@@ -25,5 +25,27 @@ The project follows the template code-project pattern:
     figure content, scholarship, and manuscript artifacts.
 14. `src/experiments.py` orchestrates the domain modules and writes artifacts.
 
+### v0.2 temporal / active / evaluation layer
+
+15. `src/temporal_model.py` defines the temporal generative model with a
+    left-to-right transition matrix `B` and implements HMM forward filtering,
+    Viterbi decoding, and forward–backward smoothing. This is the proper fix for
+    the v0.1 sticky filter, which omitted state dynamics (implicit `B = I`).
+16. `src/active_selection.py` implements the expected-free-energy policy
+    (epistemic + pragmatic value) and the greedy active-disassembly ordering —
+    the *active* half of Active Inference.
+17. `src/phase_segmentation.py` segments a trace into contiguous program phases
+    from smoothed beliefs.
+18. `src/corpus.py` defines the labelled multi-fixture corpus, and
+    `src/evaluation.py` computes decoding accuracy, calibration, free-energy
+    convergence, the static/temporal/Viterbi comparison, and the shuffled-label
+    and uniform-belief negative controls.
+19. `src/advanced_inference.py` is the thin orchestrator that composes the above
+    and writes `temporal_inference.json`, `phase_segments.json`,
+    `active_selection.json`, and `evaluation_report.json`. The new claims
+    (CLM-010..013), validation checks (`advanced_*`), reproducibility-manifest
+    rows, and RedTeam findings (RT-013, RT-014) bind these artifacts to the same
+    verifier-first discipline as the v0.1 surface. See `docs/evaluation.md`.
+
 Scripts are thin entrypoints. Manuscript variables are generated from the live
 experiment so prose and figures stay aligned with the code.

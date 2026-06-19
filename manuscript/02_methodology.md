@@ -35,3 +35,32 @@ over instruction phases.
 ![Adapter provenance for required and optional assembly packages.]({{PACKAGE_PROVENANCE_FIGURE}}){#fig:package-provenance}
 
 ![Trace feature matrix linking instruction events, execution status, observation IDs, and category channels.]({{TRACE_FEATURE_FIGURE}}){#fig:trace-feature-matrix}
+
+## Temporal, active, and evaluated inference {#sec:advanced-methods}
+
+The v0.1 belief update is a sticky filter that carries the previous posterior
+forward unchanged and therefore omits state dynamics — implicitly assuming an
+identity transition over latent phases. The v0.2 model adds a left-to-right
+transition matrix over the five program phases, yielding a genuine discrete
+hidden Markov model. Forward filtering alternates a predict step (the transition
+matrix applied to the previous posterior) with a categorical likelihood update;
+Viterbi decoding recovers the most probable joint phase path; and
+forward–backward smoothing refines the per-step beliefs
+[@friston2017activeinference]. Contiguous program phases are then segmented
+directly from the smoothed beliefs.
+
+To make the *active* in Active Inference explicit, an expected-free-energy
+policy scores each candidate observation by an epistemic term (the expected
+reduction in phase-belief entropy) and a pragmatic term (a log-preference over
+the observation categories), and selects the observation that minimises expected
+free energy [@friston2017activeinference]. This realises an active-disassembly
+ordering in which the agent chooses which instruction to read next rather than
+scanning left to right.
+
+A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
+carrying a hand-authored ground-truth phase sequence aligned to its decoded
+instructions, supports the project's first quantitative evaluation: decoding
+accuracy, calibration, a free-energy convergence summary, and a
+static-versus-temporal-versus-Viterbi comparison, each guarded by shuffled-label
+and uniform-belief negative controls so that a reported gain cannot be vacuous
+[@heins2022pymdp].

@@ -155,6 +155,57 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         boundary="A manifest detects stale or replaced artifacts; it does not certify scientific validity by itself.",
         status="validated",
     ),
+    ClaimRecord(
+        claim_id="CLM-010",
+        claim_type="temporal_inference",
+        statement="A left-to-right transition matrix yields a temporal HMM whose forward-filter decoding substantially outperforms the v0.1 sticky identity-transition recursive filter on the labelled corpus.",
+        support_keys=("friston2017activeinference", "heins2022pymdp"),
+        artifact_paths=(
+            "output/data/temporal_inference.json",
+            "output/data/evaluation_report.json",
+        ),
+        validation_checks=(
+            "advanced_temporal_artifacts_present",
+            "advanced_temporal_beats_static",
+            "advanced_temporal_isolates_transition",
+            "advanced_memoryless_baseline_honest",
+        ),
+        boundary="The claim is bounded to beating the v0.1 STICKY filter only: on this short-program corpus a simpler MEMORYLESS per-step decoder (argmax D·A) outperforms the temporal HMM, so temporal structure shows no NET advantage here and this is recorded explicitly. The static and temporal decoders share A and D (only B differs), parameters are hand-authored not fit, and the exit phase is observation-underdetermined.",
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-011",
+        claim_type="evaluation_controls",
+        statement="Phase-decoding accuracy is discriminative: shuffled-label and uniform-belief negative controls sit near chance, far below the temporal model.",
+        support_keys=("heins2022pymdp",),
+        artifact_paths=("output/data/evaluation_report.json",),
+        validation_checks=(
+            "advanced_negative_controls_discriminate",
+            "advanced_evaluation_freshness",
+        ),
+        boundary="Controls show the metric is not vacuous; they do not establish external validity beyond the corpus.",
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-012",
+        claim_type="phase_segmentation",
+        statement="Smoothed beliefs segment each trace into contiguous program phases that exactly partition the instruction steps.",
+        support_keys=("friston2017activeinference",),
+        artifact_paths=("output/data/phase_segments.json",),
+        validation_checks=("advanced_phase_segmentation_partition",),
+        boundary="Segmentation reflects the hand-authored generative model, not a discovered ground-truth control-flow structure.",
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-013",
+        claim_type="active_selection",
+        statement="An expected-free-energy active-disassembly policy is implemented; on the short-program corpus it is never worse than a fixed scan and ties because one observation saturates the phase belief.",
+        support_keys=("friston2017activeinference",),
+        artifact_paths=("output/data/active_selection.json",),
+        validation_checks=("advanced_active_never_worse", "advanced_active_policy_functional"),
+        boundary="Expected free energy genuinely varies across candidates (functional policy, not collapsed), so the corpus tie is a real null — no measurable advantage at this fixture scale — not a non-working policy; the active advantage is shown only as a mechanism in unit tests.",
+        status="validated",
+    ),
 )
 
 

@@ -534,6 +534,169 @@ def _documentation_checks(project_root: Path) -> list[ValidationCheck]:
     ]
 
 
+def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate the v0.2 temporal / active / evaluation artifacts.
+
+    Every check RECOMPUTES the relevant property from the artifact on disk (and,
+    for the headline, re-derives it from the live generator) so the gate fails if
+    a number was hand-edited, went stale, or was laundered green-by-construction.
+    """
+
+    data_dir = project_root / "output" / "data"
+    temporal_path = data_dir / "temporal_inference.json"
+    segments_path = data_dir / "phase_segments.json"
+    active_path = data_dir / "active_selection.json"
+    evaluation_path = data_dir / "evaluation_report.json"
+
+    required = (temporal_path, segments_path, active_path, evaluation_path)
+    present = all(path.exists() for path in required)
+    if not present:
+        missing = [p.name for p in required if not p.exists()]
+        return [
+            _check("advanced_temporal_artifacts_present", False, f"missing={missing}"),
+            _check("advanced_temporal_beats_static", False, "artifacts missing"),
+            _check("advanced_negative_controls_discriminate", False, "artifacts missing"),
+            _check("advanced_phase_segmentation_partition", False, "artifacts missing"),
+            _check("advanced_active_never_worse", False, "artifacts missing"),
+            _check("advanced_evaluation_freshness", False, "artifacts missing"),
+        ]
+
+    evaluation = _load_json(evaluation_path)
+    temporal = _load_json(temporal_path)
+    segments_payload = _load_json(segments_path)
+    active = _load_json(active_path)
+
+    summary = evaluation.get("summary", {})
+    mean_temporal = float(summary.get("mean_temporal_accuracy", 0.0))
+    mean_static = float(summary.get("mean_static_accuracy", 1.0))
+    mean_memoryless = float(summary.get("mean_memoryless_accuracy", 0.0))
+    temporal_advantage = float(summary.get("temporal_advantage_over_best_non_temporal", 1.0))
+    shuffle = float(evaluation.get("shuffled_label_control", {}).get("mean_accuracy", 1.0))
+    # Compare like-to-like (accuracy vs accuracy), not accuracy vs balanced accuracy.
+    uniform_accuracy = float(evaluation.get("uniform_belief_control", {}).get("accuracy", 1.0))
+
+    temporal_fixtures = temporal.get("per_fixture", {})
+    artifacts_ok = (
+        bool(temporal.get("model"))
+        and bool(temporal_fixtures)
+        and all(
+            {"filter", "smoothing", "viterbi_path", "truth_labels"}.issubset(record)
+            for record in temporal_fixtures.values()
+        )
+        and bool(evaluation.get("per_fixture"))
+    )
+
+    # Phase-segment partition: each fixture's segments must exactly tile its range.
+    partition_ok = bool(segments_payload.get("per_fixture"))
+    for record in segments_payload.get("per_fixture", {}).values():
+        covered: list[int] = []
+        for segment in record.get("segments", []):
+            covered.extend(range(int(segment["start_index"]), int(segment["end_index"]) + 1))
+        if covered != list(range(len(covered))) or not covered:
+            partition_ok = False
+            break
+
+    active_summary = active.get("summary", {})
+    active_never_worse = bool(active_summary.get("active_never_worse", False))
+
+    # Freshness: re-derive the FULL evaluation payload from the live generator and
+    # compare it byte-for-byte to the on-disk artifact, so a hand edit anywhere in
+    # the report (not just the two summary means) fails the gate.
+    from .advanced_inference import evaluation_report_payload
+
+    fresh_payload = evaluation_report_payload()
+    freshness_ok = json.dumps(fresh_payload, sort_keys=True) == json.dumps(
+        evaluation, sort_keys=True
+    )
+
+    # Honest-comparison invariant: the artifact records the strongest non-temporal
+    # baseline (the memoryless per-step decoder) and the temporal advantage over it,
+    # so the headline cannot hide that a memoryless decoder may beat the temporal
+    # model on this corpus. This binds the corrected, non-overclaiming narrative.
+    honest_comparison_ok = (
+        "mean_memoryless_accuracy" in summary
+        and mean_memoryless > 0.0
+        and abs(temporal_advantage - (mean_temporal - max(mean_static, mean_memoryless))) < 1e-9
+    )
+
+    # Clean-ablation invariant: the static and temporal decoders must share the
+    # same likelihood A and prior D, so the accuracy gap isolates the transition
+    # matrix B (temporal structure) and is not confounded by a different
+    # observation model.
+    from .active_selection import expected_free_energy
+    from .generative_model import build_generative_model
+    from .temporal_model import build_temporal_model
+
+    static_model = build_generative_model()
+    temporal_model = build_temporal_model()
+    isolation_ok = bool(
+        np.allclose(static_model.A, temporal_model.A)
+        and np.allclose(static_model.D, temporal_model.D)
+    )
+
+    # Functional-policy invariant: the expected free energy must genuinely vary
+    # across candidate observations, so the active null at corpus scale is a real
+    # null and not a collapsed (constant-EFE) policy reported as one.
+    flat_preference = np.ones(len(static_model.observation_labels), dtype=float)
+    belief = np.asarray(static_model.D, dtype=float)
+    belief = belief / belief.sum()
+    efe_values = [
+        expected_free_energy(belief, static_model.A, flat_preference, i, i).expected_free_energy
+        for i in range(len(static_model.observation_labels))
+    ]
+    policy_functional = (max(efe_values) - min(efe_values)) > 1e-6
+
+    return [
+        _check(
+            "advanced_temporal_isolates_transition",
+            isolation_ok,
+            f"static_and_temporal_share_A_and_D={isolation_ok}",
+        ),
+        _check(
+            "advanced_active_policy_functional",
+            policy_functional,
+            f"efe_spread={max(efe_values) - min(efe_values):.4f}",
+        ),
+        _check(
+            "advanced_temporal_artifacts_present",
+            artifacts_ok,
+            f"temporal_fixtures={len(temporal_fixtures)}",
+        ),
+        _check(
+            "advanced_temporal_beats_static",
+            mean_temporal > mean_static,
+            f"temporal={mean_temporal:.4f} sticky_static={mean_static:.4f} "
+            f"(narrow claim: temporal beats the v0.1 sticky identity-transition filter only)",
+        ),
+        _check(
+            "advanced_memoryless_baseline_honest",
+            honest_comparison_ok,
+            f"memoryless={mean_memoryless:.4f} temporal={mean_temporal:.4f} "
+            f"temporal_advantage_over_best_non_temporal={temporal_advantage:.4f}",
+        ),
+        _check(
+            "advanced_negative_controls_discriminate",
+            (mean_temporal - shuffle) >= 0.15 and mean_temporal > uniform_accuracy,
+            f"temporal={mean_temporal:.4f} shuffle={shuffle:.4f} uniform_acc={uniform_accuracy:.4f}",
+        ),
+        _check(
+            "advanced_phase_segmentation_partition",
+            partition_ok,
+            f"fixtures={len(segments_payload.get('per_fixture', {}))}",
+        ),
+        _check(
+            "advanced_active_never_worse",
+            active_never_worse,
+            f"never_worse={active_never_worse} ties={active_summary.get('ties')}",
+        ),
+        _check(
+            "advanced_evaluation_freshness",
+            freshness_ok,
+            f"recompute_matches_disk={freshness_ok}",
+        ),
+    ]
+
+
 def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationReport:
     """Validate generated analysis artifacts and return a structured report."""
 
@@ -549,6 +712,7 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_manuscript_token_checks(output_dir))
     checks.extend(_redteam_checks(output_dir))
     checks.extend(_reproducibility_checks(project_root))
+    checks.extend(_advanced_inference_checks(project_root))
     checks.extend(_claim_register_checks(project_root, {check.name for check in checks}))
     checks.extend(_documentation_checks(project_root))
     passed = sum(check.passed for check in checks)

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .advanced_inference import OUTPUT_DIR as ADVANCED_OUTPUT_DIR
+from .advanced_inference import run_advanced_inference
 from .claim_register import CLAIM_RECORDS, write_claim_register
 from .experiments import OUTPUT_DIR, run_experiment
 from .figures import plot_inference_diagnostics
@@ -21,6 +23,14 @@ def generate_variables() -> dict[str, str]:
     """Run the scaffold experiment and return string manuscript variables."""
 
     result = run_experiment()
+    advanced_paths = run_advanced_inference()
+    evaluation_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "evaluation_report.json").read_text(encoding="utf-8")
+    )
+    active_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "active_selection.json").read_text(encoding="utf-8")
+    )
+    evaluation_summary = evaluation_report["summary"]
     rxinfer_result = run_rxinfer_backend(PROJECT_ROOT / result.data_paths["trace_bundle"])
     inference_diagnostic_path = plot_inference_diagnostics(
         list(result.inference.free_energy_by_step),
@@ -61,6 +71,17 @@ def generate_variables() -> dict[str, str]:
         "REDTEAM_REPORT": f"../{redteam_path}",
         "REPRODUCIBILITY_MANIFEST": f"../{reproducibility_path}",
         "REPRODUCIBILITY_ARTIFACT_COUNT": str(len(MANIFEST_TARGETS)),
+        "CORPUS_FIXTURE_COUNT": str(evaluation_summary["fixture_count"]),
+        "TEMPORAL_MEAN_ACCURACY": f"{evaluation_summary['mean_temporal_accuracy']:.3f}",
+        "STATIC_MEAN_ACCURACY": f"{evaluation_summary['mean_static_accuracy']:.3f}",
+        "MEMORYLESS_MEAN_ACCURACY": f"{evaluation_summary['mean_memoryless_accuracy']:.3f}",
+        "SHUFFLE_CONTROL_ACCURACY": f"{evaluation_report['shuffled_label_control']['mean_accuracy']:.3f}",
+        "UNIFORM_CONTROL_ACCURACY": f"{evaluation_report['uniform_belief_control']['balanced_accuracy']:.3f}",
+        "ACTIVE_FIXED_TIE_COUNT": str(active_report["summary"]["ties"]),
+        "TEMPORAL_INFERENCE_ARTIFACT": f"../{advanced_paths['temporal_inference']}",
+        "EVALUATION_REPORT_ARTIFACT": f"../{advanced_paths['evaluation_report']}",
+        "PHASE_SEGMENTS_ARTIFACT": f"../{advanced_paths['phase_segments']}",
+        "ACTIVE_SELECTION_ARTIFACT": f"../{advanced_paths['active_selection']}",
         "OBSERVATION_FIGURE": "../output/figures/observation_pipeline.png",
         "POSTERIOR_FIGURE": "../output/figures/posterior_beliefs.png",
         "PACKAGE_PROVENANCE_FIGURE": "../output/figures/package_provenance.png",

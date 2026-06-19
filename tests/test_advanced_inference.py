@@ -1,0 +1,85 @@
+"""Tests for the v0.2 advanced-inference orchestration over the corpus."""
+
+from __future__ import annotations
+
+import json
+
+from src.advanced_inference import (
+    active_selection_payload,
+    evaluation_report_payload,
+    phase_segments_payload,
+    run_advanced_inference,
+    temporal_inference_payload,
+)
+
+
+def test_temporal_inference_payload_covers_every_fixture() -> None:
+    payload = temporal_inference_payload()
+    per_fixture = payload["per_fixture"]
+    assert set(per_fixture) >= {"x86_accumulator", "x86_long_accumulator"}
+    for record in per_fixture.values():
+        n = len(record["observation_ids"])
+        assert len(record["truth_labels"]) == n
+        assert len(record["filter"]["filtered_posteriors"]) == n
+        assert len(record["smoothing"]["smoothed_posteriors"]) == n
+        assert len(record["viterbi_path"]) == n
+
+
+def test_phase_segments_partition_each_fixture() -> None:
+    payload = phase_segments_payload()
+    for record in payload["per_fixture"].values():
+        segments = record["segments"]
+        assert segments, "expected at least one segment"
+        # Segments must exactly tile the step range with no gaps or overlaps.
+        covered: list[int] = []
+        for segment in segments:
+            covered.extend(range(segment["start_index"], segment["end_index"] + 1))
+        assert covered == list(range(len(covered)))
+        assert record["segment_count"] == len(segments)
+
+
+def test_active_selection_is_never_worse_than_fixed() -> None:
+    payload = active_selection_payload()
+    summary = payload["summary"]
+    # Honest corpus outcome: active selection is never WORSE than the fixed scan;
+    # on these short fixtures it ties because one observation saturates confidence.
+    assert summary["active_never_worse"] is True
+    assert summary["ties"] + summary["active_strictly_fewer_steps"] == summary["fixture_count"]
+
+
+def test_evaluation_report_temporal_beats_static_and_controls_are_near_chance() -> None:
+    payload = evaluation_report_payload()
+    summary = payload["summary"]
+    mean_temporal = summary["mean_temporal_accuracy"]
+    mean_static = summary["mean_static_accuracy"]
+    # The proper temporal model must beat the implicit-identity static filter.
+    assert mean_temporal > mean_static
+    # Negative controls must sit well below the temporal model (discriminative metric).
+    shuffle = payload["shuffled_label_control"]["mean_accuracy"]
+    uniform = payload["uniform_belief_control"]["balanced_accuracy"]
+    assert mean_temporal - shuffle >= 0.15
+    assert mean_temporal > uniform
+
+
+def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None:
+    paths_a = run_advanced_inference(tmp_path / "output")
+    first = {
+        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(encoding="utf-8")
+        for name in ("temporal_inference", "phase_segments", "active_selection", "evaluation_report")
+    }
+    run_advanced_inference(tmp_path / "output")
+    second = {
+        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(encoding="utf-8")
+        for name in first
+    }
+    # Byte-identical across runs (determinism, no RNG).
+    assert first == second
+    # Every payload is valid JSON.
+    for name in first:
+        assert json.loads(first[name])
+    assert set(paths_a) == {
+        "temporal_inference",
+        "phase_segments",
+        "active_selection",
+        "evaluation_report",
+    }

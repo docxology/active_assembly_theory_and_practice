@@ -163,6 +163,28 @@ REDTEAM_FINDINGS: tuple[RedTeamFinding, ...] = (
         validation_check="reproducibility_artifact_manifest",
         status="remediated",
     ),
+    RedTeamFinding(
+        finding_id="RT-013",
+        vector="temporal_superiority_overclaim",
+        severity="critical",
+        location="src/temporal_model.py and output/data/evaluation_report.json",
+        false_certification_path="The temporal HMM could be asserted as superior to the original static filter without a head-to-head measurement, or the metric could be vacuous (every decoder scores the same).",
+        negative_control="Replace the transition matrix with the identity (B=I) so the temporal filter collapses to the static one, or shuffle the ground-truth labels; require the temporal-beats-static and negative-control checks to fail.",
+        remediation="Evaluation recomputes static, temporal, and Viterbi decoding accuracy from the labelled corpus and validation asserts mean temporal accuracy exceeds static and beats shuffled/uniform controls by a margin.",
+        validation_check="advanced_temporal_beats_static",
+        status="remediated",
+    ),
+    RedTeamFinding(
+        finding_id="RT-014",
+        vector="active_inference_cherry_pick",
+        severity="critical",
+        location="src/active_selection.py and output/data/active_selection.json",
+        false_certification_path="Active selection could be advertised as 'helping' by cherry-picking a confidence threshold or a single favourable fixture, laundering a mechanism demo into a corpus-scale claim.",
+        negative_control="Record the honest per-fixture active-vs-fixed step counts; require validation to fail if active is ever strictly worse than the fixed scan, and confine the active-advantage claim to a unit test of the mechanism.",
+        remediation="The active artifact records the measured corpus outcome including ties; validation asserts active is never worse than the fixed scan, and the claim register marks the corpus advantage explicitly as a non-result.",
+        validation_check="advanced_active_never_worse",
+        status="remediated",
+    ),
 )
 
 

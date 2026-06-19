@@ -53,6 +53,17 @@ must use the corresponding RxInfer engine history field when they are added.
 
 ## Model Expansion
 
+> **v0.2 status:** Item 1 (a discrete/categorical model over phases) has landed
+> as an *additive* model inside the Julia package
+> (`julia/ActiveAssemblyRxInfer/`) with its own `Pkg.test()` coverage asserting
+> finite Bethe Free Energy output; the existing Gaussian spine and its tests are
+> retained unchanged. The pipeline's authoritative free-energy trace still uses
+> the Gaussian demonstrator — wiring the categorical model in as the pipeline
+> backend remains future work, so manuscript claims stay cautious. The Python
+> side independently gained a genuine temporal HMM
+> (`src/temporal_model.py`, forward filter + Viterbi + smoothing) used for the
+> measured phase-decoding evaluation (see `docs/evaluation.md`).
+
 1. Discrete HMM over instruction and trace phases.
 2. Gaussian state-space model over register deltas and entropy features.
 3. Changepoint model for phase transitions.
