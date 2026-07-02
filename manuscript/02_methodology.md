@@ -50,12 +50,24 @@ forward–backward smoothing refines the per-step beliefs
 directly from the smoothed beliefs.
 
 To make the *active* in Active Inference explicit, an expected-free-energy
-policy scores each candidate observation by an epistemic term (the expected
-reduction in phase-belief entropy) and a pragmatic term (a log-preference over
-the observation categories), and selects the observation that minimises expected
+policy scores each candidate observation by an epistemic term (the reduction in
+phase-belief entropy) and a pragmatic term (a log-preference over the
+observation categories), and selects the observation that minimises expected
 free energy [@friston2017activeinference]. This realises an active-disassembly
 ordering in which the agent chooses which instruction to read next rather than
 scanning left to right.
+
+We flag one deliberate deviation from the canonical terminology. Each
+candidate's observation category is already decoded before selection, so the
+epistemic term here is computed as the *realized* information gain of the
+observation actually revealed — the entropy reduction from that specific
+category — rather than a full expectation over the posterior-predictive
+distribution of possible future observations, which is what the canonical
+expected-free-energy epistemic term averages over. For a single realized
+observation this quantity can even be negative, whereas the true expectation is
+guaranteed non-negative. The policy uses the realized gain because it is exact
+and cheap given the known category; readers should nonetheless interpret the
+"expected free energy" label accordingly.
 
 A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
 carrying a hand-authored ground-truth phase sequence aligned to its decoded

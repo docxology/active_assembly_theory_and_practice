@@ -1,4 +1,19 @@
-"""Python bridge for the native Julia/RxInfer inference backend."""
+"""Python bridge for the native Julia/RxInfer inference backend.
+
+The RxInfer/Julia numbers that flow into the manuscript (``JULIA_VERSION``,
+``RXINFER_VERSION``, ``RXINFER_FINAL_FREE_ENERGY``) are only reproducible against
+a known external toolchain. Just as ``pyproject.toml`` pins the Python
+dependencies, the expected backend versions are pinned explicitly here as
+:data:`EXPECTED_JULIA_VERSION` / :data:`EXPECTED_RXINFER_VERSION` and enforced by
+:func:`validate_backend_versions`, so a silent toolchain bump fails loudly rather
+than republishing numbers that no longer match the pinned environment.
+
+The availability of that toolchain is also made explicit rather than implicit:
+:func:`julia_available` is the documented contract callers use to choose between
+a clean skip (Julia absent) and running the backend, while
+:func:`resolve_julia_executable` raises a clearly-labeled ``RuntimeError`` when no
+Julia executable can be found.
+"""
 
 from __future__ import annotations
 
@@ -17,6 +32,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 JULIA_PROJECT = PROJECT_ROOT / "julia" / "ActiveAssemblyRxInfer"
 JULIA_RUNNER = JULIA_PROJECT / "scripts" / "run_rxinfer.jl"
+
+# Pinned native-backend toolchain versions. These mirror how ``pyproject.toml``
+# pins the Python dependencies: the reproducible manuscript numbers depend on
+# this exact toolchain, so the expected versions are declared explicitly and
+# enforced against the backend diagnostics by ``validate_backend_versions``.
+EXPECTED_JULIA_VERSION = "1.12.1"
+EXPECTED_RXINFER_VERSION = "5.4.0"
 
 
 @dataclass(frozen=True)
@@ -71,6 +93,58 @@ def resolve_julia_executable(julia_executable: str = "julia") -> str:
     if path_julia is None:
         raise RuntimeError(f"Julia executable not found: {julia_executable}")
     return path_julia
+
+
+def julia_available(julia_executable: str = "julia") -> bool:
+    """Return whether a usable Julia executable can be resolved.
+
+    This is the explicit availability contract for the native RxInfer backend.
+    Callers that want a *clean skip* when Julia is absent (rather than the hard
+    failure :func:`run_rxinfer_backend` raises) gate on this before invoking the
+    backend. It never raises: a missing toolchain returns ``False``.
+    """
+
+    try:
+        resolve_julia_executable(julia_executable)
+    except RuntimeError:
+        return False
+    return True
+
+
+def validate_backend_versions(
+    julia_version: str,
+    rxinfer_version: str,
+    *,
+    expected_julia_version: str = EXPECTED_JULIA_VERSION,
+    expected_rxinfer_version: str = EXPECTED_RXINFER_VERSION,
+) -> None:
+    """Fail loudly when the native backend drifts from the pinned toolchain.
+
+    The manuscript reports ``JULIA_VERSION`` and ``RXINFER_VERSION`` verbatim from
+    the backend diagnostics. A silent toolchain bump would republish numbers that
+    no longer match the pinned, reproducible environment, so a mismatch is a
+    hard, clearly-labeled ``RuntimeError`` rather than an implicit acceptance.
+
+    Args:
+        julia_version: Julia version reported by the backend diagnostics.
+        rxinfer_version: RxInfer version reported by the backend diagnostics.
+        expected_julia_version: Pinned Julia version (defaults to the module pin).
+        expected_rxinfer_version: Pinned RxInfer version (defaults to the module pin).
+    """
+
+    mismatches: list[str] = []
+    if julia_version != expected_julia_version:
+        mismatches.append(
+            f"Julia {julia_version!r} != pinned {expected_julia_version!r}"
+        )
+    if rxinfer_version != expected_rxinfer_version:
+        mismatches.append(
+            f"RxInfer {rxinfer_version!r} != pinned {expected_rxinfer_version!r}"
+        )
+    if mismatches:
+        raise RuntimeError(
+            "native RxInfer backend version mismatch: " + "; ".join(mismatches)
+        )
 
 
 def load_free_energy_records(path: Path) -> list[dict[str, object]]:
@@ -221,6 +295,10 @@ def run_rxinfer_backend(
     expected_data_hash = file_sha256(trace_bundle_path)
     records = validate_rxinfer_outputs(rxinfer_dir, expected_data_hash=expected_data_hash)
     diagnostics = json.loads((rxinfer_dir / "diagnostics.json").read_text(encoding="utf-8"))
+    validate_backend_versions(
+        str(diagnostics["julia_version"]),
+        str(diagnostics["rxinfer_version"]),
+    )
     free_energy_values = tuple(float(record["value"]) for record in records)
     figure_path = plot_rxinfer_free_energy(
         records,

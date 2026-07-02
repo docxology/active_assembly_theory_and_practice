@@ -286,22 +286,37 @@ def shuffled_label_control(
     model: TemporalGenerativeModel,
     *,
     rounds: int = 20,
+    seed: int = 0,
 ) -> dict[str, object]:
-    """Temporal decoding accuracy against a deterministically shuffled truth.
+    """Temporal decoding accuracy against seeded random label permutations.
 
-    Each round ``r`` rotates the concatenated truth labels by ``r + 1`` positions
-    (a deterministic, RNG-free permutation) and measures the temporal decoder's
-    accuracy against that scrambled reference. The mean over rounds should sit
-    near chance — far below the accuracy against the true labels — proving the
-    decoding metric is discriminative rather than vacuous.
+    Each round draws a fresh permutation of the concatenated truth labels from a
+    deterministic, seeded RNG and measures the temporal decoder's accuracy
+    against that scrambled reference. A random permutation is a materially
+    stronger null than a cyclic rotation: a rotation preserves local label
+    adjacency and the run structure of the ground-truth sequence, whereas a full
+    permutation destroys both. The mean over rounds should sit near chance — far
+    below the accuracy against the true labels — proving the decoding metric is
+    discriminative rather than vacuous.
+
+    Only *distinct* permutations that also differ from the true label order are
+    kept, so ``rounds`` in the returned payload is the actual number of unique
+    scrambles averaged over. This avoids the wrap-around duplicates that a modular
+    rotation schedule silently produces when ``rounds`` exceeds the label count
+    (e.g. 20 requested rounds over an 18-label corpus). With a very small corpus
+    the number of achievable distinct permutations can be below the requested
+    ``rounds``; the returned ``rounds`` reflects what was actually used.
 
     Args:
         corpus: The labelled fixtures.
         model: The temporal generative model.
-        rounds: Number of distinct deterministic rotations to average over.
+        rounds: Maximum number of distinct random permutations to average over.
+        seed: Seed for the deterministic permutation RNG. Fixed so the control is
+            byte-identical across repeated calls.
 
     Returns:
-        A dict with ``mean_accuracy``, ``rounds``, and ``per_round`` accuracies.
+        A dict with ``mean_accuracy``, ``rounds`` (the actual distinct count
+        used), and ``per_round`` accuracies.
     """
 
     if rounds <= 0:
@@ -316,19 +331,32 @@ def shuffled_label_control(
         truth.extend(fixture.phase_labels)
 
     n = len(truth)
+    rng = np.random.default_rng(seed)
+    seen: set[tuple[str, ...]] = {tuple(truth)}
     per_round: list[float] = []
-    for r in range(rounds):
-        shift = (r + 1) % n
-        if shift == 0:
-            shift = 1
-        rotated = truth[shift:] + truth[:shift]
+    # Bound the draws so a corpus admitting few distinct permutations cannot spin
+    # forever; 64 attempts per requested round is ample headroom in practice.
+    max_attempts = max(rounds * 64, 64)
+    attempts = 0
+    while len(per_round) < rounds and attempts < max_attempts:
+        attempts += 1
+        permutation = rng.permutation(n)
+        scrambled = tuple(truth[int(index)] for index in permutation)
+        if scrambled in seen:
+            continue
+        seen.add(scrambled)
         per_round.append(
-            float(evaluate_decoding(predicted, rotated, labels)["accuracy"])
+            float(evaluate_decoding(predicted, list(scrambled), labels)["accuracy"])
+        )
+
+    if not per_round:
+        raise ValueError(
+            "corpus admits no label permutation distinct from the ground truth"
         )
 
     return {
         "mean_accuracy": float(np.mean(per_round)),
-        "rounds": int(rounds),
+        "rounds": int(len(per_round)),
         "per_round": [float(value) for value in per_round],
     }
 
