@@ -197,6 +197,27 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_redteam_risk_register",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/temporal_beliefs_x86_accumulator.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_temporal_belief_figures",
+        claim_ids=("CLM-010", "CLM-012"),
+        validation_checks=("figure_temporal_beliefs_x86_accumulator",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/model_comparison.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_advanced_figures",
+        claim_ids=("CLM-010", "CLM-011"),
+        validation_checks=("figure_model_comparison",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/active_efe.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_advanced_figures",
+        claim_ids=("CLM-013",),
+        validation_checks=("figure_active_efe",),
+    ),
+    ArtifactManifestTarget(
         path="output/data/temporal_inference.json",
         artifact_type="inference",
         generated_by="src.advanced_inference.run_advanced_inference",

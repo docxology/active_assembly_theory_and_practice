@@ -6,4 +6,10 @@
   `src/manuscript_variables.py`.
 - Figures must live under `output/figures/` and be referenced as
   `../output/figures/<name>.png` after token hydration.
+- Every figure must carry a generated caption in `output/figures/README.md`
+  (`FIGURE_CAPTIONS` in `src/figures.py`). Add a `{{NEW_FIGURE}}` token and a
+  manifest target whenever a new figure is introduced.
+- The v0.2 figure tokens are `{{TEMPORAL_BELIEFS_FIGURE}}`,
+  `{{MODEL_COMPARISON_FIGURE}}`, and `{{ACTIVE_EFE_FIGURE}}`; each must appear in
+  the manuscript source so the `manuscript_source_surface` check stays green.
 

@@ -241,6 +241,9 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "claim_evidence_map.png",
         "redteam_risk_register.png",
         "artifact_hash_manifest.png",
+        "temporal_beliefs_x86_accumulator.png",
+        "model_comparison.png",
+        "active_efe.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -384,6 +387,9 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "VALIDATION_FIGURE",
         "REDTEAM_FIGURE",
         "REPRODUCIBILITY_FIGURE",
+        "TEMPORAL_BELIEFS_FIGURE",
+        "MODEL_COMPARISON_FIGURE",
+        "ACTIVE_EFE_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(token for token in expected_figures if f"{{{{{token}}}}}" not in text)

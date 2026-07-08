@@ -40,6 +40,9 @@ def generate_variables() -> dict[str, str]:
     scholarship_path = write_scholarship_sources()
     claim_register_path = write_claim_register()
     redteam_path = write_redteam_report()
+    from .advanced_figures import write_advanced_figures
+
+    advanced_figure_paths = write_advanced_figures()
     reproducibility_path = write_reproducibility_manifest()
     remediated_redteam = sum(finding.status == "remediated" for finding in REDTEAM_FINDINGS)
     variables = {
@@ -93,6 +96,9 @@ def generate_variables() -> dict[str, str]:
         "CLAIM_FIGURE": "../output/figures/claim_evidence_map.png",
         "REDTEAM_FIGURE": "../output/figures/redteam_risk_register.png",
         "REPRODUCIBILITY_FIGURE": "../output/figures/artifact_hash_manifest.png",
+        "TEMPORAL_BELIEFS_FIGURE": f"../{advanced_figure_paths['temporal_beliefs']}",
+        "MODEL_COMPARISON_FIGURE": f"../{advanced_figure_paths['model_comparison']}",
+        "ACTIVE_EFE_FIGURE": f"../{advanced_figure_paths['active_efe']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

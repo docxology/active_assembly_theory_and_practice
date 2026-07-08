@@ -2,9 +2,11 @@
 
 `active_assembly_theory_and_practice` is a private sidecar project that turns
 assembly-language traces into categorical observations for Active Inference
-experiments. The v0.1 scaffold uses real Capstone disassembly, Unicorn bounded
-emulation, native Julia/RxInfer Bethe Free Energy tracking, and a pymdp-backed
-comparison baseline on a transparent x86-64 byte fixture.
+experiments. It uses real Capstone disassembly, Unicorn bounded emulation, native
+Julia/RxInfer Bethe Free Energy tracking, and a pymdp-backed comparison baseline
+on a transparent x86-64 byte fixture. On top of that observation bridge it adds a
+temporal hidden Markov model (explicit phase dynamics), an expected-free-energy
+active-disassembly policy, and a labelled corpus evaluation — the v0.2 layer.
 
 The project is intentionally narrow: it demonstrates an explicit bridge between
 machine-code observations and a discrete generative model. It does not claim
@@ -72,4 +74,21 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
 - `output/figures/scholarship_evidence_matrix.png`
 - `output/figures/claim_evidence_map.png`
 - `output/figures/artifact_hash_manifest.png`
+- `output/figures/temporal_beliefs_x86_accumulator.png`
+- `output/figures/model_comparison.png`
+- `output/figures/active_efe.png`
 - `output/figures/validation_summary.png`
+- `output/figures/README.md` (generated caption ledger for every figure)
+
+## Reproducibility notes
+
+- Every figure is regenerated from project artifacts before rendering, and
+  `output/figures/README.md` records a caption for each one.
+- The native Julia/RxInfer backend checks its toolchain version against the
+  pinned `EXPECTED_JULIA_VERSION` in `src/rxinfer_bridge.py`. The generic
+  `julia` launcher can auto-advance on juliaup's `release` channel; when the
+  pinned version is installed, `resolve_julia_executable()` prefers that exact
+  binary so regeneration stays reproducible. Bumping the pin requires a
+  deliberate change plus a fresh backend run.
+- The validation gate (`scripts/validate_analysis_outputs.py`) recomputes each
+  tracked artifact's SHA-256 and byte size and asserts the full 47-check surface.

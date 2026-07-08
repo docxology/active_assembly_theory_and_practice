@@ -9,6 +9,7 @@ from .active_selection import (
     fixed_order_steps_to_confidence,
     select_next_observation,
 )
+from .advanced_figures import write_advanced_figures
 from .advanced_inference import run_advanced_inference
 from .assembly_packages import BasicBlock, CfgEdge, PackageProvenance, TraceBundle
 from .claim_register import ClaimRecord, write_claim_register
@@ -83,6 +84,7 @@ __all__ = [
     "validate_trace_file",
     "viterbi_decode",
     "write_claim_register",
+    "write_advanced_figures",
     "write_redteam_report",
     "write_reproducibility_manifest",
     "write_validation_report",

@@ -49,6 +49,14 @@ forward–backward smoothing refines the per-step beliefs
 [@friston2017activeinference]. Contiguous program phases are then segmented
 directly from the smoothed beliefs.
 
+![Temporal HMM forward-filter beliefs for the accumulator fixture]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs}
+*Forward-filter posterior over the five program phases at each observation step
+for the `x86_accumulator` fixture. Rows are normalized posteriors; the temporal
+model lets the latent phase evolve across steps (via the transition matrix `B`)
+rather than being re-estimated independently. Reading the most-probable phase
+down the column recovers `setup -> accumulator_update ->
+representation_transform -> accumulator_update` once the `shl` is decoded.*
+
 To make the *active* in Active Inference explicit, an expected-free-energy
 policy scores each candidate observation by an epistemic term (the reduction in
 phase-belief entropy) and a pragmatic term (a log-preference over the

@@ -60,3 +60,27 @@ print(errors)
 raise SystemExit(bool(errors))
 PY
 ```
+
+## What the validation gate enforces
+
+`scripts/validate_analysis_outputs.py` regenerates the full analysis surface and
+then asserts a 47-oracle contract. The oracles span trace contracts, RxInfer
+companion-artifact consistency, the scholarship implemented/comparison/roadmap/context
+partition, claim-register closure, RedTeam durability, the SHA-256/byte-size
+reproducibility manifest, and a **figure-set oracle** that requires the expected
+`output/figures/*.png` set to exist, be non-empty, and pass a pixel-variance check
+(so a blank or zero-byte PNG cannot satisfy the gate). The figure set includes the
+temporal-belief heatmap, the decoder-comparison bars, and the active-EFE
+trajectory.
+
+The gate also enforces **toolchain drift**: the native Julia/RxInfer backend
+asserts its version against the pinned `EXPECTED_JULIA_VERSION` in
+`src/rxinfer_bridge.py`. When the pinned version is installed,
+`resolve_julia_executable()` prefers that exact binary, so an auto-advancing
+juliaup `release` channel cannot silently change the backend under the reported
+numbers. A genuine version change requires a deliberate pin bump plus a fresh
+backend run.
+
+A generated caption ledger at `output/figures/README.md` documents every figure,
+and `output/data/claim_register.md` ties each bounded claim to its artifacts and
+checks.

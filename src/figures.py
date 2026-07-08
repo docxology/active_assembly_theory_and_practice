@@ -430,3 +430,207 @@ def plot_redteam_risk_register(findings: list[dict[str, object]], output_path: P
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
     return output_path
+
+
+# ---------------------------------------------------------------------------
+# v0.2 temporal / active / evaluation visualizations
+# ---------------------------------------------------------------------------
+
+def plot_temporal_beliefs_heatmap(
+    fixture_name: str,
+    observation_ids: list[int],
+    filtered_posteriors: list[list[float]],
+    hidden_state_labels: list[str],
+    output_path: Path,
+) -> Path:
+    """Plot a single fixture's forward-filter belief trajectory as a heatmap.
+
+    Rows are observation steps (labelled by decoded observation category); columns
+    are the five latent program-phase beliefs. Each row is a normalized belief, so
+    columns sum to one row-wise.
+    """
+
+    if not filtered_posteriors:
+        raise ValueError("filtered_posteriors must not be empty")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    matrix = np.array(filtered_posteriors, dtype=float)
+    step_labels = [
+        f"{index + 1}: obs {obs_id}" for index, obs_id in enumerate(observation_ids)
+    ]
+
+    fig, ax = plt.subplots(figsize=(7.6, max(2.6, 0.42 * len(step_labels) + 1.2)))
+    image = ax.imshow(matrix, aspect="auto", cmap="viridis", vmin=0.0, vmax=1.0)
+    ax.set_yticks(np.arange(len(step_labels)))
+    ax.set_yticklabels(step_labels, fontsize=8)
+    ax.set_xticks(np.arange(len(hidden_state_labels)))
+    ax.set_xticklabels([label.replace("_", " ") for label in hidden_state_labels], rotation=30, ha="right")
+    ax.set_ylabel("Observation step")
+    ax.set_xlabel("Latent program-phase belief")
+    ax.set_title(f"Temporal HMM forward-filter beliefs: {fixture_name}")
+    for row_index in range(matrix.shape[0]):
+        for column_index in range(matrix.shape[1]):
+            value = matrix[row_index, column_index]
+            ax.text(
+                column_index,
+                row_index,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="white" if value < 0.5 else "black",
+            )
+    fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04, label="Posterior probability")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
+def plot_model_comparison_bars(
+    evaluation_report: dict[str, object],
+    output_path: Path,
+) -> Path:
+    """Plot per-fixture decoding accuracy for sticky, memoryless, and temporal decoders."""
+
+    compare = evaluation_report.get("compare_models", {})
+    if not compare:
+        raise ValueError("evaluation_report must contain compare_models rows")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fixture_names = list(compare.keys())
+    sticky = [compare[name].get("static_accuracy", 0.0) for name in fixture_names]
+    memoryless = [compare[name].get("memoryless_accuracy", 0.0) for name in fixture_names]
+    temporal = [compare[name].get("temporal_accuracy", 0.0) for name in fixture_names]
+    x = np.arange(len(fixture_names))
+    width = 0.26
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    ax.bar(x - width, sticky, width=width, label="sticky (v0.1)", color=PALETTE[0])
+    ax.bar(x, memoryless, width=width, label="memoryless", color=PALETTE[1])
+    ax.bar(x + width, temporal, width=width, label="temporal HMM", color=PALETTE[2])
+    ax.axhline(0.2, color="#333333", linewidth=0.8, linestyle="--", label="chance (0.20)")
+    ax.set_xticks(x)
+    ax.set_xticklabels([name.replace("x86_", "") for name in fixture_names], rotation=15, ha="right")
+    ax.set_ylabel("Phase-decoding accuracy")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title("Decoder accuracy by fixture: sticky vs memoryless vs temporal")
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
+def plot_active_efe_trajectory(
+    selection: dict[str, object],
+    output_path: Path,
+) -> Path:
+    """Plot the greedy active-disassembly expected-free-energy and belief-entropy trajectory."""
+
+    efe_by_step = selection.get("efe_by_step")
+    entropy_by_step = selection.get("belief_entropy_by_step")
+    if not efe_by_step or not entropy_by_step:
+        raise ValueError("selection must contain efe_by_step and belief_entropy_by_step")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    steps = np.arange(1, len(efe_by_step) + 1)
+
+    fig, ax = plt.subplots(figsize=(7.8, 4.2))
+    ax.plot(steps, efe_by_step, marker="o", linewidth=2, color=PALETTE[0], label="Expected free energy")
+    ax.plot(steps, entropy_by_step, marker="s", linewidth=2, color=PALETTE[2], label="Belief entropy (nats)")
+    ax.set_xticks(steps)
+    ax.set_xlabel("Active-selection step")
+    ax.set_ylabel("Value")
+    ax.set_title("Active-disassembly EFE and belief-entropy trajectory")
+    ax.legend(loc="upper right", fontsize=8)
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
+# ---------------------------------------------------------------------------
+# Figure caption registry
+# ---------------------------------------------------------------------------
+# Captions are written next to every output figure so the rendered manuscript and
+# any figure inventory stay consistent with what each PNG actually shows. Keys
+# match the generated PNG stem under ``output/figures/``.
+
+FIGURE_CAPTIONS: dict[str, str] = {
+    "observation_pipeline": (
+        "Assembly observation pipeline. Each decoded x86-64 instruction (labelled by mnemonic) "
+        "is mapped to a categorical observation id; these ids feed the generative model."
+    ),
+    "posterior_beliefs": (
+        "Variational posterior beliefs over the five latent program-state classes at each of the "
+        "four observation steps. Beliefs are produced by the v0.1 sticky filter (explicit "
+        "likelihood update, implicit identity transition)."
+    ),
+    "package_provenance": (
+        "Adapter provenance for the required (Capstone, Unicorn) and optional assembly-analysis "
+        "packages. Hatched bars are optional roadmap slots; grey bars were probed but are unavailable."
+    ),
+    "trace_feature_matrix": (
+        "Trace feature matrix for every decoded instruction: whether it executed, its observation "
+        "id, whether it carries an immediate operand, whether it touches the accumulator, and its "
+        "categorical channel."
+    ),
+    "rxinfer_free_energy": (
+        "Bethe Free Energy trajectory emitted by the native Julia/RxInfer backend (Gaussian "
+        "event-code model) for the v0.1 fixture."
+    ),
+    "inference_diagnostics": (
+        "Separate diagnostic traces: the pymdp comparison variational diagnostic (upper) and the "
+        "RxInfer Bethe Free Energy (lower). The panels are distinct objectives, not one series."
+    ),
+    "scholarship_source_roles": (
+        "Scholarship source roles used to support theory, software, documentation, and binary-analysis context."
+    ),
+    "scholarship_evidence_matrix": (
+        "Scholarship evidence tiers partitioned by implementation stage (implemented, comparison, "
+        "roadmap, context)."
+    ),
+    "claim_evidence_map": (
+        "Claim-register evidence coverage: the number of source keys, generated artifacts, and "
+        "validation checks linked to each bounded claim."
+    ),
+    "redteam_risk_register": (
+        "RedTeam risk register. Every finding is remediated and guarded by a validation check; "
+        "severity reflects the false-certification path, not residual risk."
+    ),
+    "artifact_hash_manifest": (
+        "Reproducibility manifest coverage by artifact class (tracked bytes). The manifest recomputes "
+        "each file's SHA-256 and byte size so stale or replaced artifacts fail validation."
+    ),
+    "validation_summary": (
+        "Analysis validation report: every generated-output oracle that the validation gate enforces."
+    ),
+    "temporal_beliefs": (
+        "Forward-filter belief trajectory of the temporal HMM for one corpus fixture. Each row is a "
+        "normalized belief over the five program phases at one observation step."
+    ),
+    "model_comparison": (
+        "Per-fixture phase-decoding accuracy for the three decoders. The temporal HMM beats the v0.1 "
+        "sticky filter but not the memoryless baseline on this short-program corpus."
+    ),
+    "active_efe": (
+        "Expected-free-energy and belief-entropy trajectory of the greedy active-disassembly policy. "
+        "On the short-program corpus the trajectory is honest: the policy is functional but ties the "
+        "fixed scan."
+    ),
+}
+
+
+def write_figure_captions(output_dir: Path) -> Path:
+    """Write ``output/figures/README.md`` with one caption per generated figure."""
+
+    figure_dir = output_dir / "figures"
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    rows = ["# Figure Captions", "", "| Figure | Caption |", "| --- | --- |"]
+    for stem, caption in FIGURE_CAPTIONS.items():
+        path = figure_dir / f"{stem}.png"
+        status = "present" if path.exists() else "missing"
+        rows.append(f"| `{stem}.png` ({status}) | {caption} |")
+    caption_path = figure_dir / "README.md"
+    caption_path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return caption_path

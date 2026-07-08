@@ -76,8 +76,39 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _pinned_juliaup_binary(expected_version: str) -> str | None:
+    """Return the exact-pinned Julia binary if a juliaup install matches.
+
+    juliaup install layouts place each version at
+    ``~/.julia/juliaup/julia-<version>+<triple>/bin/julia``. When the pinned
+    backend version is present there, we prefer it over the generic ``julia``
+    launcher, whose ``release`` channel can auto-advance (e.g. 1.12.1 -> 1.12.6)
+    and otherwise trip the deliberate version-pin guard in
+    :func:`validate_backend_versions`. The guard still fails loudly when the
+    pinned version is genuinely absent.
+    """
+
+    base = Path.home() / ".julia" / "juliaup"
+    if not base.is_dir():
+        return None
+    for candidate in sorted(base.glob(f"julia-{expected_version}*")):
+        binary = candidate / "bin" / "julia"
+        if binary.is_file():
+            return str(binary)
+    return None
+
+
 def resolve_julia_executable(julia_executable: str = "julia") -> str:
-    """Resolve a stable Julia executable for Python and template invocations."""
+    """Resolve a stable Julia executable for Python and template invocations.
+
+    When ``julia_executable == "julia"`` the resolution order honours an explicit
+    ``JULIA`` environment override, then the exact-pinned juliaup install (see
+    :func:`_pinned_juliaup_binary`), then the generic ``~/.juliaup/bin/julia``
+    launcher (whose ``release`` channel may auto-advance), and finally the
+    ``PATH`` lookup. An explicit absolute path or a named channel is used
+    directly. The returned binary is the one :func:`validate_backend_versions`
+    checks against :data:`EXPECTED_JULIA_VERSION`.
+    """
 
     requested = Path(julia_executable).expanduser()
     if requested.is_absolute() and requested.exists():
@@ -86,6 +117,9 @@ def resolve_julia_executable(julia_executable: str = "julia") -> str:
         env_julia = os.environ.get("JULIA")
         if env_julia and Path(env_julia).expanduser().exists():
             return str(Path(env_julia).expanduser())
+        pinned = _pinned_juliaup_binary(EXPECTED_JULIA_VERSION)
+        if pinned is not None:
+            return pinned
         juliaup = Path.home() / ".juliaup" / "bin" / "julia"
         if juliaup.exists():
             return str(juliaup)

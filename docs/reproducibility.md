@@ -6,6 +6,7 @@ the current manuscript and validation report. It writes:
 - `output/data/reproducibility_manifest.json`
 - `output/data/reproducibility_manifest.md`
 - `output/figures/artifact_hash_manifest.png`
+- `output/figures/README.md` (a caption ledger documenting every figure)
 
 Each manifest row records:
 
