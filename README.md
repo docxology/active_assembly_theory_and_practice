@@ -75,8 +75,13 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
 - `output/figures/claim_evidence_map.png`
 - `output/figures/artifact_hash_manifest.png`
 - `output/figures/temporal_beliefs_x86_accumulator.png`
+- `output/figures/temporal_beliefs_x86_bitwise.png`
+- `output/figures/temporal_beliefs_x86_guard.png`
+- `output/figures/temporal_beliefs_x86_long_accumulator.png`
 - `output/figures/model_comparison.png`
 - `output/figures/active_efe.png`
+- `output/figures/calibration_curve.png`
+- `output/figures/confusion_matrix.png`
 - `output/figures/validation_summary.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 

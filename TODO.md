@@ -183,11 +183,30 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-07-31):** 148 passed, 0 failed. Coverage 93.75% (gate
+**Current state (2026-07-31):** 157 passed, 0 failed. Coverage 94.56% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
 reports **52/52** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Docs / Tests / Visualization Pass (2026-07-31)
+
+- **Documentation**: added the missing `evaluation.md` entry to `docs/README.md`
+  and expanded its index intro; completed the root `README.md` figure list with
+  the per-fixture temporal-belief variants and the new calibration/confusion
+  figures.
+- **Tests**: `+9` real, no-mock tests. RxInfer free-energy-record validation
+  (missing fields, non-increasing iterations, data-hash mismatch, empty trace,
+  companion presence/round-trip via `validate_rxinfer_outputs`), reproducibility
+  manifest tamper detection (missing artifact, hash + size mismatch), and
+  bounded-emulation early stop. Suite 148 -> 157; coverage 93.75% -> 94.56%.
+  Sub-90% modules raised: rxinfer_bridge 78->83%, reproducibility 87->92%,
+  emulation 88->92%.
+- **Visualization**: `model_comparison.png` now has a second panel showing pooled
+  accuracy with 95% Wilson confidence intervals (visualizes the new uncertainty
+  statistics); its caption was updated to describe both panels.
+- **Captions**: model_comparison caption reworded; calibration/confusion captions
+  already added in the previous pass.
 
 ## Scientific Upgrade (2026-07-31)
 

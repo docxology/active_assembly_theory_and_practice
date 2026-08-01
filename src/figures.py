@@ -532,7 +532,13 @@ def plot_model_comparison_bars(
     evaluation_report: dict[str, object],
     output_path: Path,
 ) -> Path:
-    """Plot per-fixture decoding accuracy for sticky, memoryless, and temporal decoders."""
+    """Plot per-fixture decoding accuracy and pooled accuracy with 95% Wilson CIs.
+
+    Left panel: sticky vs memoryless vs temporal accuracy per corpus fixture.
+    Right panel: the pooled (micro) accuracy of each decoder with its 95% Wilson
+    confidence interval, so the headline uncertainty is visible rather than just
+    a point estimate.
+    """
 
     compare = cast(
         dict[str, dict[str, float]], evaluation_report.get("compare_models", {})
@@ -549,7 +555,27 @@ def plot_model_comparison_bars(
     x = np.arange(len(fixture_names))
     width = 0.26
 
-    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    summary = cast(dict[str, object], evaluation_report.get("summary", {}))
+    pooled_accs = [
+        cast(float, summary.get("pooled_static_accuracy", 0.0)),
+        cast(float, summary.get("pooled_memoryless_accuracy", 0.0)),
+        cast(float, summary.get("pooled_temporal_accuracy", 0.0)),
+    ]
+    ci_lo = [
+        cast(list[float], summary.get("static_ci95", [0.0, 0.0]))[0],
+        cast(list[float], summary.get("memoryless_ci95", [0.0, 0.0]))[0],
+        cast(list[float], summary.get("temporal_ci95", [0.0, 0.0]))[0],
+    ]
+    ci_hi = [
+        cast(list[float], summary.get("static_ci95", [0.0, 0.0]))[1],
+        cast(list[float], summary.get("memoryless_ci95", [0.0, 0.0]))[1],
+        cast(list[float], summary.get("temporal_ci95", [0.0, 0.0]))[1],
+    ]
+    decoder_labels = ["sticky (v0.1)", "memoryless", "temporal HMM"]
+    colors = [PALETTE[0], PALETTE[1], PALETTE[2]]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.4), sharey=True)
+    ax = axes[0]
     ax.bar(x - width, sticky, width=width, label="sticky (v0.1)", color=PALETTE[0])
     ax.bar(x, memoryless, width=width, label="memoryless", color=PALETTE[1])
     ax.bar(x + width, temporal, width=width, label="temporal HMM", color=PALETTE[2])
@@ -562,9 +588,42 @@ def plot_model_comparison_bars(
     )
     ax.set_ylabel("Phase-decoding accuracy")
     ax.set_ylim(0.0, 1.0)
-    ax.set_title("Decoder accuracy by fixture: sticky vs memoryless vs temporal")
+    ax.set_title("Per-fixture accuracy")
     ax.legend(loc="lower right", fontsize=8)
     ax.grid(axis="y", alpha=0.2)
+
+    ax2 = axes[1]
+    ypos = np.arange(len(decoder_labels))
+    ax2.errorbar(
+        pooled_accs,
+        ypos,
+        xerr=np.array(
+            [
+                [p - lo for p, lo in zip(pooled_accs, ci_lo)],
+                [hi - p for p, hi in zip(pooled_accs, ci_hi)],
+            ]
+        ),
+        fmt="none",
+        ecolor="#333333",
+        capsize=4,
+        linewidth=1.5,
+    )
+    for yi, (p, color) in enumerate(zip(pooled_accs, colors)):
+        ax2.plot(p, yi, "o", color=color, markersize=8)
+    ax2.axvline(
+        0.2, color="#333333", linewidth=0.8, linestyle="--", label="chance (0.20)"
+    )
+    ax2.set_yticks(ypos)
+    ax2.set_yticklabels(decoder_labels)
+    ax2.set_xlabel("Pooled accuracy (95% Wilson CI)")
+    ax2.set_xlim(0.0, 1.0)
+    ax2.set_title("Pooled accuracy with 95% CI")
+    ax2.grid(axis="x", alpha=0.2)
+
+    fig.suptitle(
+        "Decoder comparison: per-fixture and pooled accuracy with confidence",
+        y=1.02,
+    )
     fig.tight_layout()
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
@@ -780,8 +839,10 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "fixture. Each row is a normalized belief over the five program phases at one observation step."
     ),
     "model_comparison": (
-        "Per-fixture phase-decoding accuracy for the three decoders. The temporal HMM beats the v0.1 "
-        "sticky filter but not the memoryless baseline on this short-program corpus."
+        "Decoder comparison. Left: per-fixture phase-decoding accuracy for sticky, memoryless, and "
+        "temporal decoders — the temporal HMM beats the v0.1 sticky filter but not the memoryless "
+        "baseline on this short-program corpus. Right: pooled accuracy with 95% Wilson confidence "
+        "intervals, making the measured uncertainty around each headline explicit."
     ),
     "active_efe": (
         "Expected-free-energy and belief-entropy trajectory of the greedy active-disassembly policy. "

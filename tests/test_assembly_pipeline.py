@@ -16,8 +16,8 @@ from src.claim_register import (
     claim_register_payload,
     write_claim_register,
 )
-from src.disassembly import disassemble_sample
-from src.emulation import emulate_sample
+from src.disassembly import disassemble_sample, sample_bytes
+from src.emulation import emulate_sample, emulate_x86_64
 from src.experiments import PROJECT_ROOT, run_experiment
 from src.features import encode_observations, observation_counts
 from src.generative_model import build_generative_model
@@ -363,3 +363,61 @@ def test_trace_validator_negative_control_rejects_observation_category_drift(
     checks = validate_trace_file(malformed)
     failed = {check.name for check in checks if not check.passed}
     assert "trace_observation_semantics" in failed
+
+
+def test_unicorn_emulation_stops_at_max_instructions() -> None:
+    trace = emulate_x86_64(sample_bytes(), max_instructions=2)
+    assert trace.instruction_count == 2
+    assert trace.addresses == (0x1000, 0x1005)
+
+
+def _manifest_row(target, **overrides) -> dict[str, object]:
+    row: dict[str, object] = {
+        "path": target.path,
+        "artifact_type": target.artifact_type,
+        "sha256": "0" * 64,
+        "bytes": 1,
+        "required": target.required,
+        "generated_by": target.generated_by,
+        "claim_ids": list(target.claim_ids),
+        "validation_checks": list(target.validation_checks),
+        "status": "missing",
+    }
+    row.update(overrides)
+    return row
+
+
+def _write_fake_manifest(project_root: Path, rows: list[dict[str, object]]) -> None:
+    payload: dict[str, object] = {"artifact_count": len(rows), "artifacts": rows}
+    data_dir = project_root / "output" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "reproducibility_manifest.json").write_text(
+        json.dumps(payload) + "\n", encoding="utf-8"
+    )
+
+
+def test_reproducibility_verify_detects_missing_artifact(tmp_path: Path) -> None:
+    _write_fake_manifest(tmp_path, [_manifest_row(t) for t in MANIFEST_TARGETS])
+    errors = verify_reproducibility_manifest(tmp_path)
+    assert any("missing_artifact=output/" in error for error in errors)
+
+
+def test_reproducibility_verify_detects_hash_and_size_mismatch(tmp_path: Path) -> None:
+    target = MANIFEST_TARGETS[0]
+    artifact = tmp_path / target.path
+    artifact.parent.mkdir(parents=True)
+    content = b"tampered-bytes"
+    artifact.write_bytes(content)
+    rows = [
+        _manifest_row(
+            t,
+            sha256="0" * 64,
+            bytes=len(content) + 1,
+            status="present" if t is target else "missing",
+        )
+        for t in MANIFEST_TARGETS
+    ]
+    _write_fake_manifest(tmp_path, rows)
+    errors = verify_reproducibility_manifest(tmp_path)
+    assert any("hash_mismatch" in error for error in errors)
+    assert any("size_mismatch" in error for error in errors)
