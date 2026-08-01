@@ -91,6 +91,17 @@ def generate_variables() -> dict[str, str]:
         "TEMPORAL_MEAN_ACCURACY": f"{evaluation_summary['mean_temporal_accuracy']:.3f}",
         "STATIC_MEAN_ACCURACY": f"{evaluation_summary['mean_static_accuracy']:.3f}",
         "MEMORYLESS_MEAN_ACCURACY": f"{evaluation_summary['mean_memoryless_accuracy']:.3f}",
+        "TEMPORAL_ACC_CI": (
+            f"[{evaluation_summary['temporal_ci95'][0]:.3f}, "
+            f"{evaluation_summary['temporal_ci95'][1]:.3f}]"
+        ),
+        "MEMORYLESS_ACC_CI": (
+            f"[{evaluation_summary['memoryless_ci95'][0]:.3f}, "
+            f"{evaluation_summary['memoryless_ci95'][1]:.3f}]"
+        ),
+        "TEMPORAL_MEMORYLESS_DIFF": f"{evaluation_summary['temporal_memoryless_diff']:.3f}",
+        "POOLED_TEMPORAL_ACCURACY": f"{evaluation_summary['pooled_temporal_accuracy']:.3f}",
+        "POOLED_MEMORYLESS_ACCURACY": f"{evaluation_summary['pooled_memoryless_accuracy']:.3f}",
         "SHUFFLE_CONTROL_ACCURACY": f"{evaluation_report['shuffled_label_control']['mean_accuracy']:.3f}",
         "UNIFORM_CONTROL_ACCURACY": f"{evaluation_report['uniform_belief_control']['balanced_accuracy']:.3f}",
         "ACTIVE_FIXED_TIE_COUNT": str(active_report["summary"]["ties"]),
@@ -112,6 +123,8 @@ def generate_variables() -> dict[str, str]:
         "TEMPORAL_BELIEFS_FIGURE": f"../{advanced_figure_paths['temporal_beliefs']}",
         "MODEL_COMPARISON_FIGURE": f"../{advanced_figure_paths['model_comparison']}",
         "ACTIVE_EFE_FIGURE": f"../{advanced_figure_paths['active_efe']}",
+        "CALIBRATION_CURVE_FIGURE": f"../{advanced_figure_paths['calibration_curve']}",
+        "CONFUSION_MATRIX_FIGURE": f"../{advanced_figure_paths['confusion_matrix']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -183,8 +183,28 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-07-31):** 136 passed, 0 failed. Coverage 93.53% (gate
+**Current state (2026-07-31):** 148 passed, 0 failed. Coverage 93.75% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **50/50** oracles all passed. `ruff check` and `mypy` are clean; `ruff
-format` is applied. All findings below marked **RESOLVED 2026-07-31** have been
+reports **52/52** oracles all passed. `ruff check`, `ruff format --check`, and
+`mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Scientific Upgrade (2026-07-31)
+
+Adds measured uncertainty and two visualizations to the quantitative layer, all
+deterministic and recomputed by the validation gate:
+
+- **Statistics** (`src/evaluation.py`): `wilson_ci` (95% Wilson scores), pooled
+  (micro) accuracies + `*_ci95` in the evaluation summary, pooled confusion
+  matrix, pooled calibration bins, per-bin calibration data, shuffled-control
+  `std`/`se`, and a `temporal_memoryless_diff`. Every new number is emitted as a
+  manuscript variable and recomputed from disk by the freshness oracle.
+- **Figures** (`src/figures.py`): `calibration_curve.png` (reliability diagram)
+  and `confusion_matrix.png` (pooled annotated heatmap); captions added to the
+  caption ledger; both registered in `MANIFEST_TARGETS` and the figure oracle.
+  Figure count 18 -> 20; oracle count 50 -> 52.
+- **Manuscript** (`manuscript/03_results.md`): reports pooled accuracy with its
+  Wilson CI and the temporal-vs-memoryless difference, and references the two
+  new figures via `{{CALIBRATION_CURVE_FIGURE}}` / `{{CONFUSION_MATRIX_FIGURE}}`.
+- **Tests**: +12 (Wilson CI, calibration bins, pooled stats, figure generation);
+  suite 136 -> 148. Coverage 93.53% -> 93.75%.

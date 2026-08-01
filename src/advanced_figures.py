@@ -17,6 +17,8 @@ from pathlib import Path
 
 from .figures import (
     plot_active_efe_trajectory,
+    plot_calibration_curve,
+    plot_confusion_matrix,
     plot_model_comparison_bars,
     plot_temporal_beliefs_heatmap,
     write_figure_captions,
@@ -49,12 +51,40 @@ def write_temporal_belief_figures(output_dir: Path = OUTPUT_DIR) -> list[str]:
     return relative_paths
 
 
+def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
+    """Write calibration-curve and pooled-confusion figures from the evaluation report.
+
+    Returns:
+        A dict with keys ``calibration_curve`` and ``confusion_matrix`` mapping
+        to their project-relative PNG paths.
+    """
+
+    figure_dir = output_dir / "figures"
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    evaluation_path = output_dir / "data" / "evaluation_report.json"
+    evaluation_report = json.loads(evaluation_path.read_text(encoding="utf-8"))
+
+    calibration_path = figure_dir / "calibration_curve.png"
+    plot_calibration_curve(
+        evaluation_report["pooled_calibration_bins"], calibration_path
+    )
+
+    confusion_path = figure_dir / "confusion_matrix.png"
+    plot_confusion_matrix(evaluation_report["pooled_confusion"], confusion_path)
+
+    return {
+        "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
+        "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
+    }
+
+
 def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     """Write the v0.2 figure set and the caption ledger; return relative paths.
 
     Returns:
         A dict with keys ``temporal_beliefs`` (first fixture, for the manuscript
-        token), ``model_comparison``, ``active_efe``, and ``captions``.
+        token), ``model_comparison``, ``active_efe``, ``calibration_curve``,
+        ``confusion_matrix``, and ``captions``.
     """
 
     figure_dir = output_dir / "figures"
@@ -76,11 +106,14 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         active_efe_path,
     )
 
+    stats_paths = write_stats_figures(output_dir)
     captions_path = write_figure_captions(output_dir)
 
     return {
         "temporal_beliefs": temporal_paths[0] if temporal_paths else "",
         "model_comparison": str(model_comparison_path.relative_to(PROJECT_ROOT)),
         "active_efe": str(active_efe_path.relative_to(PROJECT_ROOT)),
+        "calibration_curve": stats_paths["calibration_curve"],
+        "confusion_matrix": stats_paths["confusion_matrix"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

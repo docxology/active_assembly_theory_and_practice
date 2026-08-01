@@ -262,6 +262,8 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         *temporal_belief_figures,
         "model_comparison.png",
         "active_efe.png",
+        "calibration_curve.png",
+        "confusion_matrix.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -429,6 +431,8 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "TEMPORAL_BELIEFS_FIGURE",
         "MODEL_COMPARISON_FIGURE",
         "ACTIVE_EFE_FIGURE",
+        "CALIBRATION_CURVE_FIGURE",
+        "CONFUSION_MATRIX_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(

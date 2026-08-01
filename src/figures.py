@@ -615,6 +615,98 @@ def plot_active_efe_trajectory(
     return output_path
 
 
+def plot_calibration_curve(bins: list[dict[str, object]], output_path: Path) -> Path:
+    """Plot a reliability (calibration) diagram from per-bin statistics.
+
+    Each bin's mean confidence (max posterior) is drawn against its observed
+    accuracy, with the identity line for perfect calibration. Point labels show
+    the number of steps in each bin.
+    """
+
+    if not bins:
+        raise ValueError("calibration bins must not be empty")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    confidences = [cast(float, bin_["confidence"]) for bin_ in bins]
+    accuracies = [cast(float, bin_["accuracy"]) for bin_ in bins]
+    counts = [cast(int, bin_["count"]) for bin_ in bins]
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    ax.plot(
+        [0.0, 1.0],
+        [0.0, 1.0],
+        color="#333333",
+        linestyle="--",
+        linewidth=1.0,
+        label="Perfect calibration",
+    )
+    ax.plot(
+        confidences,
+        accuracies,
+        marker="o",
+        linewidth=2,
+        color=PALETTE[0],
+        label="Forward filter",
+    )
+    for cx, cy, count in zip(confidences, accuracies, counts, strict=True):
+        ax.annotate(
+            str(count),
+            (cx, cy),
+            textcoords="offset points",
+            xytext=(4, 4),
+            fontsize=8,
+        )
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_xlabel("Confidence (mean max posterior)")
+    ax.set_ylabel("Observed accuracy")
+    ax.set_title("Reliability diagram: forward-filter calibration")
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(axis="both", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
+def plot_confusion_matrix(pooled: dict[str, object], output_path: Path) -> Path:
+    """Plot a pooled phase-decoding confusion matrix as an annotated heatmap."""
+
+    labels = cast(list[str], pooled.get("labels"))
+    matrix = np.asarray(cast(list[list[int]], pooled.get("matrix")), dtype=float)
+    if matrix.size == 0 or matrix.shape != (len(labels), len(labels)):
+        raise ValueError("confusion matrix must be square and match label count")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, ax = plt.subplots(figsize=(7.6, 6.2))
+    image = ax.imshow(matrix, cmap="Blues", aspect="auto")
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_yticks(np.arange(len(labels)))
+    ax.set_xticklabels(
+        [label.replace("_", " ") for label in labels], rotation=30, ha="right"
+    )
+    ax.set_yticklabels([label.replace("_", " ") for label in labels])
+    for row in range(len(labels)):
+        for column in range(len(labels)):
+            value = int(matrix[row, column])
+            ax.text(
+                column,
+                row,
+                str(value),
+                ha="center",
+                va="center",
+                color="white" if value > matrix.max() / 2 else "black",
+                fontsize=9,
+            )
+    ax.set_xlabel("Predicted phase")
+    ax.set_ylabel("True phase")
+    ax.set_title("Pooled confusion matrix (temporal HMM, all fixtures)")
+    fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04, label="Count")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -695,6 +787,17 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "Expected-free-energy and belief-entropy trajectory of the greedy active-disassembly policy. "
         "On the short-program corpus the trajectory is honest: the policy is functional but ties the "
         "fixed scan."
+    ),
+    "calibration_curve": (
+        "Reliability diagram of the temporal-HMM forward filter over the labelled corpus: mean "
+        "max-posterior confidence per bin versus observed accuracy, with the identity line for "
+        "perfect calibration and per-bin step counts. Points below the line indicate overconfidence."
+    ),
+    "confusion_matrix": (
+        "Pooled phase-decoding confusion matrix of the temporal forward filter across all corpus "
+        "fixtures. Diagonal cells are correct phase recoveries; off-diagonal mass shows which "
+        "phases are confusable (e.g. the exit phase sharing observation categories with earlier "
+        "phases)."
     ),
 }
 

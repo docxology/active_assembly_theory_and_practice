@@ -19,6 +19,7 @@ outputs are JSON-safe and deterministic across runs — no RNG is used anywhere.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Sequence, cast
 
 import numpy as np
@@ -95,6 +96,86 @@ def evaluate_decoding(
     }
 
 
+def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Return the ``100*(1-alpha)`` Wilson score interval for the ratio ``k/n``.
+
+    Unlike the normal approximation, the Wilson interval is well behaved for
+    small ``n`` and for proportions near 0 or 1, so it is a robust way to report
+    uncertainty around a decoding accuracy computed on a handful of steps.
+
+    Args:
+        k: Number of successes (e.g. correct labels).
+        n: Number of trials (e.g. total labels).
+        z: Standard normal quantile; 1.96 gives a 95% interval.
+
+    Returns:
+        The ``(lower, upper)`` bounds of the interval.
+    """
+
+    if n <= 0:
+        raise ValueError("n must be positive")
+    p = k / n
+    z2 = z * z
+    denominator = 1.0 + z2 / n
+    center = (p + z2 / (2.0 * n)) / denominator
+    margin = z * math.sqrt((p * (1.0 - p) + z2 / (4.0 * n)) / n) / denominator
+    return (float(center - margin), float(center + margin))
+
+
+def calibration_bins(
+    posteriors: Sequence[Sequence[float]],
+    truth_state_ids: Sequence[int],
+    n_bins: int = 10,
+) -> list[dict[str, Any]]:
+    """Return per-bin calibration statistics over max-posterior confidence.
+
+    Each bin records ``count``, ``confidence`` (mean max posterior) and
+    ``accuracy`` (mean correctness) — the data behind a reliability diagram and
+    the expected calibration error (ECE).
+
+    Args:
+        posteriors: Per-step posterior distributions over the hidden states.
+        truth_state_ids: Ground-truth state index per step.
+        n_bins: Number of equal-width confidence bins.
+
+    Returns:
+        A JSON-safe list of bin records, one per non-empty bin.
+    """
+
+    if len(posteriors) != len(truth_state_ids):
+        raise ValueError("posteriors and truth_state_ids must have equal length")
+    if not posteriors:
+        raise ValueError("posteriors must not be empty")
+
+    matrix = np.asarray(posteriors, dtype=float)
+    truth = np.asarray(truth_state_ids, dtype=int)
+    confidences = matrix.max(axis=1)
+    predictions = matrix.argmax(axis=1)
+    accuracies = (predictions == truth).astype(float)
+
+    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
+    bins: list[dict[str, Any]] = []
+    for bin_index, (lower, upper) in enumerate(zip(bin_edges[:-1], bin_edges[1:])):
+        # First bin is lower-inclusive so a confidence of exactly 0.0 is binned;
+        # all later bins are lower-exclusive, upper-inclusive.
+        if bin_index == 0:
+            in_bin = (confidences >= lower) & (confidences <= upper)
+        else:
+            in_bin = (confidences > lower) & (confidences <= upper)
+        count = int(np.sum(in_bin))
+        if count == 0:
+            continue
+        bins.append(
+            {
+                "bin_index": bin_index,
+                "count": count,
+                "confidence": float(np.mean(confidences[in_bin])),
+                "accuracy": float(np.mean(accuracies[in_bin])),
+            }
+        )
+    return bins
+
+
 def calibration(
     posteriors: Sequence[Sequence[float]],
     truth_state_ids: Sequence[int],
@@ -107,8 +188,9 @@ def calibration(
 
     Returns:
         A dict with ``brier`` (mean squared error of the full posterior against
-        the one-hot truth) and ``ece`` (expected calibration error over 10 equal
-        bins on the per-step maximum posterior probability).
+        the one-hot truth), ``ece`` (expected calibration error over 10 equal
+        bins on the per-step maximum posterior probability), the per-bin
+        ``bins`` (see :func:`calibration_bins`), and ``n_steps``.
     """
 
     if len(posteriors) != len(truth_state_ids):
@@ -125,29 +207,21 @@ def calibration(
     onehot[np.arange(n_steps), truth] = 1.0
     brier = float(np.mean(np.sum((matrix - onehot) ** 2, axis=1)))
 
-    # ECE over 10 bins on the max-prob confidence.
-    confidences = matrix.max(axis=1)
-    predictions = matrix.argmax(axis=1)
-    accuracies = (predictions == truth).astype(float)
+    bins = calibration_bins(posteriors, truth_state_ids)
+    ece = float(
+        sum(
+            (cast(int, bin_["count"]) / n_steps)
+            * abs(cast(float, bin_["accuracy"]) - cast(float, bin_["confidence"]))
+            for bin_ in bins
+        )
+    )
 
-    n_bins = 10
-    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
-    ece = 0.0
-    for bin_index, (lower, upper) in enumerate(zip(bin_edges[:-1], bin_edges[1:])):
-        # First bin is lower-inclusive so a confidence of exactly 0.0 is binned;
-        # all later bins are lower-exclusive, upper-inclusive.
-        if bin_index == 0:
-            in_bin = (confidences >= lower) & (confidences <= upper)
-        else:
-            in_bin = (confidences > lower) & (confidences <= upper)
-        count = int(np.sum(in_bin))
-        if count == 0:
-            continue
-        bin_confidence = float(np.mean(confidences[in_bin]))
-        bin_accuracy = float(np.mean(accuracies[in_bin]))
-        ece += (count / n_steps) * abs(bin_accuracy - bin_confidence)
-
-    return {"brier": float(brier), "ece": float(ece)}
+    return {
+        "brier": brier,
+        "ece": ece,
+        "bins": bins,
+        "n_steps": int(n_steps),
+    }
 
 
 def free_energy_convergence(
@@ -358,8 +432,11 @@ def shuffled_label_control(
             "corpus admits no label permutation distinct from the ground truth"
         )
 
+    std = float(np.std(per_round))
     return {
         "mean_accuracy": float(np.mean(per_round)),
+        "std": std,
+        "se": std / math.sqrt(len(per_round)),
         "rounds": int(len(per_round)),
         "per_round": [float(value) for value in per_round],
     }
@@ -399,7 +476,7 @@ def uniform_belief_control(corpus: Sequence[CorpusFixture]) -> dict[str, object]
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     """Bundle all evaluation metrics into a deterministic, JSON-safe payload.
 
     The payload aggregates per-fixture metrics (observation ids, truth labels,
@@ -424,6 +501,20 @@ def evaluation_payload(
     static_accuracies: list[float] = []
     memoryless_accuracies: list[float] = []
 
+    # Pooled (concatenated-corpus) accumulators for confidence intervals and
+    # the confusion-matrix / calibration visualizations.
+    temporal_hits = 0
+    temporal_total = 0
+    static_hits = 0
+    static_total = 0
+    memoryless_hits = 0
+    memoryless_total = 0
+    pooled_confusion: dict[str, dict[str, int]] = {
+        true_label: {pred_label: 0 for pred_label in labels} for true_label in labels
+    }
+    pooled_posteriors: list[list[float]] = []
+    pooled_truth_ids: list[int] = []
+
     for fixture in corpus:
         observation_ids = fixture_observation_ids(fixture)
         truth = fixture.phase_labels
@@ -445,6 +536,22 @@ def evaluation_payload(
         temporal_accuracies.append(cast(float, temporal_metrics["accuracy"]))
         static_accuracies.append(cast(float, static_metrics["accuracy"]))
         memoryless_accuracies.append(cast(float, memoryless_metrics["accuracy"]))
+
+        temporal_hits += sum(1 for p, t in zip(temporal_labels, truth) if p == t)
+        temporal_total += len(truth)
+        static_hits += sum(1 for p, t in zip(static_labels, truth) if p == t)
+        static_total += len(truth)
+        memoryless_hits += sum(1 for p, t in zip(memoryless_labels, truth) if p == t)
+        memoryless_total += len(truth)
+
+        for true_label, row in temporal_metrics["confusion"].items():
+            for pred_label, count in row.items():
+                pooled_confusion[true_label][pred_label] += int(count)
+
+        pooled_posteriors.extend(
+            [list(row) for row in filter_result.filtered_posteriors]
+        )
+        pooled_truth_ids.extend(truth_state_ids)
 
         per_fixture[fixture.name] = {
             "observation_ids": [int(o) for o in observation_ids],
@@ -477,6 +584,13 @@ def evaluation_payload(
         "mean_memoryless_accuracy": mean_memoryless,
         "best_non_temporal_accuracy": best_non_temporal,
         "temporal_advantage_over_best_non_temporal": mean_temporal - best_non_temporal,
+        "temporal_memoryless_diff": mean_temporal - mean_memoryless,
+        "pooled_temporal_accuracy": temporal_hits / temporal_total,
+        "pooled_static_accuracy": static_hits / static_total,
+        "pooled_memoryless_accuracy": memoryless_hits / memoryless_total,
+        "temporal_ci95": list(wilson_ci(temporal_hits, temporal_total)),
+        "static_ci95": list(wilson_ci(static_hits, static_total)),
+        "memoryless_ci95": list(wilson_ci(memoryless_hits, memoryless_total)),
         "fixture_count": int(len(corpus)),
     }
 
@@ -486,4 +600,14 @@ def evaluation_payload(
         "shuffled_label_control": shuffled_label_control(corpus, model),
         "uniform_belief_control": uniform_belief_control(corpus),
         "summary": summary,
+        "pooled_confusion": {
+            "labels": list(labels),
+            "matrix": [
+                [pooled_confusion[true_label][pred_label] for pred_label in labels]
+                for true_label in labels
+            ],
+        },
+        "pooled_calibration_bins": calibration_bins(
+            pooled_posteriors, pooled_truth_ids
+        ),
     }

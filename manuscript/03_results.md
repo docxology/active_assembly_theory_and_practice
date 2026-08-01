@@ -41,19 +41,33 @@ First, the temporal HMM substantially beats the v0.1 *sticky* filter — adding 
 left-to-right transition prior fixes the pathology where a peaked prior keeps the
 sticky filter stuck on `setup`. Second, and importantly, the *memoryless* decoder
 beats the temporal HMM on this corpus: temporal structure earns no net advantage
-here, because the programs are short enough that each observation alone is
-strongly informative and the terminal `exit` phase is observation-underdetermined
-(it shares categories with earlier phases). The right reading is conditional —
-temporal modelling helps relative to a sticky filter, but a memoryless decoder is
-sufficient until programs are long or ambiguous enough that carrying belief
-forward pays off. The parameters are hand-authored rather than fit, so this
-measures model-structure value, not generalization. The accuracy metric is
-discriminative rather than green-by-construction: a shuffled-label control scores
-`{{SHUFFLE_CONTROL_ACCURACY}}` and a uniform-belief control
-`{{UNIFORM_CONTROL_ACCURACY}}`, both near chance. Per-fixture accuracy,
+here (temporal minus memoryless = `{{TEMPORAL_MEMORYLESS_DIFF}}`), because the
+programs are short enough that each observation alone is strongly informative
+and the terminal `exit` phase is observation-underdetermined (it shares
+categories with earlier phases). Across the pooled corpus the temporal decoder
+recovers `{{POOLED_TEMPORAL_ACCURACY}}` of phases (Wilson 95% CI
+`{{TEMPORAL_ACC_CI}}`) versus `{{POOLED_MEMORYLESS_ACCURACY}}` (CI
+`{{MEMORYLESS_ACC_CI}}`) for the memoryless baseline. The right reading is
+conditional — temporal modelling helps relative to a sticky filter, but a
+memoryless decoder is sufficient until programs are long or ambiguous enough
+that carrying belief forward pays off. The parameters are hand-authored rather
+than fit, so this measures model-structure value, not generalization. The
+accuracy metric is discriminative rather than green-by-construction: a
+shuffled-label control scores `{{SHUFFLE_CONTROL_ACCURACY}}` and a uniform-belief
+control `{{UNIFORM_CONTROL_ACCURACY}}`, both near chance. Per-fixture accuracy,
 calibration, free-energy convergence, and the full four-way decoder comparison
 are written to the evaluation report and recomputed from disk by the validation
 gate.
+
+![Reliability diagram for the temporal forward filter over the corpus]({{CALIBRATION_CURVE_FIGURE}}){#fig:calibration-curve}
+*Reliability diagram of the temporal-HMM forward filter. Each point is a confidence
+bin (mean max posterior) versus observed accuracy; points near the dashed identity
+line are well calibrated, and per-bin step counts are annotated.*
+
+![Pooled phase-decoding confusion matrix across all fixtures]({{CONFUSION_MATRIX_FIGURE}}){#fig:confusion-matrix}
+*Pooled confusion matrix of the temporal forward filter. Diagonal mass is correct
+phase recovery; off-diagonal mass reveals which phases are confusable (notably the
+`exit` phase, which shares observation categories with earlier phases).*
 
 ![Per-fixture decoder accuracy: sticky vs memoryless vs temporal]({{MODEL_COMPARISON_FIGURE}}){#fig:model-comparison}
 *Phase-decoding accuracy by fixture for the three decoders sharing the same

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from src.advanced_inference import (
     active_selection_payload,
     evaluation_report_payload,
@@ -11,6 +13,8 @@ from src.advanced_inference import (
     run_advanced_inference,
     temporal_inference_payload,
 )
+from src.features import HIDDEN_STATE_LABELS
+from src.figures import plot_calibration_curve, plot_confusion_matrix
 
 
 def test_temporal_inference_payload_covers_every_fixture() -> None:
@@ -95,3 +99,42 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
         "active_selection",
         "evaluation_report",
     }
+
+
+def test_calibration_curve_written_nonempty(tmp_path) -> None:
+    bins = [
+        {
+            "bin_index": i,
+            "count": 4,
+            "confidence": 0.3 + 0.1 * i,
+            "accuracy": 0.3 + 0.1 * i,
+        }
+        for i in range(6)
+    ]
+    path = plot_calibration_curve(bins, tmp_path / "calibration_curve.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_calibration_curve_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_calibration_curve([], tmp_path / "calibration_curve.png")
+
+
+def test_confusion_matrix_written_nonempty(tmp_path) -> None:
+    labels = list(HIDDEN_STATE_LABELS)
+    n = len(labels)
+    matrix = [[1 if i == j else 0 for j in range(n)] for i in range(n)]
+    path = plot_confusion_matrix(
+        {"labels": labels, "matrix": matrix}, tmp_path / "confusion_matrix.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_confusion_matrix_shape_mismatch_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_confusion_matrix(
+            {"labels": list(HIDDEN_STATE_LABELS), "matrix": [[1, 2]]},
+            tmp_path / "confusion_matrix.png",
+        )

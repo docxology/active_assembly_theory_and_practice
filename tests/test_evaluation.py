@@ -10,12 +10,14 @@ import pytest
 from src.corpus import build_corpus, fixture_observation_ids
 from src.evaluation import (
     calibration,
+    calibration_bins,
     compare_models,
     evaluate_decoding,
     evaluation_payload,
     free_energy_convergence,
     shuffled_label_control,
     uniform_belief_control,
+    wilson_ci,
 )
 from src.features import HIDDEN_STATE_LABELS
 from src.temporal_model import build_temporal_model, forward_filter
@@ -274,6 +276,87 @@ def test_isc32_evaluation_payload_byte_identical_across_runs() -> None:
     assert first == second
 
 
+# --------------------------------------------------------------------------- #
+# wilson_ci / calibration bins / pooled statistics
+# --------------------------------------------------------------------------- #
+def test_wilson_ci_brackets_point_estimate() -> None:
+    lo, hi = wilson_ci(10, 20)
+    assert lo < 0.5 < hi
+    assert 0.0 <= lo < hi <= 1.0
+
+
+def test_wilson_ci_narrows_with_sample_size() -> None:
+    small = wilson_ci(5, 10)
+    large = wilson_ci(50, 100)
+    assert (small[1] - small[0]) > (large[1] - large[0])
+
+
+def test_wilson_ci_perfect_accuracy_upper_near_one() -> None:
+    lo, hi = wilson_ci(5, 5)
+    assert hi > 0.9
+
+
+def test_wilson_ci_invalid_n_raises() -> None:
+    with pytest.raises(ValueError):
+        wilson_ci(0, 0)
+
+
+def test_calibration_bins_reliability_shape() -> None:
+    posteriors = [[0.7, 0.3], [0.5, 0.5], [0.9, 0.1], [0.2, 0.8]]
+    truth = [0, 1, 0, 1]
+    bins = calibration_bins(posteriors, truth)
+    assert bins
+    for record in bins:
+        assert 0 <= record["confidence"] <= 1
+        assert 0 <= record["accuracy"] <= 1
+        assert record["count"] > 0
+
+
+def test_calibration_returns_bins_and_n_steps() -> None:
+    posteriors = [[0.8, 0.2], [0.6, 0.4]]
+    truth = [0, 0]
+    result = calibration(posteriors, truth)
+    assert result["brier"] == pytest.approx(0.2)
+    assert result["n_steps"] == 2
+    assert isinstance(result["bins"], list)
+    assert result["bins"] == calibration_bins(posteriors, truth)
+
+
+def test_calibration_bins_length_mismatch_raises() -> None:
+    with pytest.raises(ValueError):
+        calibration_bins([[1.0, 0.0]], [0, 1])
+
+
+def test_evaluation_payload_pooled_stats_consistent() -> None:
+    payload = evaluation_payload(build_corpus(), build_temporal_model())
+    summary = payload["summary"]
+    # The reported CI brackets the pooled (micro) accuracy of the same estimator.
+    assert (
+        summary["temporal_ci95"][0]
+        <= summary["pooled_temporal_accuracy"]
+        <= summary["temporal_ci95"][1]
+    )
+    assert (
+        summary["memoryless_ci95"][0]
+        <= summary["pooled_memoryless_accuracy"]
+        <= summary["memoryless_ci95"][1]
+    )
+    # Pooled confusion sums to the number of labelled instructions in the corpus.
+    pooled = payload["pooled_confusion"]
+    assert pooled["labels"] == list(HIDDEN_STATE_LABELS)
+    total_truth = sum(len(fixture.phase_labels) for fixture in build_corpus())
+    assert sum(sum(row) for row in pooled["matrix"]) == total_truth
+    assert isinstance(payload["pooled_calibration_bins"], list)
+    # Shuffled control now reports dispersion around the mean.
+    control = payload["shuffled_label_control"]
+    assert control["std"] >= 0
+    assert control["se"] >= 0
+    # Determinism is preserved with the new pooled fields.
+    assert json.dumps(payload, sort_keys=True) == json.dumps(
+        evaluation_payload(build_corpus(), build_temporal_model()), sort_keys=True
+    )
+
+
 def test_evaluation_payload_structure() -> None:
     corpus = build_corpus()
     model = build_temporal_model()
@@ -284,6 +367,8 @@ def test_evaluation_payload_structure() -> None:
         "shuffled_label_control",
         "uniform_belief_control",
         "summary",
+        "pooled_confusion",
+        "pooled_calibration_bins",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -302,7 +387,8 @@ def test_evaluation_payload_per_fixture_fields() -> None:
         assert len(entry["temporal_labels"]) == len(fixture.phase_labels)
         assert "calibration" in entry
         assert "free_energy_convergence" in entry
-        assert set(entry["calibration"].keys()) == {"brier", "ece"}
+        # calibration now also surfaces per-bin data used by the reliability diagram.
+        assert set(entry["calibration"].keys()) == {"brier", "ece", "bins", "n_steps"}
 
 
 def test_evaluation_payload_is_json_serializable() -> None:

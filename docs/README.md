@@ -12,7 +12,7 @@ temporal / active / evaluation layer).
 - `redteam.md` defines the durable adversarial findings artifact.
 - `reproducibility.md` defines the generated artifact hash manifest and the figure caption ledger (`output/figures/README.md`).
 - `analysis_validation.md` defines the generated-output validation oracle.
-- `verification.md` lists the local and template-side gates (50-oracle contract).
+- `verification.md` lists the local and template-side gates (52-oracle contract).
 
-The project emits 18 figures under `output/figures/`; each has a generated
+The project emits 20 figures under `output/figures/`; each has a generated
 caption in `output/figures/README.md`.
