@@ -88,10 +88,20 @@ observations become ambiguous. This is a mechanism demonstration on the same
 transparent fixtures (only the likelihood conditioning `A` is swept; `B` and `D`
 are fixed), not a claim about real-world observation noise.
 
+The same mechanism appears in the *segmentation* dimension (right panel of
+Figure `fig:ambiguity-ablation`): at the authored likelihood the memoryless
+segmenter already recovers phase boundaries well (boundary F1
+`{{SEG_MEMORYLESS_F1}}`), but under full ambiguity its boundary recovery
+collapses to `{{SEG_HIGH_MEMORYLESS_F1}}` while the smoothed temporal
+segmentation retains a boundary F1 of `{{SEG_HIGH_TEMPORAL_F1}}`. Temporal
+structure rescues segmentation exactly when per-step decoding cannot.
+
 ![Decoder accuracy versus observation ambiguity]({{AMBIGUITY_ABLATION_FIGURE}}){#fig:ambiguity-ablation}
-*Temporal, memoryless, sticky, and Viterbi mean accuracy as the likelihood is
-blended toward uniform. The temporal line stays high as per-step decoding
-degrades; the crossover marks where temporal first beats memoryless.*
+*Left panel: temporal, memoryless, sticky, and Viterbi mean accuracy as the
+likelihood is blended toward uniform; the temporal line stays high as per-step
+decoding degrades and the crossover marks where temporal first beats memoryless.
+Right panel: pool phase-boundary F1 for the temporal (smoothed) and memoryless
+segmentations, showing the same mechanism in the segmentation dimension.*
 
 ## How well we segment phases {#sec:segmentation-evaluation}
 
@@ -100,6 +110,12 @@ forward-backward beliefs into per-step phases and comparing the detected phase
 boundaries against the hand-authored ground truth yields a pooled boundary
 F1 of `{{SEGMENTATION_BOUNDARY_F1}}` and a per-step accuracy of
 `{{SEGMENTATION_STEP_ACC}}`, available per fixture in the evaluation report.
+Figure `fig:segmentation-ribbons` makes this visual: for each fixture the top
+ribbon is the ground-truth phase sequence and the bottom ribbon is the sequence
+recovered from the smoothed beliefs, so a mis-segmentation shows up as a
+boundary mismatch between the two rows.
+
+![Phase segmentation: ground truth vs smoothed prediction]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons}
 
 ![Per-fixture decoder accuracy: sticky vs memoryless vs temporal]({{MODEL_COMPARISON_FIGURE}}){#fig:model-comparison}
 *Phase-decoding accuracy by fixture for the three decoders sharing the same

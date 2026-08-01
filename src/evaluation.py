@@ -538,7 +538,7 @@ def segmentation_evaluation(
         A JSON-safe dict with ``per_fixture`` metrics and a ``pooled`` summary.
     """
 
-    per_fixture: dict[str, object] = {}
+    per_fixture: dict[str, dict[str, Any]] = {}
     pooled_predicted: list[str] = []
     pooled_truth: list[str] = []
     for fixture in corpus:
@@ -551,6 +551,8 @@ def segmentation_evaluation(
         per_fixture[fixture.name] = evaluate_segmentation(
             step_labels, list(fixture.phase_labels)
         )
+        per_fixture[fixture.name]["predicted_labels"] = list(step_labels)
+        per_fixture[fixture.name]["truth_labels"] = list(fixture.phase_labels)
         pooled_predicted.extend(step_labels)
         pooled_truth.extend(fixture.phase_labels)
     return {
@@ -587,6 +589,44 @@ def _ambiguous_likelihood_temporal_model(
     return ambiguous
 
 
+def _segmentation_boundary_f1_for_decoder(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+    *,
+    memoryless: bool = False,
+) -> float:
+    """Pooled boundary F1 of a decoder's per-step labels against ground truth.
+
+    ``memoryless=False`` decodes each step from the smoothed forward-backward
+    posteriors (the temporal segmentation); ``memoryless=True`` decodes each step
+    independently as ``argmax(D * A[obs, :])``. Both use the same generative
+    model, so comparing the two at a given ambiguity blend isolates how much the
+    transition structure improves boundary recovery when per-step decoding is
+    ambiguous.
+    """
+
+    predicted: list[str] = []
+    truth: list[str] = []
+    for fixture in corpus:
+        observation_ids = [int(o) for o in fixture_observation_ids(fixture)]
+        if memoryless:
+            prior = np.asarray(model.D, dtype=float)
+            likelihood = np.asarray(model.A, dtype=float)
+            step_labels = [
+                model.hidden_state_labels[int(np.argmax(prior * likelihood[obs, :]))]
+                for obs in observation_ids
+            ]
+        else:
+            smoothing = forward_backward(observation_ids, model)
+            step_labels = [
+                model.hidden_state_labels[int(np.argmax(row))]
+                for row in smoothing.smoothed_posteriors
+            ]
+        predicted.extend(step_labels)
+        truth.extend(fixture.phase_labels)
+    return float(evaluate_segmentation(predicted, truth)["boundary_f1"])
+
+
 def ambiguity_ablation(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -603,6 +643,10 @@ def ambiguity_ablation(
     when observations become ambiguous (and the corpus is unchanged, only the
     likelihood conditioning is swept).
 
+    For each blend the rows also record pooled phase-boundary F1 for the temporal
+    (smoothed) and memoryless segmentations, so the same mechanism is shown for
+    *segmentation*, not only step decoding.
+
     Args:
         corpus: The labelled fixtures.
         model: The temporal generative model (supplies ``A``/``B``/``D``).
@@ -611,8 +655,8 @@ def ambiguity_ablation(
 
     Returns:
         A JSON-safe dict with ``blends``, per-blend ``rows`` of decoder mean
-        accuracies, and ``crossover_blend`` (the first blend at which the
-        temporal decoder beats the memoryless decoder).
+        accuracies and segmentation boundary F1, and ``crossover_blend`` (the
+        first blend at which the temporal decoder beats the memoryless decoder).
     """
 
     if blends is None:
@@ -631,6 +675,12 @@ def ambiguity_ablation(
         memoryless = _mean("memoryless_accuracy")
         sticky = _mean("static_accuracy")
         viterbi = _mean("viterbi_accuracy")
+        segmentation_temporal = _segmentation_boundary_f1_for_decoder(
+            corpus, ambiguous, memoryless=False
+        )
+        segmentation_memoryless = _segmentation_boundary_f1_for_decoder(
+            corpus, ambiguous, memoryless=True
+        )
         gap = temporal - memoryless
         if crossover is None and gap > 1e-9:
             crossover = float(blend)
@@ -642,6 +692,8 @@ def ambiguity_ablation(
                 "static_accuracy": sticky,
                 "viterbi_accuracy": viterbi,
                 "temporal_minus_memoryless": float(gap),
+                "temporal_segmentation_f1": segmentation_temporal,
+                "memoryless_segmentation_f1": segmentation_memoryless,
             }
         )
     return {

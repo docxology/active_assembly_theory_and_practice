@@ -183,11 +183,33 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 172 passed, 0 failed. Coverage 95.02% (gate
+**Current state (2026-08-01):** 174 passed, 0 failed. Coverage 95.19% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **55/55** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **56/56** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Visualization, Writing & Scholarship Pass (2026-08-01)
+
+- **Visualization**: new `segmentation_ribbons.png` (per-fixture ground-truth vs
+  predicted phase ribbons, pooled boundary F1 in title); `ambiguity_ablation.png`
+  is now a two-panel figure (left: decoder accuracy; right: segmentation
+  boundary F1). Caption ledger updated. Figures 21->22.
+- **Research**: the ambiguity analysis is extended into the segmentation
+  dimension — the ablation rows now also record temporal vs memoryless pooled
+  boundary F1 at each blend. Measured result (honest both ways): at the authored
+  likelihood memoryless boundary recovery is better (F1 0.89 vs 0.64), but under
+  full ambiguity memoryless collapses to F1 0.00 while the smoothed temporal
+  segmentation retains F1 0.88. Validation check
+  `advanced_ambiguity_ablation_shows_advantage` now binds both directions of the
+  segmentation mechanism too.
+- **Writing**: abstract now states the measured result and mechanism; discussion
+  gained a quantitative, mechanism-aware synthesis paragraph; results references
+  the ribbon figure and the segmentation-under-ambiguity finding.
+- **Scholarship**: two canonical sources added — `parr2022activeinference`
+  (Active Inference textbook, MIT Press) and `rabiner1989tutorial` (HMM
+  tutorial) — each with a BibTeX entry and a manuscript citation; mapped to
+  claims CLM-010 and CLM-014. Oracle 55->56.
 
 ## Completeness & Hardening Pass (2026-08-01)
 

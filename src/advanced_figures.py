@@ -21,6 +21,7 @@ from .figures import (
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_model_comparison_bars,
+    plot_segmentation_ribbons,
     plot_temporal_beliefs_heatmap,
     write_figure_captions,
 )
@@ -76,10 +77,14 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     ablation_path = figure_dir / "ambiguity_ablation.png"
     plot_ambiguity_ablation(evaluation_report["ambiguity_ablation"], ablation_path)
 
+    ribbons_path = figure_dir / "segmentation_ribbons.png"
+    plot_segmentation_ribbons(evaluation_report, ribbons_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
         "ambiguity_ablation": str(ablation_path.relative_to(PROJECT_ROOT)),
+        "segmentation_ribbons": str(ribbons_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -121,5 +126,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "calibration_curve": stats_paths["calibration_curve"],
         "confusion_matrix": stats_paths["confusion_matrix"],
         "ambiguity_ablation": stats_paths["ambiguity_ablation"],
+        "segmentation_ribbons": stats_paths["segmentation_ribbons"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

@@ -18,6 +18,7 @@ from src.figures import (
     plot_ambiguity_ablation,
     plot_calibration_curve,
     plot_confusion_matrix,
+    plot_segmentation_ribbons,
 )
 
 
@@ -173,3 +174,36 @@ def test_ambiguity_ablation_figure_written_nonempty(tmp_path) -> None:
 def test_ambiguity_ablation_figure_empty_rows_raises(tmp_path) -> None:
     with pytest.raises(ValueError):
         plot_ambiguity_ablation({"rows": []}, tmp_path / "ambiguity_ablation.png")
+
+
+def test_segmentation_ribbons_figure_written_nonempty(tmp_path) -> None:
+    report: dict[str, object] = {
+        "segmentation": {
+            "per_fixture": {
+                "x86_a": {
+                    "truth_labels": ["setup", "accumulator_update", "exit"],
+                    "predicted_labels": [
+                        "setup",
+                        "accumulator_update",
+                        "accumulator_update",
+                    ],
+                    "boundary_f1": 0.5,
+                },
+                "x86_b": {
+                    "truth_labels": ["setup", "guard_check", "exit"],
+                    "predicted_labels": ["setup", "setup", "exit"],
+                    "boundary_f1": 0.5,
+                },
+            },
+            "pooled": {"boundary_f1": 0.5},
+        }
+    }
+    path = plot_segmentation_ribbons(report, tmp_path / "segmentation_ribbons.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_segmentation_ribbons_empty_per_fixture_raises(tmp_path) -> None:
+    report: dict[str, object] = {"segmentation": {"per_fixture": {}}}
+    with pytest.raises(ValueError):
+        plot_segmentation_ribbons(report, tmp_path / "segmentation_ribbons.png")

@@ -46,7 +46,7 @@ hidden Markov model. Forward filtering alternates a predict step (the transition
 matrix applied to the previous posterior) with a categorical likelihood update;
 Viterbi decoding recovers the most probable joint phase path; and
 forward–backward smoothing refines the per-step beliefs
-[@friston2017activeinference]. Contiguous program phases are then segmented
+[@friston2017activeinference;@rabiner1989tutorial]. Contiguous program phases are then segmented
 directly from the smoothed beliefs.
 
 ![Temporal HMM forward-filter beliefs for the accumulator fixture]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs}

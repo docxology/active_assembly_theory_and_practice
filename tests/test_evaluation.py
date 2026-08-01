@@ -429,7 +429,11 @@ def test_segmentation_evaluation_pooled_is_measured() -> None:
     pooled = result["pooled"]
     assert pooled["boundary_f1"] > 0
     assert pooled["step_accuracy"] > 0
-    assert set(result["per_fixture"].keys()) == {f.name for f in build_corpus()}
+    per_fixture = result["per_fixture"]
+    assert set(per_fixture.keys()) == {f.name for f in build_corpus()}
+    # Per-fixture entries carry the step sequences used to compute the metrics.
+    for entry in per_fixture.values():
+        assert len(entry["predicted_labels"]) == len(entry["truth_labels"]) > 0
 
 
 def test_ambiguity_ablation_mechanism() -> None:
@@ -445,6 +449,13 @@ def test_ambiguity_ablation_mechanism() -> None:
     last = rows[-1]
     assert last["temporal_accuracy"] > last["memoryless_accuracy"]
     assert last["temporal_minus_memoryless"] > 0
+    # Segmentation follows the same mechanism: memoryless boundary recovery is at
+    # least as good at the authored likelihood but collapses under ambiguity while
+    # the smoothed temporal segmentation retains/improves.
+    assert (
+        first["temporal_segmentation_f1"] <= first["memoryless_segmentation_f1"] + 1e-6
+    )
+    assert last["temporal_segmentation_f1"] > last["memoryless_segmentation_f1"]
     # Deterministic.
     assert json.dumps(result, sort_keys=True) == json.dumps(
         ambiguity_ablation(build_corpus(), build_temporal_model()), sort_keys=True

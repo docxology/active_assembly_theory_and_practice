@@ -121,6 +121,9 @@ def generate_variables() -> dict[str, str]:
         ),
         "SEGMENTATION_BOUNDARY_F1": f"{seg_pooled['boundary_f1']:.3f}",
         "SEGMENTATION_STEP_ACC": f"{seg_pooled['step_accuracy']:.3f}",
+        "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
+        "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
+        "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
         "TEMPORAL_INFERENCE_ARTIFACT": f"../{advanced_paths['temporal_inference']}",
         "EVALUATION_REPORT_ARTIFACT": f"../{advanced_paths['evaluation_report']}",
         "PHASE_SEGMENTS_ARTIFACT": f"../{advanced_paths['phase_segments']}",
@@ -142,6 +145,9 @@ def generate_variables() -> dict[str, str]:
         "CALIBRATION_CURVE_FIGURE": f"../{advanced_figure_paths['calibration_curve']}",
         "CONFUSION_MATRIX_FIGURE": f"../{advanced_figure_paths['confusion_matrix']}",
         "AMBIGUITY_ABLATION_FIGURE": f"../{advanced_figure_paths['ambiguity_ablation']}",
+        "SEGMENTATION_RIBBONS_FIGURE": (
+            f"../{advanced_figure_paths['segmentation_ribbons']}"
+        ),
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

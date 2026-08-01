@@ -203,7 +203,11 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         claim_id="CLM-010",
         claim_type="temporal_inference",
         statement="A left-to-right transition matrix yields a temporal HMM whose forward-filter decoding substantially outperforms the v0.1 sticky identity-transition recursive filter on the labelled corpus.",
-        support_keys=("friston2017activeinference", "heins2022pymdp"),
+        support_keys=(
+            "friston2017activeinference",
+            "heins2022pymdp",
+            "rabiner1989tutorial",
+        ),
         artifact_paths=(
             "output/data/temporal_inference.json",
             "output/data/evaluation_report.json",
@@ -257,7 +261,7 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         claim_id="CLM-014",
         claim_type="ambiguity_ablation",
         statement="The temporal HMM gains a measurable decoding advantage over the memoryless per-step decoder exactly when observations become ambiguous (the authored likelihood is blended toward uniform), and has no net advantage at the authored, near-diagonal likelihood.",
-        support_keys=("friston2017activeinference",),
+        support_keys=("friston2017activeinference", "parr2022activeinference"),
         artifact_paths=(
             "output/data/evaluation_report.json",
             "output/figures/ambiguity_ablation.png",

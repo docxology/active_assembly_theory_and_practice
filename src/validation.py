@@ -265,6 +265,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "calibration_curve.png",
         "confusion_matrix.png",
         "ambiguity_ablation.png",
+        "segmentation_ribbons.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -435,6 +436,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "CALIBRATION_CURVE_FIGURE",
         "CONFUSION_MATRIX_FIGURE",
         "AMBIGUITY_ABLATION_FIGURE",
+        "SEGMENTATION_RIBBONS_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -738,8 +740,20 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     max_blend_row = max(ablation_rows, key=lambda row: float(row["blend"]))
     high_blend_gap = float(max_blend_row["temporal_minus_memoryless"])
     crossover_blend = ablation_payload["crossover_blend"]
+    seg_blend0_temporal = float(ablation_rows[0]["temporal_segmentation_f1"])
+    seg_blend0_memoryless = float(ablation_rows[0]["memoryless_segmentation_f1"])
+    seg_high_temporal = float(max_blend_row["temporal_segmentation_f1"])
+    seg_high_memoryless = float(max_blend_row["memoryless_segmentation_f1"])
     ablation_shows_advantage = (
-        high_blend_gap > 0 and blend0_gap <= 1e-6 and crossover_blend is not None
+        high_blend_gap > 0
+        and blend0_gap <= 1e-6
+        and crossover_blend is not None
+        # Segmentation follows the same mechanism: at the informative likelihood
+        # the memoryless per-step segmentation is at least as good, but under
+        # ambiguity memoryless boundary recovery collapses while the temporal
+        # smoothed segmentation retains/improves.
+        and seg_high_temporal > seg_high_memoryless
+        and seg_blend0_temporal <= seg_blend0_memoryless + 1e-6
     )
 
     return [
@@ -794,7 +808,9 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             "advanced_ambiguity_ablation_shows_advantage",
             ablation_shows_advantage,
             f"crossover={crossover_blend} blend0_gap={blend0_gap:+.3f} "
-            f"high_blend_gap={high_blend_gap:+.3f}",
+            f"high_blend_gap={high_blend_gap:+.3f} "
+            f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
+            f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
         ),
         _check(
             "advanced_evaluation_freshness",

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Sequence, cast
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 
 from .active_inference_bridge import InferenceResult
@@ -767,12 +768,15 @@ def plot_confusion_matrix(pooled: dict[str, object], output_path: Path) -> Path:
 
 
 def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> Path:
-    """Plot decoder mean accuracy versus observation-ambiguity blend.
+    """Plot decoder accuracy and segmentation F1 versus observation ambiguity.
 
-    As the likelihood is blended toward uniform (x-axis), per-step observation
-    decoding degrades and the temporal transition structure carries the
-    information: the temporal line stays high while memoryless and sticky fall.
-    The crossover (where temporal first beats memoryless) is annotated.
+    Two panels. Left: mean step-decoding accuracy of the temporal, memoryless,
+    sticky, and Viterbi decoders as the likelihood is blended toward uniform —
+    per-step decoding degrades and the temporal transition structure carries the
+    information. Right: pooled phase-boundary F1 for the temporal (smoothed) and
+    memoryless segmentations at the same blends, showing the same mechanism in
+    the segmentation dimension. The crossover (temporal first beating memoryless)
+    is annotated on both panels.
     """
 
     rows = cast(list[dict[str, object]], ablation.get("rows"))
@@ -780,39 +784,165 @@ def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> P
         raise ValueError("ambiguity ablation must contain rows")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     blends = [cast(float, row["blend"]) for row in rows]
+    crossover: float | None = cast(float | None, ablation.get("crossover_blend"))
 
-    fig, ax = plt.subplots(figsize=(8.0, 4.6))
-    series = {
-        "temporal HMM": ("temporal_accuracy", PALETTE[2]),
-        "memoryless": ("memoryless_accuracy", PALETTE[1]),
-        "sticky (v0.1)": ("static_accuracy", PALETTE[0]),
-        "viterbi": ("viterbi_accuracy", "#CC79A7"),
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.6), sharex=True)
+    ax_left, ax_right = axes
+
+    accuracy_series = {
+        "temporal HMM": ("temporal_accuracy", PALETTE[2], "-"),
+        "memoryless": ("memoryless_accuracy", PALETTE[1], "--"),
+        "sticky (v0.1)": ("static_accuracy", PALETTE[0], ":"),
+        "viterbi": ("viterbi_accuracy", "#CC79A7", "-."),
     }
-    for label, (key, color) in series.items():
-        values = [cast(float, row[key]) for row in rows]
-        ax.plot(
+    for label, (key, color, linestyle) in accuracy_series.items():
+        ax_left.plot(
             blends,
-            values,
+            [cast(float, row[key]) for row in rows],
             marker="o",
             linewidth=2,
             color=color,
+            linestyle=linestyle,
             label=label,
         )
-    crossover: float | None = cast(float | None, ablation.get("crossover_blend"))
     if crossover is not None:
-        ax.axvline(
+        ax_left.axvline(
             crossover,
             color="#333333",
             linewidth=1.0,
             linestyle=":",
             label=f"crossover {crossover:.1f}",
         )
-    ax.set_xlabel("Observation-ambiguity blend (0 = authored likelihood, 1 = uniform)")
-    ax.set_ylabel("Mean decoding accuracy")
-    ax.set_ylim(0.0, 1.0)
-    ax.set_title("Temporal advantage emerges as observations become ambiguous")
-    ax.legend(loc="lower left", fontsize=8)
-    ax.grid(axis="both", alpha=0.2)
+    ax_left.set_xlabel("Observation-ambiguity blend (0 = authored, 1 = uniform)")
+    ax_left.set_ylabel("Mean decoding accuracy")
+    ax_left.set_ylim(0.0, 1.0)
+    ax_left.set_title("Step decoding accuracy")
+    ax_left.legend(loc="lower left", fontsize=8)
+    ax_left.grid(axis="both", alpha=0.2)
+
+    ax_right.plot(
+        blends,
+        [cast(float, row.get("temporal_segmentation_f1", 0.0)) for row in rows],
+        marker="s",
+        linewidth=2,
+        color=PALETTE[2],
+        linestyle="-",
+        label="temporal segmentation",
+    )
+    ax_right.plot(
+        blends,
+        [cast(float, row.get("memoryless_segmentation_f1", 0.0)) for row in rows],
+        marker="s",
+        linewidth=2,
+        color="#555555",
+        linestyle="--",
+        label="memoryless segmentation",
+    )
+    if crossover is not None:
+        ax_right.axvline(crossover, color="#333333", linewidth=1.0, linestyle=":")
+    ax_right.set_xlabel("Observation-ambiguity blend (0 = authored, 1 = uniform)")
+    ax_right.set_ylabel("Pooled boundary F1")
+    ax_right.set_ylim(0.0, 1.0)
+    ax_right.set_title("Phase-segmentation boundary F1")
+    ax_right.legend(loc="lower left", fontsize=8)
+    ax_right.grid(axis="both", alpha=0.2)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
+def _draw_segment_runs(
+    ax: Any, y: float, sequence: Sequence[str], phase_colors: dict[str, Any]
+) -> None:
+    """Draw a phase sequence as contiguous colored runs on one ribbon row."""
+
+    i = 0
+    while i < len(sequence):
+        j = i
+        while j < len(sequence) and sequence[j] == sequence[i]:
+            j += 1
+        ax.barh(
+            y,
+            j - i,
+            left=i,
+            height=0.8,
+            color=phase_colors.get(sequence[i], "#cccccc"),
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        i = j
+
+
+def plot_segmentation_ribbons(
+    evaluation_report: dict[str, object], output_path: Path
+) -> Path:
+    """Plot per-fixture ground-truth vs predicted phase-segmentation ribbons.
+
+    For each fixture two horizontal ribbons are drawn: the hand-authored
+    ground-truth phase sequence (top) and the phase sequence decoded from the
+    smoothed forward-backward beliefs (bottom). Contiguous segments sharing a
+    phase are merged into single colored runs, so phase boundaries appear as
+    color changes. This makes the measured segmentation (CLM-015) visual.
+    """
+
+    segmented = cast(dict[str, object], evaluation_report.get("segmentation"))
+    per_fixture = cast(dict[str, dict[str, object]], segmented.get("per_fixture"))
+    if not per_fixture:
+        raise ValueError("segmentation per_fixture must not be empty")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    labels: list[str] = []
+    for entry in per_fixture.values():
+        for label in cast(list[str], entry.get("truth_labels", [])) + cast(
+            list[str], entry.get("predicted_labels", [])
+        ):
+            if label not in labels:
+                labels.append(label)
+    cmap = plt.get_cmap("tab10")
+    phase_colors = {label: cmap(i % 10) for i, label in enumerate(labels)}
+
+    max_len = max(
+        len(cast(list[str], entry.get("truth_labels", [])))
+        for entry in per_fixture.values()
+    )
+    n_fixtures = len(per_fixture)
+    fig, ax = plt.subplots(figsize=(0.55 * max_len + 2.0, 1.2 * n_fixtures + 1.5))
+
+    y = n_fixtures * 2 - 1
+    yticks: list[int] = []
+    yticklabels: list[str] = []
+    for name, entry in per_fixture.items():
+        truth = cast(list[str], entry.get("truth_labels", []))
+        predicted = cast(list[str], entry.get("predicted_labels", []))
+        _draw_segment_runs(ax, y, truth, phase_colors)
+        yticks.append(y)
+        yticklabels.append(f"{name.replace('x86_', '')} · truth")
+        y -= 1
+        _draw_segment_runs(ax, y, predicted, phase_colors)
+        yticks.append(y)
+        yticklabels.append(f"{name.replace('x86_', '')} · predicted")
+        y -= 1
+
+    pooled = cast(dict[str, object], segmented.get("pooled", {}))
+    ax.set_yticks(yticks)
+    ax.set_yticklabels(yticklabels, fontsize=8)
+    ax.set_xlim(0, max_len)
+    ax.set_xticks(range(0, max_len + 1))
+    ax.set_xlabel("Instruction index")
+    ax.set_title(
+        "Phase segmentation: ground truth vs smoothed prediction "
+        f"(pooled boundary F1 = {float(cast(float, pooled.get('boundary_f1', 0.0))):.2f})"
+    )
+    for i in range(1, max_len):
+        ax.axvline(i, color="#dddddd", linewidth=0.5, zorder=0)
+    proxies = [
+        Rectangle((0, 0), 1, 1, color=phase_colors[label], label=label)
+        for label in labels
+    ]
+    ax.legend(handles=proxies, loc="upper right", fontsize=8, ncol=2, framealpha=0.9)
+    ax.set_ylim(-1, n_fixtures * 2)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
@@ -914,11 +1044,20 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "phases)."
     ),
     "ambiguity_ablation": (
-        "Decoder mean accuracy versus observation-ambiguity blend. As the authored likelihood is "
-        "blended toward uniform, per-step observation decoding degrades and the left-to-right "
-        "temporal transition structure carries the information: the temporal line stays high while "
-        "memoryless and sticky fall, with the crossover (temporal first beating memoryless) marked. "
-        "This demonstrates the mechanism behind the head-to-head result."
+        "Two panels of decoder accuracy and segmentation F1 versus observation-ambiguity blend. "
+        "Left: as the authored likelihood is blended toward uniform, per-step observation decoding "
+        "degrades and the left-to-right temporal transition structure carries the information — the "
+        "temporal line stays high while memoryless and sticky fall, with the crossover (temporal "
+        "first beating memoryless) marked. Right: pooled phase-boundary F1 for the temporal "
+        "(smoothed) and memoryless segmentations, showing the same mechanism in the segmentation "
+        "dimension. This demonstrates the mechanism behind the head-to-head result."
+    ),
+    "segmentation_ribbons": (
+        "Per-fixture phase-segmentation ribbons. For each fixture the top row is the hand-authored "
+        "ground-truth phase sequence and the bottom row is the phase sequence decoded from the "
+        "smoothed forward-backward beliefs; contiguous same-phase runs share a color so phase "
+        "boundaries appear as color changes. The pooled boundary F1 is shown in the title, making "
+        "the measured phase segmentation (CLM-015) visual."
     ),
 }
 
