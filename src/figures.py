@@ -768,15 +768,18 @@ def plot_confusion_matrix(pooled: dict[str, object], output_path: Path) -> Path:
 
 
 def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> Path:
-    """Plot decoder accuracy and segmentation F1 versus observation ambiguity.
+    """Plot decoder accuracy, segmentation F1, and EFE-active advantage vs ambiguity.
 
-    Two panels. Left: mean step-decoding accuracy of the temporal, memoryless,
+    Three panels. Left: mean step-decoding accuracy of the temporal, memoryless,
     sticky, and Viterbi decoders as the likelihood is blended toward uniform —
     per-step decoding degrades and the temporal transition structure carries the
-    information. Right: pooled phase-boundary F1 for the temporal (smoothed) and
-    memoryless segmentations at the same blends, showing the same mechanism in
-    the segmentation dimension. The crossover (temporal first beating memoryless)
-    is annotated on both panels.
+    information. Middle: pooled phase-boundary F1 for the temporal (smoothed) and
+    memoryless segmentations. Right: how many fixtures reach confidence in fewer
+    steps under the EFE-active policy than under a fixed scan — an advantage that
+    appears only in an intermediate-ambiguity band where observations become
+    differentially informative. The crossover (temporal first beating memoryless)
+    is annotated on every panel, and the figure shows all three inference layers
+    gaining their mechanism exactly under observation ambiguity.
     """
 
     rows = cast(list[dict[str, object]], ablation.get("rows"))
@@ -786,8 +789,8 @@ def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> P
     blends = [cast(float, row["blend"]) for row in rows]
     crossover: float | None = cast(float | None, ablation.get("crossover_blend"))
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.6), sharex=True)
-    ax_left, ax_right = axes
+    fig, axes = plt.subplots(1, 3, figsize=(18.0, 4.6), sharex=True)
+    ax_left, ax_mid, ax_right = axes
 
     accuracy_series = {
         "temporal HMM": ("temporal_accuracy", PALETTE[2], "-"),
@@ -820,7 +823,7 @@ def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> P
     ax_left.legend(loc="lower left", fontsize=8)
     ax_left.grid(axis="both", alpha=0.2)
 
-    ax_right.plot(
+    ax_mid.plot(
         blends,
         [cast(float, row.get("temporal_segmentation_f1", 0.0)) for row in rows],
         marker="s",
@@ -829,7 +832,7 @@ def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> P
         linestyle="-",
         label="temporal segmentation",
     )
-    ax_right.plot(
+    ax_mid.plot(
         blends,
         [cast(float, row.get("memoryless_segmentation_f1", 0.0)) for row in rows],
         marker="s",
@@ -839,13 +842,35 @@ def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> P
         label="memoryless segmentation",
     )
     if crossover is not None:
+        ax_mid.axvline(crossover, color="#333333", linewidth=1.0, linestyle=":")
+    ax_mid.set_xlabel("Observation-ambiguity blend (0 = authored, 1 = uniform)")
+    ax_mid.set_ylabel("Pooled boundary F1")
+    ax_mid.set_ylim(0.0, 1.0)
+    ax_mid.set_title("Phase-segmentation boundary F1")
+    ax_mid.legend(loc="lower left", fontsize=8)
+    ax_mid.grid(axis="both", alpha=0.2)
+
+    active_counts = [cast(int, row.get("active_advantage_count", 0)) for row in rows]
+    step = (
+        (blends[-1] - blends[0]) / max(1, len(blends) - 1) if len(blends) > 1 else 0.05
+    )
+    ax_right.bar(
+        blends,
+        active_counts,
+        width=0.7 * step,
+        color=PALETTE[2],
+        alpha=0.85,
+        label="# fixtures where EFE active reaches confidence first",
+    )
+    if crossover is not None:
         ax_right.axvline(crossover, color="#333333", linewidth=1.0, linestyle=":")
     ax_right.set_xlabel("Observation-ambiguity blend (0 = authored, 1 = uniform)")
-    ax_right.set_ylabel("Pooled boundary F1")
-    ax_right.set_ylim(0.0, 1.0)
-    ax_right.set_title("Phase-segmentation boundary F1")
-    ax_right.legend(loc="lower left", fontsize=8)
-    ax_right.grid(axis="both", alpha=0.2)
+    ax_right.set_ylabel("Fixtures with EFE-active advantage")
+    ax_right.set_ylim(0.0, max(max(active_counts), 1) + 0.5)
+    ax_right.set_yticks(range(0, max(max(active_counts), 1) + 1))
+    ax_right.set_title("Active (EFE) advantage under ambiguity")
+    ax_right.legend(loc="upper right", fontsize=8)
+    ax_right.grid(axis="y", alpha=0.2)
 
     fig.tight_layout()
     fig.savefig(output_path, dpi=300)
@@ -1109,13 +1134,17 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "phases)."
     ),
     "ambiguity_ablation": (
-        "Two panels of decoder accuracy and segmentation F1 versus observation-ambiguity blend. "
-        "Left: as the authored likelihood is blended toward uniform, per-step observation decoding "
-        "degrades and the left-to-right temporal transition structure carries the information — the "
-        "temporal line stays high while memoryless and sticky fall, with the crossover (temporal "
-        "first beating memoryless) marked. Right: pooled phase-boundary F1 for the temporal "
-        "(smoothed) and memoryless segmentations, showing the same mechanism in the segmentation "
-        "dimension. This demonstrates the mechanism behind the head-to-head result."
+        "Three panels of decoder accuracy, segmentation F1, and EFE-active advantage versus "
+        "observation-ambiguity blend. Left: per-step decoding degrades as the authored likelihood is "
+        "blended toward uniform, and the left-to-right temporal transition structure carries the "
+        "information — the temporal line stays high while memoryless and sticky fall, with the "
+        "crossover (temporal first beating memoryless) marked. Middle: pooled phase-boundary F1 for "
+        "the temporal (smoothed) and memoryless segmentations, showing the same mechanism in the "
+        "segmentation dimension. Right: the number of fixtures where the EFE-active policy reaches "
+        "confidence in fewer steps than a fixed scan — an advantage that appears only in an "
+        "intermediate-ambiguity band, where observations become differentially informative, and is "
+        "never worse. Together the panels show all three inference layers (temporal, segmentation, "
+        "active) gaining their mechanism exactly under observation ambiguity."
     ),
     "segmentation_ribbons": (
         "Per-fixture phase-segmentation ribbons. For each fixture the top row is the hand-authored "

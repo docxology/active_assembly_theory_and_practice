@@ -770,6 +770,17 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         and bool(stability["all_holdouts_temporal_above_chance"])
     )
 
+    # Active layer under ambiguity: the EFE policy must be never worse at every
+    # blend, must show a real advantage (fewer steps to confidence) somewhere in
+    # the sweep, and must have NO advantage at the authored likelihood — binding
+    # the "activity matters only under differential informativeness" mechanism.
+    active_never_worse = bool(ablation_payload["active_never_worse"])
+    active_max_fraction = float(ablation_payload["active_max_advantage_fraction"])
+    active_authored = int(ablation_payload["authored_blend_active_advantage"])
+    active_advantage_emerges = (
+        active_never_worse and active_max_fraction > 0 and active_authored == 0
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -825,6 +836,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_active_advantage_emerges_under_ambiguity",
+            active_advantage_emerges,
+            f"never_worse={active_never_worse} max_frac={active_max_fraction:.2f} "
+            f"authored_adv={active_authored}",
         ),
         _check(
             "advanced_corpus_stability_measured",

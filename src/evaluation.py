@@ -26,6 +26,7 @@ import numpy as np
 
 from .corpus import CorpusFixture, fixture_observation_ids
 from .features import HIDDEN_STATE_LABELS
+from .active_selection import active_observation_order, fixed_order_steps_to_confidence
 from .temporal_model import (
     TemporalGenerativeModel,
     forward_backward,
@@ -681,6 +682,29 @@ def ambiguity_ablation(
         segmentation_memoryless = _segmentation_boundary_f1_for_decoder(
             corpus, ambiguous, memoryless=True
         )
+        # Active layer: does the EFE policy reach confidence in fewer steps than a
+        # fixed scan? Under intermediate ambiguity observations become
+        # differentially informative, so the greedy EFE ordering matters (and is
+        # never worse than the fixed order at any blend).
+        active_advantage = 0
+        active_worse = 0
+        prior = np.asarray(model.D, dtype=float)
+        preference = np.ones(ambiguous.A.shape[0], dtype=float)
+        ambiguous_a = np.asarray(ambiguous.A, dtype=float)
+        for fixture in corpus:
+            ids = [int(o) for o in fixture_observation_ids(fixture)]
+            active_steps = active_observation_order(
+                ids, ambiguous_a, prior, preference, 0.7
+            ).steps_to_confidence
+            fixed_steps = fixed_order_steps_to_confidence(ids, ambiguous_a, prior, 0.7)
+            if active_steps is None and fixed_steps is None:
+                continue
+            if active_steps is None or (
+                fixed_steps is not None and active_steps > fixed_steps
+            ):
+                active_worse += 1
+            elif fixed_steps is None or active_steps < fixed_steps:
+                active_advantage += 1
         gap = temporal - memoryless
         if crossover is None and gap > 1e-9:
             crossover = float(blend)
@@ -694,12 +718,38 @@ def ambiguity_ablation(
                 "temporal_minus_memoryless": float(gap),
                 "temporal_segmentation_f1": segmentation_temporal,
                 "memoryless_segmentation_f1": segmentation_memoryless,
+                "active_advantage_count": int(active_advantage),
+                "active_worse_count": int(active_worse),
             }
         )
+
+    authored_blend_active_advantage = int(cast(int, rows[0]["active_advantage_count"]))
+    active_never_worse = all(
+        int(cast(int, row["active_worse_count"])) == 0 for row in rows
+    )
+    advantage_fractions = [
+        int(cast(int, row["active_advantage_count"])) / max(1, len(corpus))
+        for row in rows
+    ]
+    advantage_blends = [
+        float(cast(float, rows[i]["blend"]))
+        for i, fraction in enumerate(advantage_fractions)
+        if fraction > 0
+    ]
+    max_advantage_fraction = (
+        float(max(advantage_fractions)) if advantage_fractions else 0.0
+    )
+
     return {
         "blends": [float(v) for v in blends],
         "rows": rows,
         "crossover_blend": crossover,
+        "active_max_advantage_fraction": max_advantage_fraction,
+        "active_advantage_band": (
+            [min(advantage_blends), max(advantage_blends)] if advantage_blends else []
+        ),
+        "active_never_worse": bool(active_never_worse),
+        "authored_blend_active_advantage": authored_blend_active_advantage,
     }
 
 

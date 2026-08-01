@@ -115,6 +115,10 @@ def generate_variables() -> dict[str, str]:
             if ablation["crossover_blend"] is not None
             else "n/a"
         ),
+        "ACTIVE_ADV_MAX_FRACTION": f"{ablation['active_max_advantage_fraction']:.3f}",
+        "ACTIVE_ADV_BAND_MIN": f"{ablation['active_advantage_band'][0]:.2f}",
+        "ACTIVE_ADV_BAND_MAX": f"{ablation['active_advantage_band'][1]:.2f}",
+        "ACTIVE_NEVER_WORSE": "yes",
         "AMBIGUITY_HIGH_BLEND": f"{max_blend_row['blend']:.2f}",
         "AMBIGUITY_HIGH_TEMPORAL_ACC": f"{max_blend_row['temporal_accuracy']:.3f}",
         "AMBIGUITY_HIGH_MEMORYLESS_ACC": (

@@ -504,6 +504,13 @@ def test_ambiguity_ablation_mechanism() -> None:
         first["temporal_segmentation_f1"] <= first["memoryless_segmentation_f1"] + 1e-6
     )
     assert last["temporal_segmentation_f1"] > last["memoryless_segmentation_f1"]
+    # Active layer: never worse at every blend, advantage appears somewhere in the
+    # sweep, and is absent at the authored likelihood.
+    assert result["active_never_worse"] is True
+    assert result["active_max_advantage_fraction"] > 0
+    assert result["authored_blend_active_advantage"] == 0
+    band = result["active_advantage_band"]
+    assert len(band) == 2 and band[0] < band[1]
     # Deterministic.
     assert json.dumps(result, sort_keys=True) == json.dumps(
         ambiguity_ablation(build_corpus(), build_temporal_model()), sort_keys=True

@@ -88,7 +88,7 @@ observations become ambiguous. This is a mechanism demonstration on the same
 transparent fixtures (only the likelihood conditioning `A` is swept; `B` and `D`
 are fixed), not a claim about real-world observation noise.
 
-The same mechanism appears in the *segmentation* dimension (right panel of
+The same mechanism appears in the *segmentation* dimension (middle panel of
 Figure `fig:ambiguity-ablation`): at the authored likelihood the memoryless
 segmenter already recovers phase boundaries well (boundary F1
 `{{SEG_MEMORYLESS_F1}}`), but under full ambiguity its boundary recovery
@@ -96,12 +96,24 @@ collapses to `{{SEG_HIGH_MEMORYLESS_F1}}` while the smoothed temporal
 segmentation retains a boundary F1 of `{{SEG_HIGH_TEMPORAL_F1}}`. Temporal
 structure rescues segmentation exactly when per-step decoding cannot.
 
+The *active* layer behaves the same way (right panel of Figure
+`fig:ambiguity-ablation`): the expected-free-energy policy reaches the confidence
+threshold in fewer steps than a fixed scan on `{{ACTIVE_ADV_MAX_FRACTION}}` of
+fixtures, within an intermediate-ambiguity band (`{{ACTIVE_ADV_BAND_MIN}}` to
+`{{ACTIVE_ADV_BAND_MAX}}`), and is never worse at any blend. The EFE ordering
+carries real value only when observations are *differentially* informative —
+neither when they are all equally informative (the authored likelihood) nor when
+none are (fully uniform).
+
 ![Decoder accuracy versus observation ambiguity]({{AMBIGUITY_ABLATION_FIGURE}}){#fig:ambiguity-ablation}
 *Left panel: temporal, memoryless, sticky, and Viterbi mean accuracy as the
 likelihood is blended toward uniform; the temporal line stays high as per-step
 decoding degrades and the crossover marks where temporal first beats memoryless.
-Right panel: pool phase-boundary F1 for the temporal (smoothed) and memoryless
-segmentations, showing the same mechanism in the segmentation dimension.*
+Middle panel: pooled phase-boundary F1 for the temporal (smoothed) and memoryless
+segmentations. Right panel: fixtures where the EFE-active policy reaches
+confidence in fewer steps than a fixed scan — an advantage within an
+intermediate-ambiguity band, never worse. All three layers gain their mechanism
+under observation ambiguity.*
 
 ## How well we segment phases {#sec:segmentation-evaluation}
 

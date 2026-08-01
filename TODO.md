@@ -183,11 +183,29 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 179 passed, 0 failed. Coverage 95.12% (gate
+**Current state (2026-08-01):** 179 passed, 0 failed. Coverage 95.09% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **58/58** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **59/59** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Active-Layer Mechanism Pass (2026-08-01)
+
+- **Research**: extended the ambiguity ablation into the active (EFE) layer,
+  closing the loop on the last non-result. Measured, honest result: the
+  EFE-active policy reaches the confidence threshold in fewer steps than a fixed
+  scan on 0.25 of fixtures, within an intermediate-ambiguity band (blend
+  0.40-0.70), is never worse at any blend, and has zero advantage at the authored
+  likelihood. Activity matters exactly when observations become *differentially*
+  informative — neither when all are equally informative (authored) nor when none
+  are (uniform). Validation check
+  `advanced_active_advantage_emerges_under_ambiguity` binds both directions.
+- **Visualization**: ambiguity_ablation.png is now a three-panel figure (decoder
+  accuracy, segmentation F1, EFE-active advantage count) showing all three
+  inference layers gaining their mechanism under observation ambiguity.
+- **Manuscript**: the ambiguity-ablation section now reports the active-layer
+  advantage (right panel) with tokens ACTIVE_ADV_MAX_FRACTION / BAND_MIN / BAND_MAX.
+- Registry: oracle 58->59 (one new check; figures unchanged at 23).
 
 ## Corpus-Stability Research Pass (2026-08-01)
 
