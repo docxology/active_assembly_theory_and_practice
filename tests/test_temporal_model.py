@@ -236,7 +236,9 @@ def test_forward_filter_two_step_hand_computed() -> None:
     assert math.isclose(marg0, manual_marg0, abs_tol=TOL)
 
     # MAP labels.
-    assert result.most_likely_states[0] == model.hidden_state_labels[int(np.argmax(post0))]
+    assert (
+        result.most_likely_states[0] == model.hidden_state_labels[int(np.argmax(post0))]
+    )
     assert result.final_state == model.hidden_state_labels[int(np.argmax(post1))]
 
     # Free energy matches the categorical VFE definition independently.
@@ -320,12 +322,7 @@ def test_viterbi_two_step_hand_computed() -> None:
     best_path = (-1, -1)
     for s0 in range(n):
         for s1 in range(n):
-            logp = (
-                log_d[s0]
-                + log_a[ids[0], s0]
-                + log_b[s1, s0]
-                + log_a[ids[1], s1]
-            )
+            logp = log_d[s0] + log_a[ids[0], s0] + log_b[s1, s0] + log_a[ids[1], s1]
             if logp > best_logp:
                 best_logp = logp
                 best_path = (s0, s1)

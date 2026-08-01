@@ -48,7 +48,10 @@ def test_validation_script_runs() -> None:
 
 def test_manuscript_variable_script_runs_and_hydrates_manuscript() -> None:
     completed = subprocess.run(
-        [sys.executable, str(PROJECT_ROOT / "scripts/z_generate_manuscript_variables.py")],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts/z_generate_manuscript_variables.py"),
+        ],
         check=True,
         capture_output=True,
         text=True,

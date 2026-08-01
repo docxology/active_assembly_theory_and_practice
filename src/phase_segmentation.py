@@ -87,7 +87,9 @@ def segment_phases(
     start = 0
     n_steps = len(map_indices)
     for step in range(1, n_steps + 1):
-        is_boundary = step == n_steps or int(map_indices[step]) != int(map_indices[start])
+        is_boundary = step == n_steps or int(map_indices[step]) != int(
+            map_indices[start]
+        )
         if is_boundary:
             mean_confidence = float(np.mean(max_posterior[start:step]))
             segments.append(

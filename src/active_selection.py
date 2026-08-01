@@ -59,9 +59,13 @@ class SelectionResult:
 
         data = asdict(self)
         data["order"] = [int(value) for value in self.order]
-        data["observation_id_order"] = [int(value) for value in self.observation_id_order]
+        data["observation_id_order"] = [
+            int(value) for value in self.observation_id_order
+        ]
         data["efe_by_step"] = [float(value) for value in self.efe_by_step]
-        data["belief_entropy_by_step"] = [float(value) for value in self.belief_entropy_by_step]
+        data["belief_entropy_by_step"] = [
+            float(value) for value in self.belief_entropy_by_step
+        ]
         data["steps_to_confidence"] = (
             None if self.steps_to_confidence is None else int(self.steps_to_confidence)
         )
@@ -241,7 +245,10 @@ def active_observation_order(
         belief_entropy_by_step.append(_shannon_entropy(belief))
 
         step += 1
-        if steps_to_confidence is None and float(np.max(belief)) >= confidence_threshold:
+        if (
+            steps_to_confidence is None
+            and float(np.max(belief)) >= confidence_threshold
+        ):
             steps_to_confidence = step
 
         remaining = [

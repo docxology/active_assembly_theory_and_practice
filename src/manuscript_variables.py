@@ -25,13 +25,19 @@ def generate_variables() -> dict[str, str]:
     result = run_experiment()
     advanced_paths = run_advanced_inference()
     evaluation_report = json.loads(
-        (ADVANCED_OUTPUT_DIR / "data" / "evaluation_report.json").read_text(encoding="utf-8")
+        (ADVANCED_OUTPUT_DIR / "data" / "evaluation_report.json").read_text(
+            encoding="utf-8"
+        )
     )
     active_report = json.loads(
-        (ADVANCED_OUTPUT_DIR / "data" / "active_selection.json").read_text(encoding="utf-8")
+        (ADVANCED_OUTPUT_DIR / "data" / "active_selection.json").read_text(
+            encoding="utf-8"
+        )
     )
     evaluation_summary = evaluation_report["summary"]
-    rxinfer_result = run_rxinfer_backend(PROJECT_ROOT / result.data_paths["trace_bundle"])
+    rxinfer_result = run_rxinfer_backend(
+        PROJECT_ROOT / result.data_paths["trace_bundle"]
+    )
     inference_diagnostic_path = plot_inference_diagnostics(
         list(result.inference.free_energy_by_step),
         list(rxinfer_result.free_energy_values),
@@ -44,7 +50,9 @@ def generate_variables() -> dict[str, str]:
 
     advanced_figure_paths = write_advanced_figures()
     reproducibility_path = write_reproducibility_manifest()
-    remediated_redteam = sum(finding.status == "remediated" for finding in REDTEAM_FINDINGS)
+    remediated_redteam = sum(
+        finding.status == "remediated" for finding in REDTEAM_FINDINGS
+    )
     variables = {
         "PROJECT_TITLE": "Active Assembly Theory and Practice",
         "SAMPLE_NAME": result.sample_name,
@@ -57,7 +65,10 @@ def generate_variables() -> dict[str, str]:
         "BINARY_SHA256": result.trace_bundle.binary_sha256,
         "TOTAL_PACKAGE_COUNT": str(len(result.trace_bundle.package_provenance)),
         "AVAILABLE_PACKAGE_COUNT": str(
-            sum(provenance.available for provenance in result.trace_bundle.package_provenance)
+            sum(
+                provenance.available
+                for provenance in result.trace_bundle.package_provenance
+            )
         ),
         "RXINFER_MODEL_NAME": rxinfer_result.model_name.replace("_", " "),
         "RXINFER_FREE_ENERGY_COUNT": str(len(rxinfer_result.free_energy_values)),
@@ -67,7 +78,9 @@ def generate_variables() -> dict[str, str]:
         "SCHOLARSHIP_SOURCE_COUNT": str(len(SCHOLARSHIP_SOURCES)),
         "SCHOLARSHIP_SOURCE_LEDGER": f"../{scholarship_path}",
         "CLAIM_COUNT": str(len(CLAIM_RECORDS)),
-        "VALIDATED_CLAIM_COUNT": str(sum(claim.status == "validated" for claim in CLAIM_RECORDS)),
+        "VALIDATED_CLAIM_COUNT": str(
+            sum(claim.status == "validated" for claim in CLAIM_RECORDS)
+        ),
         "CLAIM_REGISTER": f"../{claim_register_path}",
         "REDTEAM_FINDING_COUNT": str(len(REDTEAM_FINDINGS)),
         "REDTEAM_REMEDIATED_COUNT": str(remediated_redteam),
@@ -102,17 +115,23 @@ def generate_variables() -> dict[str, str]:
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     validation_report = write_validation_report()
     variables.update(
         {
             "VALIDATION_PASS_COUNT": str(validation_report.summary["passed"]),
             "VALIDATION_FAIL_COUNT": str(validation_report.summary["failed"]),
             "VALIDATION_TOTAL_COUNT": str(validation_report.summary["total"]),
-            "VALIDATION_ALL_PASSED": str(validation_report.summary["all_passed"]).lower(),
+            "VALIDATION_ALL_PASSED": str(
+                validation_report.summary["all_passed"]
+            ).lower(),
             "VALIDATION_REPORT": "../output/data/validation_report.json",
             "VALIDATION_FIGURE": "../output/figures/validation_summary.png",
         }
     )
-    output_path.write_text(json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return variables

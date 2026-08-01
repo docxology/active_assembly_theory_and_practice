@@ -21,7 +21,10 @@ class GenerativeModelSpec:
     def validate(self) -> None:
         """Validate categorical probability tensors."""
 
-        if self.A.shape != (len(self.observation_labels), len(self.hidden_state_labels)):
+        if self.A.shape != (
+            len(self.observation_labels),
+            len(self.hidden_state_labels),
+        ):
             raise ValueError("A shape must be observations x hidden states")
         if self.D.shape != (len(self.hidden_state_labels),):
             raise ValueError("D shape must match hidden state count")
@@ -62,4 +65,3 @@ def build_generative_model() -> GenerativeModelSpec:
     )
     spec.validate()
     return spec
-

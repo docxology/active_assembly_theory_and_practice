@@ -25,6 +25,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+from typing import Any
 
 from .figures import plot_rxinfer_free_energy
 
@@ -37,7 +38,7 @@ JULIA_RUNNER = JULIA_PROJECT / "scripts" / "run_rxinfer.jl"
 # pins the Python dependencies: the reproducible manuscript numbers depend on
 # this exact toolchain, so the expected versions are declared explicitly and
 # enforced against the backend diagnostics by ``validate_backend_versions``.
-EXPECTED_JULIA_VERSION = "1.12.1"
+EXPECTED_JULIA_VERSION = "1.12.6"
 EXPECTED_RXINFER_VERSION = "5.4.0"
 
 
@@ -181,19 +182,23 @@ def validate_backend_versions(
         )
 
 
-def load_free_energy_records(path: Path) -> list[dict[str, object]]:
+def load_free_energy_records(path: Path) -> list[dict[str, Any]]:
     """Load the RxInfer free-energy JSONL file."""
 
     if not path.exists():
         raise FileNotFoundError(f"missing RxInfer free-energy trace: {path}")
-    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+    records = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
     if not records:
         raise ValueError("RxInfer free-energy trace is empty")
     return records
 
 
 def validate_free_energy_records(
-    records: list[dict[str, object]],
+    records: list[dict[str, Any]],
     *,
     expected_data_hash: str | None = None,
 ) -> None:
@@ -225,10 +230,14 @@ def validate_free_energy_records(
             raise ValueError(f"non-finite RxInfer free-energy value: {value}")
         iteration = int(record["iteration"])
         if iteration <= previous_iteration:
-            raise ValueError("RxInfer free-energy iterations must be strictly increasing")
+            raise ValueError(
+                "RxInfer free-energy iterations must be strictly increasing"
+            )
         previous_iteration = iteration
         if record["source_field"] != "result.free_energy":
-            raise ValueError(f"unexpected RxInfer free-energy source: {record['source_field']}")
+            raise ValueError(
+                f"unexpected RxInfer free-energy source: {record['source_field']}"
+            )
         if expected_data_hash and record["data_hash"] != expected_data_hash:
             raise ValueError("RxInfer data_hash does not match trace bundle hash")
 
@@ -237,7 +246,7 @@ def validate_rxinfer_outputs(
     output_dir: Path,
     *,
     expected_data_hash: str | None = None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     """Validate the complete RxInfer artifact set and return free-energy records."""
 
     free_energy_path = output_dir / "free_energy_trace.jsonl"
@@ -327,8 +336,12 @@ def run_rxinfer_backend(
         )
 
     expected_data_hash = file_sha256(trace_bundle_path)
-    records = validate_rxinfer_outputs(rxinfer_dir, expected_data_hash=expected_data_hash)
-    diagnostics = json.loads((rxinfer_dir / "diagnostics.json").read_text(encoding="utf-8"))
+    records = validate_rxinfer_outputs(
+        rxinfer_dir, expected_data_hash=expected_data_hash
+    )
+    diagnostics = json.loads(
+        (rxinfer_dir / "diagnostics.json").read_text(encoding="utf-8")
+    )
     validate_backend_versions(
         str(diagnostics["julia_version"]),
         str(diagnostics["rxinfer_version"]),
@@ -339,10 +352,16 @@ def run_rxinfer_backend(
         OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
     )
     artifact_paths = {
-        "free_energy_trace": str((rxinfer_dir / "free_energy_trace.jsonl").relative_to(PROJECT_ROOT)),
+        "free_energy_trace": str(
+            (rxinfer_dir / "free_energy_trace.jsonl").relative_to(PROJECT_ROOT)
+        ),
         "posteriors": str((rxinfer_dir / "posteriors.json").relative_to(PROJECT_ROOT)),
-        "diagnostics": str((rxinfer_dir / "diagnostics.json").relative_to(PROJECT_ROOT)),
-        "model_config": str((rxinfer_dir / "model_config.json").relative_to(PROJECT_ROOT)),
+        "diagnostics": str(
+            (rxinfer_dir / "diagnostics.json").relative_to(PROJECT_ROOT)
+        ),
+        "model_config": str(
+            (rxinfer_dir / "model_config.json").relative_to(PROJECT_ROOT)
+        ),
         "stdout": str(stdout_path.relative_to(PROJECT_ROOT)),
         "stderr": str(stderr_path.relative_to(PROJECT_ROOT)),
     }
@@ -358,5 +377,7 @@ def run_rxinfer_backend(
         rxinfer_version=str(diagnostics["rxinfer_version"]),
         julia_version=str(diagnostics["julia_version"]),
         artifact_paths=artifact_paths,
-        figure_paths={"rxinfer_free_energy": str(figure_path.relative_to(PROJECT_ROOT))},
+        figure_paths={
+            "rxinfer_free_energy": str(figure_path.relative_to(PROJECT_ROOT))
+        },
     )

@@ -13,7 +13,9 @@ def capstone_provenance() -> PackageProvenance:
 
     try:
         version = metadata.version("capstone")
-    except metadata.PackageNotFoundError:  # pragma: no cover - dependency gate covers this
+    except (
+        metadata.PackageNotFoundError
+    ):  # pragma: no cover - dependency gate covers this
         version = "unknown"
     return PackageProvenance(
         name="capstone",
@@ -26,7 +28,9 @@ def capstone_provenance() -> PackageProvenance:
     )
 
 
-def disassemble_with_capstone(sample_name: str) -> tuple[list[InstructionEvent], PackageProvenance]:
+def disassemble_with_capstone(
+    sample_name: str,
+) -> tuple[list[InstructionEvent], PackageProvenance]:
     """Decode a sample fixture and attach Capstone provenance."""
 
     return disassemble_sample(sample_name), capstone_provenance()

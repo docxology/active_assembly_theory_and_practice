@@ -19,7 +19,7 @@ outputs are JSON-safe and deterministic across runs — no RNG is used anywhere.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any, Sequence, cast
 
 import numpy as np
 
@@ -33,12 +33,16 @@ from .temporal_model import (
 
 _EPS = 1e-12
 
+# Upper bound on RNG draws per requested control round, so a corpus admitting
+# very few distinct label permutations cannot spin forever in the loop below.
+_PER_ROUND_DRAW_ATTEMPTS = 64
+
 
 def evaluate_decoding(
     predicted: Sequence[str],
     truth: Sequence[str],
     labels: Sequence[str],
-) -> dict[str, object]:
+) -> dict[str, Any]:
     """Score a predicted label sequence against ground truth.
 
     Args:
@@ -335,8 +339,8 @@ def shuffled_label_control(
     seen: set[tuple[str, ...]] = {tuple(truth)}
     per_round: list[float] = []
     # Bound the draws so a corpus admitting few distinct permutations cannot spin
-    # forever; 64 attempts per requested round is ample headroom in practice.
-    max_attempts = max(rounds * 64, 64)
+    # forever (see _PER_ROUND_DRAW_ATTEMPTS).
+    max_attempts = max(rounds * _PER_ROUND_DRAW_ATTEMPTS, _PER_ROUND_DRAW_ATTEMPTS)
     attempts = 0
     while len(per_round) < rounds and attempts < max_attempts:
         attempts += 1
@@ -438,9 +442,9 @@ def evaluation_payload(
         memoryless_metrics = evaluate_decoding(memoryless_labels, truth, labels)
         viterbi_metrics = evaluate_decoding(viterbi_labels, truth, labels)
 
-        temporal_accuracies.append(float(temporal_metrics["accuracy"]))
-        static_accuracies.append(float(static_metrics["accuracy"]))
-        memoryless_accuracies.append(float(memoryless_metrics["accuracy"]))
+        temporal_accuracies.append(cast(float, temporal_metrics["accuracy"]))
+        static_accuracies.append(cast(float, static_metrics["accuracy"]))
+        memoryless_accuracies.append(cast(float, memoryless_metrics["accuracy"]))
 
         per_fixture[fixture.name] = {
             "observation_ids": [int(o) for o in observation_ids],
@@ -463,17 +467,16 @@ def evaluation_payload(
             ),
         }
 
+    mean_temporal = float(np.mean(temporal_accuracies))
+    mean_static = float(np.mean(static_accuracies))
+    mean_memoryless = float(np.mean(memoryless_accuracies))
+    best_non_temporal = max(mean_static, mean_memoryless)
     summary = {
-        "mean_temporal_accuracy": float(np.mean(temporal_accuracies)),
-        "mean_static_accuracy": float(np.mean(static_accuracies)),
-        "mean_memoryless_accuracy": float(np.mean(memoryless_accuracies)),
-        "best_non_temporal_accuracy": float(
-            max(np.mean(static_accuracies), np.mean(memoryless_accuracies))
-        ),
-        "temporal_advantage_over_best_non_temporal": float(
-            np.mean(temporal_accuracies)
-            - max(np.mean(static_accuracies), np.mean(memoryless_accuracies))
-        ),
+        "mean_temporal_accuracy": mean_temporal,
+        "mean_static_accuracy": mean_static,
+        "mean_memoryless_accuracy": mean_memoryless,
+        "best_non_temporal_accuracy": best_non_temporal,
+        "temporal_advantage_over_best_non_temporal": mean_temporal - best_non_temporal,
         "fixture_count": int(len(corpus)),
     }
 

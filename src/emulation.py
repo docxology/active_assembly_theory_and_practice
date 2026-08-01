@@ -81,4 +81,3 @@ def emulate_sample(sample_name: str = "x86_accumulator") -> EmulationTrace:
     """Run bounded emulation for a named sample fixture."""
 
     return emulate_x86_64(sample_bytes(sample_name))
-

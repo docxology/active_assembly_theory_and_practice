@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .corpus import build_corpus
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 
@@ -48,6 +50,21 @@ class ArtifactManifestRow:
         return data
 
 
+# Every corpus fixture emits its own temporal-belief heatmap; track all of them
+# so a missing or replaced variant figure is caught by the manifest and the
+# pixel-variance figure oracle (derived from the fixtures, not hard-coded).
+_TEMPORAL_BELIEF_TARGETS: tuple[ArtifactManifestTarget, ...] = tuple(
+    ArtifactManifestTarget(
+        path=f"output/figures/temporal_beliefs_{fixture.name}.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_temporal_belief_figures",
+        claim_ids=("CLM-010", "CLM-012"),
+        validation_checks=(f"figure_temporal_beliefs_{fixture.name}",),
+    )
+    for fixture in build_corpus()
+)
+
+
 MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
     ArtifactManifestTarget(
         path="output/data/disassembly_trace.json",
@@ -82,7 +99,10 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         artifact_type="scholarship",
         generated_by="src.scholarship.write_scholarship_sources",
         claim_ids=("CLM-006", "CLM-008"),
-        validation_checks=("scholarship_source_quality", "scholarship_evidence_partition"),
+        validation_checks=(
+            "scholarship_source_quality",
+            "scholarship_evidence_partition",
+        ),
     ),
     ArtifactManifestTarget(
         path="output/data/claim_register.json",
@@ -197,13 +217,6 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_redteam_risk_register",),
     ),
     ArtifactManifestTarget(
-        path="output/figures/temporal_beliefs_x86_accumulator.png",
-        artifact_type="figure",
-        generated_by="src.advanced_figures.write_temporal_belief_figures",
-        claim_ids=("CLM-010", "CLM-012"),
-        validation_checks=("figure_temporal_beliefs_x86_accumulator",),
-    ),
-    ArtifactManifestTarget(
         path="output/figures/model_comparison.png",
         artifact_type="figure",
         generated_by="src.advanced_figures.write_advanced_figures",
@@ -245,7 +258,7 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         claim_ids=("CLM-013",),
         validation_checks=("advanced_active_never_worse",),
     ),
-)
+) + _TEMPORAL_BELIEF_TARGETS
 
 
 def sha256_file(path: Path) -> str:
@@ -285,10 +298,14 @@ def reproducibility_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]
     """Return the complete reproducibility manifest payload."""
 
     rows = manifest_rows(project_root)
-    missing_required = [row.path for row in rows if row.required and row.status != "present"]
+    missing_required = [
+        row.path for row in rows if row.required and row.status != "present"
+    ]
     artifact_type_counts: dict[str, int] = {}
     for row in rows:
-        artifact_type_counts[row.artifact_type] = artifact_type_counts.get(row.artifact_type, 0) + 1
+        artifact_type_counts[row.artifact_type] = (
+            artifact_type_counts.get(row.artifact_type, 0) + 1
+        )
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "artifact_count": len(rows),
@@ -356,7 +373,9 @@ def write_reproducibility_manifest(output_dir: Path = OUTPUT_DIR) -> str:
     payload = reproducibility_payload(output_dir.parent)
 
     json_path = data_dir / "reproducibility_manifest.json"
-    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     markdown_rows = [
         "# Reproducibility Manifest",

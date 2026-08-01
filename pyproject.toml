@@ -55,3 +55,25 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+check_untyped_defs = true
+warn_unused_ignores = true
+
+[tool.ruff.lint]
+# Thin scripts intentionally import after inserting the project root into
+# sys.path (the shared orchestration bootstrap), so E402 is scoped out there.
+extend-per-file-ignores = { "scripts/*.py" = ["E402"] }
+
+[[tool.mypy.overrides]]
+# Third-party modules that ship without type stubs or a py.typed marker.
+module = [
+    "capstone",
+    "pymdp",
+    "pymdp.*",
+    "unicorn",
+    "unicorn.*",
+]
+ignore_missing_imports = true

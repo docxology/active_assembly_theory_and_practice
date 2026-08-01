@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Sequence, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +16,7 @@ PALETTE = ("#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9")
 
 
 def plot_observation_pipeline(
-    observations: list[AssemblyObservation],
+    observations: Sequence[AssemblyObservation],
     output_path: Path,
 ) -> Path:
     """Plot instruction observations as a categorical pipeline."""
@@ -24,12 +25,19 @@ def plot_observation_pipeline(
     x = np.arange(len(observations))
     y = [observation.observation_id for observation in observations]
 
+    # Deterministic observation_id -> category map (first occurrence wins). Ties
+    # the y-axis tick to the category vocabulary rather than to whichever step
+    # happened to exhibit a given id first.
+    category_by_id: dict[int, str] = {}
+    for observation in observations:
+        category_by_id.setdefault(observation.observation_id, observation.category)
+
     fig, ax = plt.subplots(figsize=(7.0, 3.8))
     ax.plot(x, y, marker="o", color=PALETTE[0], linewidth=2)
     ax.set_xticks(x)
     ax.set_xticklabels([obs.mnemonic for obs in observations])
     ax.set_yticks(sorted(set(y)))
-    ax.set_yticklabels([observations[y.index(value)].category for value in sorted(set(y))])
+    ax.set_yticklabels([category_by_id[value] for value in sorted(set(y))])
     ax.set_xlabel("Instruction order")
     ax.set_ylabel("Observation category")
     ax.set_title("Assembly observations from decoded x86-64 bytes")
@@ -74,7 +82,7 @@ def plot_posterior_beliefs(
     return output_path
 
 
-def plot_rxinfer_free_energy(records: list[dict[str, object]], output_path: Path) -> Path:
+def plot_rxinfer_free_energy(records: list[dict[str, Any]], output_path: Path) -> Path:
     """Plot RxInfer Bethe Free Energy values emitted by the Julia backend."""
 
     if not records:
@@ -95,7 +103,9 @@ def plot_rxinfer_free_energy(records: list[dict[str, object]], output_path: Path
     return output_path
 
 
-def plot_package_provenance(provenance_rows: list[dict[str, object]], output_path: Path) -> Path:
+def plot_package_provenance(
+    provenance_rows: list[dict[str, object]], output_path: Path
+) -> Path:
     """Plot required and optional assembly package adapter availability."""
 
     if not provenance_rows:
@@ -141,7 +151,9 @@ def plot_trace_feature_matrix(
             [
                 1.0 if observation.executed else 0.0,
                 float(observation.observation_id),
-                1.0 if any(char.isdigit() for char in observation.operand_text) else 0.0,
+                1.0
+                if any(char.isdigit() for char in observation.operand_text)
+                else 0.0,
                 1.0
                 if observation.operand_text.lower().startswith(("rax", "eax"))
                 else 0.0,
@@ -156,7 +168,10 @@ def plot_trace_feature_matrix(
     image = ax.imshow(matrix, aspect="auto", cmap="viridis")
     ax.set_yticks(np.arange(len(observations)))
     ax.set_yticklabels(
-        [f"{observation.index}: {observation.mnemonic}" for observation in observations],
+        [
+            f"{observation.index}: {observation.mnemonic}"
+            for observation in observations
+        ],
         fontsize=8,
     )
     ax.set_xticks(np.arange(matrix.shape[1]))
@@ -247,7 +262,7 @@ def plot_validation_summary(checks: list[dict[str, object]], output_path: Path) 
     return output_path
 
 
-def plot_artifact_hash_manifest(rows: list[dict[str, object]], output_path: Path) -> Path:
+def plot_artifact_hash_manifest(rows: list[dict[str, Any]], output_path: Path) -> Path:
     """Plot tracked artifact bytes by artifact class."""
 
     if not rows:
@@ -258,7 +273,9 @@ def plot_artifact_hash_manifest(rows: list[dict[str, object]], output_path: Path
     missing_by_type: dict[str, int] = {}
     for row in rows:
         artifact_type = str(row["artifact_type"])
-        bytes_by_type[artifact_type] = bytes_by_type.get(artifact_type, 0) + int(row["bytes"])
+        bytes_by_type[artifact_type] = bytes_by_type.get(artifact_type, 0) + int(
+            row["bytes"]
+        )
         count_by_type[artifact_type] = count_by_type.get(artifact_type, 0) + 1
         if row["status"] != "present":
             missing_by_type[artifact_type] = missing_by_type.get(artifact_type, 0) + 1
@@ -274,7 +291,9 @@ def plot_artifact_hash_manifest(rows: list[dict[str, object]], output_path: Path
     x = np.arange(len(labels))
     bars = ax.bar(x, values_kib, color=colors)
     ax.set_xticks(x)
-    ax.set_xticklabels([label.replace("_", " ") for label in labels], rotation=28, ha="right")
+    ax.set_xticklabels(
+        [label.replace("_", " ") for label in labels], rotation=28, ha="right"
+    )
     ax.set_ylabel("Tracked bytes (KiB)")
     ax.set_title("Reproducibility manifest coverage by artifact class")
     ax.grid(axis="y", alpha=0.2)
@@ -314,9 +333,13 @@ def plot_scholarship_source_roles(
 
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     x = np.arange(len(labels))
-    ax.bar(x, values, color=[PALETTE[index % len(PALETTE)] for index in range(len(labels))])
+    ax.bar(
+        x, values, color=[PALETTE[index % len(PALETTE)] for index in range(len(labels))]
+    )
     ax.set_xticks(x)
-    ax.set_xticklabels([label.replace("_", " ") for label in labels], rotation=30, ha="right")
+    ax.set_xticklabels(
+        [label.replace("_", " ") for label in labels], rotation=30, ha="right"
+    )
     ax.set_ylabel("Source count")
     ax.set_title("Scholarship source roles and evidence tiers")
     ax.grid(axis="y", alpha=0.2)
@@ -361,7 +384,14 @@ def plot_scholarship_evidence_matrix(
         for column_index in range(matrix.shape[1]):
             value = int(matrix[row_index, column_index])
             if value:
-                ax.text(column_index, row_index, str(value), ha="center", va="center", fontsize=8)
+                ax.text(
+                    column_index,
+                    row_index,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                )
     fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300)
@@ -379,9 +409,11 @@ def plot_claim_evidence_map(
         raise ValueError("claim records must not be empty")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     labels = [str(claim["claim_id"]) for claim in claims]
-    source_counts = [len(claim["support_keys"]) for claim in claims]
-    artifact_counts = [len(claim["artifact_paths"]) for claim in claims]
-    validation_counts = [len(claim["validation_checks"]) for claim in claims]
+    source_counts = [len(cast(list, claim["support_keys"])) for claim in claims]
+    artifact_counts = [len(cast(list, claim["artifact_paths"])) for claim in claims]
+    validation_counts = [
+        len(cast(list, claim["validation_checks"])) for claim in claims
+    ]
     x = np.arange(len(claims))
     width = 0.25
 
@@ -401,13 +433,18 @@ def plot_claim_evidence_map(
     return output_path
 
 
-def plot_redteam_risk_register(findings: list[dict[str, object]], output_path: Path) -> Path:
+def plot_redteam_risk_register(
+    findings: list[dict[str, str]], output_path: Path
+) -> Path:
     """Plot RedTeam finding status by severity."""
 
     if not findings:
         raise ValueError("RedTeam findings must not be empty")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    labels = [f"{finding['finding_id']} {finding['vector']}".replace("_", " ") for finding in findings]
+    labels = [
+        f"{finding['finding_id']} {finding['vector']}".replace("_", " ")
+        for finding in findings
+    ]
     severity_score = {"critical": 3, "investigate": 2, "clean": 1}
     values = [severity_score.get(str(finding["severity"]), 1) for finding in findings]
     colors = [
@@ -436,6 +473,7 @@ def plot_redteam_risk_register(findings: list[dict[str, object]], output_path: P
 # v0.2 temporal / active / evaluation visualizations
 # ---------------------------------------------------------------------------
 
+
 def plot_temporal_beliefs_heatmap(
     fixture_name: str,
     observation_ids: list[int],
@@ -463,7 +501,11 @@ def plot_temporal_beliefs_heatmap(
     ax.set_yticks(np.arange(len(step_labels)))
     ax.set_yticklabels(step_labels, fontsize=8)
     ax.set_xticks(np.arange(len(hidden_state_labels)))
-    ax.set_xticklabels([label.replace("_", " ") for label in hidden_state_labels], rotation=30, ha="right")
+    ax.set_xticklabels(
+        [label.replace("_", " ") for label in hidden_state_labels],
+        rotation=30,
+        ha="right",
+    )
     ax.set_ylabel("Observation step")
     ax.set_xlabel("Latent program-phase belief")
     ax.set_title(f"Temporal HMM forward-filter beliefs: {fixture_name}")
@@ -492,13 +534,17 @@ def plot_model_comparison_bars(
 ) -> Path:
     """Plot per-fixture decoding accuracy for sticky, memoryless, and temporal decoders."""
 
-    compare = evaluation_report.get("compare_models", {})
+    compare = cast(
+        dict[str, dict[str, float]], evaluation_report.get("compare_models", {})
+    )
     if not compare:
         raise ValueError("evaluation_report must contain compare_models rows")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fixture_names = list(compare.keys())
     sticky = [compare[name].get("static_accuracy", 0.0) for name in fixture_names]
-    memoryless = [compare[name].get("memoryless_accuracy", 0.0) for name in fixture_names]
+    memoryless = [
+        compare[name].get("memoryless_accuracy", 0.0) for name in fixture_names
+    ]
     temporal = [compare[name].get("temporal_accuracy", 0.0) for name in fixture_names]
     x = np.arange(len(fixture_names))
     width = 0.26
@@ -507,9 +553,13 @@ def plot_model_comparison_bars(
     ax.bar(x - width, sticky, width=width, label="sticky (v0.1)", color=PALETTE[0])
     ax.bar(x, memoryless, width=width, label="memoryless", color=PALETTE[1])
     ax.bar(x + width, temporal, width=width, label="temporal HMM", color=PALETTE[2])
-    ax.axhline(0.2, color="#333333", linewidth=0.8, linestyle="--", label="chance (0.20)")
+    ax.axhline(
+        0.2, color="#333333", linewidth=0.8, linestyle="--", label="chance (0.20)"
+    )
     ax.set_xticks(x)
-    ax.set_xticklabels([name.replace("x86_", "") for name in fixture_names], rotation=15, ha="right")
+    ax.set_xticklabels(
+        [name.replace("x86_", "") for name in fixture_names], rotation=15, ha="right"
+    )
     ax.set_ylabel("Phase-decoding accuracy")
     ax.set_ylim(0.0, 1.0)
     ax.set_title("Decoder accuracy by fixture: sticky vs memoryless vs temporal")
@@ -527,16 +577,32 @@ def plot_active_efe_trajectory(
 ) -> Path:
     """Plot the greedy active-disassembly expected-free-energy and belief-entropy trajectory."""
 
-    efe_by_step = selection.get("efe_by_step")
-    entropy_by_step = selection.get("belief_entropy_by_step")
+    efe_by_step = cast(list[float], selection.get("efe_by_step"))
+    entropy_by_step = cast(list[float], selection.get("belief_entropy_by_step"))
     if not efe_by_step or not entropy_by_step:
-        raise ValueError("selection must contain efe_by_step and belief_entropy_by_step")
+        raise ValueError(
+            "selection must contain efe_by_step and belief_entropy_by_step"
+        )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     steps = np.arange(1, len(efe_by_step) + 1)
 
     fig, ax = plt.subplots(figsize=(7.8, 4.2))
-    ax.plot(steps, efe_by_step, marker="o", linewidth=2, color=PALETTE[0], label="Expected free energy")
-    ax.plot(steps, entropy_by_step, marker="s", linewidth=2, color=PALETTE[2], label="Belief entropy (nats)")
+    ax.plot(
+        steps,
+        efe_by_step,
+        marker="o",
+        linewidth=2,
+        color=PALETTE[0],
+        label="Expected free energy",
+    )
+    ax.plot(
+        steps,
+        entropy_by_step,
+        marker="s",
+        linewidth=2,
+        color=PALETTE[2],
+        label="Belief entropy (nats)",
+    )
     ax.set_xticks(steps)
     ax.set_xlabel("Active-selection step")
     ax.set_ylabel("Value")
@@ -605,9 +671,21 @@ FIGURE_CAPTIONS: dict[str, str] = {
     "validation_summary": (
         "Analysis validation report: every generated-output oracle that the validation gate enforces."
     ),
-    "temporal_beliefs": (
-        "Forward-filter belief trajectory of the temporal HMM for one corpus fixture. Each row is a "
-        "normalized belief over the five program phases at one observation step."
+    "temporal_beliefs_x86_accumulator": (
+        "Forward-filter belief trajectory of the temporal HMM for the x86_accumulator corpus "
+        "fixture. Each row is a normalized belief over the five program phases at one observation step."
+    ),
+    "temporal_beliefs_x86_bitwise": (
+        "Forward-filter belief trajectory of the temporal HMM for the x86_bitwise corpus fixture. "
+        "Each row is a normalized belief over the five program phases at one observation step."
+    ),
+    "temporal_beliefs_x86_guard": (
+        "Forward-filter belief trajectory of the temporal HMM for the x86_guard corpus fixture. "
+        "Each row is a normalized belief over the five program phases at one observation step."
+    ),
+    "temporal_beliefs_x86_long_accumulator": (
+        "Forward-filter belief trajectory of the temporal HMM for the x86_long_accumulator corpus "
+        "fixture. Each row is a normalized belief over the five program phases at one observation step."
     ),
     "model_comparison": (
         "Per-fixture phase-decoding accuracy for the three decoders. The temporal HMM beats the v0.1 "

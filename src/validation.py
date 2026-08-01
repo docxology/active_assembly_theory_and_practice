@@ -14,11 +14,16 @@ import numpy as np
 
 from .assembly_packages.schema import TRACE_SCHEMA_VERSION, binary_hash
 from .claim_register import CLAIM_RECORDS
+from .corpus import build_corpus
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .figures import plot_validation_summary
 from .redteam_report import REDTEAM_FINDINGS
 from .reproducibility import MANIFEST_TARGETS, verify_reproducibility_manifest
-from .rxinfer_bridge import file_sha256, load_free_energy_records, validate_free_energy_records
+from .rxinfer_bridge import (
+    file_sha256,
+    load_free_energy_records,
+    validate_free_energy_records,
+)
 from .scholarship import scholarship_keys, scholarship_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -119,9 +124,9 @@ def _trace_checks(trace_path: Path) -> list[ValidationCheck]:
             ):
                 observation_semantics_ok = False
                 break
-    label_vocab_ok = payload.get("observation_labels") == list(OBSERVATION_LABELS) and payload.get(
-        "hidden_state_labels"
-    ) == list(HIDDEN_STATE_LABELS)
+    label_vocab_ok = payload.get("observation_labels") == list(
+        OBSERVATION_LABELS
+    ) and payload.get("hidden_state_labels") == list(HIDDEN_STATE_LABELS)
     dynamic_trace = payload.get("dynamic_register_trace", [])
     dynamic_trace_ok = (
         len(dynamic_trace) >= 2
@@ -130,7 +135,7 @@ def _trace_checks(trace_path: Path) -> list[ValidationCheck]:
         and int(dynamic_trace[-1].get("instruction_count", -1)) == len(instructions)
     )
     return [
-        _check("trace_required_keys", not missing, f"missing={missing}"),
+        _check("trace_required_keys", len(missing) == 0, f"missing={missing}"),
         _check(
             "trace_schema_version",
             payload.get("schema_version") == TRACE_SCHEMA_VERSION,
@@ -161,7 +166,8 @@ def _trace_checks(trace_path: Path) -> list[ValidationCheck]:
         _check(
             "trace_basic_block_coverage",
             bool(payload.get("basic_blocks"))
-            and payload["basic_blocks"][0].get("instruction_indexes") == list(range(len(instructions))),
+            and payload["basic_blocks"][0].get("instruction_indexes")
+            == list(range(len(instructions))),
             f"blocks={len(payload.get('basic_blocks', []))}",
         ),
         _check(
@@ -211,8 +217,15 @@ def _rxinfer_checks(trace_path: Path, rxinfer_dir: Path) -> list[ValidationCheck
             f"iterations={diagnostics.get('iteration_count')} all_finite={diagnostics.get('all_free_energy_finite')}",
         )
     )
-    companion_files = ("posteriors.json", "model_config.json", "stdout.log", "stderr.log")
-    companion_files_ok = all((rxinfer_dir / filename).exists() for filename in companion_files)
+    companion_files = (
+        "posteriors.json",
+        "model_config.json",
+        "stdout.log",
+        "stderr.log",
+    )
+    companion_files_ok = all(
+        (rxinfer_dir / filename).exists() for filename in companion_files
+    )
     posterior_rows = posteriors.get("posteriors", {}).get("μ", [])
     config_values = model_config.get("observation_values", [])
     checks.append(
@@ -229,6 +242,11 @@ def _rxinfer_checks(trace_path: Path, rxinfer_dir: Path) -> list[ValidationCheck
 
 
 def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
+    # Every corpus fixture emits a temporal-belief heatmap, so the validated
+    # figure set is derived from the fixtures rather than hard-coded to one.
+    temporal_belief_figures = tuple(
+        f"temporal_beliefs_{fixture.name}.png" for fixture in build_corpus()
+    )
     expected = (
         "observation_pipeline.png",
         "posterior_beliefs.png",
@@ -241,7 +259,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "claim_evidence_map.png",
         "redteam_risk_register.png",
         "artifact_hash_manifest.png",
-        "temporal_beliefs_x86_accumulator.png",
+        *temporal_belief_figures,
         "model_comparison.png",
         "active_efe.png",
     )
@@ -255,7 +273,9 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         checks.append(
             _check(
                 f"figure_{path.stem}",
-                path.stat().st_size > 0 and image.size > 0 and float(np.var(image)) > 0.00001,
+                path.stat().st_size > 0
+                and image.size > 0
+                and float(np.var(image)) > 0.00001,
                 f"bytes={path.stat().st_size} variance={float(np.var(image)):.6f}",
             )
         )
@@ -263,7 +283,9 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
 
 
 def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
-    references = (project_root / "manuscript" / "references.bib").read_text(encoding="utf-8")
+    references = (project_root / "manuscript" / "references.bib").read_text(
+        encoding="utf-8"
+    )
     manuscript_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((project_root / "manuscript").glob("*.md"))
@@ -325,6 +347,22 @@ def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
         and int(project_stage_counts.get("context", 0)) >= 3
         and int(project_stage_counts.get("comparison", 0)) >= 1
     )
+    # Cautious-boundary language is protected conceptually (not by exact prose),
+    # so a legitimate rephrase does not silently trip the gate.
+    reverse_engineering_boundary = bool(
+        re.search(
+            r"not\s+(?:a\s+)?general\s+reverse[-\s]?engineering",
+            manuscript_text,
+            flags=re.IGNORECASE,
+        )
+    )
+    categorical_hmm_boundary = bool(
+        re.search(
+            r"not\s+(?:yet\s+)?(?:the\s+)?planned\s+categorical(?:[-\s]+)hidden\s+markov",
+            manuscript_text,
+            flags=re.IGNORECASE,
+        )
+    )
     return [
         _check(
             "scholarship_source_quality",
@@ -338,23 +376,22 @@ def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
         ),
         _check(
             "scholarship_bibliography_coverage",
-            not missing_bib,
+            len(missing_bib) == 0,
             f"missing_bib={missing_bib}",
         ),
         _check(
             "scholarship_citation_closure",
-            not unresolved_citations,
+            len(unresolved_citations) == 0,
             f"unresolved_citations={unresolved_citations}",
         ),
         _check(
             "scholarship_manuscript_usage",
-            not missing_usage,
+            len(missing_usage) == 0,
             f"uncited_ledger_keys={missing_usage}",
         ),
         _check(
             "scholarship_claim_boundaries",
-            "not a general reverse-engineering" in manuscript_text
-            and "not yet the planned categorical hidden Markov model" in manuscript_text,
+            reverse_engineering_boundary and categorical_hmm_boundary,
             "cautious claim boundaries present",
         ),
     ]
@@ -373,7 +410,9 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "99_references.md",
     }
     files = {path.name for path in manuscript_dir.glob("*.md")}
-    text = "\n".join(path.read_text(encoding="utf-8") for path in manuscript_dir.glob("*.md"))
+    text = "\n".join(
+        path.read_text(encoding="utf-8") for path in manuscript_dir.glob("*.md")
+    )
     expected_figures = {
         "OBSERVATION_FIGURE",
         "PACKAGE_PROVENANCE_FIGURE",
@@ -392,11 +431,13 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "ACTIVE_EFE_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
-    missing_figures = sorted(token for token in expected_figures if f"{{{{{token}}}}}" not in text)
+    missing_figures = sorted(
+        token for token in expected_figures if f"{{{{{token}}}}}" not in text
+    )
     return [
         _check(
             "manuscript_source_surface",
-            not missing_sections and not missing_figures,
+            len(missing_sections) == 0 and len(missing_figures) == 0,
             f"missing_sections={missing_sections} missing_figures={missing_figures}",
         )
     ]
@@ -423,7 +464,9 @@ def _manuscript_token_checks(output_dir: Path) -> list[ValidationCheck]:
 def _redteam_checks(output_dir: Path) -> list[ValidationCheck]:
     report_path = output_dir / "data" / "redteam_report.json"
     if not report_path.exists():
-        return [_check("redteam_findings_remediated", False, "missing redteam_report.json")]
+        return [
+            _check("redteam_findings_remediated", False, "missing redteam_report.json")
+        ]
     payload = _load_json(report_path)
     findings = payload.get("findings", [])
     expected_ids = {finding.finding_id for finding in REDTEAM_FINDINGS}
@@ -455,11 +498,13 @@ def _claim_register_checks(
     observed_ids = {claim.get("claim_id") for claim in claims}
     ledger_keys = scholarship_keys()
     all_sources_known = all(
-        set(claim.get("support_keys", [])).issubset(ledger_keys)
-        for claim in claims
+        set(claim.get("support_keys", [])).issubset(ledger_keys) for claim in claims
     )
     all_artifacts_present = all(
-        all((project_root / str(path)).exists() for path in claim.get("artifact_paths", []))
+        all(
+            (project_root / str(path)).exists()
+            for path in claim.get("artifact_paths", [])
+        )
         for claim in claims
     )
     all_checks_known = all(
@@ -527,7 +572,9 @@ def _documentation_checks(project_root: Path) -> list[ValidationCheck]:
     observed_docs = {path.name for path in docs_dir.glob("*.md")}
     missing_docs = sorted(expected_docs - observed_docs)
     claim_map_path = docs_dir / "claim_map.md"
-    claim_map_text = claim_map_path.read_text(encoding="utf-8") if claim_map_path.exists() else ""
+    claim_map_text = (
+        claim_map_path.read_text(encoding="utf-8") if claim_map_path.exists() else ""
+    )
     return [
         _check(
             "documentation_contract_surface",
@@ -561,7 +608,9 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         return [
             _check("advanced_temporal_artifacts_present", False, f"missing={missing}"),
             _check("advanced_temporal_beats_static", False, "artifacts missing"),
-            _check("advanced_negative_controls_discriminate", False, "artifacts missing"),
+            _check(
+                "advanced_negative_controls_discriminate", False, "artifacts missing"
+            ),
             _check("advanced_phase_segmentation_partition", False, "artifacts missing"),
             _check("advanced_active_never_worse", False, "artifacts missing"),
             _check("advanced_evaluation_freshness", False, "artifacts missing"),
@@ -576,10 +625,16 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     mean_temporal = float(summary.get("mean_temporal_accuracy", 0.0))
     mean_static = float(summary.get("mean_static_accuracy", 1.0))
     mean_memoryless = float(summary.get("mean_memoryless_accuracy", 0.0))
-    temporal_advantage = float(summary.get("temporal_advantage_over_best_non_temporal", 1.0))
-    shuffle = float(evaluation.get("shuffled_label_control", {}).get("mean_accuracy", 1.0))
+    temporal_advantage = float(
+        summary.get("temporal_advantage_over_best_non_temporal", 1.0)
+    )
+    shuffle = float(
+        evaluation.get("shuffled_label_control", {}).get("mean_accuracy", 1.0)
+    )
     # Compare like-to-like (accuracy vs accuracy), not accuracy vs balanced accuracy.
-    uniform_accuracy = float(evaluation.get("uniform_belief_control", {}).get("accuracy", 1.0))
+    uniform_accuracy = float(
+        evaluation.get("uniform_belief_control", {}).get("accuracy", 1.0)
+    )
 
     temporal_fixtures = temporal.get("per_fixture", {})
     artifacts_ok = (
@@ -597,7 +652,9 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     for record in segments_payload.get("per_fixture", {}).values():
         covered: list[int] = []
         for segment in record.get("segments", []):
-            covered.extend(range(int(segment["start_index"]), int(segment["end_index"]) + 1))
+            covered.extend(
+                range(int(segment["start_index"]), int(segment["end_index"]) + 1)
+            )
         if covered != list(range(len(covered))) or not covered:
             partition_ok = False
             break
@@ -622,7 +679,10 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     honest_comparison_ok = (
         "mean_memoryless_accuracy" in summary
         and mean_memoryless > 0.0
-        and abs(temporal_advantage - (mean_temporal - max(mean_static, mean_memoryless))) < 1e-9
+        and abs(
+            temporal_advantage - (mean_temporal - max(mean_static, mean_memoryless))
+        )
+        < 1e-9
     )
 
     # Clean-ablation invariant: the static and temporal decoders must share the
@@ -647,7 +707,9 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     belief = np.asarray(static_model.D, dtype=float)
     belief = belief / belief.sum()
     efe_values = [
-        expected_free_energy(belief, static_model.A, flat_preference, i, i).expected_free_energy
+        expected_free_energy(
+            belief, static_model.A, flat_preference, i, i
+        ).expected_free_energy
         for i in range(len(static_model.observation_labels))
     ]
     policy_functional = (max(efe_values) - min(efe_values)) > 1e-6
@@ -719,7 +781,9 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_redteam_checks(output_dir))
     checks.extend(_reproducibility_checks(project_root))
     checks.extend(_advanced_inference_checks(project_root))
-    checks.extend(_claim_register_checks(project_root, {check.name for check in checks}))
+    checks.extend(
+        _claim_register_checks(project_root, {check.name for check in checks})
+    )
     checks.extend(_documentation_checks(project_root))
     passed = sum(check.passed for check in checks)
     failed = len(checks) - passed

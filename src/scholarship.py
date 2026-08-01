@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
@@ -359,7 +360,7 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
 )
 
 
-def scholarship_payload() -> dict[str, object]:
+def scholarship_payload() -> dict[str, Any]:
     """Return the complete source ledger payload."""
 
     source_counts: dict[str, int] = {}
@@ -367,14 +368,20 @@ def scholarship_payload() -> dict[str, object]:
     project_stage_counts: dict[str, int] = {}
     for source in SCHOLARSHIP_SOURCES:
         source_counts[source.source_type] = source_counts.get(source.source_type, 0) + 1
-        evidence_tier_counts[source.evidence_tier] = evidence_tier_counts.get(
-            source.evidence_tier,
-            0,
-        ) + 1
-        project_stage_counts[source.project_stage] = project_stage_counts.get(
-            source.project_stage,
-            0,
-        ) + 1
+        evidence_tier_counts[source.evidence_tier] = (
+            evidence_tier_counts.get(
+                source.evidence_tier,
+                0,
+            )
+            + 1
+        )
+        project_stage_counts[source.project_stage] = (
+            project_stage_counts.get(
+                source.project_stage,
+                0,
+            )
+            + 1
+        )
     return {
         "source_count": len(SCHOLARSHIP_SOURCES),
         "source_type_counts": source_counts,

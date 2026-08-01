@@ -21,7 +21,9 @@ from src.validation import write_validation_report
 
 def main() -> int:
     experiment = run_experiment()
-    rxinfer_result = run_rxinfer_backend(PROJECT_ROOT / experiment.data_paths["trace_bundle"])
+    rxinfer_result = run_rxinfer_backend(
+        PROJECT_ROOT / experiment.data_paths["trace_bundle"]
+    )
     plot_inference_diagnostics(
         list(experiment.inference.free_energy_by_step),
         list(rxinfer_result.free_energy_values),

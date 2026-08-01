@@ -56,7 +56,9 @@ def infer_hidden_states(
 
     for observation in observations:
         log_prior = np.log(np.clip(posterior, 1e-12, 1.0))
-        log_likelihood = np.log(np.clip(model.A[observation.observation_id, :], 1e-12, 1.0))
+        log_likelihood = np.log(
+            np.clip(model.A[observation.observation_id, :], 1e-12, 1.0)
+        )
         logits = log_prior + log_likelihood
         posterior = np.asarray(nn.softmax(logits), dtype=float)
         posterior = posterior / posterior.sum()

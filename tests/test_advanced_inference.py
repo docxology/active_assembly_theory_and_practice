@@ -44,7 +44,10 @@ def test_active_selection_is_never_worse_than_fixed() -> None:
     # Honest corpus outcome: active selection is never WORSE than the fixed scan;
     # on these short fixtures it ties because one observation saturates confidence.
     assert summary["active_never_worse"] is True
-    assert summary["ties"] + summary["active_strictly_fewer_steps"] == summary["fixture_count"]
+    assert (
+        summary["ties"] + summary["active_strictly_fewer_steps"]
+        == summary["fixture_count"]
+    )
 
 
 def test_evaluation_report_temporal_beats_static_and_controls_are_near_chance() -> None:
@@ -64,12 +67,21 @@ def test_evaluation_report_temporal_beats_static_and_controls_are_near_chance() 
 def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None:
     paths_a = run_advanced_inference(tmp_path / "output")
     first = {
-        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(encoding="utf-8")
-        for name in ("temporal_inference", "phase_segments", "active_selection", "evaluation_report")
+        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(
+            encoding="utf-8"
+        )
+        for name in (
+            "temporal_inference",
+            "phase_segments",
+            "active_selection",
+            "evaluation_report",
+        )
     }
     run_advanced_inference(tmp_path / "output")
     second = {
-        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(encoding="utf-8")
+        name: (tmp_path / "output" / "data" / f"{name}.json").read_text(
+            encoding="utf-8"
+        )
         for name in first
     }
     # Byte-identical across runs (determinism, no RNG).

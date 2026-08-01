@@ -89,7 +89,9 @@ def encode_observations(
             )
         )
     if not observations:
-        raise ValueError("at least one instruction is required for observation encoding")
+        raise ValueError(
+            "at least one instruction is required for observation encoding"
+        )
     return observations
 
 
@@ -98,4 +100,3 @@ def observation_counts(observations: Iterable[AssemblyObservation]) -> dict[str,
 
     counts = Counter(observation.category for observation in observations)
     return {label: counts.get(label, 0) for label in OBSERVATION_LABELS}
-

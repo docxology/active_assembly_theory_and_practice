@@ -54,7 +54,8 @@ class ExperimentResult:
             "binary_sha256": self.trace_bundle.binary_sha256,
             "package_count": len(self.trace_bundle.package_provenance),
             "available_package_count": sum(
-                provenance.available for provenance in self.trace_bundle.package_provenance
+                provenance.available
+                for provenance in self.trace_bundle.package_provenance
             ),
             "data_paths": self.data_paths,
             "figure_paths": self.figure_paths,
@@ -63,7 +64,9 @@ class ExperimentResult:
 
 def _write_json(path: Path, payload: object) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return str(path.relative_to(PROJECT_ROOT))
 
 
@@ -124,16 +127,21 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
     }
     figure_paths = {
         "observation_pipeline": str(
-            plot_observation_pipeline(observations, figure_dir / "observation_pipeline.png")
-            .relative_to(PROJECT_ROOT)
+            plot_observation_pipeline(
+                observations, figure_dir / "observation_pipeline.png"
+            ).relative_to(PROJECT_ROOT)
         ),
         "posterior_beliefs": str(
-            plot_posterior_beliefs(inference, model, figure_dir / "posterior_beliefs.png")
-            .relative_to(PROJECT_ROOT)
+            plot_posterior_beliefs(
+                inference, model, figure_dir / "posterior_beliefs.png"
+            ).relative_to(PROJECT_ROOT)
         ),
         "package_provenance": str(
             plot_package_provenance(
-                [provenance.to_dict() for provenance in trace_bundle.package_provenance],
+                [
+                    provenance.to_dict()
+                    for provenance in trace_bundle.package_provenance
+                ],
                 figure_dir / "package_provenance.png",
             ).relative_to(PROJECT_ROOT)
         ),

@@ -202,7 +202,9 @@ def _concatenated_temporal_accuracy() -> float:
     truth: list[str] = []
     for fixture in corpus:
         ids = fixture_observation_ids(fixture)
-        predicted.extend(forward_filter([int(o) for o in ids], model).most_likely_states)
+        predicted.extend(
+            forward_filter([int(o) for o in ids], model).most_likely_states
+        )
         truth.extend(fixture.phase_labels)
     return float(evaluate_decoding(predicted, truth, labels)["accuracy"])
 
@@ -240,9 +242,13 @@ def test_isc31_uniform_predictor_worse_than_temporal() -> None:
     truth: list[str] = []
     for fixture in corpus:
         ids = fixture_observation_ids(fixture)
-        predicted.extend(forward_filter([int(o) for o in ids], model).most_likely_states)
+        predicted.extend(
+            forward_filter([int(o) for o in ids], model).most_likely_states
+        )
         truth.extend(fixture.phase_labels)
-    temporal_balanced = float(evaluate_decoding(predicted, truth, labels)["balanced_accuracy"])
+    temporal_balanced = float(
+        evaluate_decoding(predicted, truth, labels)["balanced_accuracy"]
+    )
 
     uniform = uniform_belief_control(corpus)
     assert uniform["balanced_accuracy"] < temporal_balanced

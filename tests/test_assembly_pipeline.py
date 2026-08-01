@@ -11,7 +11,11 @@ import numpy as np
 
 from src.active_inference_bridge import infer_hidden_states
 from src.assembly_packages.schema import TRACE_SCHEMA_VERSION, binary_hash
-from src.claim_register import CLAIM_RECORDS, claim_register_payload, write_claim_register
+from src.claim_register import (
+    CLAIM_RECORDS,
+    claim_register_payload,
+    write_claim_register,
+)
 from src.disassembly import disassemble_sample
 from src.emulation import emulate_sample
 from src.experiments import PROJECT_ROOT, run_experiment
@@ -26,7 +30,11 @@ from src.reproducibility import (
     write_reproducibility_manifest,
 )
 from src.rxinfer_bridge import load_free_energy_records, validate_free_energy_records
-from src.scholarship import scholarship_keys, scholarship_payload, write_scholarship_sources
+from src.scholarship import (
+    scholarship_keys,
+    scholarship_payload,
+    write_scholarship_sources,
+)
 from src.validation import validate_trace_file, write_validation_report
 
 
@@ -99,7 +107,9 @@ def test_run_experiment_writes_required_artifacts() -> None:
         assert artifact.exists(), artifact
         assert artifact.stat().st_size > 0
 
-    inference_payload = json.loads((PROJECT_ROOT / result.data_paths["inference_result"]).read_text())
+    inference_payload = json.loads(
+        (PROJECT_ROOT / result.data_paths["inference_result"]).read_text()
+    )
     assert inference_payload["inference"]["final_state"] == result.inference.final_state
 
 
@@ -120,7 +130,16 @@ def test_trace_bundle_schema_records_package_provenance_and_hashes() -> None:
     assert provenance["capstone"]["optional"] is False
     assert provenance["unicorn"]["available"] is True
     assert provenance["angr"]["optional"] is True
-    for optional_name in ("ghidra", "bap", "gtirb", "qiling", "miasm", "dyninst", "retdec", "mcsema"):
+    for optional_name in (
+        "ghidra",
+        "bap",
+        "gtirb",
+        "qiling",
+        "miasm",
+        "dyninst",
+        "retdec",
+        "mcsema",
+    ):
         assert provenance[optional_name]["optional"] is True
     assert (PROJECT_ROOT / result.figure_paths["package_provenance"]).exists()
 
@@ -153,10 +172,14 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert (PROJECT_ROOT / "output/figures/artifact_hash_manifest.png").exists()
     assert (PROJECT_ROOT / "output/figures/validation_summary.png").exists()
     assert variables["TRACE_FEATURE_FIGURE"].endswith("trace_feature_matrix.png")
-    assert variables["INFERENCE_DIAGNOSTIC_FIGURE"].endswith("inference_diagnostics.png")
+    assert variables["INFERENCE_DIAGNOSTIC_FIGURE"].endswith(
+        "inference_diagnostics.png"
+    )
     assert variables["REPRODUCIBILITY_FIGURE"].endswith("artifact_hash_manifest.png")
 
-    records = load_free_energy_records(PROJECT_ROOT / "output/rxinfer/free_energy_trace.jsonl")
+    records = load_free_energy_records(
+        PROJECT_ROOT / "output/rxinfer/free_energy_trace.jsonl"
+    )
     validate_free_energy_records(records)
     assert len(records) == 8
     assert {record["source_field"] for record in records} == {"result.free_energy"}
@@ -192,7 +215,9 @@ def test_rxinfer_free_energy_validation_rejects_nonfinite_values() -> None:
 def test_scholarship_ledger_matches_bibliography() -> None:
     relative_path = write_scholarship_sources()
     payload = json.loads((PROJECT_ROOT / relative_path).read_text(encoding="utf-8"))
-    references = (PROJECT_ROOT / "manuscript/references.bib").read_text(encoding="utf-8")
+    references = (PROJECT_ROOT / "manuscript/references.bib").read_text(
+        encoding="utf-8"
+    )
 
     keys = [row["key"] for row in payload["sources"]]
     assert len(keys) == payload["source_count"]
@@ -295,7 +320,9 @@ def test_validation_report_checks_outputs_and_nonblank_figures() -> None:
     assert float(np.var(image)) > 0.00001
 
 
-def test_trace_validator_negative_control_rejects_malformed_bundle(tmp_path: Path) -> None:
+def test_trace_validator_negative_control_rejects_malformed_bundle(
+    tmp_path: Path,
+) -> None:
     malformed = tmp_path / "trace_bundle.json"
     malformed.write_text(
         json.dumps(

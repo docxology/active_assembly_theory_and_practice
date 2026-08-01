@@ -102,7 +102,9 @@ class TraceBundle:
             "package_provenance": [
                 provenance.to_dict() for provenance in self.package_provenance
             ],
-            "observations": [observation.to_dict() for observation in self.observations],
+            "observations": [
+                observation.to_dict() for observation in self.observations
+            ],
             "observation_labels": list(self.observation_labels),
             "hidden_state_labels": list(self.hidden_state_labels),
         }
@@ -114,7 +116,9 @@ def binary_hash(sample_name: str) -> str:
     return hashlib.sha256(sample_bytes(sample_name)).hexdigest()
 
 
-def _single_linear_block(instructions: tuple[InstructionEvent, ...]) -> tuple[BasicBlock, ...]:
+def _single_linear_block(
+    instructions: tuple[InstructionEvent, ...],
+) -> tuple[BasicBlock, ...]:
     if not instructions:
         return ()
     first = instructions[0]
@@ -155,7 +159,9 @@ def build_trace_bundle(
     """Build the stable trace bundle consumed by Python and Julia backends."""
 
     if len(instructions) != len(observations):
-        raise ValueError("instruction and observation streams must have the same length")
+        raise ValueError(
+            "instruction and observation streams must have the same length"
+        )
     return TraceBundle(
         schema_version=TRACE_SCHEMA_VERSION,
         sample_id=sample_name,

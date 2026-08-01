@@ -41,10 +41,14 @@ def sample_bytes(sample_name: str = "x86_accumulator") -> bytes:
         return SAMPLE_PROGRAMS[sample_name]
     except KeyError as exc:
         names = ", ".join(sorted(SAMPLE_PROGRAMS))
-        raise ValueError(f"unknown sample {sample_name!r}; available samples: {names}") from exc
+        raise ValueError(
+            f"unknown sample {sample_name!r}; available samples: {names}"
+        ) from exc
 
 
-def disassemble_bytes(code: bytes, base_address: int = BASE_ADDRESS) -> list[InstructionEvent]:
+def disassemble_bytes(
+    code: bytes, base_address: int = BASE_ADDRESS
+) -> list[InstructionEvent]:
     """Decode x86-64 machine code with Capstone."""
 
     if not code:
@@ -85,4 +89,3 @@ def instructions_to_json(events: Iterable[InstructionEvent]) -> list[dict[str, o
     """Return JSON-safe instruction rows."""
 
     return [event.to_dict() for event in events]
-

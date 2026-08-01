@@ -131,8 +131,12 @@ def test_isc16_sign_control_pragmatic_value():
     # Preference peaked on category k=0.
     C = np.array([0.9, 0.1])
 
-    efe_on_peak = expected_free_energy(belief, A, C, candidate_index=0, observation_id=k)
-    efe_off_peak = expected_free_energy(belief, A, C, candidate_index=1, observation_id=1)
+    efe_on_peak = expected_free_energy(
+        belief, A, C, candidate_index=0, observation_id=k
+    )
+    efe_off_peak = expected_free_energy(
+        belief, A, C, candidate_index=1, observation_id=1
+    )
 
     assert efe_on_peak.pragmatic_value > efe_off_peak.pragmatic_value
     # Concrete hand values: log(0.9) > log(0.1).
@@ -161,7 +165,9 @@ def test_select_next_observation_empty_raises():
     """Selecting from no candidates is an error."""
 
     with pytest.raises(ValueError):
-        select_next_observation(UNIFORM_BELIEF_3, [], ONE_HOT_VS_UNIFORM_A, np.array([1.0, 1.0]))
+        select_next_observation(
+            UNIFORM_BELIEF_3, [], ONE_HOT_VS_UNIFORM_A, np.array([1.0, 1.0])
+        )
 
 
 def test_isc15_active_beats_fixed_when_informative_is_last():
@@ -182,7 +188,9 @@ def test_isc15_active_beats_fixed_when_informative_is_last():
     observation_ids = [1, 1, 0]
 
     fixed_steps = fixed_order_steps_to_confidence(observation_ids, A, D, threshold=0.7)
-    result = active_observation_order(observation_ids, A, D, C, confidence_threshold=0.7)
+    result = active_observation_order(
+        observation_ids, A, D, C, confidence_threshold=0.7
+    )
 
     assert fixed_steps == 3
     assert result.steps_to_confidence == 1

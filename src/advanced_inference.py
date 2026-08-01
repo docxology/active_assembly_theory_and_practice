@@ -45,7 +45,9 @@ CONFIDENCE_THRESHOLD = 0.7
 
 def _write_json(path: Path, payload: object) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     try:
         return str(path.relative_to(PROJECT_ROOT))
     except ValueError:
@@ -87,7 +89,9 @@ def phase_segments_payload() -> dict[str, object]:
     for fixture in corpus:
         observation_ids = [int(o) for o in fixture_observation_ids(fixture)]
         smoothing = forward_backward(observation_ids, model)
-        segments = segment_phases(smoothing.smoothed_posteriors, model.hidden_state_labels)
+        segments = segment_phases(
+            smoothing.smoothed_posteriors, model.hidden_state_labels
+        )
         per_fixture[fixture.name] = {
             "segment_count": len(segments),
             "segments": [segment.to_dict() for segment in segments],
@@ -109,7 +113,7 @@ def active_selection_payload() -> dict[str, object]:
     model = build_generative_model()
     preference = np.ones(len(model.observation_labels), dtype=float)
     corpus = build_corpus()
-    per_fixture: dict[str, object] = {}
+    per_fixture: dict[str, dict[str, object]] = {}
     active_wins = 0
     ties = 0
     for fixture in corpus:
@@ -125,7 +129,11 @@ def active_selection_payload() -> dict[str, object]:
             observation_ids, model.A, model.D, CONFIDENCE_THRESHOLD
         )
         active_steps = selection.steps_to_confidence
-        if active_steps is not None and fixed_steps is not None and active_steps < fixed_steps:
+        if (
+            active_steps is not None
+            and fixed_steps is not None
+            and active_steps < fixed_steps
+        ):
             active_wins += 1
         elif active_steps == fixed_steps:
             ties += 1

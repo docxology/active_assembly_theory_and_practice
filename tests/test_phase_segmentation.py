@@ -91,7 +91,9 @@ def test_isc20_monotone_phase_sequence_segments():
 
     # mean_confidence of the first segment is mean of max-posterior over steps 0,1.
     first = segments[0]
-    assert math.isclose(first.mean_confidence, (0.7 + 0.6) / 2.0, rel_tol=0, abs_tol=1e-12)
+    assert math.isclose(
+        first.mean_confidence, (0.7 + 0.6) / 2.0, rel_tol=0, abs_tol=1e-12
+    )
     # Single-step segment confidence equals that step's max posterior.
     assert math.isclose(segments[1].mean_confidence, 0.7, rel_tol=0, abs_tol=1e-12)
     assert math.isclose(segments[3].mean_confidence, 0.7, rel_tol=0, abs_tol=1e-12)

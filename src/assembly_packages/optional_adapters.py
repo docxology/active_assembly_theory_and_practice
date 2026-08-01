@@ -17,8 +17,12 @@ def _python_package_version(package_name: str) -> str | None:
         return "unknown"
 
 
-def _command_probe(name: str, adapter: str, command_names: tuple[str, ...]) -> PackageProvenance:
-    command = next((candidate for candidate in command_names if shutil.which(candidate)), None)
+def _command_probe(
+    name: str, adapter: str, command_names: tuple[str, ...]
+) -> PackageProvenance:
+    command = next(
+        (candidate for candidate in command_names if shutil.which(candidate)), None
+    )
     return PackageProvenance(
         name=name,
         adapter=adapter,
@@ -50,8 +54,12 @@ def probe_optional_packages() -> list[PackageProvenance]:
         ),
         _command_probe("rizin", "rizin_static_baseline", ("rizin", "rz-bin", "rz-asm")),
         _command_probe("radare2", "radare2_static_baseline", ("r2", "radare2")),
-        _command_probe("llvm-objdump", "llvm_objdump_static_baseline", ("llvm-objdump", "objdump")),
-        _command_probe("ghidra", "ghidra_headless_analysis", ("analyzeHeadless", "ghidra")),
+        _command_probe(
+            "llvm-objdump", "llvm_objdump_static_baseline", ("llvm-objdump",)
+        ),
+        _command_probe(
+            "ghidra", "ghidra_headless_analysis", ("analyzeHeadless", "ghidra")
+        ),
         _command_probe("bap", "bap_ir_analysis", ("bap",)),
         PackageProvenance(
             name="gtirb",
@@ -81,7 +89,9 @@ def probe_optional_packages() -> list[PackageProvenance]:
             details={"role": "optional Python-native IR and emulation adapter"},
         ),
         _command_probe("dyninst", "dyninst_instrumentation", ("dyninst", "parseThat")),
-        _command_probe("retdec", "retdec_decompiler", ("retdec-decompiler", "retdec-fileinfo")),
+        _command_probe(
+            "retdec", "retdec_decompiler", ("retdec-decompiler", "retdec-fileinfo")
+        ),
         _command_probe("mcsema", "mcsema_lifting", ("mcsema-lift", "mcsema-disass")),
         PackageProvenance(
             name="keystone",

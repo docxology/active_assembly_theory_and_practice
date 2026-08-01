@@ -13,7 +13,9 @@ def unicorn_provenance() -> PackageProvenance:
 
     try:
         version = metadata.version("unicorn")
-    except metadata.PackageNotFoundError:  # pragma: no cover - dependency gate covers this
+    except (
+        metadata.PackageNotFoundError
+    ):  # pragma: no cover - dependency gate covers this
         version = "unknown"
     return PackageProvenance(
         name="unicorn",
