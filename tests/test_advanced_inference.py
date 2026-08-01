@@ -14,7 +14,11 @@ from src.advanced_inference import (
     temporal_inference_payload,
 )
 from src.features import HIDDEN_STATE_LABELS
-from src.figures import plot_calibration_curve, plot_confusion_matrix
+from src.figures import (
+    plot_ambiguity_ablation,
+    plot_calibration_curve,
+    plot_confusion_matrix,
+)
 
 
 def test_temporal_inference_payload_covers_every_fixture() -> None:
@@ -138,3 +142,34 @@ def test_confusion_matrix_shape_mismatch_raises(tmp_path) -> None:
             {"labels": list(HIDDEN_STATE_LABELS), "matrix": [[1, 2]]},
             tmp_path / "confusion_matrix.png",
         )
+
+
+def test_ambiguity_ablation_figure_written_nonempty(tmp_path) -> None:
+    rows = [
+        {
+            "blend": 0.0,
+            "temporal_accuracy": 0.6,
+            "memoryless_accuracy": 0.7,
+            "static_accuracy": 0.3,
+            "viterbi_accuracy": 0.5,
+            "temporal_minus_memoryless": -0.1,
+        },
+        {
+            "blend": 1.0,
+            "temporal_accuracy": 0.6,
+            "memoryless_accuracy": 0.3,
+            "static_accuracy": 0.2,
+            "viterbi_accuracy": 0.5,
+            "temporal_minus_memoryless": 0.3,
+        },
+    ]
+    path = plot_ambiguity_ablation(
+        {"rows": rows, "crossover_blend": 0.8}, tmp_path / "ambiguity_ablation.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_ambiguity_ablation_figure_empty_rows_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_ambiguity_ablation({"rows": []}, tmp_path / "ambiguity_ablation.png")

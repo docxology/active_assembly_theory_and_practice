@@ -35,6 +35,10 @@ def generate_variables() -> dict[str, str]:
         )
     )
     evaluation_summary = evaluation_report["summary"]
+    ablation = evaluation_report["ambiguity_ablation"]
+    ablation_rows = list(ablation["rows"])
+    max_blend_row = max(ablation_rows, key=lambda row: row["blend"])
+    seg_pooled = evaluation_report["segmentation"]["pooled"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -105,6 +109,18 @@ def generate_variables() -> dict[str, str]:
         "SHUFFLE_CONTROL_ACCURACY": f"{evaluation_report['shuffled_label_control']['mean_accuracy']:.3f}",
         "UNIFORM_CONTROL_ACCURACY": f"{evaluation_report['uniform_belief_control']['balanced_accuracy']:.3f}",
         "ACTIVE_FIXED_TIE_COUNT": str(active_report["summary"]["ties"]),
+        "AMBIGUITY_CROSSOVER_BLEND": (
+            f"{ablation['crossover_blend']:.2f}"
+            if ablation["crossover_blend"] is not None
+            else "n/a"
+        ),
+        "AMBIGUITY_HIGH_BLEND": f"{max_blend_row['blend']:.2f}",
+        "AMBIGUITY_HIGH_TEMPORAL_ACC": f"{max_blend_row['temporal_accuracy']:.3f}",
+        "AMBIGUITY_HIGH_MEMORYLESS_ACC": (
+            f"{max_blend_row['memoryless_accuracy']:.3f}"
+        ),
+        "SEGMENTATION_BOUNDARY_F1": f"{seg_pooled['boundary_f1']:.3f}",
+        "SEGMENTATION_STEP_ACC": f"{seg_pooled['step_accuracy']:.3f}",
         "TEMPORAL_INFERENCE_ARTIFACT": f"../{advanced_paths['temporal_inference']}",
         "EVALUATION_REPORT_ARTIFACT": f"../{advanced_paths['evaluation_report']}",
         "PHASE_SEGMENTS_ARTIFACT": f"../{advanced_paths['phase_segments']}",
@@ -125,6 +141,7 @@ def generate_variables() -> dict[str, str]:
         "ACTIVE_EFE_FIGURE": f"../{advanced_figure_paths['active_efe']}",
         "CALIBRATION_CURVE_FIGURE": f"../{advanced_figure_paths['calibration_curve']}",
         "CONFUSION_MATRIX_FIGURE": f"../{advanced_figure_paths['confusion_matrix']}",
+        "AMBIGUITY_ABLATION_FIGURE": f"../{advanced_figure_paths['ambiguity_ablation']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

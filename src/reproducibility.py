@@ -245,6 +245,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_confusion_matrix",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/ambiguity_ablation.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_stats_figures",
+        claim_ids=("CLM-014",),
+        validation_checks=("figure_ambiguity_ablation",),
+    ),
+    ArtifactManifestTarget(
         path="output/data/temporal_inference.json",
         artifact_type="inference",
         generated_by="src.advanced_inference.run_advanced_inference",

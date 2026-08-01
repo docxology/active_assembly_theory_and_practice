@@ -28,6 +28,7 @@ from .corpus import CorpusFixture, fixture_observation_ids
 from .features import HIDDEN_STATE_LABELS
 from .temporal_model import (
     TemporalGenerativeModel,
+    forward_backward,
     forward_filter,
     viterbi_decode,
 )
@@ -473,6 +474,183 @@ def uniform_belief_control(corpus: Sequence[CorpusFixture]) -> dict[str, object]
     }
 
 
+def evaluate_segmentation(
+    predicted: Sequence[str],
+    truth: Sequence[str],
+) -> dict[str, Any]:
+    """Score phase-segmentation recovery against ground truth.
+
+    A phase boundary is a step index ``i`` (``1 <= i < n``) where the label
+    changes from step ``i-1`` to step ``i``. We compare the predicted boundary
+    set (from per-step decoded labels) against the ground-truth boundary set and
+    report boundary precision/recall/F1 plus per-step label accuracy.
+
+    Args:
+        predicted: Per-step predicted labels.
+        truth: Per-step ground-truth labels (same length).
+
+    Returns:
+        A JSON-safe dict with ``boundary_precision``, ``boundary_recall``,
+        ``boundary_f1``, ``step_accuracy``, and the two boundary-index sets.
+    """
+
+    if len(predicted) != len(truth):
+        raise ValueError("predicted and truth must have equal length")
+    if not truth:
+        raise ValueError("truth must not be empty")
+
+    n = len(truth)
+    predicted_boundaries = {i for i in range(1, n) if predicted[i] != predicted[i - 1]}
+    true_boundaries = {i for i in range(1, n) if truth[i] != truth[i - 1]}
+    true_positives = len(predicted_boundaries & true_boundaries)
+    precision = (
+        true_positives / len(predicted_boundaries) if predicted_boundaries else 0.0
+    )
+    recall = true_positives / len(true_boundaries) if true_boundaries else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+    step_accuracy = sum(1 for p, t in zip(predicted, truth) if p == t) / n
+
+    return {
+        "boundary_precision": float(precision),
+        "boundary_recall": float(recall),
+        "boundary_f1": float(f1),
+        "step_accuracy": float(step_accuracy),
+        "predicted_boundaries": sorted(predicted_boundaries),
+        "true_boundaries": sorted(true_boundaries),
+    }
+
+
+def segmentation_evaluation(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+) -> dict[str, Any]:
+    """Measure phase-segmentation recovery from the smoothed forward-backward beliefs.
+
+    Per-fixture and pooled boundary precision/recall/F1 plus step accuracy are
+    reported, so the F3 segmentation module is now *measured* against the
+    hand-authored ground truth rather than only self-consistent.
+
+    Args:
+        corpus: The labelled fixtures.
+        model: The temporal generative model.
+
+    Returns:
+        A JSON-safe dict with ``per_fixture`` metrics and a ``pooled`` summary.
+    """
+
+    per_fixture: dict[str, object] = {}
+    pooled_predicted: list[str] = []
+    pooled_truth: list[str] = []
+    for fixture in corpus:
+        observation_ids = [int(o) for o in fixture_observation_ids(fixture)]
+        smoothing = forward_backward(observation_ids, model)
+        step_labels = [
+            model.hidden_state_labels[int(np.argmax(row))]
+            for row in smoothing.smoothed_posteriors
+        ]
+        per_fixture[fixture.name] = evaluate_segmentation(
+            step_labels, list(fixture.phase_labels)
+        )
+        pooled_predicted.extend(step_labels)
+        pooled_truth.extend(fixture.phase_labels)
+    return {
+        "per_fixture": per_fixture,
+        "pooled": evaluate_segmentation(pooled_predicted, pooled_truth),
+    }
+
+
+def _ambiguous_likelihood_temporal_model(
+    model: TemporalGenerativeModel,
+    blend: float,
+) -> TemporalGenerativeModel:
+    """Return a temporal model whose likelihood is blended toward uniform.
+
+    ``blend = 0`` keeps the authored likelihood; ``blend = 1`` makes the
+    likelihood uniform over observations (maximal per-step ambiguity). Each
+    column is renormalised so the result stays a valid categorical likelihood.
+    This is the controlled knob for the ambiguity ablation: it changes only
+    the observation model (``A``), leaving ``B`` and ``D`` identical.
+    """
+
+    authored = np.clip(np.asarray(model.A, dtype=float), 1e-6, None)
+    uniform = np.ones_like(authored) / authored.shape[1]
+    mixed = (1.0 - blend) * authored + blend * uniform
+    mixed = mixed / mixed.sum(axis=0, keepdims=True)
+    ambiguous = TemporalGenerativeModel(
+        A=mixed.astype(float),
+        B=np.asarray(model.B, dtype=float),
+        D=np.asarray(model.D, dtype=float),
+        observation_labels=model.observation_labels,
+        hidden_state_labels=model.hidden_state_labels,
+    )
+    ambiguous.validate()
+    return ambiguous
+
+
+def ambiguity_ablation(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+    blends: Sequence[float] | None = None,
+) -> dict[str, Any]:
+    """Sweep observation ambiguity and report decoder accuracy at each blend.
+
+    Because the authored likelihood is near-diagonal, per-step decoding already
+    resolves most phases and the temporal transition matrix adds little. Blending
+    the likelihood toward uniform makes individual observations ambiguous; here
+    the left-to-right transition structure carries real information. This
+    ablation therefore *demonstrates the mechanism* behind the head-to-head
+    result: the temporal advantage over the memoryless decoder emerges exactly
+    when observations become ambiguous (and the corpus is unchanged, only the
+    likelihood conditioning is swept).
+
+    Args:
+        corpus: The labelled fixtures.
+        model: The temporal generative model (supplies ``A``/``B``/``D``).
+        blends: Likelihood-ambiguity values to sweep (defaults to 0.0..1.0 in
+            steps of 0.1). Deterministic.
+
+    Returns:
+        A JSON-safe dict with ``blends``, per-blend ``rows`` of decoder mean
+        accuracies, and ``crossover_blend`` (the first blend at which the
+        temporal decoder beats the memoryless decoder).
+    """
+
+    if blends is None:
+        blends = tuple(round(float(v), 3) for v in np.linspace(0.0, 1.0, 11))
+    rows: list[dict[str, object]] = []
+    crossover: float | None = None
+    for blend in blends:
+        ambiguous = _ambiguous_likelihood_temporal_model(model, float(blend))
+        result = compare_models(corpus, ambiguous)
+        names = list(result.keys())
+
+        def _mean(key: str) -> float:
+            return float(sum(result[n][key] for n in names) / len(names))
+
+        temporal = _mean("temporal_accuracy")
+        memoryless = _mean("memoryless_accuracy")
+        sticky = _mean("static_accuracy")
+        viterbi = _mean("viterbi_accuracy")
+        gap = temporal - memoryless
+        if crossover is None and gap > 1e-9:
+            crossover = float(blend)
+        rows.append(
+            {
+                "blend": float(blend),
+                "temporal_accuracy": temporal,
+                "memoryless_accuracy": memoryless,
+                "static_accuracy": sticky,
+                "viterbi_accuracy": viterbi,
+                "temporal_minus_memoryless": float(gap),
+            }
+        )
+    return {
+        "blends": [float(v) for v in blends],
+        "rows": rows,
+        "crossover_blend": crossover,
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -610,4 +788,6 @@ def evaluation_payload(
         "pooled_calibration_bins": calibration_bins(
             pooled_posteriors, pooled_truth_ids
         ),
+        "segmentation": segmentation_evaluation(corpus, model),
+        "ambiguity_ablation": ambiguity_ablation(corpus, model),
     }

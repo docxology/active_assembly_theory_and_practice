@@ -77,6 +77,31 @@ underperforming it. This non-result is recorded explicitly in
 `advanced_active_never_worse` validation check, and bounded in claim CLM-013 —
 it is not laundered into a corpus-scale advantage.
 
+## Where temporal dynamics matter (ambiguity ablation)
+
+`ambiguity_ablation` blends the authored likelihood `A` toward uniform (0 =
+authored likelihood, 1 = fully ambiguous) while holding the corpus, transition
+matrix `B`, and prior `D` fixed, and recomputes every decoder at each blend.
+Because `A` is near-diagonal (each observation peaks sharply on one phase),
+per-step decoding is already near-saturated, so the temporal model adds no net
+advantage at blend 0. As observations become ambiguous, the memoryless and
+sticky decoders collapse while the temporal forward filter — using the
+left-to-right transition structure — retains accuracy. The crossover blend
+(first value where temporal beats memoryless) is recorded, so the head-to-head
+"no net advantage" result is explained *mechanistically* rather than left as a
+bare null. It is visualized as `output/figures/ambiguity_ablation.png` and bound
+by claim CLM-014. The ablation changes only the likelihood conditioning; it is a
+mechanism demonstration on the same transparent fixtures, not a claim about
+real-world observation noise.
+
+## Measured phase segmentation
+
+`segmentation_evaluation` decodes the smoothed forward-backward beliefs into
+per-step phases and compares the detected phase boundaries against the
+hand-authored ground truth, reporting boundary precision/recall/F1 and step
+accuracy per fixture and pooled. This makes the F3 segmentation module
+*measured*, not merely self-consistent (claim CLM-015).
+
 ## Validation binding
 
 | Artifact | Claim | Validation check |
@@ -85,6 +110,8 @@ it is not laundered into a corpus-scale advantage.
 | `temporal_inference.json` | CLM-010 | `advanced_temporal_artifacts_present` |
 | `phase_segments.json` | CLM-012 | `advanced_phase_segmentation_partition` |
 | `active_selection.json` | CLM-013 | `advanced_active_never_worse` |
+| `evaluation_report.json` (ambiguity_ablation) | CLM-014 | `advanced_ambiguity_ablation_shows_advantage` |
+| `evaluation_report.json` (segmentation) | CLM-015 | `advanced_segmentation_measured` |
 
 The `advanced_evaluation_freshness` check re-derives the headline summary from
 the live generator and compares it to the on-disk artifact, so a stale or

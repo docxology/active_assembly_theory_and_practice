@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -162,7 +163,7 @@ def active_selection_payload() -> dict[str, object]:
     }
 
 
-def evaluation_report_payload() -> dict[str, object]:
+def evaluation_report_payload() -> dict[str, Any]:
     """Corpus evaluation metrics with negative controls."""
 
     model = build_temporal_model()

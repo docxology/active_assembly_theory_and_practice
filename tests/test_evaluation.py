@@ -9,12 +9,15 @@ import pytest
 
 from src.corpus import build_corpus, fixture_observation_ids
 from src.evaluation import (
+    ambiguity_ablation,
     calibration,
     calibration_bins,
     compare_models,
     evaluate_decoding,
+    evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    segmentation_evaluation,
     shuffled_label_control,
     uniform_belief_control,
     wilson_ci,
@@ -369,6 +372,8 @@ def test_evaluation_payload_structure() -> None:
         "summary",
         "pooled_confusion",
         "pooled_calibration_bins",
+        "segmentation",
+        "ambiguity_ablation",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -397,3 +402,57 @@ def test_evaluation_payload_is_json_serializable() -> None:
     payload = evaluation_payload(corpus, model)
     # Must not raise.
     json.dumps(payload, sort_keys=True)
+
+
+# --------------------------------------------------------------------------- #
+# segmentation evaluation / ambiguity ablation
+# --------------------------------------------------------------------------- #
+def test_evaluate_segmentation_hand_computed() -> None:
+    predicted = ["a", "a", "b", "b", "c"]
+    truth = ["a", "a", "b", "b", "b"]
+    result = evaluate_segmentation(predicted, truth)
+    assert result["predicted_boundaries"] == [2, 4]
+    assert result["true_boundaries"] == [2]
+    assert result["boundary_precision"] == pytest.approx(0.5)
+    assert result["boundary_recall"] == pytest.approx(1.0)
+    assert result["boundary_f1"] == pytest.approx(2 / 3)
+    assert result["step_accuracy"] == pytest.approx(0.8)
+
+
+def test_evaluate_segmentation_length_mismatch_raises() -> None:
+    with pytest.raises(ValueError):
+        evaluate_segmentation(["a"], ["a", "b"])
+
+
+def test_segmentation_evaluation_pooled_is_measured() -> None:
+    result = segmentation_evaluation(build_corpus(), build_temporal_model())
+    pooled = result["pooled"]
+    assert pooled["boundary_f1"] > 0
+    assert pooled["step_accuracy"] > 0
+    assert set(result["per_fixture"].keys()) == {f.name for f in build_corpus()}
+
+
+def test_ambiguity_ablation_mechanism() -> None:
+    result = ambiguity_ablation(build_corpus(), build_temporal_model())
+    rows = result["rows"]
+    assert len(rows) == 11
+    first = rows[0]
+    assert first["blend"] == pytest.approx(0.0)
+    # No net advantage at the authored, informative likelihood.
+    assert first["temporal_minus_memoryless"] <= 1e-6
+    # Positive advantage once observations become ambiguous.
+    assert result["crossover_blend"] is not None
+    last = rows[-1]
+    assert last["temporal_accuracy"] > last["memoryless_accuracy"]
+    assert last["temporal_minus_memoryless"] > 0
+    # Deterministic.
+    assert json.dumps(result, sort_keys=True) == json.dumps(
+        ambiguity_ablation(build_corpus(), build_temporal_model()), sort_keys=True
+    )
+
+
+def test_ambiguity_ablation_custom_blends() -> None:
+    result = ambiguity_ablation(
+        build_corpus(), build_temporal_model(), blends=(0.0, 1.0)
+    )
+    assert [round(row["blend"], 3) for row in result["rows"]] == [0.0, 1.0]

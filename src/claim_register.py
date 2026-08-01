@@ -253,6 +253,38 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         boundary="Expected free energy genuinely varies across candidates (functional policy, not collapsed), so the corpus tie is a real null — no measurable advantage at this fixture scale — not a non-working policy; the active advantage is shown only as a mechanism in unit tests.",
         status="validated",
     ),
+    ClaimRecord(
+        claim_id="CLM-014",
+        claim_type="ambiguity_ablation",
+        statement="The temporal HMM gains a measurable decoding advantage over the memoryless per-step decoder exactly when observations become ambiguous (the authored likelihood is blended toward uniform), and has no net advantage at the authored, near-diagonal likelihood.",
+        support_keys=("friston2017activeinference",),
+        artifact_paths=(
+            "output/data/evaluation_report.json",
+            "output/figures/ambiguity_ablation.png",
+        ),
+        validation_checks=(
+            "advanced_ambiguity_ablation_shows_advantage",
+            "advanced_evaluation_freshness",
+        ),
+        boundary="The ablation changes only the likelihood conditioning (A) over the same byte corpus; it demonstrates the mechanism behind the head-to-head result, not a claim about real-world binary observation noise. Both directions are measured: no advantage at the authored likelihood, positive advantage at high ambiguity.",
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-015",
+        claim_type="segmentation_evaluation",
+        statement="The smoothed forward-backward beliefs segment traces into program phases with a measured, non-trivial boundary F1 and step accuracy against the hand-authored ground truth.",
+        support_keys=("friston2017activeinference",),
+        artifact_paths=(
+            "output/data/phase_segments.json",
+            "output/data/evaluation_report.json",
+        ),
+        validation_checks=(
+            "advanced_segmentation_measured",
+            "advanced_phase_segmentation_partition",
+        ),
+        boundary="Segmentation reflects the hand-authored generative model, not a discovered ground-truth control-flow structure; the boundary-recovery metric quantifies how well the model's smoothed beliefs align with the authored phase boundaries.",
+        status="validated",
+    ),
 )
 
 

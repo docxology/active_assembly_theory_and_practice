@@ -82,6 +82,7 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
 - `output/figures/active_efe.png`
 - `output/figures/calibration_curve.png`
 - `output/figures/confusion_matrix.png`
+- `output/figures/ambiguity_ablation.png`
 - `output/figures/validation_summary.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 
@@ -96,7 +97,7 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
   binary so regeneration stays reproducible. Bumping the pin requires a
   deliberate change plus a fresh backend run.
 - The validation gate (`scripts/validate_analysis_outputs.py`) recomputes each
-  tracked artifact's SHA-256 and byte size and asserts the full 52-check surface.
+  tracked artifact's SHA-256 and byte size and asserts the full 55-check surface.
 The pinned Julia/RxInfer toolchain (see `EXPECTED_JULIA_VERSION` /
 `EXPECTED_RXINFER_VERSION` in `src/rxinfer_bridge.py`) must be present; the gate
 fails loudly on toolchain drift, so a fresh clone should install the pinned

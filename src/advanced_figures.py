@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .figures import (
     plot_active_efe_trajectory,
+    plot_ambiguity_ablation,
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_model_comparison_bars,
@@ -52,11 +53,11 @@ def write_temporal_belief_figures(output_dir: Path = OUTPUT_DIR) -> list[str]:
 
 
 def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
-    """Write calibration-curve and pooled-confusion figures from the evaluation report.
+    """Write calibration-curve, confusion-matrix, and ambiguity-ablation figures.
 
     Returns:
-        A dict with keys ``calibration_curve`` and ``confusion_matrix`` mapping
-        to their project-relative PNG paths.
+        A dict with keys ``calibration_curve``, ``confusion_matrix``, and
+        ``ambiguity_ablation`` mapping to their project-relative PNG paths.
     """
 
     figure_dir = output_dir / "figures"
@@ -72,9 +73,13 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     confusion_path = figure_dir / "confusion_matrix.png"
     plot_confusion_matrix(evaluation_report["pooled_confusion"], confusion_path)
 
+    ablation_path = figure_dir / "ambiguity_ablation.png"
+    plot_ambiguity_ablation(evaluation_report["ambiguity_ablation"], ablation_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
+        "ambiguity_ablation": str(ablation_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -115,5 +120,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "active_efe": str(active_efe_path.relative_to(PROJECT_ROOT)),
         "calibration_curve": stats_paths["calibration_curve"],
         "confusion_matrix": stats_paths["confusion_matrix"],
+        "ambiguity_ablation": stats_paths["ambiguity_ablation"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

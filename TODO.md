@@ -183,11 +183,30 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-07-31):** 157 passed, 0 failed. Coverage 94.56% (gate
+**Current state (2026-07-31):** 164 passed, 0 failed. Coverage 94.68% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **52/52** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **55/55** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Research Advances (2026-07-31)
+
+- **Ambiguity ablation (CLM-014)** — the head-to-head "temporal has no net
+  advantage over memoryless" is now explained *mechanistically*, not left as a
+  bare null. `ambiguity_ablation` sweeps the likelihood `A` toward uniform
+  (holding corpus, `B`, `D` fixed): at the authored, near-diagonal likelihood
+  there is no advantage (gap -0.06), but as observations become ambiguous the
+  memoryless/sticky decoders collapse while the temporal forward filter retains
+  accuracy (at blend 1.0: temporal 0.604 vs memoryless 0.229; crossover at 0.8).
+  New figure `ambiguity_ablation.png`; validation check
+  `advanced_ambiguity_ablation_shows_advantage` binds both directions.
+- **Measured segmentation (CLM-015)** — the F3 segmentation module is now
+  *measured* against ground truth (`evaluate_segmentation`): pooled boundary
+  F1 0.64 and step accuracy 0.67 (per fixture in the evaluation report).
+  Validation check `advanced_segmentation_measured`.
+- Net effect: figures 20->21, oracle 52->55, claims 13->15 (CLM-014, CLM-015);
+  suite 157->164, coverage 94.56%->94.68%.
+- The two honest non-results remain, now explained rather than removed.
 
 ## Docs / Tests / Visualization Pass (2026-07-31)
 

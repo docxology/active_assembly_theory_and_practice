@@ -69,6 +69,38 @@ line are well calibrated, and per-bin step counts are annotated.*
 phase recovery; off-diagonal mass reveals which phases are confusable (notably the
 `exit` phase, which shares observation categories with earlier phases).*
 
+## Where temporal dynamics matter {#sec:ambiguity-ablation}
+
+The head-to-head result — temporal beats the sticky filter but not the memoryless
+decoder — has a precise, measured mechanism. The authored likelihood is nearly
+diagonal: each observation category peaks sharply on one phase, so a single
+observation already reveals the phase and transition structure adds little. To
+surface this, we blend the likelihood toward uniform (observation ambiguity),
+holding the corpus, transition matrix, and prior fixed. As ambiguity rises,
+per-step decoding collapses — at blend `{{AMBIGUITY_HIGH_BLEND}}` the memoryless
+decoder falls to `{{AMBIGUITY_HIGH_MEMORYLESS_ACC}}`, while the temporal forward
+filter, using the left-to-right transition structure, retains
+`{{AMBIGUITY_HIGH_TEMPORAL_ACC}}`. The temporal advantage over the memoryless
+decoder first emerges at blend `{{AMBIGUITY_CROSSOVER_BLEND}}`. The result is
+honest in both directions: with the authored, informative likelihood there is no
+net temporal advantage, and a positive advantage appears exactly when
+observations become ambiguous. This is a mechanism demonstration on the same
+transparent fixtures (only the likelihood conditioning `A` is swept; `B` and `D`
+are fixed), not a claim about real-world observation noise.
+
+![Decoder accuracy versus observation ambiguity]({{AMBIGUITY_ABLATION_FIGURE}}){#fig:ambiguity-ablation}
+*Temporal, memoryless, sticky, and Viterbi mean accuracy as the likelihood is
+blended toward uniform. The temporal line stays high as per-step decoding
+degrades; the crossover marks where temporal first beats memoryless.*
+
+## How well we segment phases {#sec:segmentation-evaluation}
+
+Segmentation is not only self-consistent but measured. Decoding the smoothed
+forward-backward beliefs into per-step phases and comparing the detected phase
+boundaries against the hand-authored ground truth yields a pooled boundary
+F1 of `{{SEGMENTATION_BOUNDARY_F1}}` and a per-step accuracy of
+`{{SEGMENTATION_STEP_ACC}}`, available per fixture in the evaluation report.
+
 ![Per-fixture decoder accuracy: sticky vs memoryless vs temporal]({{MODEL_COMPARISON_FIGURE}}){#fig:model-comparison}
 *Phase-decoding accuracy by fixture for the three decoders sharing the same
 likelihood and prior. The temporal HMM (teal) clearly beats the v0.1 sticky filter

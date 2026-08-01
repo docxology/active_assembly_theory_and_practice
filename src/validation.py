@@ -264,6 +264,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "active_efe.png",
         "calibration_curve.png",
         "confusion_matrix.png",
+        "ambiguity_ablation.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -433,6 +434,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "ACTIVE_EFE_FIGURE",
         "CALIBRATION_CURVE_FIGURE",
         "CONFUSION_MATRIX_FIGURE",
+        "AMBIGUITY_ABLATION_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -718,6 +720,28 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     ]
     policy_functional = (max(efe_values) - min(efe_values)) > 1e-6
 
+    # Segmentation evaluation: the smoothed beliefs must genuinely recover the
+    # ground-truth phase boundaries (recomputed from the live generator, not a
+    # hardcoded literal).
+    seg_pooled = fresh_payload["segmentation"]["pooled"]
+    seg_f1 = float(seg_pooled["boundary_f1"])
+    seg_step = float(seg_pooled["step_accuracy"])
+    segmentation_measured = seg_f1 > 0 and seg_step > 0
+
+    # Ambiguity ablation: the temporal advantage over the memoryless decoder
+    # must EMERGE as observations become ambiguous (positive gap at high blend)
+    # and be ABSENT at the authored likelihood (gap <= 0 at blend 0) — binding
+    # both directions of the mechanism honestly.
+    ablation_payload = fresh_payload["ambiguity_ablation"]
+    ablation_rows = list(ablation_payload["rows"])
+    blend0_gap = float(ablation_rows[0]["temporal_minus_memoryless"])
+    max_blend_row = max(ablation_rows, key=lambda row: float(row["blend"]))
+    high_blend_gap = float(max_blend_row["temporal_minus_memoryless"])
+    crossover_blend = ablation_payload["crossover_blend"]
+    ablation_shows_advantage = (
+        high_blend_gap > 0 and blend0_gap <= 1e-6 and crossover_blend is not None
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -760,6 +784,17 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             "advanced_active_never_worse",
             active_never_worse,
             f"never_worse={active_never_worse} ties={active_summary.get('ties')}",
+        ),
+        _check(
+            "advanced_segmentation_measured",
+            segmentation_measured,
+            f"boundary_f1={seg_f1:.3f} step_acc={seg_step:.3f}",
+        ),
+        _check(
+            "advanced_ambiguity_ablation_shows_advantage",
+            ablation_shows_advantage,
+            f"crossover={crossover_blend} blend0_gap={blend0_gap:+.3f} "
+            f"high_blend_gap={high_blend_gap:+.3f}",
         ),
         _check(
             "advanced_evaluation_freshness",

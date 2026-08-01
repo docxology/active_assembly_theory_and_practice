@@ -766,6 +766,59 @@ def plot_confusion_matrix(pooled: dict[str, object], output_path: Path) -> Path:
     return output_path
 
 
+def plot_ambiguity_ablation(ablation: dict[str, object], output_path: Path) -> Path:
+    """Plot decoder mean accuracy versus observation-ambiguity blend.
+
+    As the likelihood is blended toward uniform (x-axis), per-step observation
+    decoding degrades and the temporal transition structure carries the
+    information: the temporal line stays high while memoryless and sticky fall.
+    The crossover (where temporal first beats memoryless) is annotated.
+    """
+
+    rows = cast(list[dict[str, object]], ablation.get("rows"))
+    if not rows:
+        raise ValueError("ambiguity ablation must contain rows")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    blends = [cast(float, row["blend"]) for row in rows]
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    series = {
+        "temporal HMM": ("temporal_accuracy", PALETTE[2]),
+        "memoryless": ("memoryless_accuracy", PALETTE[1]),
+        "sticky (v0.1)": ("static_accuracy", PALETTE[0]),
+        "viterbi": ("viterbi_accuracy", "#CC79A7"),
+    }
+    for label, (key, color) in series.items():
+        values = [cast(float, row[key]) for row in rows]
+        ax.plot(
+            blends,
+            values,
+            marker="o",
+            linewidth=2,
+            color=color,
+            label=label,
+        )
+    crossover: float | None = cast(float | None, ablation.get("crossover_blend"))
+    if crossover is not None:
+        ax.axvline(
+            crossover,
+            color="#333333",
+            linewidth=1.0,
+            linestyle=":",
+            label=f"crossover {crossover:.1f}",
+        )
+    ax.set_xlabel("Observation-ambiguity blend (0 = authored likelihood, 1 = uniform)")
+    ax.set_ylabel("Mean decoding accuracy")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title("Temporal advantage emerges as observations become ambiguous")
+    ax.legend(loc="lower left", fontsize=8)
+    ax.grid(axis="both", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -859,6 +912,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "fixtures. Diagonal cells are correct phase recoveries; off-diagonal mass shows which "
         "phases are confusable (e.g. the exit phase sharing observation categories with earlier "
         "phases)."
+    ),
+    "ambiguity_ablation": (
+        "Decoder mean accuracy versus observation-ambiguity blend. As the authored likelihood is "
+        "blended toward uniform, per-step observation decoding degrades and the left-to-right "
+        "temporal transition structure carries the information: the temporal line stays high while "
+        "memoryless and sticky fall, with the crossover (temporal first beating memoryless) marked. "
+        "This demonstrates the mechanism behind the head-to-head result."
     ),
 }
 
