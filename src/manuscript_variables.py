@@ -39,6 +39,7 @@ def generate_variables() -> dict[str, str]:
     ablation_rows = list(ablation["rows"])
     max_blend_row = max(ablation_rows, key=lambda row: row["blend"])
     seg_pooled = evaluation_report["segmentation"]["pooled"]
+    stability = evaluation_report["corpus_stability"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -121,6 +122,9 @@ def generate_variables() -> dict[str, str]:
         ),
         "SEGMENTATION_BOUNDARY_F1": f"{seg_pooled['boundary_f1']:.3f}",
         "SEGMENTATION_STEP_ACC": f"{seg_pooled['step_accuracy']:.3f}",
+        "CORPUS_TEMPORAL_SPAN": f"{stability['temporal_pooled_range']['span']:.3f}",
+        "CORPUS_TEMPORAL_MIN": f"{stability['temporal_pooled_range']['min']:.3f}",
+        "CORPUS_TEMPORAL_MAX": f"{stability['temporal_pooled_range']['max']:.3f}",
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
@@ -148,6 +152,7 @@ def generate_variables() -> dict[str, str]:
         "SEGMENTATION_RIBBONS_FIGURE": (
             f"../{advanced_figure_paths['segmentation_ribbons']}"
         ),
+        "CORPUS_STABILITY_FIGURE": f"../{advanced_figure_paths['corpus_stability']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

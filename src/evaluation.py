@@ -703,6 +703,101 @@ def ambiguity_ablation(
     }
 
 
+def pooled_decoding_accuracies(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+) -> dict[str, float]:
+    """Pooled (micro) decoding accuracy of each decoder over the given corpus.
+
+    Hits and totals are accumulated across all fixture steps, so the pools are
+    comparable to the Wilson CIs reported in the summary (which bracket pooled,
+    not macro, accuracy).
+    """
+
+    hits = {"temporal": 0, "static": 0, "memoryless": 0}
+    total = 0
+    for fixture in corpus:
+        observation_ids = [int(o) for o in fixture_observation_ids(fixture)]
+        truth = list(fixture.phase_labels)
+        temporal = forward_filter(observation_ids, model).most_likely_states
+        static = _static_filter_labels(observation_ids, model)
+        memoryless = _memoryless_decoder_labels(observation_ids, model)
+        hits["temporal"] += sum(1 for p, t in zip(temporal, truth) if p == t)
+        hits["static"] += sum(1 for p, t in zip(static, truth) if p == t)
+        hits["memoryless"] += sum(1 for p, t in zip(memoryless, truth) if p == t)
+        total += len(truth)
+    if not total:
+        return {"temporal": 0.0, "static": 0.0, "memoryless": 0.0}
+    return {key: float(count / total) for key, count in hits.items()}
+
+
+def corpus_stability_analysis(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+) -> dict[str, Any]:
+    """Leave-one-out sensitivity of the pooled decoding accuracies.
+
+    Because the corpus is small (see the manuscript's honest limits), the
+    headline pooled accuracies could in principle be driven by a single fixture.
+    This analysis holds out one fixture at a time and recomputes the pooled
+    accuracies over the remaining corpus, reporting the resulting range and
+    whether the headline pattern (temporal beats the static filter, and stays
+    well above chance) survives every single-fixture removal.
+
+    Args:
+        corpus: The labelled fixtures.
+        model: The temporal generative model.
+
+    Returns:
+        A JSON-safe dict with ``reference`` (full-corpus pools), ``per_holdout``
+        results, per-decoder pooled ``*_range``, and two booleans binding whether
+        the pattern holds under every holdout.
+    """
+
+    reference = pooled_decoding_accuracies(corpus, model)
+    per_holdout: list[dict[str, object]] = []
+    temporal_above_static = True
+    temporal_above_chance = True
+    chance_floor = 0.2
+    clearance = 0.25  # temporal pooled must stay >= chance+clearance under holdout
+
+    for fixture in corpus:
+        reduced = [f for f in corpus if f is not fixture]
+        accuracies = pooled_decoding_accuracies(reduced, model)
+        per_holdout.append(
+            {
+                "held_out_fixture": fixture.name,
+                "temporal": accuracies["temporal"],
+                "static": accuracies["static"],
+                "memoryless": accuracies["memoryless"],
+            }
+        )
+        if not (accuracies["temporal"] > accuracies["static"]):
+            temporal_above_static = False
+        if not (accuracies["temporal"] > chance_floor + clearance):
+            temporal_above_chance = False
+
+    def _range(key: str) -> dict[str, float]:
+        values = [float(cast(float, row[key])) for row in per_holdout]
+        return {
+            "min": min(values),
+            "max": max(values),
+            "span": max(values) - min(values),
+        }
+
+    return {
+        "reference": reference,
+        "per_holdout": per_holdout,
+        "temporal_pooled_range": _range("temporal"),
+        "static_pooled_range": _range("static"),
+        "memoryless_pooled_range": _range("memoryless"),
+        "chance_floor": float(chance_floor),
+        "chance_clearance": float(clearance),
+        "all_holdouts_temporal_above_static": temporal_above_static,
+        "all_holdouts_temporal_above_chance": temporal_above_chance,
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -842,4 +937,5 @@ def evaluation_payload(
         ),
         "segmentation": segmentation_evaluation(corpus, model),
         "ambiguity_ablation": ambiguity_ablation(corpus, model),
+        "corpus_stability": corpus_stability_analysis(corpus, model),
     }

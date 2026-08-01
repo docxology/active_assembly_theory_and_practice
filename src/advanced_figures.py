@@ -20,6 +20,7 @@ from .figures import (
     plot_ambiguity_ablation,
     plot_calibration_curve,
     plot_confusion_matrix,
+    plot_corpus_stability,
     plot_model_comparison_bars,
     plot_segmentation_ribbons,
     plot_temporal_beliefs_heatmap,
@@ -80,11 +81,15 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     ribbons_path = figure_dir / "segmentation_ribbons.png"
     plot_segmentation_ribbons(evaluation_report, ribbons_path)
 
+    stability_path = figure_dir / "corpus_stability.png"
+    plot_corpus_stability(evaluation_report["corpus_stability"], stability_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
         "ambiguity_ablation": str(ablation_path.relative_to(PROJECT_ROOT)),
         "segmentation_ribbons": str(ribbons_path.relative_to(PROJECT_ROOT)),
+        "corpus_stability": str(stability_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -127,5 +132,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "confusion_matrix": stats_paths["confusion_matrix"],
         "ambiguity_ablation": stats_paths["ambiguity_ablation"],
         "segmentation_ribbons": stats_paths["segmentation_ribbons"],
+        "corpus_stability": stats_paths["corpus_stability"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

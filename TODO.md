@@ -183,11 +183,27 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 174 passed, 0 failed. Coverage 95.19% (gate
+**Current state (2026-08-01):** 179 passed, 0 failed. Coverage 95.12% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **56/56** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **58/58** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Corpus-Stability Research Pass (2026-08-01)
+
+- **Research**: new `corpus_stability_analysis` (leave-one-out sensitivity) —
+  holds out each fixture in turn and recomputes the pooled decoding accuracies.
+  Measured, honest: the pooled temporal accuracy ranges from 0.583 to 0.714
+  (span 0.131) across single-fixture holdouts, stays above the pooled static
+  (sticky) accuracy under every removal, and remains well above the 0.2 chance
+  floor. This quantifies the small-corpus fragility the manuscript owns.
+  Validation check `advanced_corpus_stability_measured` binds the result.
+- **Visualization**: new `corpus_stability.png` (pooled temporal accuracy for the
+  full corpus and each holdout, vs static and chance). Figures 22->23.
+- **Manuscript**: new results subsection "Robustness to the small corpus" with
+  tokens for the range and the figure.
+- Registry: oracle 56->58 (new figure + new check). Suite 174->179, coverage
+  95.19%->95.12%.
 
 ## Visualization, Writing & Scholarship Pass (2026-08-01)
 

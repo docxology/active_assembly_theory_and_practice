@@ -266,6 +266,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "confusion_matrix.png",
         "ambiguity_ablation.png",
         "segmentation_ribbons.png",
+        "corpus_stability.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -437,6 +438,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "CONFUSION_MATRIX_FIGURE",
         "AMBIGUITY_ABLATION_FIGURE",
         "SEGMENTATION_RIBBONS_FIGURE",
+        "CORPUS_STABILITY_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -756,6 +758,18 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         and seg_blend0_temporal <= seg_blend0_memoryless + 1e-6
     )
 
+    # Corpus stability: the headline "temporal beats the static filter, and is
+    # well above chance" must survive every single-fixture holdout, confirmed by
+    # recomputation (not a hardcoded literal).
+    stability = fresh_payload["corpus_stability"]
+    stability_holdouts = list(stability["per_holdout"])
+    stability_span = float(stability["temporal_pooled_range"]["span"])
+    stability_ok = (
+        len(stability_holdouts) > 0
+        and bool(stability["all_holdouts_temporal_above_static"])
+        and bool(stability["all_holdouts_temporal_above_chance"])
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -811,6 +825,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_corpus_stability_measured",
+            stability_ok,
+            f"temporal_pooled_span={stability_span:.3f} "
+            f"holdouts={len(stability_holdouts)}",
         ),
         _check(
             "advanced_evaluation_freshness",

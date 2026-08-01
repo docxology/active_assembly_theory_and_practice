@@ -117,6 +117,25 @@ boundary mismatch between the two rows.
 
 ![Phase segmentation: ground truth vs smoothed prediction]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons}
 
+## Robustness to the small corpus {#sec:corpus-stability}
+
+Because the corpus has only `{{CORPUS_FIXTURE_COUNT}}` fixtures, pooled
+accuracies could in principle be driven by a single fixture. A leave-one-out
+analysis holds out each fixture in turn and recomputes the pooled accuracies over
+the remaining corpus: the pooled temporal accuracy ranges from
+`{{CORPUS_TEMPORAL_MIN}}` to `{{CORPUS_TEMPORAL_MAX}}` (span
+`{{CORPUS_TEMPORAL_SPAN}}`), stays above the pooled static (sticky) accuracy
+under every single-fixture removal, and remains well above the 0.2 chance floor.
+This makes the small-corpus fragility explicit rather than hidden: the headline
+temporal result is not the artifact of any one fixture, and the span quantifies
+how much a single fixture moves the estimate.
+
+![Leave-one-out corpus stability]({{CORPUS_STABILITY_FIGURE}}){#fig:corpus-stability}
+*Pooled temporal accuracy for the full corpus and after holding out each single
+fixture (bars), versus pooled static accuracy (dashed) and chance (dotted). The
+headline result survives every single-fixture removal; the span quantifies the
+small-corpus fragility.*
+
 ![Per-fixture decoder accuracy: sticky vs memoryless vs temporal]({{MODEL_COMPARISON_FIGURE}}){#fig:model-comparison}
 *Phase-decoding accuracy by fixture for the three decoders sharing the same
 likelihood and prior. The temporal HMM (teal) clearly beats the v0.1 sticky filter

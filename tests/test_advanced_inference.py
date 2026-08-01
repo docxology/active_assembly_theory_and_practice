@@ -18,6 +18,7 @@ from src.figures import (
     plot_ambiguity_ablation,
     plot_calibration_curve,
     plot_confusion_matrix,
+    plot_corpus_stability,
     plot_segmentation_ribbons,
 )
 
@@ -207,3 +208,34 @@ def test_segmentation_ribbons_empty_per_fixture_raises(tmp_path) -> None:
     report: dict[str, object] = {"segmentation": {"per_fixture": {}}}
     with pytest.raises(ValueError):
         plot_segmentation_ribbons(report, tmp_path / "segmentation_ribbons.png")
+
+
+def test_corpus_stability_figure_written_nonempty(tmp_path) -> None:
+    stability: dict[str, object] = {
+        "reference": {"temporal": 0.667, "static": 0.389, "memoryless": 0.722},
+        "per_holdout": [
+            {
+                "held_out_fixture": "x86_accumulator",
+                "temporal": 0.643,
+                "static": 0.429,
+                "memoryless": 0.714,
+            },
+            {
+                "held_out_fixture": "x86_bitwise",
+                "temporal": 0.714,
+                "static": 0.357,
+                "memoryless": 0.714,
+            },
+        ],
+        "temporal_pooled_range": {"min": 0.643, "max": 0.714, "span": 0.071},
+        "chance_floor": 0.2,
+    }
+    path = plot_corpus_stability(stability, tmp_path / "corpus_stability.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_corpus_stability_figure_empty_raises(tmp_path) -> None:
+    stability: dict[str, object] = {"per_holdout": [], "reference": {}}
+    with pytest.raises(ValueError):
+        plot_corpus_stability(stability, tmp_path / "corpus_stability.png")

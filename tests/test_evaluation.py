@@ -13,10 +13,12 @@ from src.evaluation import (
     calibration,
     calibration_bins,
     compare_models,
+    corpus_stability_analysis,
     evaluate_decoding,
     evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    pooled_decoding_accuracies,
     segmentation_evaluation,
     shuffled_label_control,
     uniform_belief_control,
@@ -374,6 +376,7 @@ def test_evaluation_payload_structure() -> None:
         "pooled_calibration_bins",
         "segmentation",
         "ambiguity_ablation",
+        "corpus_stability",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -436,6 +439,51 @@ def test_segmentation_evaluation_pooled_is_measured() -> None:
         assert len(entry["predicted_labels"]) == len(entry["truth_labels"]) > 0
 
 
+def test_ambiguity_ablation_custom_blends() -> None:
+    result = ambiguity_ablation(
+        build_corpus(), build_temporal_model(), blends=(0.0, 1.0)
+    )
+    assert [round(row["blend"], 3) for row in result["rows"]] == [0.0, 1.0]
+
+
+def test_pooled_decoding_accuracies_match_summary() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    pooled = pooled_decoding_accuracies(corpus, model)
+    summary = evaluation_payload(corpus, model)["summary"]
+    assert pooled["temporal"] == pytest.approx(summary["pooled_temporal_accuracy"])
+    assert pooled["static"] == pytest.approx(summary["pooled_static_accuracy"])
+    assert pooled["memoryless"] == pytest.approx(summary["pooled_memoryless_accuracy"])
+
+
+def test_corpus_stability_honest_and_deterministic() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    result = corpus_stability_analysis(corpus, model)
+    assert len(result["per_holdout"]) == len(corpus)
+    # The headline result survives every single-fixture removal.
+    assert result["all_holdouts_temporal_above_static"] is True
+    assert result["all_holdouts_temporal_above_chance"] is True
+    range_ = result["temporal_pooled_range"]
+    assert 0.0 < range_["span"] < 0.5
+    assert 0.0 < range_["min"] <= range_["max"] < 1.0
+    # The full-corpus reference matches the pooled breakdown of the payload.
+    assert result["reference"]["temporal"] == pytest.approx(
+        evaluation_payload(corpus, model)["summary"]["pooled_temporal_accuracy"]
+    )
+    # Deterministic.
+    assert json.dumps(result, sort_keys=True) == json.dumps(
+        corpus_stability_analysis(corpus, model), sort_keys=True
+    )
+
+
+def test_corpus_stability_holdout_fixtures_named() -> None:
+    corpus = build_corpus()
+    result = corpus_stability_analysis(corpus, build_temporal_model())
+    names = {row["held_out_fixture"] for row in result["per_holdout"]}
+    assert names == {f.name for f in corpus}
+
+
 def test_ambiguity_ablation_mechanism() -> None:
     result = ambiguity_ablation(build_corpus(), build_temporal_model())
     rows = result["rows"]
@@ -460,10 +508,3 @@ def test_ambiguity_ablation_mechanism() -> None:
     assert json.dumps(result, sort_keys=True) == json.dumps(
         ambiguity_ablation(build_corpus(), build_temporal_model()), sort_keys=True
     )
-
-
-def test_ambiguity_ablation_custom_blends() -> None:
-    result = ambiguity_ablation(
-        build_corpus(), build_temporal_model(), blends=(0.0, 1.0)
-    )
-    assert [round(row["blend"], 3) for row in result["rows"]] == [0.0, 1.0]

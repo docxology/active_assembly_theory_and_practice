@@ -949,6 +949,71 @@ def plot_segmentation_ribbons(
     return output_path
 
 
+def plot_corpus_stability(stability: dict[str, object], output_path: Path) -> Path:
+    """Plot leave-one-out pooled temporal accuracy to quantify corpus stability.
+
+    Bars show the pooled temporal decoding accuracy on the full corpus and after
+    holding out each single fixture; the dashed line is the pooled static (sticky)
+    accuracy and the dotted line is chance. The headline temporal result surviving
+    every single-fixture removal is made visual, and the span is annotated so the
+    small-corpus fragility is explicit rather than hidden.
+    """
+
+    reference = cast(dict[str, object], stability.get("reference", {}))
+    per_holdout = cast(list[dict[str, object]], stability.get("per_holdout", []))
+    if not per_holdout:
+        raise ValueError("corpus stability must contain per_holdout rows")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    labels = ["full corpus"] + [
+        cast(str, row["held_out_fixture"]).replace("x86_", "") for row in per_holdout
+    ]
+    temporal = [cast(float, reference.get("temporal", 0.0))] + [
+        cast(float, row["temporal"]) for row in per_holdout
+    ]
+    static = [cast(float, reference.get("static", 0.0))] + [
+        cast(float, row["static"]) for row in per_holdout
+    ]
+    x = np.arange(len(labels))
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.4))
+    ax.bar(
+        x, temporal, width=0.55, color=PALETTE[2], label="temporal HMM pooled accuracy"
+    )
+    ax.plot(
+        x,
+        static,
+        marker="x",
+        linewidth=1.5,
+        linestyle="--",
+        color=PALETTE[0],
+        label="static (sticky) pooled",
+    )
+    chance = float(cast(float, stability.get("chance_floor", 0.2)))
+    ax.axhline(
+        chance,
+        color="#555555",
+        linewidth=1.0,
+        linestyle=":",
+        label=f"chance ({chance:.1f})",
+    )
+    pooled_range = cast(dict[str, object], stability.get("temporal_pooled_range", {}))
+    span = float(cast(float, pooled_range.get("span", 0.0)))
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=8)
+    ax.set_ylabel("Pooled decoding accuracy")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title(
+        f"Corpus stability: leave-one-out pooled temporal accuracy (span {span:.2f})"
+    )
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1058,6 +1123,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "smoothed forward-backward beliefs; contiguous same-phase runs share a color so phase "
         "boundaries appear as color changes. The pooled boundary F1 is shown in the title, making "
         "the measured phase segmentation (CLM-015) visual."
+    ),
+    "corpus_stability": (
+        "Leave-one-out corpus stability. Bars are the pooled temporal forward-filter accuracy on "
+        "the full corpus and after holding out each single fixture; the dashed line is the pooled "
+        "static (sticky) accuracy and the dotted line is chance. The headline temporal result "
+        "survives every single-fixture removal, and the annotated span quantifies the small-corpus "
+        "fragility explicitly."
     ),
 }
 
