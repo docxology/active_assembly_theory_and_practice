@@ -73,6 +73,12 @@ reproducibility manifest, and a **figure-set oracle** that requires the expected
 temporal-belief heatmap, the decoder-comparison bars, and the active-EFE
 trajectory.
 
+All deterministic gates (pytest with the 90% coverage gate, `ruff check`,
+`ruff format --check`, `mypy`, and this validation oracle) can be run together
+with `scripts/run_full_verification.sh`; add `--julia` to also run the Julia
+backend `Pkg.test()`. The script prints a pass/fail table and exits non-zero if
+any step fails.
+
 The gate also enforces **toolchain drift**: the native Julia/RxInfer backend
 asserts its version against the pinned `EXPECTED_JULIA_VERSION` in
 `src/rxinfer_bridge.py`. When the pinned version is installed,

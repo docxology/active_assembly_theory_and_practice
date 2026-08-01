@@ -183,11 +183,29 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-07-31):** 164 passed, 0 failed. Coverage 94.68% (gate
+**Current state (2026-08-01):** 172 passed, 0 failed. Coverage 95.02% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
 reports **55/55** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Completeness & Hardening Pass (2026-08-01)
+
+- **Tests**: new `tests/test_optional_adapters.py` covers the availability-probe
+  logic with real modules (numpy resolves, stdlib `os` -> "unknown",
+  absent module -> None, absent command -> optional/unavailable);
+  `test_rxinfer_bridge` adds the missing-file and unknown-source-field branches.
+  Suite 164->172, coverage 94.68%->95.02% (weakest modules rxinfer_bridge and
+  optional_adapters both raised).
+- **Orchestration**: `scripts/run_full_verification.sh` runs every deterministic
+  gate (pytest+coverage, ruff check, ruff format --check, mypy, 55-oracle
+  validation) as one command with a pass/fail table and non-zero exit on any
+  failure; `--julia` adds the backend `Pkg.test()`. Documented in README and
+  docs/verification.md; syntax-checked by a new test_scripts_smoke test.
+- **Manuscript**: 06_redteam_limits updated to reflect the mechanically-explained
+  temporal result (CLM-014) and measured segmentation (CLM-015), with precise
+  future work (categorical-HMM RxInfer backend, larger/ambiguous corpus,
+  parameter learning).
 
 ## Research Advances (2026-07-31)
 

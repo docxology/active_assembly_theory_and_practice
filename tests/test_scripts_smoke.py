@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -61,3 +62,17 @@ def test_manuscript_variable_script_runs_and_hydrates_manuscript() -> None:
     hydrated_abstract = PROJECT_ROOT / "output/manuscript/00_abstract.md"
     assert hydrated_abstract.exists()
     assert "{{" not in hydrated_abstract.read_text(encoding="utf-8")
+
+
+def test_full_verification_orchestrator_is_valid_shell() -> None:
+    script = PROJECT_ROOT / "scripts/run_full_verification.sh"
+    assert script.exists()
+    assert os.access(script, os.X_OK)
+    # Syntax-check the orchestrator without executing any gate.
+    completed = subprocess.run(
+        ["bash", "-n", str(script)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0

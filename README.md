@@ -98,6 +98,9 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
   deliberate change plus a fresh backend run.
 - The validation gate (`scripts/validate_analysis_outputs.py`) recomputes each
   tracked artifact's SHA-256 and byte size and asserts the full 55-check surface.
+  All deterministic gates can be run together with `scripts/run_full_verification.sh`
+  (add `--julia` to also run the Julia backend `Pkg.test()`); it fails fast and
+  prints a pass/fail table.
 The pinned Julia/RxInfer toolchain (see `EXPECTED_JULIA_VERSION` /
 `EXPECTED_RXINFER_VERSION` in `src/rxinfer_bridge.py`) must be present; the gate
 fails loudly on toolchain drift, so a fresh clone should install the pinned

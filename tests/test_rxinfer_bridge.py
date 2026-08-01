@@ -97,6 +97,18 @@ def test_load_free_energy_records_empty_trace_raises(tmp_path) -> None:
         load_free_energy_records(path)
 
 
+def test_load_free_energy_records_missing_file_raises(tmp_path) -> None:
+    with pytest.raises(FileNotFoundError, match="missing"):
+        load_free_energy_records(tmp_path / "does_not_exist.jsonl")
+
+
+def test_validate_free_energy_records_rejects_unknown_source() -> None:
+    record = _valid_free_energy_record()
+    record["source_field"] = "result.something_else"
+    with pytest.raises(ValueError, match="source"):
+        validate_free_energy_records([record])
+
+
 def test_validate_free_energy_records_rejects_missing_fields() -> None:
     record = _valid_free_energy_record()
     record.pop("value")
