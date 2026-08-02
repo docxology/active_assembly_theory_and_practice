@@ -1123,6 +1123,131 @@ def plot_decoder_calibration(
     return output_path
 
 
+def plot_generative_model(output_path: Path) -> Path:
+    """Bayesian-graph (plate) diagram of the generative model.
+
+    Schematic of the discrete generative model rendered from constants (no data),
+    so it is deterministic. Hidden phase states ``s_t`` form a left-to-right
+    Markov chain (transition ``B``) that emits categorical observations ``o_t``
+    (likelihood ``A``); ``D`` is the initial prior. The repeating ``s``-``o``
+    block is drawn as a plate. An active layer (policy ``pi``, expected free
+    energy ``G(pi)``, and prior preference ``C``) extends the model to
+    observation selection.
+    """
+
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(11.0, 5.2))
+    ax.set_xlim(0.0, 2.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.axis("off")
+
+    def node(x: float, y: float, label: str, fill: str = "#EAF1FB") -> None:
+        ax.text(
+            x,
+            y,
+            label,
+            ha="center",
+            va="center",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.4", fc=fill, ec="#333333", lw=1.0),
+        )
+
+    def edge(
+        x1: float, y1: float, x2: float, y2: float, label: str | None = None
+    ) -> None:
+        ax.add_patch(
+            FancyArrowPatch(
+                (x1, y1), (x2, y2), arrowstyle="-|>", color="#333333", lw=1.2
+            )
+        )
+        if label:
+            ax.text(
+                (x1 + x2) / 2.0,
+                (y1 + y2) / 2.0 + 0.03,
+                label,
+                ha="center",
+                va="center",
+                fontsize=8,
+                color="#333333",
+            )
+
+    s_x = [0.28, 0.60, 0.92]
+    o_y = 0.26
+    s_y = 0.62
+
+    # hidden states and their observations
+    for x in s_x:
+        node(x, s_y, "")
+    node(s_x[0], s_y, "$s_{t-1}$")
+    node(s_x[1], s_y, "$s_t$")
+    node(s_x[2], s_y, "$s_{t+1}$")
+    node(s_x[0], o_y, "$o_{t-1}$", "#FEF3D9")
+    node(s_x[1], o_y, "$o_t$", "#FEF3D9")
+    node(s_x[2], o_y, "$o_{t+1}$", "#FEF3D9")
+    # transition B between consecutive states
+    edge(s_x[0], s_y, s_x[1], s_y, "B")
+    edge(s_x[1], s_y, s_x[2], s_y, "B")
+    # likelihood A from each state to its observation
+    for x in s_x:
+        edge(x, s_y, x, o_y, "A")
+    # initial prior D
+    node(0.10, s_y, "$D$", "#E8F5E9")
+    edge(0.10, s_y, s_x[0], s_y)
+    ax.text(0.20, s_y + 0.08, "prior", fontsize=8, ha="center", color="#333333")
+    # plate over the repeating s-o block
+    ax.add_patch(
+        Rectangle(
+            (s_x[1] - 0.14, o_y - 0.11),
+            s_x[2] - s_x[1] + 0.30,
+            s_y - o_y + 0.22,
+            fill=False,
+            edgecolor="#777777",
+            linewidth=1.0,
+            linestyle="--",
+        )
+    )
+    ax.text(
+        s_x[2] - 0.04,
+        s_y + 0.11,
+        "t = 1, …, T",
+        fontsize=8,
+        ha="right",
+        color="#555555",
+    )
+    # --- active / EFE layer ---
+    ax.axvline(1.24, color="#BBBBBB", linewidth=0.8, linestyle=":")
+    ax.text(1.56, 0.94, "active layer", fontsize=9, style="italic", color="#444444")
+    node(1.56, 0.80, "policy $\\pi$", "#F3E5F5")
+    node(1.56, 0.48, "preference $C$", "#E8F5E9")
+    node(1.56, 0.26, "select next $o$", "#FEF3D9")
+    edge(1.56, 0.72, 1.56, 0.58, "G($\\pi$)")
+    edge(1.56, 0.40, 1.56, 0.34)
+    ax.annotate(
+        "beliefs",
+        xy=(s_x[2], s_y),
+        xytext=(1.32, 0.80),
+        arrowprops=dict(arrowstyle="-|>", color="#777777", lw=1.0, linestyle="--"),
+        fontsize=7,
+        color="#555555",
+    )
+    ax.text(
+        1.56,
+        0.68,
+        "expected free\nenergy, G($\\pi$)",
+        fontsize=6.5,
+        ha="center",
+        va="center",
+        color="#333333",
+    )
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1131,6 +1256,13 @@ def plot_decoder_calibration(
 # match the generated PNG stem under ``output/figures/``.
 
 FIGURE_CAPTIONS: dict[str, str] = {
+    "generative_model": (
+        "Bayesian-graph (plate) diagram of the generative model. Hidden phase states s_t form "
+        "a left-to-right Markov chain (transition B) emitting categorical observations o_t "
+        "(likelihood A), with prior D; the repeating s-o block is the plate. An active layer "
+        "(policy pi, expected free energy G(pi), preference C) extends the model to observation "
+        "selection. Rendered from constants, so it is deterministic."
+    ),
     "observation_pipeline": (
         "Assembly observation pipeline. Each decoded x86-64 instruction (labelled by mnemonic) "
         "is mapped to a categorical observation id; these ids feed the generative model."

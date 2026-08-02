@@ -183,11 +183,21 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 186 passed, 0 failed. Coverage 95.31% (gate
+**Current state (2026-08-01):** 187 passed, 0 failed. Coverage 95.40% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **63/63** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **64/64** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Bayesian-Graph Visualization Pass (2026-08-01)
+
+- **Visualization**: new `generative_model.png` — a Bayesian-graph (plate)
+  diagram of the generative model: hidden phase states form a left-to-right
+  Markov chain (transition B) emitting categorical observations (likelihood A),
+  prior D, with an active layer (policy pi, expected free energy G(pi),
+  preference C). Rendered from constants (deterministic). Figures 25->26.
+- **Manuscript**: methodology now references the generative-model figure.
+- Registry: oracle 63->64 (new figure check).
 
 ## Decoder Calibration Pass (2026-08-01)
 

@@ -49,6 +49,19 @@ forward–backward smoothing refines the per-step beliefs
 [@friston2017activeinference;@rabiner1989tutorial]. Contiguous program phases are then segmented
 directly from the smoothed beliefs.
 
+The complete Bayesian graph of this model is drawn in Figure
+`fig:generative-model`: the hidden phase states form the left-to-right Markov
+backbone, each emits a categorical observation through the likelihood `A`, the
+initial belief is fixed by the prior `D`, and the active layer scores candidate
+observations through the expected free energy.
+
+![Generative model as a Bayesian graph]({{GENERATIVE_MODEL_FIGURE}}){#fig:generative-model}
+*Bayesian-graph (plate) diagram of the generative model. Hidden phase states
+form a left-to-right Markov chain (transition `B`) that emits categorical
+observations (likelihood `A`); `D` is the initial prior. The active layer scores
+candidate observations via the expected free energy `G(pi)`. Rendered from
+constants, so it is deterministic.*
+
 ![Temporal HMM forward-filter beliefs for the accumulator fixture]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs}
 *Forward-filter posterior over the five program phases at each observation step
 for the `x86_accumulator` fixture. Rows are normalized posteriors; the temporal

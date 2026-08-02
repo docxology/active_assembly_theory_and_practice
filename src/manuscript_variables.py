@@ -167,6 +167,7 @@ def generate_variables() -> dict[str, str]:
         "CORPUS_STABILITY_FIGURE": f"../{advanced_figure_paths['corpus_stability']}",
         "PHASE_RECOVERY_FIGURE": f"../{advanced_figure_paths['phase_recovery']}",
         "DECODER_CALIBRATION_FIGURE": f"../{advanced_figure_paths['decoder_calibration']}",
+        "GENERATIVE_MODEL_FIGURE": f"../{advanced_figure_paths['generative_model']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

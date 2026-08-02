@@ -20,6 +20,7 @@ from src.figures import (
     plot_confusion_matrix,
     plot_corpus_stability,
     plot_decoder_calibration,
+    plot_generative_model,
     plot_phase_recovery,
     plot_segmentation_ribbons,
 )
@@ -287,3 +288,9 @@ def test_decoder_calibration_figure_written_nonempty(tmp_path) -> None:
 def test_decoder_calibration_figure_empty_raises(tmp_path) -> None:
     with pytest.raises(ValueError):
         plot_decoder_calibration({"decoders": {}}, tmp_path / "decoder_calibration.png")
+
+
+def test_generative_model_figure_written_nonempty(tmp_path) -> None:
+    path = plot_generative_model(tmp_path / "generative_model.png")
+    assert path.exists()
+    assert path.stat().st_size > 0

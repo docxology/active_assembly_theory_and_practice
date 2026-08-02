@@ -22,6 +22,7 @@ from .figures import (
     plot_confusion_matrix,
     plot_corpus_stability,
     plot_decoder_calibration,
+    plot_generative_model,
     plot_model_comparison_bars,
     plot_phase_recovery,
     plot_segmentation_ribbons,
@@ -92,6 +93,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     calibration_path = figure_dir / "decoder_calibration.png"
     plot_decoder_calibration(evaluation_report["decoder_calibration"], calibration_path)
 
+    generative_path = figure_dir / "generative_model.png"
+    plot_generative_model(generative_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -100,6 +104,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "corpus_stability": str(stability_path.relative_to(PROJECT_ROOT)),
         "phase_recovery": str(phase_recovery_path.relative_to(PROJECT_ROOT)),
         "decoder_calibration": str(calibration_path.relative_to(PROJECT_ROOT)),
+        "generative_model": str(generative_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -145,5 +150,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "corpus_stability": stats_paths["corpus_stability"],
         "phase_recovery": stats_paths["phase_recovery"],
         "decoder_calibration": stats_paths["decoder_calibration"],
+        "generative_model": stats_paths["generative_model"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }
