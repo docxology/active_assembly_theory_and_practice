@@ -40,7 +40,7 @@ run_step "ruff format --check" \
   uv run ruff format --check src tests scripts
 run_step "mypy" \
   uv run mypy
-run_step "validation gate (59-oracle)" \
+run_step "validation gate (61-oracle)" \
   uv run python scripts/validate_analysis_outputs.py
 
 if [ "${1:-}" = "--julia" ]; then

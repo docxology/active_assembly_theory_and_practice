@@ -129,6 +129,23 @@ boundary mismatch between the two rows.
 
 ![Phase segmentation: ground truth vs smoothed prediction]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons}
 
+## Which phases are recoverable {#sec:phase-recovery}
+
+Collapsing the pooled confusion matrix into per-phase metrics quantifies the
+recovery limitation that the manuscript cites qualitatively: the `setup` and
+`accumulator_update` phases are fully recovered (recall 1.0), the
+`representation_transform` phase is recovered at F1 0.75, while the `exit` phase
+(F1 0.33) and — hardest of all — the `guard_check` phase (F1 0.00) are
+observation-underdetermined. The macro F1 is `{{PHASE_MACRO_F1}}` and the hardest
+phase to recover is `{{HARDEST_PHASE}}`. These are forward-filter decoding limits
+of the demonstrator, not claims about a complete binary-analysis system.
+
+![Per-phase recovery]({{PHASE_RECOVERY_FIGURE}}){#fig:phase-recovery}
+*Per-phase recall and F1 of the temporal forward filter, ordered by F1. The
+`setup` and `accumulator_update` phases are fully recovered while `exit` and
+especially `guard_check` are difficult to recover, quantifying the
+under-determination limitation.*
+
 ## Robustness to the small corpus {#sec:corpus-stability}
 
 Because the corpus has only `{{CORPUS_FIXTURE_COUNT}}` fixtures, pooled

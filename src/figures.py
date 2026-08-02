@@ -1039,6 +1039,51 @@ def plot_corpus_stability(stability: dict[str, object], output_path: Path) -> Pa
     return output_path
 
 
+def plot_phase_recovery(phase_recovery: dict[str, object], output_path: Path) -> Path:
+    """Plot per-phase recall and F1 to show which phases are recoverable.
+
+    Phases are ordered by F1 so the hardest (underdetermined) phases are on the
+    left; recall and F1 are grouped bars, and the worst phase is highlighted. This
+    makes quantitative — rather than asserted — which phases the temporal forward
+    filter recovers (e.g. that ``exit`` and especially ``guard_check`` are
+    observation-underdetermined).
+    """
+
+    per_phase = cast(dict[str, dict[str, object]], phase_recovery.get("per_phase"))
+    if not per_phase:
+        raise ValueError("phase recovery must contain per_phase rows")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    labels = sorted(
+        list(per_phase.keys()), key=lambda p: float(cast(float, per_phase[p]["f1"]))
+    )
+    f1s = [float(cast(float, per_phase[p]["f1"])) for p in labels]
+    recalls = [float(cast(float, per_phase[p]["recall"])) for p in labels]
+    x = np.arange(len(labels))
+    hardest = cast(str, phase_recovery.get("hardest_phase", labels[0]))
+
+    fig, ax = plt.subplots(figsize=(8.6, 4.2))
+    ax.bar(x - 0.18, recalls, width=0.36, color="#9ecae1", label="recall")
+    f1_colors = ["#d62728" if p == hardest else PALETTE[2] for p in labels]
+    ax.bar(x + 0.18, f1s, width=0.36, color=f1_colors, label="F1")
+    ax.axhline(0.5, color="#555555", linewidth=0.8, linestyle=":", alpha=0.7)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=9)
+    ax.set_ylabel("Recovery score")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title(
+        f"Per-phase recovery (macro F1 = "
+        f"{float(cast(float, phase_recovery.get('macro_f1', 0.0))):.2f}; "
+        f"hardest: {hardest})"
+    )
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1159,6 +1204,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "static (sticky) accuracy and the dotted line is chance. The headline temporal result "
         "survives every single-fixture removal, and the annotated span quantifies the small-corpus "
         "fragility explicitly."
+    ),
+    "phase_recovery": (
+        "Per-phase recovery of the temporal forward filter, ordered by F1. Grouped bars show recall "
+        "and F1 for each of the five program phases (worst phase highlighted); the macro F1 is in "
+        "the title. The setup and accumulator_update phases are fully recovered, while the exit (and "
+        "especially guard_check) phase is observation-underdetermined — quantifying the recovery "
+        "limitation the manuscript cites qualitatively."
     ),
 }
 

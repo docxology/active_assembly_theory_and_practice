@@ -19,6 +19,7 @@ from src.figures import (
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_corpus_stability,
+    plot_phase_recovery,
     plot_segmentation_ribbons,
 )
 
@@ -239,3 +240,27 @@ def test_corpus_stability_figure_empty_raises(tmp_path) -> None:
     stability: dict[str, object] = {"per_holdout": [], "reference": {}}
     with pytest.raises(ValueError):
         plot_corpus_stability(stability, tmp_path / "corpus_stability.png")
+
+
+def test_phase_recovery_figure_written_nonempty(tmp_path) -> None:
+    phase_recovery: dict[str, object] = {
+        "per_phase": {
+            "setup": {"precision": 0.67, "recall": 1.0, "f1": 0.8, "true_count": 4},
+            "guard_check": {
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0,
+                "true_count": 2,
+            },
+        },
+        "macro_f1": 0.4,
+        "hardest_phase": "guard_check",
+    }
+    path = plot_phase_recovery(phase_recovery, tmp_path / "phase_recovery.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_phase_recovery_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_phase_recovery({"per_phase": {}}, tmp_path / "phase_recovery.png")

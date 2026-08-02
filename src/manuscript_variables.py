@@ -40,6 +40,7 @@ def generate_variables() -> dict[str, str]:
     max_blend_row = max(ablation_rows, key=lambda row: row["blend"])
     seg_pooled = evaluation_report["segmentation"]["pooled"]
     stability = evaluation_report["corpus_stability"]
+    phase_recovery = evaluation_report["phase_recovery"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -129,6 +130,8 @@ def generate_variables() -> dict[str, str]:
         "CORPUS_TEMPORAL_SPAN": f"{stability['temporal_pooled_range']['span']:.3f}",
         "CORPUS_TEMPORAL_MIN": f"{stability['temporal_pooled_range']['min']:.3f}",
         "CORPUS_TEMPORAL_MAX": f"{stability['temporal_pooled_range']['max']:.3f}",
+        "PHASE_MACRO_F1": f"{phase_recovery['macro_f1']:.3f}",
+        "HARDEST_PHASE": str(phase_recovery["hardest_phase"]),
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
@@ -157,6 +160,7 @@ def generate_variables() -> dict[str, str]:
             f"../{advanced_figure_paths['segmentation_ribbons']}"
         ),
         "CORPUS_STABILITY_FIGURE": f"../{advanced_figure_paths['corpus_stability']}",
+        "PHASE_RECOVERY_FIGURE": f"../{advanced_figure_paths['phase_recovery']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

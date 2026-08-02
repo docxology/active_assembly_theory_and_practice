@@ -266,6 +266,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_corpus_stability",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/phase_recovery.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_stats_figures",
+        claim_ids=("CLM-010",),
+        validation_checks=("figure_phase_recovery",),
+    ),
+    ArtifactManifestTarget(
         path="output/data/temporal_inference.json",
         artifact_type="inference",
         generated_by="src.advanced_inference.run_advanced_inference",

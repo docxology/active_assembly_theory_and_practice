@@ -848,6 +848,67 @@ def corpus_stability_analysis(
     }
 
 
+def per_phase_recovery_metrics(pooled_confusion: dict[str, object]) -> dict[str, Any]:
+    """Per-phase precision/recall/F1 from a pooled confusion matrix.
+
+    The pooled confusion matrix (rows = truth, columns = predicted, counts) from
+    the temporal forward filter is collapsed into per-class recovery metrics.
+    This quantifies *which* phases are recoverable — e.g. that the ``exit`` (and
+    especially ``guard_check``) phase is observation-underdetermined — instead of
+    citing the limitation qualitatively. A phase never predicted anywhere (its
+    column all zero) or never present (its row) is reported with 0.0 metrics.
+
+    Args:
+        pooled_confusion: Dict with ``labels`` and a square ``matrix`` of counts.
+
+    Returns:
+        A JSON-safe dict with ``labels``, per-phase metrics, ``macro_f1``, the
+        hardest phase, and the best-recall phase.
+    """
+
+    labels = list(cast(list[str], pooled_confusion["labels"]))
+    matrix: list[list[int]] = [
+        [int(value) for value in cast(list, row)]
+        for row in cast(list, pooled_confusion["matrix"])
+    ]
+    per_phase: dict[str, dict[str, object]] = {}
+    for i, phase in enumerate(labels):
+        true_positives = matrix[i][i]
+        false_positives = sum(matrix[j][i] for j in range(len(labels)) if j != i)
+        false_negatives = sum(matrix[i][j] for j in range(len(labels)) if j != i)
+        precision = (
+            true_positives / (true_positives + false_positives)
+            if (true_positives + false_positives)
+            else 0.0
+        )
+        recall = (
+            true_positives / (true_positives + false_negatives)
+            if (true_positives + false_negatives)
+            else 0.0
+        )
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall)
+            else 0.0
+        )
+        per_phase[phase] = {
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1": float(f1),
+            "true_count": int(true_positives + false_negatives),
+        }
+    macro_f1 = float(sum(cast(float, per_phase[p]["f1"]) for p in labels) / len(labels))
+    hardest = min(labels, key=lambda p: float(cast(float, per_phase[p]["f1"])))
+    best_recall = max(labels, key=lambda p: float(cast(float, per_phase[p]["recall"])))
+    return {
+        "labels": labels,
+        "per_phase": per_phase,
+        "macro_f1": macro_f1,
+        "hardest_phase": hardest,
+        "best_recall_phase": best_recall,
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -969,23 +1030,26 @@ def evaluation_payload(
         "fixture_count": int(len(corpus)),
     }
 
+    formatted_confusion: dict[str, object] = {
+        "labels": list(labels),
+        "matrix": [
+            [pooled_confusion[true_label][pred_label] for pred_label in labels]
+            for true_label in labels
+        ],
+    }
+
     return {
         "per_fixture": per_fixture,
         "compare_models": compare_models(corpus, model),
         "shuffled_label_control": shuffled_label_control(corpus, model),
         "uniform_belief_control": uniform_belief_control(corpus),
         "summary": summary,
-        "pooled_confusion": {
-            "labels": list(labels),
-            "matrix": [
-                [pooled_confusion[true_label][pred_label] for pred_label in labels]
-                for true_label in labels
-            ],
-        },
+        "pooled_confusion": formatted_confusion,
         "pooled_calibration_bins": calibration_bins(
             pooled_posteriors, pooled_truth_ids
         ),
         "segmentation": segmentation_evaluation(corpus, model),
         "ambiguity_ablation": ambiguity_ablation(corpus, model),
         "corpus_stability": corpus_stability_analysis(corpus, model),
+        "phase_recovery": per_phase_recovery_metrics(formatted_confusion),
     }

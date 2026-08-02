@@ -22,6 +22,7 @@ from .figures import (
     plot_confusion_matrix,
     plot_corpus_stability,
     plot_model_comparison_bars,
+    plot_phase_recovery,
     plot_segmentation_ribbons,
     plot_temporal_beliefs_heatmap,
     write_figure_captions,
@@ -84,12 +85,16 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     stability_path = figure_dir / "corpus_stability.png"
     plot_corpus_stability(evaluation_report["corpus_stability"], stability_path)
 
+    phase_recovery_path = figure_dir / "phase_recovery.png"
+    plot_phase_recovery(evaluation_report["phase_recovery"], phase_recovery_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
         "ambiguity_ablation": str(ablation_path.relative_to(PROJECT_ROOT)),
         "segmentation_ribbons": str(ribbons_path.relative_to(PROJECT_ROOT)),
         "corpus_stability": str(stability_path.relative_to(PROJECT_ROOT)),
+        "phase_recovery": str(phase_recovery_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -133,5 +138,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "ambiguity_ablation": stats_paths["ambiguity_ablation"],
         "segmentation_ribbons": stats_paths["segmentation_ribbons"],
         "corpus_stability": stats_paths["corpus_stability"],
+        "phase_recovery": stats_paths["phase_recovery"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

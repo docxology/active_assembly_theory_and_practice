@@ -267,6 +267,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "ambiguity_ablation.png",
         "segmentation_ribbons.png",
         "corpus_stability.png",
+        "phase_recovery.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -439,6 +440,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "AMBIGUITY_ABLATION_FIGURE",
         "SEGMENTATION_RIBBONS_FIGURE",
         "CORPUS_STABILITY_FIGURE",
+        "PHASE_RECOVERY_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -781,6 +783,24 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         active_never_worse and active_max_fraction > 0 and active_authored == 0
     )
 
+    # Per-phase recovery: every phase must be reported, the decently-recovered
+    # phases must be mastered (best-recall phase fully recovered), and the hardest
+    # phase must be measured as underdetermined (recall below half) — turning the
+    # qualitative \"exit / guard underdetermined\" limit into a recomputed number.
+    phase_recovery = fresh_payload["phase_recovery"]
+    phase_per = phase_recovery["per_phase"]
+    phase_macro = float(phase_recovery["macro_f1"])
+    hardest_phase = str(phase_recovery["hardest_phase"])
+    hardest_recall = float(phase_per[hardest_phase]["recall"])
+    best_recall_phase = str(phase_recovery["best_recall_phase"])
+    best_recall = float(phase_per[best_recall_phase]["recall"])
+    phase_recovery_ok = (
+        set(phase_per.keys()) == set(HIDDEN_STATE_LABELS)
+        and phase_macro > 0.4
+        and hardest_recall < 0.5
+        and best_recall >= 1.0
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -836,6 +856,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_phase_recovery_measured",
+            phase_recovery_ok,
+            f"macro_f1={phase_macro:.2f} hardest={hardest_phase} "
+            f"hardest_recall={hardest_recall:.2f} best_recall={best_recall:.2f}",
         ),
         _check(
             "advanced_active_advantage_emerges_under_ambiguity",

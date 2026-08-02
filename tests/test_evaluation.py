@@ -18,6 +18,7 @@ from src.evaluation import (
     evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    per_phase_recovery_metrics,
     pooled_decoding_accuracies,
     segmentation_evaluation,
     shuffled_label_control,
@@ -377,6 +378,7 @@ def test_evaluation_payload_structure() -> None:
         "segmentation",
         "ambiguity_ablation",
         "corpus_stability",
+        "phase_recovery",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -482,6 +484,36 @@ def test_corpus_stability_holdout_fixtures_named() -> None:
     result = corpus_stability_analysis(corpus, build_temporal_model())
     names = {row["held_out_fixture"] for row in result["per_holdout"]}
     assert names == {f.name for f in corpus}
+
+
+def test_per_phase_recovery_metrics() -> None:
+    payload = evaluation_payload(build_corpus(), build_temporal_model())
+    phase_recovery = payload["phase_recovery"]
+    assert set(phase_recovery["per_phase"].keys()) == set(HIDDEN_STATE_LABELS)
+    assert 0 < phase_recovery["macro_f1"] <= 1.0
+    assert phase_recovery["hardest_phase"] in HIDDEN_STATE_LABELS
+    # Best-recall phase is fully recovered; the hardest phase is underdetermined.
+    best = phase_recovery["best_recall_phase"]
+    assert phase_recovery["per_phase"][best]["recall"] >= 1.0
+    hardest = phase_recovery["hardest_phase"]
+    assert phase_recovery["per_phase"][hardest]["recall"] < 0.5
+    # Deterministic and consistent with the reported confusion matrix.
+    assert json.dumps(phase_recovery, sort_keys=True) == json.dumps(
+        per_phase_recovery_metrics(payload["pooled_confusion"]), sort_keys=True
+    )
+
+
+def test_per_phase_recovery_degenerate_all_zero() -> None:
+    confusion: dict[str, object] = {
+        "labels": list(HIDDEN_STATE_LABELS),
+        "matrix": [
+            [0] * len(HIDDEN_STATE_LABELS) for _ in range(len(HIDDEN_STATE_LABELS))
+        ],
+    }
+    phase_recovery = per_phase_recovery_metrics(confusion)
+    assert phase_recovery["macro_f1"] == 0.0
+    for phase in HIDDEN_STATE_LABELS:
+        assert phase_recovery["per_phase"][phase]["f1"] == 0.0
 
 
 def test_ambiguity_ablation_mechanism() -> None:

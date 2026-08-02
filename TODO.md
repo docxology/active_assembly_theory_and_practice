@@ -183,11 +183,27 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 179 passed, 0 failed. Coverage 95.09% (gate
+**Current state (2026-08-01):** 183 passed, 0 failed. Coverage 95.19% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **59/59** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **61/61** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Per-Phase Recovery Pass (2026-08-01)
+
+- **Research**: new `per_phase_recovery_metrics` collapses the pooled confusion
+  matrix into per-phase precision/recall/F1. Measured, honest result: `setup` and
+  `accumulator_update` are fully recovered (recall 1.0), `representation_transform`
+  F1 0.75, `exit` F1 0.33, and — hardest — `guard_check` F1 0.00 (macro F1 0.537).
+  This quantifies the under-determination limitation the manuscript previously
+  cited qualitatively. Validation check `advanced_phase_recovery_measured` binds
+  all phases present, macro F1 > 0.4, best-recall phase fully recovered, hardest
+  phase recall < 0.5. Wired into the evaluation payload as "phase_recovery".
+- **Visualization**: new `phase_recovery.png` (per-phase recall and F1 bars,
+  hardest phase highlighted, macro F1 in title). Figures 23->24.
+- **Manuscript**: new results subsection "Which phases are recoverable" with
+  tokens PHASE_MACRO_F1 / HARDEST_PHASE and the figure.
+- Registry: oracle 59->61 (new figure + new check).
 
 ## Active-Layer Mechanism Pass (2026-08-01)
 
