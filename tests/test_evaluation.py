@@ -14,6 +14,7 @@ from src.evaluation import (
     calibration_bins,
     compare_models,
     corpus_stability_analysis,
+    decoder_calibration,
     evaluate_decoding,
     evaluate_segmentation,
     evaluation_payload,
@@ -379,6 +380,7 @@ def test_evaluation_payload_structure() -> None:
         "ambiguity_ablation",
         "corpus_stability",
         "phase_recovery",
+        "decoder_calibration",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -514,6 +516,23 @@ def test_per_phase_recovery_degenerate_all_zero() -> None:
     assert phase_recovery["macro_f1"] == 0.0
     for phase in HIDDEN_STATE_LABELS:
         assert phase_recovery["per_phase"][phase]["f1"] == 0.0
+
+
+def test_decoder_calibration_ordering() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    payload = evaluation_payload(corpus, model)
+    calibration_payload = payload["decoder_calibration"]
+    decoders = calibration_payload["decoders"]
+    # On this corpus calibration tracks accuracy: memoryless < temporal < static.
+    assert decoders["memoryless"]["ece"] < decoders["temporal"]["ece"]
+    assert decoders["temporal"]["ece"] < decoders["static"]["ece"]
+    assert calibration_payload["best_calibrated"] == "memoryless"
+    assert calibration_payload["worst_calibrated"] == "static"
+    # Deterministic and consistent with the live computation.
+    assert json.dumps(calibration_payload, sort_keys=True) == json.dumps(
+        decoder_calibration(corpus, model), sort_keys=True
+    )
 
 
 def test_ambiguity_ablation_mechanism() -> None:

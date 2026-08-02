@@ -86,6 +86,7 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
 - `output/figures/segmentation_ribbons.png`
 - `output/figures/corpus_stability.png`
 - `output/figures/phase_recovery.png`
+- `output/figures/decoder_calibration.png`
 - `output/figures/validation_summary.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 
@@ -100,7 +101,7 @@ uv run python scripts/03_render_pdf.py --project working/active_assembly_theory_
   binary so regeneration stays reproducible. Bumping the pin requires a
   deliberate change plus a fresh backend run.
 - The validation gate (`scripts/validate_analysis_outputs.py`) recomputes each
-  tracked artifact's SHA-256 and byte size and asserts the full 61-check surface.
+  tracked artifact's SHA-256 and byte size and asserts the full 63-check surface.
   All deterministic gates can be run together with `scripts/run_full_verification.sh`
   (add `--julia` to also run the Julia backend `Pkg.test()`); it fails fast and
   prints a pass/fail table.

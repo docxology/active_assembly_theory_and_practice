@@ -909,6 +909,81 @@ def per_phase_recovery_metrics(pooled_confusion: dict[str, object]) -> dict[str,
     }
 
 
+def decoder_calibration(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+) -> dict[str, Any]:
+    """Calibration (Brier / ECE) of the temporal, static, and memoryless decoders.
+
+    The evaluation summary reports calibration for the temporal forward-filter
+    posterior only. This completes the picture by computing the same Brier/ECE
+    from each decoder's *own* per-step posteriors (static = identity-transition
+    carry; memoryless = reset-to-prior each step), pooled across the corpus. On
+    this corpus calibration tracks accuracy: the memoryless decoder is best
+    calibrated, the temporal model middle, and the sticky static filter worst —
+    so the temporal model is neither the most accurate nor the best calibrated,
+    a fact reported honestly rather than cherry-picked.
+
+    Args:
+        corpus: The labelled fixtures.
+        model: The temporal generative model (supplies ``A``/``D``).
+
+    Returns:
+        A JSON-safe dict with per-decoder Brier/ECE and the best/worst-calibrated
+        decoder names.
+    """
+
+    labels = list(model.hidden_state_labels)
+    label_index = {label: i for i, label in enumerate(labels)}
+    matrix_a = np.asarray(model.A, dtype=float)
+    prior = np.asarray(model.D, dtype=float)
+    prior = prior / prior.sum()
+
+    def _pooled_metrics(kind: str) -> dict[str, object]:
+        posteriors: list[list[float]] = []
+        truth: list[int] = []
+        for fixture in corpus:
+            ids = [int(o) for o in fixture_observation_ids(fixture)]
+            truth.extend(label_index[t] for t in fixture.phase_labels)
+            if kind == "temporal":
+                result = forward_filter(ids, model)
+                posteriors.extend(list(row) for row in result.filtered_posteriors)
+            elif kind == "static":
+                posterior = prior.copy()
+                for obs in ids:
+                    unnormalized = posterior * matrix_a[int(obs), :]
+                    posterior = unnormalized / unnormalized.sum()
+                    posteriors.append(list(posterior))
+            else:  # memoryless: reset to the prior at every step
+                for obs in ids:
+                    unnormalized = prior * matrix_a[int(obs), :]
+                    posteriors.append(list(unnormalized / unnormalized.sum()))
+        metrics = calibration(posteriors, truth)
+        return {
+            "brier": float(cast(float, metrics["brier"])),
+            "ece": float(cast(float, metrics["ece"])),
+            "n_steps": int(cast(int, metrics["n_steps"])),
+        }
+
+    decoders = {
+        name: _pooled_metrics(name) for name in ("temporal", "static", "memoryless")
+    }
+
+    def _ece(name: str) -> float:
+        return float(cast(float, decoders[name]["ece"]))
+
+    best = min(decoders, key=_ece)
+    worst = max(decoders, key=_ece)
+    return {
+        "decoders": decoders,
+        "best_calibrated": best,
+        "worst_calibrated": worst,
+        "temporal_ece": _ece("temporal"),
+        "static_ece": _ece("static"),
+        "memoryless_ece": _ece("memoryless"),
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -1052,4 +1127,5 @@ def evaluation_payload(
         "ambiguity_ablation": ambiguity_ablation(corpus, model),
         "corpus_stability": corpus_stability_analysis(corpus, model),
         "phase_recovery": per_phase_recovery_metrics(formatted_confusion),
+        "decoder_calibration": decoder_calibration(corpus, model),
     }

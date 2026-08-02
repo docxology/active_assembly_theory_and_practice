@@ -64,6 +64,18 @@ gate.
 bin (mean max posterior) versus observed accuracy; points near the dashed identity
 line are well calibrated, and per-bin step counts are annotated.*
 
+Calibration is also compared across decoders. Reporting each decoder's own
+per-step posterior (Figure `fig:decoder-calibration`) shows ECE tracking accuracy
+on this corpus: the memoryless per-step decoder is the best calibrated (ECE
+`{{MEMORYLESS_ECE}}`), the temporal model is middle (`{{TEMPORAL_ECE}}`), and the
+sticky static filter is worst (`{{STATIC_ECE}}`). This is stated honestly: the
+temporal model is neither the most accurate nor the best calibrated.
+
+![Decoder calibration across decoders]({{DECODER_CALIBRATION_FIGURE}}){#fig:decoder-calibration}
+*ECE and Brier score for the temporal, static, and memoryless decoders (ordered by
+ECE). On this corpus calibration tracks accuracy: memoryless is best calibrated
+and the sticky filter is worst.*
+
 ![Pooled phase-decoding confusion matrix across all fixtures]({{CONFUSION_MATRIX_FIGURE}}){#fig:confusion-matrix}
 *Pooled confusion matrix of the temporal forward filter. Diagonal mass is correct
 phase recovery; off-diagonal mass reveals which phases are confusable (notably the

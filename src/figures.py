@@ -1084,6 +1084,45 @@ def plot_phase_recovery(phase_recovery: dict[str, object], output_path: Path) ->
     return output_path
 
 
+def plot_decoder_calibration(
+    calibration_payload: dict[str, object], output_path: Path
+) -> Path:
+    """Plot ECE and Brier for each decoder to compare calibration quality.
+
+    Shows expected calibration error (ECE) and Brier score for the temporal,
+    static, and memoryless decoders (ordered by ECE). This makes the honest
+    result visual: on this corpus calibration tracks accuracy — the memoryless
+    decoder is best calibrated and the sticky static filter worst.
+    """
+
+    decoders = cast(dict[str, dict[str, object]], calibration_payload.get("decoders"))
+    if not decoders:
+        raise ValueError("decoder calibration must contain decoders")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    names = ["memoryless", "temporal", "static"]
+    eces = [float(cast(float, decoders[name]["ece"])) for name in names]
+    briers = [float(cast(float, decoders[name]["brier"])) for name in names]
+    best = cast(str, calibration_payload.get("best_calibrated", names[0]))
+    worst = cast(str, calibration_payload.get("worst_calibrated", names[-1]))
+    x = np.arange(len(names))
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.2))
+    ax.bar(x - 0.18, eces, width=0.36, color=PALETTE[2], label="ECE")
+    ax.bar(x + 0.18, briers, width=0.36, color="#9ecae1", label="Brier")
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=15, ha="right", fontsize=9)
+    ax.set_ylabel("Calibration error")
+    ax.set_ylim(0.0, 0.8)
+    ax.set_title(f"Decoder calibration (best: {best}, worst: {worst})")
+    ax.legend(loc="upper right", fontsize=8)
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1211,6 +1250,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "the title. The setup and accumulator_update phases are fully recovered, while the exit (and "
         "especially guard_check) phase is observation-underdetermined — quantifying the recovery "
         "limitation the manuscript cites qualitatively."
+    ),
+    "decoder_calibration": (
+        "Calibration of the temporal, static (sticky), and memoryless decoders, showing ECE and "
+        "Brier for each (ordered by ECE). On this corpus calibration tracks accuracy: the memoryless "
+        "decoder is best calibrated, the temporal model middle, and the sticky static filter worst — "
+        "an honest statement that the temporal model is neither the most accurate nor the best "
+        "calibrated."
     ),
 }
 

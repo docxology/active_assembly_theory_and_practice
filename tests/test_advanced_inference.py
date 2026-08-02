@@ -19,6 +19,7 @@ from src.figures import (
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_corpus_stability,
+    plot_decoder_calibration,
     plot_phase_recovery,
     plot_segmentation_ribbons,
 )
@@ -264,3 +265,25 @@ def test_phase_recovery_figure_written_nonempty(tmp_path) -> None:
 def test_phase_recovery_figure_empty_raises(tmp_path) -> None:
     with pytest.raises(ValueError):
         plot_phase_recovery({"per_phase": {}}, tmp_path / "phase_recovery.png")
+
+
+def test_decoder_calibration_figure_written_nonempty(tmp_path) -> None:
+    calibration_payload: dict[str, object] = {
+        "decoders": {
+            "memoryless": {"brier": 0.46, "ece": 0.09, "n_steps": 18},
+            "temporal": {"brier": 0.5, "ece": 0.19, "n_steps": 18},
+            "static": {"brier": 0.74, "ece": 0.36, "n_steps": 18},
+        },
+        "best_calibrated": "memoryless",
+        "worst_calibrated": "static",
+    }
+    path = plot_decoder_calibration(
+        calibration_payload, tmp_path / "decoder_calibration.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_decoder_calibration_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_decoder_calibration({"decoders": {}}, tmp_path / "decoder_calibration.png")

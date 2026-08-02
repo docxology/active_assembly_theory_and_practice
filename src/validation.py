@@ -268,6 +268,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "segmentation_ribbons.png",
         "corpus_stability.png",
         "phase_recovery.png",
+        "decoder_calibration.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -441,6 +442,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "SEGMENTATION_RIBBONS_FIGURE",
         "CORPUS_STABILITY_FIGURE",
         "PHASE_RECOVERY_FIGURE",
+        "DECODER_CALIBRATION_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -801,6 +803,16 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         and best_recall >= 1.0
     )
 
+    # Decoder calibration: on this corpus calibration tracks accuracy — the
+    # memoryless decoder is best calibrated and the sticky static filter worst.
+    # Binding the honest ordering (recomputed, not hardcoded) prevents overstating
+    # the temporal model's calibration.
+    cal_decoders = fresh_payload["decoder_calibration"]["decoders"]
+    cal_temporal = float(cal_decoders["temporal"]["ece"])
+    cal_static = float(cal_decoders["static"]["ece"])
+    cal_memoryless = float(cal_decoders["memoryless"]["ece"])
+    calibration_ordering_ok = cal_memoryless < cal_temporal < cal_static
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -856,6 +868,11 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_decoder_calibration_ordering",
+            calibration_ordering_ok,
+            f"ece(memoryless/temporal/static)={cal_memoryless:.3f}/{cal_temporal:.3f}/{cal_static:.3f}",
         ),
         _check(
             "advanced_phase_recovery_measured",

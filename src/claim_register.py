@@ -289,6 +289,22 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         boundary="Segmentation reflects the hand-authored generative model, not a discovered ground-truth control-flow structure; the boundary-recovery metric quantifies how well the model's smoothed beliefs align with the authored phase boundaries.",
         status="validated",
     ),
+    ClaimRecord(
+        claim_id="CLM-016",
+        claim_type="decoder_calibration",
+        statement="Decoder calibration tracks accuracy on this corpus: the memoryless per-step decoder is the best calibrated (lowest ECE), the temporal model is middle, and the sticky static filter is worst.",
+        support_keys=("friston2017activeinference", "parr2022activeinference"),
+        artifact_paths=(
+            "output/data/evaluation_report.json",
+            "output/figures/decoder_calibration.png",
+        ),
+        validation_checks=(
+            "advanced_decoder_calibration_ordering",
+            "advanced_evaluation_freshness",
+        ),
+        boundary="Calibration is computed from each decoder's own per-step posteriors on the small hand-authored corpus; it reports honest ordering (the temporal model is neither the most accurate nor the best calibrated), not a claim about real-world binary observation noise.",
+        status="validated",
+    ),
 )
 
 

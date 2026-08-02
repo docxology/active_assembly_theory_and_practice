@@ -21,6 +21,7 @@ from .figures import (
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_corpus_stability,
+    plot_decoder_calibration,
     plot_model_comparison_bars,
     plot_phase_recovery,
     plot_segmentation_ribbons,
@@ -88,6 +89,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     phase_recovery_path = figure_dir / "phase_recovery.png"
     plot_phase_recovery(evaluation_report["phase_recovery"], phase_recovery_path)
 
+    calibration_path = figure_dir / "decoder_calibration.png"
+    plot_decoder_calibration(evaluation_report["decoder_calibration"], calibration_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -95,6 +99,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "segmentation_ribbons": str(ribbons_path.relative_to(PROJECT_ROOT)),
         "corpus_stability": str(stability_path.relative_to(PROJECT_ROOT)),
         "phase_recovery": str(phase_recovery_path.relative_to(PROJECT_ROOT)),
+        "decoder_calibration": str(calibration_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -139,5 +144,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "segmentation_ribbons": stats_paths["segmentation_ribbons"],
         "corpus_stability": stats_paths["corpus_stability"],
         "phase_recovery": stats_paths["phase_recovery"],
+        "decoder_calibration": stats_paths["decoder_calibration"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

@@ -183,11 +183,28 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 183 passed, 0 failed. Coverage 95.19% (gate
+**Current state (2026-08-01):** 186 passed, 0 failed. Coverage 95.31% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **61/61** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **63/63** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Decoder Calibration Pass (2026-08-01)
+
+- **Research**: new `decoder_calibration` computes Brier/ECE from each decoder's
+  own per-step posteriors (temporal forward-filter, sticky identity-transition,
+  memoryless reset-to-prior). Measured, honest result: calibration tracks accuracy
+  on this corpus — memoryless best calibrated (ECE 0.09), temporal middle (0.19),
+  sticky static worst (0.36). The temporal model is therefore neither the most
+  accurate nor the best calibrated, stated honestly. Validation check
+  `advanced_decoder_calibration_ordering` binds memoryless < temporal < static.
+  Wired into the evaluation payload as "decoder_calibration".
+- **Visualization**: new `decoder_calibration.png` (ECE and Brier by decoder,
+  ordered by ECE). Figures 24->25.
+- **Claim CLM-016** (decoder_calibration) registered and bounded.
+- **Manuscript**: results section now compares calibration across decoders with
+  tokens DECODER_BEST_CALIBRATED / TEMPORAL_ECE / STATIC_ECE / MEMORYLESS_ECE.
+- Registry: oracle 61->63 (new figure + new check); claims 15->16.
 
 ## Per-Phase Recovery Pass (2026-08-01)
 

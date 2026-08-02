@@ -41,6 +41,7 @@ def generate_variables() -> dict[str, str]:
     seg_pooled = evaluation_report["segmentation"]["pooled"]
     stability = evaluation_report["corpus_stability"]
     phase_recovery = evaluation_report["phase_recovery"]
+    decoder_cal = evaluation_report["decoder_calibration"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -132,6 +133,10 @@ def generate_variables() -> dict[str, str]:
         "CORPUS_TEMPORAL_MAX": f"{stability['temporal_pooled_range']['max']:.3f}",
         "PHASE_MACRO_F1": f"{phase_recovery['macro_f1']:.3f}",
         "HARDEST_PHASE": str(phase_recovery["hardest_phase"]),
+        "DECODER_BEST_CALIBRATED": str(decoder_cal["best_calibrated"]),
+        "TEMPORAL_ECE": f"{decoder_cal['temporal_ece']:.3f}",
+        "STATIC_ECE": f"{decoder_cal['static_ece']:.3f}",
+        "MEMORYLESS_ECE": f"{decoder_cal['memoryless_ece']:.3f}",
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
@@ -161,6 +166,7 @@ def generate_variables() -> dict[str, str]:
         ),
         "CORPUS_STABILITY_FIGURE": f"../{advanced_figure_paths['corpus_stability']}",
         "PHASE_RECOVERY_FIGURE": f"../{advanced_figure_paths['phase_recovery']}",
+        "DECODER_CALIBRATION_FIGURE": f"../{advanced_figure_paths['decoder_calibration']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
