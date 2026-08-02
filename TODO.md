@@ -183,11 +183,33 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 193 passed, 0 failed. Coverage 95.57% (gate
+**Current state (2026-08-01):** 196 passed, 0 failed. Coverage 95.61% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **68/68** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **70/70** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Transition-Ablation Pass (2026-08-01)
+
+- **Research**: new `transition_ablation` — the second axis of the mechanism. The
+  ambiguity ablation varies the likelihood A; this varies the transition matrix B
+  toward a uniform matrix (A and D fixed). Because B @ posterior is uniform when B
+  is, the temporal decoder converges EXACTLY to the memoryless per-step decoder:
+  the temporal-vs-memoryless gap reaches 0.000 (by blend 0.4), isolating that the
+  entire temporal-vs-memoryless difference is the transition structure B. Honest
+  secondary: the peak mean accuracy occurs at a mild blend (0.778 at 0.2), so
+  brute accuracy and the authored transition structure need not coincide. Wired
+  into the payload as "transition_ablation".
+- Validation check `advanced_transition_ablation_converges` binds exact
+  convergence to memoryless at uniform B AND temporal>static at authored B
+  (recomputed).
+- **Visualization**: new `transition_ablation.png` (temporal accuracy line vs
+  blend with memoryless/static references, convergence + peak annotated).
+  Figures 28->29.
+- **Manuscript**: mechanism section now reports the two-axis picture (likelihood
+  axis + transition axis). Tokens TRANSITION_CONVERGENCE_BLEND /
+  TRANSITION_PEAK_BLEND / TRANSITION_PEAK_ACC.
+- Registry: oracle 68->70 (new figure + new check).
 
 ## Model-Evidence Pass (2026-08-01)
 

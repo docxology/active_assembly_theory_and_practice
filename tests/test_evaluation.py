@@ -25,6 +25,7 @@ from src.evaluation import (
     pooled_decoding_accuracies,
     segmentation_evaluation,
     shuffled_label_control,
+    transition_ablation,
     uniform_belief_control,
     wilson_ci,
 )
@@ -385,6 +386,7 @@ def test_evaluation_payload_structure() -> None:
         "decoder_calibration",
         "observation_informativeness",
         "model_evidence",
+        "transition_ablation",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -571,6 +573,24 @@ def test_model_evidence_temporal_best() -> None:
     # Deterministic and consistent with the live computation.
     assert json.dumps(evidence_payload, sort_keys=True) == json.dumps(
         model_evidence(corpus, model), sort_keys=True
+    )
+
+
+def test_transition_ablation_converges_to_memoryless() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    payload = evaluation_payload(corpus, model)
+    ablation = payload["transition_ablation"]
+    rows = list(ablation["rows"])
+    assert len(rows) >= 5
+    # At uniform B (max blend), temporal converges exactly to memoryless.
+    assert abs(rows[-1]["temporal_minus_memoryless"]) < 1e-6
+    assert ablation["convergence_blend"] is not None
+    # At the authored B, temporal beats static (the mechanism B provides).
+    assert rows[0]["temporal_minus_static"] > 0
+    # Deterministic and consistent with the live computation.
+    assert json.dumps(ablation, sort_keys=True) == json.dumps(
+        transition_ablation(corpus, model), sort_keys=True
     )
 
 

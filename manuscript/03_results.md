@@ -157,6 +157,23 @@ boundary mismatch between the two rows.
 
 ![Phase segmentation: ground truth vs smoothed prediction]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons}
 
+A second ablation isolates the contribution of the transition structure itself
+(Figure `fig:transition-ablation`): as the transition matrix `B` is blended toward
+a uniform matrix, the temporal decoder converges *exactly* to the per-step
+memoryless decoder — with `B @ posterior` uniform, the forward filter no longer
+carries state history — reaching equivalence by blend `{{TRANSITION_CONVERGENCE_BLEND}}`.
+The entire temporal-vs-memoryless difference is therefore attributable to the
+transition structure `B`. On this small corpus the peak mean accuracy occurs at a
+mild blend (`{{TRANSITION_PEAK_ACC}}` at blend `{{TRANSITION_PEAK_BLEND}}`), an
+honest reminder that brute accuracy and the authored transition structure need
+not coincide.
+
+![Transition-structure ablation]({{TRANSITION_ABLATION_FIGURE}}){#fig:transition-ablation}
+*Mean temporal accuracy as the transition matrix `B` is blended toward uniform,
+with constant memoryless and static references. At uniform `B` the temporal
+decoder converges exactly to memoryless, isolating that the temporal-vs-memoryless
+difference is the transition structure.*
+
 ## Which phases are recoverable {#sec:phase-recovery}
 
 Collapsing the pooled confusion matrix into per-phase metrics quantifies the

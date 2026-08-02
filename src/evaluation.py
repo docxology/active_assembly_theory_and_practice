@@ -1130,6 +1130,93 @@ def model_evidence(
     }
 
 
+def transition_ablation(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+    blends: Sequence[float] | None = None,
+) -> dict[str, Any]:
+    """Ablate the transition matrix ``B`` (the second axis of the mechanism).
+
+    The ambiguity ablation varies the likelihood ``A`` while ``B`` is fixed. This
+    is the complementary sweep: it varies the transition structure ``B`` toward a
+    uniform matrix (no transitions impose any constraint) while ``A`` and ``D``
+    stay fixed. Because ``B @ posterior`` is a uniform vector when ``B`` is
+    uniform, the forward filter collapses exactly to the per-step memoryless
+    decoder there: the temporal-vs-memoryless gap converges to zero. This isolates
+    that the entire difference between the temporal and memoryless decoders is the
+    transition structure ``B``. An honest secondary observation is that on this
+    corpus a mild blend (not the authored ``B``) happens to give the highest mean
+    accuracy — accuracy and generative-optimality need not coincide.
+
+    Returns per-blend mean temporal accuracy plus the memoryless/static (constant)
+    references, the blend at which temporal converges to memoryless, and the peak.
+    """
+
+    authored = np.asarray(model.B, dtype=float)
+    n_states = authored.shape[0]
+    uniform = np.full_like(authored, 1.0 / n_states)
+    if blends is None:
+        blends = [round(index * 0.1, 1) for index in range(11)]
+
+    def _mean_accuracy(predict) -> float:
+        accuracies: list[float] = []
+        for fixture in corpus:
+            ids = [int(o) for o in fixture_observation_ids(fixture)]
+            predicted = predict(ids, model)
+            truth = fixture.phase_labels
+            accuracies.append(
+                float(np.mean([predicted[i] == truth[i] for i in range(len(truth))]))
+            )
+        return float(np.mean(accuracies)) if accuracies else 0.0
+
+    memoryless_mean = _mean_accuracy(_memoryless_decoder_labels)
+    static_mean = _mean_accuracy(_static_filter_labels)
+
+    rows: list[dict[str, object]] = []
+    for blend in blends:
+        mixed = (1.0 - blend) * authored + blend * uniform
+        mixed = mixed / mixed.sum(axis=0, keepdims=True)
+        blended = TemporalGenerativeModel(
+            A=np.asarray(model.A, dtype=float),
+            B=mixed.astype(float),
+            D=np.asarray(model.D, dtype=float),
+            observation_labels=model.observation_labels,
+            hidden_state_labels=model.hidden_state_labels,
+        )
+        blended.validate()
+        result = compare_models(corpus, blended)
+        temporal_mean = float(
+            np.mean([float(row["temporal_accuracy"]) for row in result.values()])
+        )
+        rows.append(
+            {
+                "blend": float(blend),
+                "temporal_mean_accuracy": temporal_mean,
+                "temporal_minus_memoryless": temporal_mean - memoryless_mean,
+                "temporal_minus_static": temporal_mean - static_mean,
+            }
+        )
+
+    convergence_blend: float | None = next(
+        (
+            float(cast(float, row["blend"]))
+            for row in rows
+            if abs(float(cast(float, row["temporal_minus_memoryless"]))) < 1e-9
+        ),
+        None,
+    )
+    peak = max(rows, key=lambda row: float(cast(float, row["temporal_mean_accuracy"])))
+    return {
+        "blends": [float(blend) for blend in blends],
+        "rows": rows,
+        "memoryless_mean_accuracy": memoryless_mean,
+        "static_mean_accuracy": static_mean,
+        "convergence_blend": convergence_blend,
+        "peak_blend": float(cast(float, peak["blend"])),
+        "peak_temporal_accuracy": float(cast(float, peak["temporal_mean_accuracy"])),
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -1276,4 +1363,5 @@ def evaluation_payload(
         "decoder_calibration": decoder_calibration(corpus, model),
         "observation_informativeness": observation_informativeness(model),
         "model_evidence": model_evidence(corpus, model),
+        "transition_ablation": transition_ablation(corpus, model),
     }

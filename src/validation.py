@@ -272,6 +272,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "generative_model.png",
         "observation_informativeness.png",
         "model_evidence.png",
+        "transition_ablation.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -449,6 +450,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "GENERATIVE_MODEL_FIGURE",
         "OBSERVATION_INFO_FIGURE",
         "MODEL_EVIDENCE_FIGURE",
+        "TRANSITION_ABLATION_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -842,6 +844,18 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         and float(evidence["temporal_margin_over_best_alternative"]) > 0
     )
 
+    # Transition ablation: as B -> uniform, temporal must converge exactly to
+    # memoryless (B @ posterior = uniform), and temporal must beat static at the
+    # authored B (the mechanism the ablation isolates).
+    trans = fresh_payload["transition_ablation"]
+    trans_rows = list(trans["rows"])
+    trans_ok = (
+        len(trans_rows) >= 5
+        and trans["convergence_blend"] is not None
+        and abs(float(trans_rows[-1]["temporal_minus_memoryless"])) < 1e-6
+        and float(trans_rows[0]["temporal_minus_static"]) > 0
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -897,6 +911,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_transition_ablation_converges",
+            trans_ok,
+            f"convergence_blend={trans['convergence_blend']} "
+            f"peak={float(trans['peak_temporal_accuracy']):.3f}",
         ),
         _check(
             "advanced_model_evidence_temporal_best",

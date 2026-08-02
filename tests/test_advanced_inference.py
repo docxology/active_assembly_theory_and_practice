@@ -25,6 +25,7 @@ from src.figures import (
     plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
+    plot_transition_ablation,
 )
 
 
@@ -347,3 +348,35 @@ def test_model_evidence_figure_written_nonempty(tmp_path) -> None:
 def test_model_evidence_figure_empty_raises(tmp_path) -> None:
     with pytest.raises(ValueError):
         plot_model_evidence({"log_evidence": {}}, tmp_path / "model_evidence.png")
+
+
+def test_transition_ablation_figure_written_nonempty(tmp_path) -> None:
+    payload: dict[str, object] = {
+        "rows": [
+            {
+                "blend": 0.0,
+                "temporal_mean_accuracy": 0.667,
+                "temporal_minus_memoryless": -0.056,
+                "temporal_minus_static": 0.278,
+            },
+            {
+                "blend": 1.0,
+                "temporal_mean_accuracy": 0.722,
+                "temporal_minus_memoryless": 0.0,
+                "temporal_minus_static": 0.333,
+            },
+        ],
+        "memoryless_mean_accuracy": 0.722,
+        "static_mean_accuracy": 0.389,
+        "convergence_blend": 0.4,
+        "peak_blend": 0.2,
+        "peak_temporal_accuracy": 0.778,
+    }
+    path = plot_transition_ablation(payload, tmp_path / "transition_ablation.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_transition_ablation_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_transition_ablation({"rows": []}, tmp_path / "transition_ablation.png")

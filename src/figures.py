@@ -1346,6 +1346,70 @@ def plot_model_evidence(payload: dict[str, object], output_path: Path) -> Path:
     return output_path
 
 
+def plot_transition_ablation(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot mean temporal accuracy as the transition matrix B -> uniform.
+
+    Line of the temporal decoder's mean accuracy across the transition blend,
+    with the constant memoryless and static references as horizontal lines. This
+    shows the second axis of the mechanism: as the transition structure is removed
+    (blend -> 1, uniform B) the temporal decoder converges exactly to the
+    memoryless per-step decoder; the peak (if off-zero) is annotated to record
+    honestly that accuracy and generative-optimality need not coincide.
+    """
+
+    rows = cast(list[dict[str, object]], payload.get("rows"))
+    if not rows:
+        raise ValueError("transition ablation must contain rows")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    blends = [float(cast(float, row["blend"])) for row in rows]
+    temps = [float(cast(float, row["temporal_mean_accuracy"])) for row in rows]
+    memoryless_mean = float(cast(float, payload.get("memoryless_mean_accuracy", 0.0)))
+    static_mean = float(cast(float, payload.get("static_mean_accuracy", 0.0)))
+    convergence = payload.get("convergence_blend")
+    peak_blend = float(cast(float, payload.get("peak_blend", 0.0)))
+    peak_acc = float(cast(float, payload.get("peak_temporal_accuracy", 0.0)))
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.4))
+    ax.plot(blends, temps, marker="o", color=PALETTE[2], label="temporal HMM")
+    ax.axhline(
+        memoryless_mean,
+        color="#8b5a00",
+        linestyle="--",
+        linewidth=1.0,
+        label=f"memoryless ({memoryless_mean:.3f})",
+    )
+    ax.axhline(
+        static_mean,
+        color="#999999",
+        linestyle=":",
+        linewidth=1.0,
+        label=f"static ({static_mean:.3f})",
+    )
+    if convergence is not None:
+        convergence_float = float(cast(float, convergence))
+        ax.axvline(convergence_float, color="#555555", linestyle=":", linewidth=0.8)
+        ax.annotate(
+            "converges to memoryless",
+            xy=(convergence_float, memoryless_mean),
+            xytext=(convergence_float - 0.02, memoryless_mean + 0.06),
+            fontsize=7,
+            color="#555555",
+        )
+    ax.plot(peak_blend, peak_acc, marker="*", color="#c62828", markersize=12)
+    ax.set_xlabel("transition blend toward uniform")
+    ax.set_ylabel("mean decoding accuracy")
+    ax.set_title(
+        f"Transition-structure ablation (peak {peak_acc:.3f} at blend {peak_blend:.1f})"
+    )
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1376,6 +1440,15 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "sequences) even though the memoryless decoder wins on raw per-step accuracy — the "
         "temporal model is the better explainer of the data where it is not the better per-step "
         "classifier."
+    ),
+    "transition_ablation": (
+        "Transition-structure ablation (the second axis of the mechanism): mean temporal decoding "
+        "accuracy as the transition matrix B is blended toward a uniform matrix, with constant "
+        "memoryless and static references. As the transition structure is removed the temporal "
+        "decoder converges exactly to the memoryless per-step decoder (B @ posterior is uniform), "
+        "isolating that the temporal-vs-memoryless difference is entirely the transition structure "
+        "B. An annotated peak records honestly that on this corpus mild blending (not the authored "
+        "B) maximizes brute accuracy — accuracy and generative-optimality need not coincide."
     ),
     "observation_pipeline": (
         "Assembly observation pipeline. Each decoded x86-64 instruction (labelled by mnemonic) "

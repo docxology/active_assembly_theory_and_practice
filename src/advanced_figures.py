@@ -28,6 +28,7 @@ from .figures import (
     plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
+    plot_transition_ablation,
     plot_temporal_beliefs_heatmap,
     write_figure_captions,
 )
@@ -106,6 +107,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     evidence_path = figure_dir / "model_evidence.png"
     plot_model_evidence(evaluation_report["model_evidence"], evidence_path)
 
+    transition_path = figure_dir / "transition_ablation.png"
+    plot_transition_ablation(evaluation_report["transition_ablation"], transition_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -119,6 +123,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
             informativeness_path.relative_to(PROJECT_ROOT)
         ),
         "model_evidence": str(evidence_path.relative_to(PROJECT_ROOT)),
+        "transition_ablation": str(transition_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -167,5 +172,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "generative_model": stats_paths["generative_model"],
         "observation_informativeness": stats_paths["observation_informativeness"],
         "model_evidence": stats_paths["model_evidence"],
+        "transition_ablation": stats_paths["transition_ablation"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

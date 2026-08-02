@@ -64,7 +64,7 @@ PY
 ## What the validation gate enforces
 
 `scripts/validate_analysis_outputs.py` regenerates the full analysis surface and
-then asserts a 68-oracle contract. The oracles span trace contracts, RxInfer
+then asserts a 70-oracle contract. The oracles span trace contracts, RxInfer
 companion-artifact consistency, the scholarship implemented/comparison/roadmap/context
 partition, claim-register closure, RedTeam durability, the SHA-256/byte-size
 reproducibility manifest, and a **figure-set oracle** that requires the expected
