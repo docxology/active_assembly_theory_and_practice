@@ -24,6 +24,7 @@ from .figures import (
     plot_decoder_calibration,
     plot_generative_model,
     plot_model_comparison_bars,
+    plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
     plot_temporal_beliefs_heatmap,
@@ -96,6 +97,11 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     generative_path = figure_dir / "generative_model.png"
     plot_generative_model(generative_path)
 
+    informativeness_path = figure_dir / "observation_informativeness.png"
+    plot_observation_informativeness(
+        evaluation_report["observation_informativeness"], informativeness_path
+    )
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -105,6 +111,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "phase_recovery": str(phase_recovery_path.relative_to(PROJECT_ROOT)),
         "decoder_calibration": str(calibration_path.relative_to(PROJECT_ROOT)),
         "generative_model": str(generative_path.relative_to(PROJECT_ROOT)),
+        "observation_informativeness": str(
+            informativeness_path.relative_to(PROJECT_ROOT)
+        ),
     }
 
 
@@ -151,5 +160,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "phase_recovery": stats_paths["phase_recovery"],
         "decoder_calibration": stats_paths["decoder_calibration"],
         "generative_model": stats_paths["generative_model"],
+        "observation_informativeness": stats_paths["observation_informativeness"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

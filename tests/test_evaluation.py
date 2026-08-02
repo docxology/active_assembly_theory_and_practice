@@ -19,6 +19,7 @@ from src.evaluation import (
     evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    observation_informativeness,
     per_phase_recovery_metrics,
     pooled_decoding_accuracies,
     segmentation_evaluation,
@@ -381,6 +382,7 @@ def test_evaluation_payload_structure() -> None:
         "corpus_stability",
         "phase_recovery",
         "decoder_calibration",
+        "observation_informativeness",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -532,6 +534,24 @@ def test_decoder_calibration_ordering() -> None:
     # Deterministic and consistent with the live computation.
     assert json.dumps(calibration_payload, sort_keys=True) == json.dumps(
         decoder_calibration(corpus, model), sort_keys=True
+    )
+
+
+def test_observation_informativeness_ranking() -> None:
+    model = build_temporal_model()
+    payload = evaluation_payload(build_corpus(), model)
+    informativeness = payload["observation_informativeness"]
+    rows = list(informativeness["observations"])
+    assert len(rows) >= 5
+    gains = [float(row["info_gain"]) for row in rows]
+    # Reported sorted descending.
+    assert gains == sorted(gains, reverse=True)
+    assert rows[0]["observation"] == informativeness["most_informative"]
+    assert rows[-1]["observation"] == informativeness["least_informative"]
+    assert gains[0] > gains[-1]
+    # Deterministic and consistent with the live computation.
+    assert json.dumps(informativeness, sort_keys=True) == json.dumps(
+        observation_informativeness(model), sort_keys=True
     )
 
 

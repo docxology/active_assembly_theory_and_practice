@@ -1248,6 +1248,59 @@ def plot_generative_model(output_path: Path) -> Path:
     return output_path
 
 
+def plot_observation_informativeness(
+    payload: dict[str, object], output_path: Path
+) -> Path:
+    """Plot per-category information gain to show which instructions matter.
+
+    Horizontal bars of the realised information gain of each observation category
+    (decoded-instruction channel) over the prior ``D``, sorted descending and
+    coloured by the phase each category most strongly indicates. This visualizes
+    the generative model's likelihood: categories with high gain (e.g.
+    ``load_immediate``, ``arithmetic_update``) are strongly phase-diagnostic,
+    while low-gain categories (e.g. the ``exit``-indicating ``control_transfer``)
+    leave the phase underdetermined.
+    """
+
+    from matplotlib.patches import Patch
+
+    observations = cast(list[dict[str, object]], payload.get("observations"))
+    if not observations:
+        raise ValueError("observation informativeness must contain observations")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    names = [str(row["observation"]) for row in observations]
+    gains = [float(cast(float, row["info_gain"])) for row in observations]
+    bests = [str(row["best_phase"]) for row in observations]
+    most = cast(str, payload.get("most_informative", names[0]))
+    least = cast(str, payload.get("least_informative", names[-1]))
+
+    phases = sorted(set(bests))
+    phase_color = {
+        phase: PALETTE[index % len(PALETTE)] for index, phase in enumerate(phases)
+    }
+    y = np.arange(len(names))
+
+    fig, ax = plt.subplots(figsize=(8.8, 4.6))
+    ax.barh(y, gains, color=[phase_color[phase] for phase in bests])
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=9)
+    ax.axvline(0.0, color="#333333", linewidth=0.8)
+    ax.set_xlabel("information gain (nats) over the prior given this observation")
+    ax.set_title(f"Observation informativeness (most: {most}, least: {least})")
+    ax.legend(
+        handles=[Patch(color=phase_color[p], label=p) for p in phases],
+        title="best-indicated phase",
+        fontsize=7,
+        loc="lower right",
+    )
+    ax.grid(axis="x", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1262,6 +1315,14 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "(likelihood A), with prior D; the repeating s-o block is the plate. An active layer "
         "(policy pi, expected free energy G(pi), preference C) extends the model to observation "
         "selection. Rendered from constants, so it is deterministic."
+    ),
+    "observation_informativeness": (
+        "Observation-category informativeness: the realized information gain of each decoded-"
+        "instruction channel over the prior, sorted descending and colored by the phase it most "
+        "strongly indicates. High-gain channels (load_immediate, arithmetic_update) are strongly "
+        "phase-diagnostic; low-gain channels (notably the exit-indicating control_transfer) leave "
+        "the phase underdetermined — quantifying the likelihood-side source of the exit/guard "
+        "recovery difficulty."
     ),
     "observation_pipeline": (
         "Assembly observation pipeline. Each decoded x86-64 instruction (labelled by mnemonic) "

@@ -42,6 +42,7 @@ def generate_variables() -> dict[str, str]:
     stability = evaluation_report["corpus_stability"]
     phase_recovery = evaluation_report["phase_recovery"]
     decoder_cal = evaluation_report["decoder_calibration"]
+    obs_info = evaluation_report["observation_informativeness"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -137,6 +138,9 @@ def generate_variables() -> dict[str, str]:
         "TEMPORAL_ECE": f"{decoder_cal['temporal_ece']:.3f}",
         "STATIC_ECE": f"{decoder_cal['static_ece']:.3f}",
         "MEMORYLESS_ECE": f"{decoder_cal['memoryless_ece']:.3f}",
+        "MOST_INFORMATIVE_OBS": str(obs_info["most_informative"]),
+        "LEAST_INFORMATIVE_OBS": str(obs_info["least_informative"]),
+        "OBS_INFO_RANGE": f"{obs_info['info_gain_range']:.3f}",
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
@@ -168,6 +172,7 @@ def generate_variables() -> dict[str, str]:
         "PHASE_RECOVERY_FIGURE": f"../{advanced_figure_paths['phase_recovery']}",
         "DECODER_CALIBRATION_FIGURE": f"../{advanced_figure_paths['decoder_calibration']}",
         "GENERATIVE_MODEL_FIGURE": f"../{advanced_figure_paths['generative_model']}",
+        "OBSERVATION_INFO_FIGURE": f"../{advanced_figure_paths['observation_informativeness']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -183,11 +183,30 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 187 passed, 0 failed. Coverage 95.40% (gate
+**Current state (2026-08-01):** 190 passed, 0 failed. Coverage 95.47% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **64/64** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **66/66** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Observation-Informativeness Pass (2026-08-01)
+
+- **Research**: new `observation_informativeness` ranks each decoded-instruction
+  channel by the realised information gain it provides over the prior given the
+  likelihood A (H(prior) - H(posterior|o)), with the phase each channel most
+  strongly indicates. Measured, honest result: `load_immediate` (+0.966) and
+  `arithmetic_update` (+0.657) are most phase-diagnostic, while the
+  `exit`-indicating `control_transfer` channel is least (+0.374) — quantifying
+  the likelihood-side source of exit/guard recovery difficulty (consistent with
+  per-phase recovery). Wired into the payload as "observation_informativeness".
+- Validation check `advanced_observation_informativeness_measured` binds structure
+  and a positive-gain spread (recomputed). 
+- **Visualization**: new `observation_informativeness.png` (horizontal bars of
+  info gain by channel, colored by best-indicated phase). Figures 26->27.
+- **Manuscript**: phase-recovery section now traces the limits back to the
+  likelihood via the informativeness figure + tokens
+  MOST_INFORMATIVE_OBS / LEAST_INFORMATIVE_OBS / OBS_INFO_RANGE.
+- Registry: oracle 64->66 (new figure + new check).
 
 ## Bayesian-Graph Visualization Pass (2026-08-01)
 

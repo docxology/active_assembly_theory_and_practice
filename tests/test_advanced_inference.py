@@ -21,6 +21,7 @@ from src.figures import (
     plot_corpus_stability,
     plot_decoder_calibration,
     plot_generative_model,
+    plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
 )
@@ -294,3 +295,34 @@ def test_generative_model_figure_written_nonempty(tmp_path) -> None:
     path = plot_generative_model(tmp_path / "generative_model.png")
     assert path.exists()
     assert path.stat().st_size > 0
+
+
+def test_observation_informativeness_figure_written_nonempty(tmp_path) -> None:
+    payload: dict[str, object] = {
+        "observations": [
+            {
+                "observation": "load_immediate",
+                "info_gain": 0.966,
+                "best_phase": "setup",
+            },
+            {
+                "observation": "control_transfer",
+                "info_gain": 0.374,
+                "best_phase": "exit",
+            },
+        ],
+        "most_informative": "load_immediate",
+        "least_informative": "control_transfer",
+    }
+    path = plot_observation_informativeness(
+        payload, tmp_path / "observation_informativeness.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_observation_informativeness_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_observation_informativeness(
+            {"observations": []}, tmp_path / "observation_informativeness.png"
+        )

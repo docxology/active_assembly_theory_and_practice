@@ -270,6 +270,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "phase_recovery.png",
         "decoder_calibration.png",
         "generative_model.png",
+        "observation_informativeness.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -445,6 +446,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "PHASE_RECOVERY_FIGURE",
         "DECODER_CALIBRATION_FIGURE",
         "GENERATIVE_MODEL_FIGURE",
+        "OBSERVATION_INFO_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -815,6 +817,19 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     cal_memoryless = float(cal_decoders["memoryless"]["ece"])
     calibration_ordering_ok = cal_memoryless < cal_temporal < cal_static
 
+    # Observation informativeness: every category must be reported with a
+    # positive-gain spread, and the ranking must be recomputed (not hardcoded).
+    obs_info = fresh_payload["observation_informativeness"]
+    obs_rows = list(obs_info["observations"])
+    obs_info_ok = (
+        len(obs_rows) >= 5
+        and float(obs_info["info_gain_range"]) > 0
+        and all(
+            "observation" in row and "info_gain" in row and "best_phase" in row
+            for row in obs_rows
+        )
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -870,6 +885,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_observation_informativeness_measured",
+            obs_info_ok,
+            f"range={float(obs_info['info_gain_range']):.3f} "
+            f"most={obs_info['most_informative']} least={obs_info['least_informative']}",
         ),
         _check(
             "advanced_decoder_calibration_ordering",

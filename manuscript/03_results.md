@@ -152,6 +152,20 @@ observation-underdetermined. The macro F1 is `{{PHASE_MACRO_F1}}` and the hardes
 phase to recover is `{{HARDEST_PHASE}}`. These are forward-filter decoding limits
 of the demonstrator, not claims about a complete binary-analysis system.
 
+These limits trace back to the likelihood itself (Figure `fig:observation-info`):
+the decoded-instruction channels differ sharply in how phase-diagnostic they are.
+`load_immediate` and `arithmetic_update` are the most informative over the prior,
+while the `exit`-indicating `control_transfer` channel carries the least
+information — a gain range of `{{OBS_INFO_RANGE}}` nats from most to least
+informative channel. This quantifies the likelihood-side source of why `exit`
+(and `guard_check`) are hard to recover: their most indicative observations are
+the least diagnostic.
+
+![Observation-category informativeness]({{OBSERVATION_INFO_FIGURE}}){#fig:observation-info}
+*Realized information gain of each decoded-instruction channel over the prior,
+sorted descending and colored by the phase it most strongly indicates. The
+low-gain `control_transfer` channel under-determines the `exit` phase.*
+
 ![Per-phase recovery]({{PHASE_RECOVERY_FIGURE}}){#fig:phase-recovery}
 *Per-phase recall and F1 of the temporal forward filter, ordered by F1. The
 `setup` and `accumulator_update` phases are fully recovered while `exit` and

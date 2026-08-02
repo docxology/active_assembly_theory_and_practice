@@ -26,7 +26,11 @@ import numpy as np
 
 from .corpus import CorpusFixture, fixture_observation_ids
 from .features import HIDDEN_STATE_LABELS
-from .active_selection import active_observation_order, fixed_order_steps_to_confidence
+from .active_selection import (
+    active_observation_order,
+    fixed_order_steps_to_confidence,
+    observation_info_gain,
+)
 from .temporal_model import (
     TemporalGenerativeModel,
     forward_backward,
@@ -984,6 +988,63 @@ def decoder_calibration(
     }
 
 
+def observation_informativeness(
+    model: TemporalGenerativeModel,
+) -> dict[str, Any]:
+    """Rank the observation categories by how phase-diagnostic each one is.
+
+    For every observation category (decoded-instruction channel) this computes the
+    realised information gain of that category over the prior ``D`` given the
+    likelihood ``A`` (``H(prior) - H(posterior | o)``): the reduction in phase
+    uncertainty a single observation of that category would achieve. The ranking
+    quantifies which instructions are most — and least — phase-diagnostic, and
+    which phase each category most strongly indicates (``argmax_s A[o, s]``).
+
+    This is a data-derived view of the generative model's likelihood, connecting
+    the observation channel to recoverability: categories with low information
+    gain (e.g. the ``exit``-indicating control-transfer channel) leave the phase
+    underdetermined, consistent with the per-phase recovery result.
+    """
+
+    prior = np.asarray(model.D, dtype=float)
+    prior = prior / prior.sum()
+    matrix_a = np.asarray(model.A, dtype=float)
+
+    def _entropy(vector: np.ndarray) -> float:
+        safe = np.clip(np.asarray(vector, dtype=float), 1e-12, 1.0)
+        return float(-np.sum(safe * np.log(safe)))
+
+    prior_entropy = _entropy(prior)
+    rows: list[dict[str, object]] = []
+    for observation_id in range(matrix_a.shape[0]):
+        gain = observation_info_gain(prior, matrix_a, observation_id)
+        best_phase = model.hidden_state_labels[
+            int(np.argmax(matrix_a[observation_id, :]))
+        ]
+        rows.append(
+            {
+                "observation": model.observation_labels[observation_id],
+                "observation_id": int(observation_id),
+                "info_gain": float(gain),
+                "posterior_entropy": float(prior_entropy - gain),
+                "best_phase": best_phase,
+            }
+        )
+    rows.sort(key=lambda row: -float(cast(float, row["info_gain"])))
+    most = str(rows[0]["observation"])
+    least = str(rows[-1]["observation"])
+    return {
+        "prior_entropy": float(prior_entropy),
+        "most_informative": most,
+        "least_informative": least,
+        "info_gain_range": float(
+            float(cast(float, rows[0]["info_gain"]))
+            - float(cast(float, rows[-1]["info_gain"]))
+        ),
+        "observations": rows,
+    }
+
+
 def evaluation_payload(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
@@ -1128,4 +1189,5 @@ def evaluation_payload(
         "corpus_stability": corpus_stability_analysis(corpus, model),
         "phase_recovery": per_phase_recovery_metrics(formatted_confusion),
         "decoder_calibration": decoder_calibration(corpus, model),
+        "observation_informativeness": observation_informativeness(model),
     }

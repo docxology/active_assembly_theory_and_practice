@@ -17,7 +17,7 @@ the `manuscript/`, `ISA.md`, and `TODO.md`) are authored.
 - `redteam.md` defines the durable adversarial findings artifact.
 - `reproducibility.md` defines the generated artifact hash manifest and the figure caption ledger (`output/figures/README.md`).
 - `analysis_validation.md` defines the generated-output validation oracle.
-- `verification.md` lists the local and template-side gates (64-oracle contract).
+- `verification.md` lists the local and template-side gates (66-oracle contract).
 
-The project emits 26 figures under `output/figures/`; each has a generated
+The project emits 27 figures under `output/figures/`; each has a generated
 caption in `output/figures/README.md`.
