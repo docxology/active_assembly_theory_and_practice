@@ -305,6 +305,22 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         boundary="Calibration is computed from each decoder's own per-step posteriors on the small hand-authored corpus; it reports honest ordering (the temporal model is neither the most accurate nor the best calibrated), not a claim about real-world binary observation noise.",
         status="validated",
     ),
+    ClaimRecord(
+        claim_id="CLM-017",
+        claim_type="model_evidence",
+        statement="The temporal HMM has the highest Bayesian log marginal likelihood of the observed traces (best generative model) even though the memoryless decoder wins on raw per-step accuracy.",
+        support_keys=("friston2017activeinference", "rabiner1989tutorial"),
+        artifact_paths=(
+            "output/data/evaluation_report.json",
+            "output/figures/model_evidence.png",
+        ),
+        validation_checks=(
+            "advanced_model_evidence_temporal_best",
+            "advanced_evaluation_freshness",
+        ),
+        boundary="Log marginal likelihood is computed from the forward-filter evidence on the small hand-authored corpus; it reports the generative (model-selection) comparison — the temporal model best explains the data even where it is not the best per-step classifier.",
+        status="validated",
+    ),
 )
 
 

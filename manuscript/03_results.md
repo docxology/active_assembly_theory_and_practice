@@ -81,6 +81,22 @@ and the sticky filter is worst.*
 phase recovery; off-diagonal mass reveals which phases are confusable (notably the
 `exit` phase, which shares observation categories with earlier phases).*
 
+The decoding results above are classification metrics. A complementary,
+principled *generative* comparison — the log marginal likelihood of the observed
+traces under each model (Figure `fig:model-evidence`) — shows the temporal HMM is
+the best *explainer* of the data: its pooled evidence (`{{TEMPORAL_LOG_EVIDENCE}}`)
+is higher than the static (`{{STATIC_LOG_EVIDENCE}}`) and memoryless
+(`{{MEMORYLESS_LOG_EVIDENCE}}`) alternatives, a margin of
+`{{TEMPORAL_EVIDENCE_MARGIN}}` over its best alternative. So the temporal model
+best explains the observed sequences even though the memoryless decoder is the
+better per-step classifier: the two comparison criteria (discriminative accuracy
+vs generative evidence) do not pick the same model, and we report both honestly.
+
+![Bayesian model evidence]({{MODEL_EVIDENCE_FIGURE}}){#fig:model-evidence}
+*Pooled log marginal likelihood under the temporal HMM, static (identity
+transition), and memoryless generative assumptions (higher is better). The
+temporal HMM has the highest evidence.*
+
 ## Where temporal dynamics matter {#sec:ambiguity-ablation}
 
 The head-to-head result — temporal beats the sticky filter but not the memoryless

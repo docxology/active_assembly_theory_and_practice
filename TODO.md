@@ -183,11 +183,31 @@ uv run --project working/active_assembly_theory_and_practice \
   --cov-fail-under=90
 ```
 
-**Current state (2026-08-01):** 190 passed, 0 failed. Coverage 95.47% (gate
+**Current state (2026-08-01):** 193 passed, 0 failed. Coverage 95.57% (gate
 `--cov-fail-under=90` is GREEN). Validation gate `validate_analysis_outputs.py`
-reports **66/66** oracles all passed. `ruff check`, `ruff format --check`, and
+reports **68/68** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
+
+## Model-Evidence Pass (2026-08-01)
+
+- **Research**: new `model_evidence` computes the Bayesian log marginal
+  likelihood of the observed traces under the temporal HMM (forward-filter
+  evidence), static (identity-transition), and memoryless (no-transition)
+  generative assumptions. Measured, principled result: the temporal HMM has the
+  highest evidence (-26.72) vs static (-29.34) and memoryless (-27.47) — the
+  temporal model is the best *explainer* of the data even though the memoryless
+  decoder wins on raw per-step accuracy. Honest per-fixture nuance: temporal wins
+  on 3/4 fixture log-likelihoods, memoryless on x86_guard. Wired into the payload
+  as "model_evidence".
+- Validation check `advanced_model_evidence_temporal_best` binds temporal >
+  static and temporal > memoryless (recomputed).
+- **Claim CLM-017** (model_evidence) added and bounded.
+- **Visualization**: new `model_evidence.png` (bars of log marginal likelihood,
+  best model highlighted, margin annotated). Figures 27->28.
+- **Manuscript**: results now report the principled generative comparison —
+  discriminative accuracy and generative evidence do not pick the same model.
+- Registry: oracle 66->68 (new figure + new check); claims 16->17.
 
 ## Observation-Informativeness Pass (2026-08-01)
 

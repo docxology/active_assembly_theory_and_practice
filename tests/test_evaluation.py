@@ -19,6 +19,7 @@ from src.evaluation import (
     evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    model_evidence,
     observation_informativeness,
     per_phase_recovery_metrics,
     pooled_decoding_accuracies,
@@ -383,6 +384,7 @@ def test_evaluation_payload_structure() -> None:
         "phase_recovery",
         "decoder_calibration",
         "observation_informativeness",
+        "model_evidence",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
@@ -552,6 +554,23 @@ def test_observation_informativeness_ranking() -> None:
     # Deterministic and consistent with the live computation.
     assert json.dumps(informativeness, sort_keys=True) == json.dumps(
         observation_informativeness(model), sort_keys=True
+    )
+
+
+def test_model_evidence_temporal_best() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    payload = evaluation_payload(corpus, model)
+    evidence_payload = payload["model_evidence"]
+    evidence = evidence_payload["log_evidence"]
+    # The temporal HMM is the best generative model by marginal likelihood.
+    assert evidence["temporal"] > evidence["static"]
+    assert evidence["temporal"] > evidence["memoryless"]
+    assert evidence_payload["best_model"] == "temporal"
+    assert evidence_payload["temporal_margin_over_best_alternative"] > 0
+    # Deterministic and consistent with the live computation.
+    assert json.dumps(evidence_payload, sort_keys=True) == json.dumps(
+        model_evidence(corpus, model), sort_keys=True
     )
 
 

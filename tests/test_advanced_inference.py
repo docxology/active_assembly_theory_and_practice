@@ -21,6 +21,7 @@ from src.figures import (
     plot_corpus_stability,
     plot_decoder_calibration,
     plot_generative_model,
+    plot_model_evidence,
     plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
@@ -326,3 +327,23 @@ def test_observation_informativeness_figure_empty_raises(tmp_path) -> None:
         plot_observation_informativeness(
             {"observations": []}, tmp_path / "observation_informativeness.png"
         )
+
+
+def test_model_evidence_figure_written_nonempty(tmp_path) -> None:
+    payload: dict[str, object] = {
+        "log_evidence": {
+            "temporal": -26.72,
+            "static": -29.34,
+            "memoryless": -27.47,
+        },
+        "best_model": "temporal",
+        "temporal_margin_over_best_alternative": 0.74,
+    }
+    path = plot_model_evidence(payload, tmp_path / "model_evidence.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_model_evidence_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_model_evidence({"log_evidence": {}}, tmp_path / "model_evidence.png")

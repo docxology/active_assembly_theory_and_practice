@@ -1301,6 +1301,51 @@ def plot_observation_informativeness(
     return output_path
 
 
+def plot_model_evidence(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot the log marginal likelihood of each generative model.
+
+    Bars of the pooled log marginal likelihood for the temporal HMM, static, and
+    memoryless generative assumptions (higher is better), with the best model
+    highlighted and the temporal margin over its best alternative annotated. This
+    shows the principled model-selection result: the temporal HMM best explains
+    the observed traces even where the memoryless decoder wins on per-step
+    accuracy.
+    """
+
+    evidence = cast(dict[str, object], payload.get("log_evidence"))
+    if not evidence:
+        raise ValueError("model evidence must contain log_evidence")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    names = ["temporal", "static", "memoryless"]
+    values = [float(cast(float, evidence[name])) for name in names]
+    best = cast(str, payload.get("best_model", "temporal"))
+    margin = float(
+        cast(float, payload.get("temporal_margin_over_best_alternative", 0.0))
+    )
+    x = np.arange(len(names))
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
+    bars = ax.bar(
+        x,
+        values,
+        color=["#2a7ab5" if name == best else "#8fb8d8" for name in names],
+    )
+    ax.bar_label(bars, fmt="%.2f", fontsize=8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+    ax.axhline(0.0, color="#333333", linewidth=0.8)
+    ax.set_ylabel("log marginal likelihood (higher is better)")
+    ax.set_title(
+        f"Bayesian model evidence (best: {best}; temporal margin {margin:.2f})"
+    )
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+    return output_path
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -1323,6 +1368,14 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "phase-diagnostic; low-gain channels (notably the exit-indicating control_transfer) leave "
         "the phase underdetermined — quantifying the likelihood-side source of the exit/guard "
         "recovery difficulty."
+    ),
+    "model_evidence": (
+        "Bayesian model evidence: pooled log marginal likelihood of the observed traces under the "
+        "temporal HMM, static (identity-transition), and memoryless generative assumptions "
+        "(higher is better). The temporal HMM has the highest evidence (it best explains the "
+        "sequences) even though the memoryless decoder wins on raw per-step accuracy — the "
+        "temporal model is the better explainer of the data where it is not the better per-step "
+        "classifier."
     ),
     "observation_pipeline": (
         "Assembly observation pipeline. Each decoded x86-64 instruction (labelled by mnemonic) "

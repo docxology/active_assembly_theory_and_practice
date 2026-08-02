@@ -271,6 +271,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         "decoder_calibration.png",
         "generative_model.png",
         "observation_informativeness.png",
+        "model_evidence.png",
     )
     checks: list[ValidationCheck] = []
     for filename in expected:
@@ -447,6 +448,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "DECODER_CALIBRATION_FIGURE",
         "GENERATIVE_MODEL_FIGURE",
         "OBSERVATION_INFO_FIGURE",
+        "MODEL_EVIDENCE_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -830,6 +832,16 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
         )
     )
 
+    # Bayesian model evidence: the temporal HMM must be the best generative model
+    # (highest log marginal likelihood) by recomputation, with a positive margin.
+    evidence = fresh_payload["model_evidence"]
+    ev = evidence["log_evidence"]
+    evidence_ok = (
+        float(ev["temporal"]) > float(ev["static"])
+        and float(ev["temporal"]) > float(ev["memoryless"])
+        and float(evidence["temporal_margin_over_best_alternative"]) > 0
+    )
+
     return [
         _check(
             "advanced_temporal_isolates_transition",
@@ -885,6 +897,12 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             f"high_blend_gap={high_blend_gap:+.3f} "
             f"seg_blend0(t/m)={seg_blend0_temporal:.2f}/{seg_blend0_memoryless:.2f} "
             f"seg_high(t/m)={seg_high_temporal:.2f}/{seg_high_memoryless:.2f}",
+        ),
+        _check(
+            "advanced_model_evidence_temporal_best",
+            evidence_ok,
+            f"temporal={float(ev['temporal']):.3f} "
+            f"static={float(ev['static']):.3f} memoryless={float(ev['memoryless']):.3f}",
         ),
         _check(
             "advanced_observation_informativeness_measured",

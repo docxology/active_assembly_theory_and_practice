@@ -24,6 +24,7 @@ from .figures import (
     plot_decoder_calibration,
     plot_generative_model,
     plot_model_comparison_bars,
+    plot_model_evidence,
     plot_observation_informativeness,
     plot_phase_recovery,
     plot_segmentation_ribbons,
@@ -102,6 +103,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         evaluation_report["observation_informativeness"], informativeness_path
     )
 
+    evidence_path = figure_dir / "model_evidence.png"
+    plot_model_evidence(evaluation_report["model_evidence"], evidence_path)
+
     return {
         "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -114,6 +118,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "observation_informativeness": str(
             informativeness_path.relative_to(PROJECT_ROOT)
         ),
+        "model_evidence": str(evidence_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -161,5 +166,6 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "decoder_calibration": stats_paths["decoder_calibration"],
         "generative_model": stats_paths["generative_model"],
         "observation_informativeness": stats_paths["observation_informativeness"],
+        "model_evidence": stats_paths["model_evidence"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

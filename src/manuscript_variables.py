@@ -43,6 +43,7 @@ def generate_variables() -> dict[str, str]:
     phase_recovery = evaluation_report["phase_recovery"]
     decoder_cal = evaluation_report["decoder_calibration"]
     obs_info = evaluation_report["observation_informativeness"]
+    evidence = evaluation_report["model_evidence"]
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -141,6 +142,11 @@ def generate_variables() -> dict[str, str]:
         "MOST_INFORMATIVE_OBS": str(obs_info["most_informative"]),
         "LEAST_INFORMATIVE_OBS": str(obs_info["least_informative"]),
         "OBS_INFO_RANGE": f"{obs_info['info_gain_range']:.3f}",
+        "TEMPORAL_LOG_EVIDENCE": f"{evidence['log_evidence']['temporal']:.3f}",
+        "STATIC_LOG_EVIDENCE": f"{evidence['log_evidence']['static']:.3f}",
+        "MEMORYLESS_LOG_EVIDENCE": f"{evidence['log_evidence']['memoryless']:.3f}",
+        "BEST_MODEL": str(evidence["best_model"]),
+        "TEMPORAL_EVIDENCE_MARGIN": f"{evidence['temporal_margin_over_best_alternative']:.3f}",
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
@@ -173,6 +179,7 @@ def generate_variables() -> dict[str, str]:
         "DECODER_CALIBRATION_FIGURE": f"../{advanced_figure_paths['decoder_calibration']}",
         "GENERATIVE_MODEL_FIGURE": f"../{advanced_figure_paths['generative_model']}",
         "OBSERVATION_INFO_FIGURE": f"../{advanced_figure_paths['observation_informativeness']}",
+        "MODEL_EVIDENCE_FIGURE": f"../{advanced_figure_paths['model_evidence']}",
     }
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
