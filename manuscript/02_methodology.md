@@ -62,6 +62,44 @@ observations (likelihood `A`); `D` is the initial prior. The active layer scores
 candidate observations via the expected free energy `G(pi)`. Rendered from
 constants, so it is deterministic.*
 
+## Formal description
+
+::: {.definition #def:genmodel title="Discrete generative model"}
+A discrete temporal generative model is the triple `(D, B, A)` where `D` is a
+prior over the hidden phase `s_1`, `B` is a column-stochastic transition matrix
+`B[s', s] = P(s_{t+1} = s' | s_t = s)`, and `A` is a column-stochastic
+likelihood `A[o, s] = P(o_t = o | s_t = s)`. An observation sequence
+`o_{1:T}` arises from the phases following the left-to-right Markov chain, each
+phase emitting one observation.
+:::
+
+::: {.definition #def:expected-free-energy title="Expected free energy"}
+For a candidate observation, the expected free energy is the negative sum of a
+pragmatic term (a prior log-preference over outcomes, `ln C`) and an epistemic
+term (the reduction in phase-belief entropy from observing it). The active policy
+selects the observation minimizing it. With a flat preference `C` the pragmatic
+term is constant across candidates, so selection is driven by the epistemic
+(information-gain) term.
+:::
+
+::: {.definition #def:model-evidence title="Log marginal likelihood (model evidence)"}
+The model evidence of the observed traces under a generative model is the log
+marginal likelihood `sum_t ln P(o_t | o_{1:t-1})`, where each conditional is the
+forward-filter normalizer at step `t`.
+:::
+
+::: {.proposition #prop:forward-normalizer title="Forward-filter normalizer is the evidence"}
+At each step the forward filter's normalizer equals the conditional marginal
+`P(o_t | o_{1:t-1})`, so the cumulative log of the normalizers is exactly the
+model's log marginal likelihood (Definition [@def:model-evidence]).
+:::
+
+::: {.proposition #prop:transition-collapse title="Uniform transitions collapse temporal to memoryless"}
+When the transition matrix is uniform, `B @ posterior` is a uniform vector, so the
+temporal forward update reduces exactly to the per-step memoryless posterior
+`P(s_t | o_t) ∝ A[o_t]`; the temporal and memoryless decoders then coincide.
+:::
+
 ![Temporal HMM forward-filter beliefs for the accumulator fixture]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs}
 *Forward-filter posterior over the five program phases at each observation step
 for the `x86_accumulator` fixture. Rows are normalized posteriors; the temporal
@@ -71,7 +109,7 @@ down the column recovers `setup -> accumulator_update ->
 representation_transform -> accumulator_update` once the `shl` is decoded.*
 
 To make the *active* in Active Inference explicit, an expected-free-energy
-policy scores each candidate observation by an epistemic term (the reduction in
+policy (Definition [@def:expected-free-energy]) scores each candidate observation by an epistemic term (the reduction in
 phase-belief entropy) and a pragmatic term (a log-preference over the
 observation categories), and selects the observation that minimises expected
 free energy [@friston2017activeinference]. This realises an active-disassembly

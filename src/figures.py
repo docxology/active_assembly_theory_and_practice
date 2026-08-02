@@ -1279,12 +1279,14 @@ def plot_observation_informativeness(
     phase_color = {
         phase: PALETTE[index % len(PALETTE)] for index, phase in enumerate(phases)
     }
-    y = np.arange(len(names))
+    # Highest gain at the top (readability): reverse the y order.
+    y = np.arange(len(names))[::-1]
 
     fig, ax = plt.subplots(figsize=(8.8, 4.6))
     ax.barh(y, gains, color=[phase_color[phase] for phase in bests])
     ax.set_yticks(y)
     ax.set_yticklabels(names, fontsize=9)
+    ax.set_xlim(0.0, max(gains) * 1.1)
     ax.axvline(0.0, color="#333333", linewidth=0.8)
     ax.set_xlabel("information gain (nats) over the prior given this observation")
     ax.set_title(f"Observation informativeness (most: {most}, least: {least})")

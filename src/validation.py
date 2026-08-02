@@ -306,7 +306,7 @@ def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
         key
         for match in re.findall(r"@([A-Za-z0-9_:-]+)", manuscript_text)
         for key in [match.rstrip(".,;]")]
-        if not key.startswith(("fig:", "tab:", "sec:", "eq:"))
+        if not key.startswith(("fig:", "tab:", "sec:", "eq:", "def:", "prop:"))
     }
     ledger_keys = scholarship_keys()
     missing_bib = sorted(ledger_keys - bib_keys)

@@ -189,6 +189,22 @@ reports **70/70** oracles all passed. `ruff check`, `ruff format --check`, and
 `mypy` are clean. All findings below marked **RESOLVED 2026-07-31** have been
 implemented and verified.
 
+## Manuscript / Formalisms / Visualization Pass (2026-08-01)
+
+- **Auto-numbered formalisms**: methodology now carries three auto-numbered
+  Definitions (discrete generative model, expected free energy, log marginal
+  likelihood / model evidence) and two Propositions (forward-filter normalizer is
+  the evidence; uniform transitions collapse temporal to memoryless), rendered
+  and cross-referenced (Definition 1-3, Proposition 1-2, 0 unresolved refs). The
+  gate's `scholarship_citation_closure` now declares `def:`/`prop:` as allowed
+  cross-reference prefixes (git-verified render).
+- **Visualization**: observation-informativeness chart now ordered highest-info
+  at the top with an x-lim buffer (readability).
+- **Scholarship**: exa not available in this environment; arXiv/Semantic Scholar
+  search returned no cleanly-relevant new source, so the usage-closed 24-source
+  ledger was preserved (no padding).
+- Rendered PDF (27 pages) saved to ~/Downloads/Active_Assembly_Theory_and_Practice.pdf.
+
 ## Transition-Ablation Pass (2026-08-01)
 
 - **Research**: new `transition_ablation` — the second axis of the mechanism. The

@@ -83,7 +83,7 @@ phase recovery; off-diagonal mass reveals which phases are confusable (notably t
 
 The decoding results above are classification metrics. A complementary,
 principled *generative* comparison — the log marginal likelihood of the observed
-traces under each model (Figure `fig:model-evidence`) — shows the temporal HMM is
+traces under each model (Definition [@def:model-evidence]; Figure `fig:model-evidence`) — shows the temporal HMM is
 the best *explainer* of the data: its pooled evidence (`{{TEMPORAL_LOG_EVIDENCE}}`)
 is higher than the static (`{{STATIC_LOG_EVIDENCE}}`) and memoryless
 (`{{MEMORYLESS_LOG_EVIDENCE}}`) alternatives, a margin of
@@ -158,7 +158,7 @@ boundary mismatch between the two rows.
 ![Phase segmentation: ground truth vs smoothed prediction]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons}
 
 A second ablation isolates the contribution of the transition structure itself
-(Figure `fig:transition-ablation`): as the transition matrix `B` is blended toward
+(Figure `fig:transition-ablation`; Proposition [@prop:transition-collapse]): as the transition matrix `B` is blended toward
 a uniform matrix, the temporal decoder converges *exactly* to the per-step
 memoryless decoder — with `B @ posterior` uniform, the forward filter no longer
 carries state history — reaching equivalence by blend `{{TRANSITION_CONVERGENCE_BLEND}}`.
