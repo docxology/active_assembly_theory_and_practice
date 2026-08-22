@@ -13,9 +13,11 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "capstone>=5.0,<6",
+    "defusedxml>=0.7.1",
     "inferactively-pymdp>=1.0.2",
     "matplotlib>=3.7.0",
     "numpy>=1.24.0",
+    "pypdf>=6.0,<7",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pyyaml>=6.0",
@@ -30,6 +32,10 @@ dev = [
 heavy = [
     "angr>=9.2",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
@@ -71,9 +77,13 @@ extend-per-file-ignores = { "scripts/*.py" = ["E402"] }
 # Third-party modules that ship without type stubs or a py.typed marker.
 module = [
     "capstone",
+    "capstone.*",
     "pymdp",
     "pymdp.*",
     "unicorn",
     "unicorn.*",
+    "pypdf",
+    "pypdf.*",
+    "yaml",
 ]
 ignore_missing_imports = true

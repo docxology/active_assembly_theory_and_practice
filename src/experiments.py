@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from .active_inference_bridge import InferenceResult, infer_hidden_states
+from .assembly_formalism import assembly_listing_payload
 from .assembly_packages import TraceBundle, build_trace_bundle, trace_bundle_to_json
 from .assembly_packages.capstone_adapter import disassemble_with_capstone
 from .assembly_packages.optional_adapters import probe_optional_packages
@@ -14,13 +15,20 @@ from .assembly_packages.unicorn_adapter import emulate_with_unicorn
 from .disassembly import InstructionEvent, instructions_to_json
 from .emulation import EmulationTrace
 from .features import AssemblyObservation, encode_observations, observation_counts
+from .typed_observations import TypedObservation, encode_typed_observations
 from .figures import (
     plot_observation_pipeline,
     plot_package_provenance,
     plot_posterior_beliefs,
+    plot_trace_refinement,
     plot_trace_feature_matrix,
 )
 from .generative_model import GenerativeModelSpec, build_generative_model
+from .symbolic_semantics import (
+    SymbolicExecutionReport,
+    symbolic_execute,
+    validate_symbolic_report,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
@@ -34,6 +42,8 @@ class ExperimentResult:
     instructions: tuple[InstructionEvent, ...]
     trace: EmulationTrace
     observations: tuple[AssemblyObservation, ...]
+    typed_observations: tuple[TypedObservation, ...]
+    symbolic_execution: SymbolicExecutionReport
     model: GenerativeModelSpec
     inference: InferenceResult
     trace_bundle: TraceBundle
@@ -47,6 +57,8 @@ class ExperimentResult:
             "sample_name": self.sample_name,
             "instruction_count": len(self.instructions),
             "observation_count": len(self.observations),
+            "symbolic_execution": self.symbolic_execution.to_dict(),
+            "symbolic_final_rax_matches": self.symbolic_execution.final_rax_matches,
             "final_rax": self.trace.final_rax,
             "final_state": self.inference.final_state,
             "observation_counts": observation_counts(self.observations),
@@ -87,6 +99,13 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
     instructions = tuple(decoded_instructions)
     trace = emulation_trace
     observations = tuple(encode_observations(instructions, trace))
+    typed_observations = tuple(encode_typed_observations(instructions, trace))
+    symbolic_execution = symbolic_execute(instructions, trace)
+    symbolic_valid, symbolic_detail = validate_symbolic_report(symbolic_execution)
+    if not symbolic_valid:
+        raise RuntimeError(
+            f"bounded symbolic semantics validation failed: {symbolic_detail}"
+        )
     model = build_generative_model()
     inference = infer_hidden_states(list(observations), model)
     trace_bundle = build_trace_bundle(
@@ -94,11 +113,13 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
         instructions=instructions,
         trace=trace,
         observations=observations,
+        typed_observations=typed_observations,
         package_provenance=(
             capstone_provenance,
             unicorn_provenance,
             *tuple(probe_optional_packages()),
         ),
+        symbolic_facts=tuple(event.to_dict() for event in symbolic_execution.events),
     )
 
     data_dir = OUTPUT_DIR / "data"
@@ -112,6 +133,10 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
             data_dir / "emulation_trace.json",
             trace.to_dict(),
         ),
+        "symbolic_execution": _write_json(
+            data_dir / "symbolic_execution.json",
+            symbolic_execution.to_dict(),
+        ),
         "inference_result": _write_json(
             data_dir / "inference_result.json",
             {
@@ -123,6 +148,10 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
         "trace_bundle": _write_json(
             data_dir / "trace_bundle.json",
             trace_bundle_to_json(trace_bundle),
+        ),
+        "assembly_listing": _write_json(
+            data_dir / "assembly_listing.json",
+            assembly_listing_payload(sample_name, instructions, observations, trace),
         ),
     }
     figure_paths = {
@@ -151,12 +180,20 @@ def run_experiment(sample_name: str = "x86_accumulator") -> ExperimentResult:
                 figure_dir / "trace_feature_matrix.png",
             ).relative_to(PROJECT_ROOT)
         ),
+        "trace_refinement": str(
+            plot_trace_refinement(
+                symbolic_execution.to_dict(),
+                figure_dir / "trace_refinement.png",
+            ).relative_to(PROJECT_ROOT)
+        ),
     }
     result = ExperimentResult(
         sample_name=sample_name,
         instructions=instructions,
         trace=trace,
         observations=observations,
+        typed_observations=typed_observations,
+        symbolic_execution=symbolic_execution,
         model=model,
         inference=inference,
         trace_bundle=trace_bundle,

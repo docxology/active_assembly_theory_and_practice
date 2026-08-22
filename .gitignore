@@ -8,3 +8,4 @@ output/
 .coverage
 .coverage.*
 **/*.egg-info/
+formal/.lake/

@@ -9,12 +9,16 @@ layout, manuscript token generation, and comparison baselines.
 The first model lives in `julia/ActiveAssemblyRxInfer/` and is invoked through:
 
 ```bash
-julia --project=working/active_assembly_theory_and_practice/julia/ActiveAssemblyRxInfer \
-  working/active_assembly_theory_and_practice/julia/ActiveAssemblyRxInfer/scripts/run_rxinfer.jl \
-  --trace working/active_assembly_theory_and_practice/output/data/trace_bundle.json \
-  --output working/active_assembly_theory_and_practice/output/rxinfer \
-  --iterations 8
+uv run python scripts/run_rxinfer_backend.py
 ```
+
+This project-level bridge is the canonical invocation: it regenerates the
+trace bundle, validates the committed Julia manifest, resolves the pinned
+Julia executable, checks the returned Julia/RxInfer diagnostics, and writes
+both the Gaussian and namespaced categorical artifacts. The lower-level Julia
+CLI remains available for package development, but it should be run only after
+`uv run python scripts/run_julia_tests.py` has established that the selected
+environment satisfies the project pins.
 
 It reads observation IDs from the trace bundle as numeric event-code evidence,
 runs a conjugate Gaussian observation model with `free_energy=true`, and writes
@@ -24,10 +28,19 @@ every exposed `result.free_energy` value to:
 output/rxinfer/free_energy_trace.jsonl
 ```
 
+The categorical companion is invoked against the same bundle with:
+
+```bash
+uv run python scripts/run_rxinfer_backend.py
+```
+
 The first model is intentionally conservative. It records real RxInfer Bethe
-Free Energy values, but it is not yet the final categorical HMM over program
-phases. The pymdp path is retained only as a comparison baseline and does not
-stand in for RxInfer Bethe Free Energy.
+Free Energy values and remains the authoritative project spine. The Julia
+package also exposes an additive categorical phase-HMM through
+`--model categorical`; the bridge writes it under `output/rxinfer_categorical/`
+so its model-specific free-energy scale cannot be mistaken for the Gaussian
+trajectory. The pymdp path is retained only as a comparison baseline and does
+not stand in for RxInfer Bethe Free Energy.
 
 ## Required Free-Energy Fields
 
@@ -53,14 +66,15 @@ must use the corresponding RxInfer engine history field when they are added.
 
 ## Model Expansion
 
-> **v0.2 status:** Item 1 (a discrete/categorical model over phases) has landed
+> **current status:** Item 1 (a discrete/categorical model over phases) has landed
 > as an *additive* model inside the Julia package
 > (`julia/ActiveAssemblyRxInfer/`) with its own `Pkg.test()` coverage asserting
-> finite Bethe Free Energy output; the existing Gaussian spine and its tests are
-> retained unchanged. The pipeline's authoritative free-energy trace still uses
-> the Gaussian demonstrator — wiring the categorical model in as the pipeline
-> backend remains future work, so manuscript claims stay cautious. The Python
-> side independently gained a genuine temporal HMM
+> finite Bethe Free Energy output. The Python bridge now executes the categorical
+> CLI path, validates its model identity and trace hash, writes a separate
+> artifact namespace, and renders a companion figure. The Gaussian spine remains
+> authoritative for the project's headline RxInfer value; the categorical model
+> is implemented and tested but is not silently substituted into that spine. The
+> Python side independently gained a genuine temporal HMM
 > (`src/temporal_model.py`, forward filter + Viterbi + smoothing) used for the
 > measured phase-decoding evaluation (see `docs/evaluation.md`).
 
@@ -75,7 +89,11 @@ must use the corresponding RxInfer engine history field when they are added.
 
 Categorical RxInfer models should be added only when their Bethe Free Energy
 terms are fully supported and tested. If a custom factor or average-energy rule
-is required, that rule belongs in the Julia package with tests.
+is required, that rule belongs in the Julia package with tests. The current
+companion uses native `Categorical` and `DiscreteTransition` factors with fixed
+left-to-right transition and emission matrices; its finite values are not
+evidence that the parameters were learned or that assembly semantics were
+recovered.
 
 ## Artifact Set
 
@@ -88,6 +106,11 @@ The bridge expects:
 - `output/rxinfer/stdout.log`
 - `output/rxinfer/stderr.log`
 - `output/figures/rxinfer_free_energy.png`
+- `output/rxinfer_categorical/categorical_free_energy_trace.jsonl`
+- `output/rxinfer_categorical/categorical_posteriors.json`
+- `output/rxinfer_categorical/categorical_diagnostics.json`
+- `output/rxinfer_categorical/categorical_model_config.json`
+- `output/figures/rxinfer_categorical_free_energy.png`
 - `output/figures/inference_diagnostics.png`
 - `output/data/validation_report.json`
 - `output/figures/validation_summary.png`

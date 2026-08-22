@@ -14,9 +14,12 @@ from src.active_selection import (
     ExpectedFreeEnergy,
     SelectionResult,
     active_observation_order,
+    expected_information_gain,
     expected_free_energy,
     fixed_order_steps_to_confidence,
     observation_info_gain,
+    predictive_expected_free_energy,
+    predictive_information_contribution,
     select_next_observation,
     state_belief_update,
 )
@@ -76,6 +79,59 @@ def test_observation_info_gain_uniform_is_zero():
 
     gain = observation_info_gain(UNIFORM_BELIEF_3, ONE_HOT_VS_UNIFORM_A, 1)
     assert math.isclose(gain, 0.0, abs_tol=1e-9)
+
+
+def test_predictive_information_contributions_sum_to_channel_information():
+    """Predictive category contributions recover the mutual-information sum."""
+
+    contributions = [
+        predictive_information_contribution(
+            UNIFORM_BELIEF_3, ONE_HOT_VS_UNIFORM_A, observation_id
+        )
+        for observation_id in range(ONE_HOT_VS_UNIFORM_A.shape[0])
+    ]
+
+    assert contributions[0] > 0.0
+    assert math.isclose(
+        sum(contributions),
+        expected_information_gain(UNIFORM_BELIEF_3, ONE_HOT_VS_UNIFORM_A),
+        rel_tol=1e-9,
+    )
+
+
+def test_predictive_policy_records_distinct_contract_and_finite_efe():
+    """The predictive policy is callable and labels its trajectory explicitly."""
+
+    result = active_observation_order(
+        [1, 0],
+        ONE_HOT_VS_UNIFORM_A,
+        UNIFORM_BELIEF_3,
+        np.array([1.0, 1.0]),
+        policy="predictive",
+    )
+    assert result.policy == "predictive"
+    assert all(math.isfinite(value) for value in result.efe_by_step)
+    predictive = predictive_expected_free_energy(
+        UNIFORM_BELIEF_3,
+        ONE_HOT_VS_UNIFORM_A,
+        np.array([1.0, 1.0]),
+        candidate_index=0,
+        observation_id=0,
+    )
+    assert predictive.epistemic_value > 0.0
+
+
+def test_active_selection_rejects_unknown_policy():
+    """Policy names are a closed API rather than silently falling back."""
+
+    with pytest.raises(ValueError, match="policy"):
+        active_observation_order(
+            [0],
+            ONE_HOT_VS_UNIFORM_A,
+            UNIFORM_BELIEF_3,
+            np.array([1.0, 1.0]),
+            policy="x",
+        )
 
 
 def test_observation_info_gain_non_negative_on_real_model():
@@ -352,6 +408,39 @@ def test_state_belief_update_zero_overlap_raises():
     A = np.array([[1.0, 1.0, 0.0]])  # zero on the only supported state
     with pytest.raises(ValueError):
         state_belief_update(belief, A, 0)
+
+
+def test_active_selection_rejects_nonfinite_and_negative_inputs():
+    """Malformed probabilities must fail closed before numerical updates."""
+
+    with pytest.raises(ValueError, match="negative"):
+        state_belief_update(np.array([1.0, -1.0]), np.ones((1, 2)), 0)
+    with pytest.raises(ValueError, match="finite"):
+        state_belief_update(np.array([np.nan, 1.0]), np.ones((1, 2)), 0)
+    with pytest.raises(ValueError, match="finite"):
+        expected_free_energy(
+            np.array([0.5, 0.5]),
+            np.array([[0.5, np.inf], [0.5, 1.0]]),
+            np.array([1.0, 1.0]),
+            0,
+            0,
+        )
+
+
+def test_active_selection_rejects_truncated_ids_and_bad_thresholds():
+    """Float truncation and out-of-range policy thresholds are not implicit APIs."""
+
+    A = np.array([[0.5, 0.5]])
+    D = np.array([0.5, 0.5])
+    C = np.array([1.0])
+    with pytest.raises(ValueError, match="finite integer"):
+        state_belief_update(D, A, 0.5)
+    with pytest.raises(ValueError, match="out-of-range"):
+        state_belief_update(D, A, 1)
+    with pytest.raises(ValueError, match="threshold"):
+        fixed_order_steps_to_confidence([0], A, D, threshold=float("nan"))
+    with pytest.raises(ValueError, match="confidence_threshold"):
+        active_observation_order([0], A, D, C, confidence_threshold=1.5)
 
 
 def test_dataclasses_are_frozen():

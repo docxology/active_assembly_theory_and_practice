@@ -1,10 +1,10 @@
-"""Generated figures for the v0.2 temporal / active / evaluation layer.
+"""Generated figures for the temporal, active, and evaluation layers.
 
-The v0.2 manuscript describes a temporal HMM, an active EFE policy, and a
-quantitative decoder comparison, but the original figure set only covered the
-v0.1 observation/posterior/RxInfer surface. This module closes that gap with
-three honest, measured visualizations plus a single caption ledger that
-documents every figure the project emits.
+The manuscript describes a temporal HMM, an active EFE policy, and a
+quantitative decoder comparison. This module provides the source-bound figure
+suite for those analyses and the original observation/RxInfer surfaces, with a
+source-bound figure suite and a single caption ledger that documents every
+figure the project emits.
 
 All numbers plotted here come from artifacts already produced by
 :mod:`advanced_inference` and :mod:`evaluation`; nothing is hand-stamped.
@@ -17,19 +17,36 @@ from pathlib import Path
 
 from .figures import (
     plot_active_efe_trajectory,
+    plot_action_sensing,
+    plot_assembly_cfg,
     plot_ambiguity_ablation,
     plot_calibration_curve,
     plot_confusion_matrix,
+    plot_cross_architecture_benchmark,
+    plot_compiler_transfer,
+    plot_corpus_coverage,
     plot_corpus_stability,
     plot_decoder_calibration,
     plot_generative_model,
+    plot_generative_adequacy,
+    plot_factorized_observation_comparison,
+    plot_formal_verification_receipt,
+    plot_formal_correspondence,
+    plot_active_information_frontier,
     plot_model_comparison_bars,
     plot_model_evidence,
+    plot_memory_access_timeline,
     plot_observation_informativeness,
+    plot_parameter_learning,
     plot_phase_recovery,
+    plot_representation_invariance_benchmark,
+    plot_quotient_classifier,
+    plot_replication_manifest,
     plot_segmentation_ribbons,
     plot_transition_ablation,
+    plot_sensor_costs,
     plot_temporal_beliefs_heatmap,
+    plot_typed_observation_matrix,
     write_figure_captions,
 )
 
@@ -61,11 +78,10 @@ def write_temporal_belief_figures(output_dir: Path = OUTPUT_DIR) -> list[str]:
 
 
 def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
-    """Write calibration-curve, confusion-matrix, and ambiguity-ablation figures.
+    """Write the evaluation, calibration, ablation, and evidence figures.
 
     Returns:
-        A dict with keys ``calibration_curve``, ``confusion_matrix``, and
-        ``ambiguity_ablation`` mapping to their project-relative PNG paths.
+        A mapping from figure stem to its project-relative PNG path.
     """
 
     figure_dir = output_dir / "figures"
@@ -73,9 +89,9 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     evaluation_path = output_dir / "data" / "evaluation_report.json"
     evaluation_report = json.loads(evaluation_path.read_text(encoding="utf-8"))
 
-    calibration_path = figure_dir / "calibration_curve.png"
+    calibration_curve_path = figure_dir / "calibration_curve.png"
     plot_calibration_curve(
-        evaluation_report["pooled_calibration_bins"], calibration_path
+        evaluation_report["pooled_calibration_bins"], calibration_curve_path
     )
 
     confusion_path = figure_dir / "confusion_matrix.png"
@@ -93,8 +109,10 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     phase_recovery_path = figure_dir / "phase_recovery.png"
     plot_phase_recovery(evaluation_report["phase_recovery"], phase_recovery_path)
 
-    calibration_path = figure_dir / "decoder_calibration.png"
-    plot_decoder_calibration(evaluation_report["decoder_calibration"], calibration_path)
+    decoder_calibration_path = figure_dir / "decoder_calibration.png"
+    plot_decoder_calibration(
+        evaluation_report["decoder_calibration"], decoder_calibration_path
+    )
 
     generative_path = figure_dir / "generative_model.png"
     plot_generative_model(generative_path)
@@ -110,30 +128,153 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     transition_path = figure_dir / "transition_ablation.png"
     plot_transition_ablation(evaluation_report["transition_ablation"], transition_path)
 
+    adequacy_path = figure_dir / "generative_adequacy.png"
+    plot_generative_adequacy(evaluation_report["generative_adequacy"], adequacy_path)
+
+    typed_path = figure_dir / "typed_observation_matrix.png"
+    typed_payload = json.loads(
+        (output_dir / "data" / "typed_observations.json").read_text(encoding="utf-8")
+    )
+    plot_typed_observation_matrix(typed_payload, typed_path)
+
+    factorized_path = figure_dir / "factorized_observation_comparison.png"
+    factorized_payload = json.loads(
+        (output_dir / "data" / "factorized_observation_model.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_factorized_observation_comparison(factorized_payload, factorized_path)
+
+    coverage_path = figure_dir / "corpus_coverage.png"
+    coverage_payload = json.loads(
+        (output_dir / "data" / "corpus_coverage.json").read_text(encoding="utf-8")
+    )
+    plot_corpus_coverage(coverage_payload, coverage_path)
+
+    action_sensing_path = figure_dir / "action_sensing.png"
+    action_sensing_payload = json.loads(
+        (output_dir / "data" / "action_sensing.json").read_text(encoding="utf-8")
+    )
+    plot_action_sensing(action_sensing_payload, action_sensing_path)
+
+    parameter_learning_path = figure_dir / "parameter_learning.png"
+    parameter_learning_payload = json.loads(
+        (output_dir / "data" / "parameter_learning.json").read_text(encoding="utf-8")
+    )
+    plot_parameter_learning(parameter_learning_payload, parameter_learning_path)
+
+    representation_path = figure_dir / "representation_invariance_benchmark.png"
+    representation_payload = json.loads(
+        (output_dir / "data" / "representation_invariance_benchmark.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_representation_invariance_benchmark(
+        representation_payload, representation_path
+    )
+
+    cross_architecture_path = figure_dir / "cross_architecture_benchmark.png"
+    cross_architecture_payload = json.loads(
+        (output_dir / "data" / "cross_architecture_fixtures.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_cross_architecture_benchmark(
+        cross_architecture_payload, cross_architecture_path
+    )
+
+    formal_path = figure_dir / "formal_verification_receipt.png"
+    formal_payload = json.loads(
+        (output_dir / "data" / "formal_verification.json").read_text(encoding="utf-8")
+    )
+    plot_formal_verification_receipt(formal_payload, formal_path)
+
+    quotient_path = figure_dir / "quotient_classifier.png"
+    quotient_payload = json.loads(
+        (output_dir / "data" / "quotient_classifier.json").read_text(encoding="utf-8")
+    )
+    plot_quotient_classifier(quotient_payload, quotient_path)
+
+    compiler_path = figure_dir / "compiler_transfer.png"
+    compiler_payload = json.loads(
+        (output_dir / "data" / "compiler_transfer.json").read_text(encoding="utf-8")
+    )
+    plot_compiler_transfer(compiler_payload, compiler_path)
+
+    correspondence_path = figure_dir / "formal_correspondence.png"
+    correspondence_payload = json.loads(
+        (output_dir / "data" / "formal_trace_correspondence.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_formal_correspondence(correspondence_payload, correspondence_path)
+
+    sensor_path = figure_dir / "sensor_costs.png"
+    sensor_payload = json.loads(
+        (output_dir / "data" / "sensor_cost_receipt.json").read_text(encoding="utf-8")
+    )
+    plot_sensor_costs(sensor_payload, sensor_path)
+
+    replication_path = figure_dir / "replication_manifest.png"
+    replication_payload = json.loads(
+        (output_dir / "data" / "replication_manifest.json").read_text(encoding="utf-8")
+    )
+    plot_replication_manifest(replication_payload, replication_path)
+
+    information_path = figure_dir / "active_information_frontier.png"
+    information_payload = json.loads(
+        (output_dir / "data" / "active_information_frontier.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_active_information_frontier(information_payload, information_path)
+
     return {
-        "calibration_curve": str(calibration_path.relative_to(PROJECT_ROOT)),
+        "calibration_curve": str(calibration_curve_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
         "ambiguity_ablation": str(ablation_path.relative_to(PROJECT_ROOT)),
         "segmentation_ribbons": str(ribbons_path.relative_to(PROJECT_ROOT)),
         "corpus_stability": str(stability_path.relative_to(PROJECT_ROOT)),
         "phase_recovery": str(phase_recovery_path.relative_to(PROJECT_ROOT)),
-        "decoder_calibration": str(calibration_path.relative_to(PROJECT_ROOT)),
+        "decoder_calibration": str(decoder_calibration_path.relative_to(PROJECT_ROOT)),
         "generative_model": str(generative_path.relative_to(PROJECT_ROOT)),
         "observation_informativeness": str(
             informativeness_path.relative_to(PROJECT_ROOT)
         ),
         "model_evidence": str(evidence_path.relative_to(PROJECT_ROOT)),
         "transition_ablation": str(transition_path.relative_to(PROJECT_ROOT)),
+        "generative_adequacy": str(adequacy_path.relative_to(PROJECT_ROOT)),
+        "typed_observation_matrix": str(typed_path.relative_to(PROJECT_ROOT)),
+        "factorized_observation_comparison": str(
+            factorized_path.relative_to(PROJECT_ROOT)
+        ),
+        "corpus_coverage": str(coverage_path.relative_to(PROJECT_ROOT)),
+        "action_sensing": str(action_sensing_path.relative_to(PROJECT_ROOT)),
+        "parameter_learning": str(parameter_learning_path.relative_to(PROJECT_ROOT)),
+        "representation_invariance_benchmark": str(
+            representation_path.relative_to(PROJECT_ROOT)
+        ),
+        "cross_architecture_benchmark": str(
+            cross_architecture_path.relative_to(PROJECT_ROOT)
+        ),
+        "formal_verification_receipt": str(formal_path.relative_to(PROJECT_ROOT)),
+        "quotient_classifier": str(quotient_path.relative_to(PROJECT_ROOT)),
+        "compiler_transfer": str(compiler_path.relative_to(PROJECT_ROOT)),
+        "formal_correspondence": str(correspondence_path.relative_to(PROJECT_ROOT)),
+        "sensor_costs": str(sensor_path.relative_to(PROJECT_ROOT)),
+        "replication_manifest": str(replication_path.relative_to(PROJECT_ROOT)),
+        "active_information_frontier": str(information_path.relative_to(PROJECT_ROOT)),
     }
 
 
 def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
-    """Write the v0.2 figure set and the caption ledger; return relative paths.
+    """Write the current figure set and the caption ledger; return relative paths.
 
     Returns:
-        A dict with keys ``temporal_beliefs`` (first fixture, for the manuscript
-        token), ``model_comparison``, ``active_efe``, ``calibration_curve``,
-        ``confusion_matrix``, and ``captions``.
+        A mapping from figure stem to its project-relative PNG path. The
+        ``temporal_beliefs`` entry is the first fixture's path used by the
+        manuscript token; every fixture-specific heatmap remains in the output
+        registry and caption ledger.
     """
 
     figure_dir = output_dir / "figures"
@@ -153,15 +294,30 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     plot_active_efe_trajectory(
         active_report["per_fixture"][first_fixture]["selection"],
         active_efe_path,
+        active_report["per_fixture"][first_fixture].get("predictive_selection"),
     )
+
+    cfg_path = output_dir / "data" / "cfg_evidence.json"
+    cfg_payload = json.loads(cfg_path.read_text(encoding="utf-8"))
+    assembly_cfg_path = figure_dir / "assembly_cfg.png"
+    plot_assembly_cfg(cfg_payload, assembly_cfg_path)
+
+    memory_path = output_dir / "data" / "memory_evidence.json"
+    memory_payload = json.loads(memory_path.read_text(encoding="utf-8"))
+    memory_figure_path = figure_dir / "assembly_memory_timeline.png"
+    plot_memory_access_timeline(memory_payload, memory_figure_path)
 
     stats_paths = write_stats_figures(output_dir)
     captions_path = write_figure_captions(output_dir)
 
+    temporal_figure_paths = {Path(path).stem: path for path in temporal_paths}
     return {
         "temporal_beliefs": temporal_paths[0] if temporal_paths else "",
+        **temporal_figure_paths,
         "model_comparison": str(model_comparison_path.relative_to(PROJECT_ROOT)),
         "active_efe": str(active_efe_path.relative_to(PROJECT_ROOT)),
+        "assembly_cfg": str(assembly_cfg_path.relative_to(PROJECT_ROOT)),
+        "assembly_memory_timeline": str(memory_figure_path.relative_to(PROJECT_ROOT)),
         "calibration_curve": stats_paths["calibration_curve"],
         "confusion_matrix": stats_paths["confusion_matrix"],
         "ambiguity_ablation": stats_paths["ambiguity_ablation"],
@@ -173,5 +329,24 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "observation_informativeness": stats_paths["observation_informativeness"],
         "model_evidence": stats_paths["model_evidence"],
         "transition_ablation": stats_paths["transition_ablation"],
+        "generative_adequacy": stats_paths["generative_adequacy"],
+        "typed_observation_matrix": stats_paths["typed_observation_matrix"],
+        "factorized_observation_comparison": stats_paths[
+            "factorized_observation_comparison"
+        ],
+        "corpus_coverage": stats_paths["corpus_coverage"],
+        "action_sensing": stats_paths["action_sensing"],
+        "parameter_learning": stats_paths["parameter_learning"],
+        "representation_invariance_benchmark": stats_paths[
+            "representation_invariance_benchmark"
+        ],
+        "cross_architecture_benchmark": stats_paths["cross_architecture_benchmark"],
+        "formal_verification_receipt": stats_paths["formal_verification_receipt"],
+        "quotient_classifier": stats_paths["quotient_classifier"],
+        "compiler_transfer": stats_paths["compiler_transfer"],
+        "formal_correspondence": stats_paths["formal_correspondence"],
+        "sensor_costs": stats_paths["sensor_costs"],
+        "replication_manifest": stats_paths["replication_manifest"],
+        "active_information_frontier": stats_paths["active_information_frontier"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

@@ -57,6 +57,12 @@ class TemporalGenerativeModel:
             raise ValueError("B shape must be hidden states x hidden states")
         if self.D.shape != (n_states,):
             raise ValueError("D shape must match hidden state count")
+        if not (
+            np.all(np.isfinite(self.A))
+            and np.all(np.isfinite(self.B))
+            and np.all(np.isfinite(self.D))
+        ):
+            raise ValueError("A, B and D must contain only finite values")
         if np.any(self.A <= 0) or np.any(self.B <= 0) or np.any(self.D <= 0):
             raise ValueError("A, B and D must be strictly positive for log updates")
         if not np.allclose(self.A.sum(axis=0), 1.0):
@@ -153,10 +159,28 @@ class FilterResult:
         return data
 
 
-def _as_observation_ids(observation_ids: list[int]) -> list[int]:
+def _as_observation_ids(
+    observation_ids: list[int], *, observation_count: int | None = None
+) -> list[int]:
     if not observation_ids:
         raise ValueError("observation_ids must not be empty")
-    return [int(value) for value in observation_ids]
+    normalized: list[int] = []
+    for value in observation_ids:
+        if isinstance(value, bool):
+            raise ValueError("observation_ids must contain integers")
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("observation_ids must contain integers") from exc
+        if not np.isfinite(numeric) or not numeric.is_integer():
+            raise ValueError("observation_ids must contain finite integers")
+        integer = int(numeric)
+        if integer < 0 or (
+            observation_count is not None and integer >= observation_count
+        ):
+            raise ValueError("observation_ids contain an out-of-range category")
+        normalized.append(integer)
+    return normalized
 
 
 def forward_filter(
@@ -171,8 +195,10 @@ def forward_filter(
     log-likelihood ``sum_t log( sum_s prior_t[s] * A[obs_t, s] )``.
     """
 
-    ids = _as_observation_ids(observation_ids)
     model.validate()
+    ids = _as_observation_ids(
+        observation_ids, observation_count=len(model.observation_labels)
+    )
 
     posterior = np.asarray(model.D, dtype=float)
     filtered_posteriors: list[tuple[float, ...]] = []
@@ -224,8 +250,10 @@ def viterbi_decode(
     model ``log P(states, observations)``.
     """
 
-    ids = _as_observation_ids(observation_ids)
     model.validate()
+    ids = _as_observation_ids(
+        observation_ids, observation_count=len(model.observation_labels)
+    )
 
     n_states = len(model.hidden_state_labels)
     log_a = np.log(np.clip(np.asarray(model.A, dtype=float), _EPS, 1.0))
@@ -283,8 +311,10 @@ def forward_backward(
     sums to one; at the last step gamma equals the forward filter posterior.
     """
 
-    ids = _as_observation_ids(observation_ids)
     model.validate()
+    ids = _as_observation_ids(
+        observation_ids, observation_count=len(model.observation_labels)
+    )
 
     n_steps = len(ids)
     n_states = len(model.hidden_state_labels)

@@ -13,6 +13,12 @@ The availability of that toolchain is also made explicit rather than implicit:
 a clean skip (Julia absent) and running the backend, while
 :func:`resolve_julia_executable` raises a clearly-labeled ``RuntimeError`` when no
 Julia executable can be found.
+
+The committed Julia ``Project.toml``/``Manifest.toml`` pair is part of that
+contract. :func:`validate_julia_manifest` checks the manifest's Julia and
+RxInfer entries before either native producer is launched, so a stale lockfile
+cannot be mistaken for a reproducible backend merely because a compatible
+Julia executable happens to be installed.
 """
 
 from __future__ import annotations
@@ -25,20 +31,22 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import tomllib
 from typing import Any
 
-from .figures import plot_rxinfer_free_energy
+from .figures import plot_rxinfer_categorical_free_energy, plot_rxinfer_free_energy
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 JULIA_PROJECT = PROJECT_ROOT / "julia" / "ActiveAssemblyRxInfer"
+JULIA_MANIFEST = JULIA_PROJECT / "Manifest.toml"
 JULIA_RUNNER = JULIA_PROJECT / "scripts" / "run_rxinfer.jl"
 
 # Pinned native-backend toolchain versions. These mirror how ``pyproject.toml``
 # pins the Python dependencies: the reproducible manuscript numbers depend on
 # this exact toolchain, so the expected versions are declared explicitly and
 # enforced against the backend diagnostics by ``validate_backend_versions``.
-EXPECTED_JULIA_VERSION = "1.12.6"
+EXPECTED_JULIA_VERSION = "1.12.7"
 EXPECTED_RXINFER_VERSION = "5.4.0"
 
 
@@ -83,7 +91,7 @@ def _pinned_juliaup_binary(expected_version: str) -> str | None:
     juliaup install layouts place each version at
     ``~/.julia/juliaup/julia-<version>+<triple>/bin/julia``. When the pinned
     backend version is present there, we prefer it over the generic ``julia``
-    launcher, whose ``release`` channel can auto-advance (e.g. 1.12.1 -> 1.12.6)
+    launcher, whose ``release`` channel can auto-advance (e.g. 1.12.1 -> 1.12.7)
     and otherwise trip the deliberate version-pin guard in
     :func:`validate_backend_versions`. The guard still fails loudly when the
     pinned version is genuinely absent.
@@ -182,6 +190,61 @@ def validate_backend_versions(
         )
 
 
+def validate_julia_manifest(
+    manifest_path: Path = JULIA_MANIFEST,
+    *,
+    expected_julia_version: str = EXPECTED_JULIA_VERSION,
+    expected_rxinfer_version: str = EXPECTED_RXINFER_VERSION,
+) -> None:
+    """Validate the committed Julia lockfile against the backend version pins.
+
+    This check is intentionally structural and local: it does not resolve a
+    package environment or infer a package's version from an executable. It
+    verifies that the exact manifest selected by ``--project`` declares the
+    same Julia and RxInfer versions that the bridge later requires the native
+    diagnostics to report. A malformed, missing, or ambiguous manifest fails
+    closed with a labeled ``RuntimeError``.
+
+    Args:
+        manifest_path: Manifest to inspect; defaults to this project's committed
+            native-backend manifest.
+        expected_julia_version: Julia version pinned by the bridge.
+        expected_rxinfer_version: RxInfer version pinned by the bridge.
+    """
+
+    manifest_path = manifest_path.resolve()
+    if not manifest_path.is_file():
+        raise RuntimeError(f"native Julia manifest not found: {manifest_path}")
+    try:
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise RuntimeError(
+            f"native Julia manifest is unreadable or malformed: {manifest_path}"
+        ) from exc
+
+    declared_julia = manifest.get("julia_version")
+    if declared_julia != expected_julia_version:
+        raise RuntimeError(
+            "native Julia manifest version mismatch: "
+            f"Julia {declared_julia!r} != pinned {expected_julia_version!r}"
+        )
+
+    dependencies = manifest.get("deps")
+    rxinfer_entries = (
+        dependencies.get("RxInfer") if isinstance(dependencies, dict) else None
+    )
+    if not isinstance(rxinfer_entries, list) or len(rxinfer_entries) != 1:
+        raise RuntimeError(
+            "native Julia manifest must contain exactly one [[deps.RxInfer]] entry"
+        )
+    declared_rxinfer = rxinfer_entries[0].get("version")
+    if declared_rxinfer != expected_rxinfer_version:
+        raise RuntimeError(
+            "native Julia manifest RxInfer version mismatch: "
+            f"RxInfer {declared_rxinfer!r} != pinned {expected_rxinfer_version!r}"
+        )
+
+
 def load_free_energy_records(path: Path) -> list[dict[str, Any]]:
     """Load the RxInfer free-energy JSONL file."""
 
@@ -260,6 +323,36 @@ def validate_rxinfer_outputs(
     return records
 
 
+def validate_categorical_rxinfer_outputs(
+    output_dir: Path,
+    *,
+    expected_data_hash: str | None = None,
+) -> list[dict[str, Any]]:
+    """Validate the namespaced categorical RxInfer companion artifacts."""
+
+    free_energy_path = output_dir / "categorical_free_energy_trace.jsonl"
+    for filename in (
+        "categorical_posteriors.json",
+        "categorical_diagnostics.json",
+        "categorical_model_config.json",
+    ):
+        path = output_dir / filename
+        if not path.exists():
+            raise FileNotFoundError(f"missing categorical RxInfer artifact: {path}")
+        json.loads(path.read_text(encoding="utf-8"))
+    records = load_free_energy_records(free_energy_path)
+    validate_free_energy_records(records, expected_data_hash=expected_data_hash)
+    if any(
+        record.get("model_name") != "categorical_phase_hmm"
+        or record.get("mode") != "categorical"
+        for record in records
+    ):
+        raise ValueError(
+            "categorical RxInfer records have an unexpected model identity"
+        )
+    return records
+
+
 def run_rxinfer_backend(
     trace_bundle_path: Path,
     *,
@@ -275,6 +368,7 @@ def run_rxinfer_backend(
     trace_bundle_path = trace_bundle_path.resolve()
     if not trace_bundle_path.exists():
         raise FileNotFoundError(f"missing trace bundle: {trace_bundle_path}")
+    validate_julia_manifest()
     julia_path = resolve_julia_executable(julia_executable)
     rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer").resolve()
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
@@ -350,6 +444,7 @@ def run_rxinfer_backend(
     figure_path = plot_rxinfer_free_energy(
         records,
         OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
+        title="RxInfer Bethe Free Energy: Gaussian event-code",
     )
     artifact_paths = {
         "free_energy_trace": str(
@@ -379,5 +474,140 @@ def run_rxinfer_backend(
         artifact_paths=artifact_paths,
         figure_paths={
             "rxinfer_free_energy": str(figure_path.relative_to(PROJECT_ROOT))
+        },
+    )
+
+
+def run_rxinfer_categorical_backend(
+    trace_bundle_path: Path,
+    *,
+    output_dir: Path | None = None,
+    iterations: int = 8,
+    julia_executable: str = "julia",
+    instantiate: bool = True,
+) -> RxInferRunResult:
+    """Run the real categorical RxInfer phase-HMM companion backend.
+
+    The categorical outputs are deliberately namespaced apart from the
+    authoritative Gaussian demonstrator.  Their free-energy values are
+    model-specific and are not compared numerically across the two model
+    families; the bridge validates both model identity and trace lineage.
+    """
+
+    if iterations <= 0:
+        raise ValueError("iterations must be positive")
+    trace_bundle_path = trace_bundle_path.resolve()
+    if not trace_bundle_path.exists():
+        raise FileNotFoundError(f"missing trace bundle: {trace_bundle_path}")
+    validate_julia_manifest()
+    julia_path = resolve_julia_executable(julia_executable)
+    rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer_categorical").resolve()
+    rxinfer_dir.mkdir(parents=True, exist_ok=True)
+    stdout_path = rxinfer_dir / "stdout.log"
+    stderr_path = rxinfer_dir / "stderr.log"
+
+    stdout_chunks: list[str] = []
+    stderr_chunks: list[str] = []
+    if instantiate:
+        instantiated = subprocess.run(
+            [
+                julia_path,
+                f"--project={JULIA_PROJECT}",
+                "-e",
+                "using Pkg; Pkg.instantiate()",
+            ],
+            cwd=PROJECT_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        stdout_chunks.append("## Pkg.instantiate()\n" + instantiated.stdout)
+        stderr_chunks.append("## Pkg.instantiate()\n" + instantiated.stderr)
+        if instantiated.returncode != 0:
+            stdout_path.write_text("\n".join(stdout_chunks), encoding="utf-8")
+            stderr_path.write_text("\n".join(stderr_chunks), encoding="utf-8")
+            raise RuntimeError(
+                "Julia/RxInfer categorical environment instantiation failed with "
+                f"exit code {instantiated.returncode}; see {stderr_path}"
+            )
+
+    completed = subprocess.run(
+        [
+            julia_path,
+            f"--project={JULIA_PROJECT}",
+            str(JULIA_RUNNER),
+            "--trace",
+            str(trace_bundle_path),
+            "--output",
+            str(rxinfer_dir),
+            "--iterations",
+            str(iterations),
+            "--model",
+            "categorical",
+        ],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    stdout_chunks.append("## run_rxinfer.jl --model categorical\n" + completed.stdout)
+    stderr_chunks.append("## run_rxinfer.jl --model categorical\n" + completed.stderr)
+    stdout_path.write_text("\n".join(stdout_chunks), encoding="utf-8")
+    stderr_path.write_text("\n".join(stderr_chunks), encoding="utf-8")
+    if completed.returncode != 0:
+        raise RuntimeError(
+            "Julia/RxInfer categorical backend failed with exit code "
+            f"{completed.returncode}; see {stderr_path}"
+        )
+
+    expected_data_hash = file_sha256(trace_bundle_path)
+    records = validate_categorical_rxinfer_outputs(
+        rxinfer_dir, expected_data_hash=expected_data_hash
+    )
+    diagnostics = json.loads(
+        (rxinfer_dir / "categorical_diagnostics.json").read_text(encoding="utf-8")
+    )
+    validate_backend_versions(
+        str(diagnostics["julia_version"]),
+        str(diagnostics["rxinfer_version"]),
+    )
+    figure_path = plot_rxinfer_categorical_free_energy(
+        records,
+        OUTPUT_DIR / "figures" / "rxinfer_categorical_free_energy.png",
+    )
+    artifact_paths = {
+        "free_energy_trace": str(
+            (rxinfer_dir / "categorical_free_energy_trace.jsonl").relative_to(
+                PROJECT_ROOT
+            )
+        ),
+        "posteriors": str(
+            (rxinfer_dir / "categorical_posteriors.json").relative_to(PROJECT_ROOT)
+        ),
+        "diagnostics": str(
+            (rxinfer_dir / "categorical_diagnostics.json").relative_to(PROJECT_ROOT)
+        ),
+        "model_config": str(
+            (rxinfer_dir / "categorical_model_config.json").relative_to(PROJECT_ROOT)
+        ),
+        "stdout": str(stdout_path.relative_to(PROJECT_ROOT)),
+        "stderr": str(stderr_path.relative_to(PROJECT_ROOT)),
+    }
+    return RxInferRunResult(
+        run_id=str(diagnostics["run_id"]),
+        sample_id=str(diagnostics["sample_id"]),
+        model_name=str(diagnostics["model_name"]),
+        mode=str(diagnostics["mode"]),
+        free_energy_values=tuple(float(record["value"]) for record in records),
+        final_free_energy=float(diagnostics["free_energy_final"]),
+        data_hash=str(diagnostics["data_hash"]),
+        config_hash=str(diagnostics["config_hash"]),
+        rxinfer_version=str(diagnostics["rxinfer_version"]),
+        julia_version=str(diagnostics["julia_version"]),
+        artifact_paths=artifact_paths,
+        figure_paths={
+            "rxinfer_categorical_free_energy": str(
+                figure_path.relative_to(PROJECT_ROOT)
+            )
         },
     )

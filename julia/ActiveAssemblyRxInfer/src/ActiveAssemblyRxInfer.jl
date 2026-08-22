@@ -259,7 +259,7 @@ function run_rxinfer(trace_path::AbstractString, output_dir::AbstractString; ite
         "observation_categories" => categories,
         "mnemonics" => mnemonics,
         "observation_values" => observation_values,
-        "note" => "Numeric event-code Gaussian model; categorical RxInfer HMM is a planned extension.",
+        "note" => "Numeric event-code Gaussian model; categorical RxInfer HMM is emitted as a namespaced companion.",
     )
     config_text = JSON3.write(model_config)
     data_hash = _sha256_file(trace_path)
@@ -407,6 +407,7 @@ function _parse_args(args::Vector{String})
     trace_path = nothing
     output_dir = nothing
     iterations = 8
+    model = "gaussian"
     index = 1
     while index <= length(args)
         arg = args[index]
@@ -419,6 +420,9 @@ function _parse_args(args::Vector{String})
         elseif arg == "--iterations"
             index += 1
             iterations = parse(Int, args[index])
+        elseif arg == "--model"
+            index += 1
+            model = args[index]
         else
             error("unknown argument: $(arg)")
         end
@@ -430,12 +434,19 @@ function _parse_args(args::Vector{String})
     if isnothing(output_dir)
         error("--output is required")
     end
-    return String(trace_path), String(output_dir), iterations
+    if !(model in ("gaussian", "categorical"))
+        error("--model must be gaussian or categorical")
+    end
+    return String(trace_path), String(output_dir), iterations, model
 end
 
 function main(args::Vector{String})
-    trace_path, output_dir, iterations = _parse_args(args)
-    result = run_rxinfer(trace_path, output_dir; iterations = iterations)
+    trace_path, output_dir, iterations, model = _parse_args(args)
+    result = if model == "categorical"
+        run_rxinfer_categorical(trace_path, output_dir; iterations = iterations)
+    else
+        run_rxinfer(trace_path, output_dir; iterations = iterations)
+    end
     println(JSON3.write(result["diagnostics"]))
     return 0
 end

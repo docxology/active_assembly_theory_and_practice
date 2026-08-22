@@ -14,11 +14,13 @@ import pytest
 from src.rxinfer_bridge import (
     EXPECTED_JULIA_VERSION,
     EXPECTED_RXINFER_VERSION,
+    JULIA_MANIFEST,
     julia_available,
     load_free_energy_records,
     resolve_julia_executable,
     validate_backend_versions,
     validate_free_energy_records,
+    validate_julia_manifest,
     validate_rxinfer_outputs,
 )
 
@@ -55,6 +57,56 @@ def test_validate_backend_versions_reports_both_mismatches() -> None:
     assert "RxInfer" in message
 
 
+def _manifest_text(
+    *,
+    julia_version: str = EXPECTED_JULIA_VERSION,
+    rxinfer_version: str = EXPECTED_RXINFER_VERSION,
+) -> str:
+    return f'''julia_version = "{julia_version}"
+manifest_format = "2.0"
+
+[[deps.RxInfer]]
+uuid = "86711068-29c9-4ff7-b620-ae75d7495b3d"
+version = "{rxinfer_version}"
+'''
+
+
+def test_committed_julia_manifest_matches_native_pins() -> None:
+    validate_julia_manifest(JULIA_MANIFEST)
+
+
+def test_validate_julia_manifest_accepts_matching_temp_manifest(tmp_path) -> None:
+    manifest = tmp_path / "Manifest.toml"
+    manifest.write_text(_manifest_text(), encoding="utf-8")
+    validate_julia_manifest(manifest)
+
+
+def test_validate_julia_manifest_rejects_julia_drift(tmp_path) -> None:
+    manifest = tmp_path / "Manifest.toml"
+    manifest.write_text(_manifest_text(julia_version="1.12.1"), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="manifest version mismatch"):
+        validate_julia_manifest(manifest)
+
+
+def test_validate_julia_manifest_rejects_rxinfer_drift(tmp_path) -> None:
+    manifest = tmp_path / "Manifest.toml"
+    manifest.write_text(_manifest_text(rxinfer_version="5.3.0"), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="RxInfer version mismatch"):
+        validate_julia_manifest(manifest)
+
+
+def test_validate_julia_manifest_fails_closed_for_missing_or_malformed_file(
+    tmp_path,
+) -> None:
+    with pytest.raises(RuntimeError, match="not found"):
+        validate_julia_manifest(tmp_path / "missing-Manifest.toml")
+
+    malformed = tmp_path / "malformed-Manifest.toml"
+    malformed.write_text("julia_version = [", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="malformed"):
+        validate_julia_manifest(malformed)
+
+
 def test_resolve_julia_executable_raises_when_unavailable() -> None:
     """Missing Julia is a hard, clearly-labeled failure, not a silent None."""
     with pytest.raises(RuntimeError, match="Julia executable not found"):
@@ -84,7 +136,7 @@ def _valid_free_energy_record(iteration: int = 1) -> dict[str, object]:
         "is_finite": True,
         "delta": None,
         "rxinfer_version": "5.4.0",
-        "julia_version": "1.12.6",
+        "julia_version": EXPECTED_JULIA_VERSION,
         "data_hash": "a" * 64,
         "config_hash": "b" * 64,
     }

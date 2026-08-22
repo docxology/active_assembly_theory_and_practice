@@ -7,9 +7,10 @@ import json
 from src.corpus import CorpusFixture, build_corpus, fixture_observation_ids
 from src.disassembly import disassemble_bytes
 from src.features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
+from src.corpus_coverage import corpus_coverage_payload
 
 
-def test_build_corpus_has_at_least_four_fixtures() -> None:
+def test_build_corpus_has_expanded_fixture_surface() -> None:
     corpus = build_corpus()
     assert len(corpus) >= 4
     assert all(isinstance(fixture, CorpusFixture) for fixture in corpus)
@@ -87,6 +88,25 @@ def test_guard_fixture_observation_ids_hand_checked() -> None:
     ids = fixture_observation_ids(fixture)
     # comparison=3, control_transfer=4
     assert ids == (0, 3, 4, 1)
+
+
+def test_expanded_corpus_contains_memory_and_taken_branch_variants() -> None:
+    corpus = build_corpus()
+    memory = next(fixture for fixture in corpus if fixture.name == "x86_memory")
+    taken = next(fixture for fixture in corpus if fixture.name == "x86_guard_taken")
+    assert len(disassemble_bytes(memory.code)) == 3
+    assert len(disassemble_bytes(taken.code)) == 5
+    assert fixture_observation_ids(memory) == (0, 5, 1)
+    assert fixture_observation_ids(taken) == (0, 3, 4, 1, 1)
+
+
+def test_corpus_coverage_is_source_bound_and_contractual() -> None:
+    payload = corpus_coverage_payload()
+    assert payload["summary"]["fixture_count"] == len(build_corpus())
+    assert payload["summary"]["total_static_instruction_count"] == 26
+    assert payload["summary"]["total_executed_instruction_count"] == 25
+    assert payload["summary"]["memory_fixture_count"] == 1
+    assert payload["summary"]["alternate_path_fixture_count"] == 1
 
 
 def test_to_dict_is_json_safe_with_hex_code() -> None:

@@ -41,6 +41,8 @@ class AssemblyObservation:
     category: str
     observation_id: int
     executed: bool
+    has_immediate_operand: bool = False
+    uses_accumulator: bool = False
 
     def to_dict(self) -> dict[str, object]:
         """Return a JSON-safe representation."""
@@ -86,6 +88,11 @@ def encode_observations(
                 category=category,
                 observation_id=OBSERVATION_LABELS.index(category),
                 executed=event.address in executed_addresses,
+                has_immediate_operand=bool(event.immediate_operands),
+                uses_accumulator=bool(
+                    {"eax", "rax"}
+                    & (set(event.registers_read) | set(event.registers_written))
+                ),
             )
         )
     if not observations:

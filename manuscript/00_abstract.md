@@ -1,22 +1,26 @@
 # Abstract {#sec:abstract}
 
-`{{PROJECT_TITLE}}` is a scaffold for connecting assembly-language analysis to
+`{{PROJECT_TITLE}}` is a demonstrator for connecting assembly-language analysis to
 Active Inference and the Free Energy Principle. The project decodes a transparent
 `{{SAMPLE_NAME}}` x86-64 byte fixture, runs bounded emulation, and turns
 `{{INSTRUCTION_COUNT}}` decoded instructions into `{{OBSERVATION_COUNT}}`
 categorical observations for a schema-versioned inference artifact. A native
 Julia/RxInfer backend records `{{RXINFER_FREE_ENERGY_COUNT}}` Bethe Free Energy
-values from the `{{RXINFER_MODEL_NAME}}` model [@bagaev2023rxinfer], while the
+values from the native `{{RXINFER_MODEL_NAME}}` implementation
+[@bagaev2023rxinfer], while the
 Python/pymdp path remains a comparison baseline [@heins2022pymdp]. On top of this
 observation bridge, a temporal hidden Markov model adds explicit phase dynamics,
 an expected-free-energy policy realizes active disassembly, and a labelled
 `{{CORPUS_FIXTURE_COUNT}}`-fixture corpus supports the first quantitative decoder
 evaluation. The measured result is honest and mechanism-aware: on the authored
-likelihood the temporal HMM beats the v0.1 sticky filter but not the memoryless
+likelihood the temporal HMM beats the identity-transition filter but not the memoryless
 per-step decoder, and the ambiguity ablation shows why — a positive temporal
 (and segmentation) advantage emerges exactly when observations become ambiguous,
 with per-step decoding collapsing under the same likelihood sweep. Phase
-segmentation is likewise measured against the hand-authored ground truth.
+segmentation is likewise measured against the hand-authored ground truth. A
+bounded transfer-function layer cross-checks the supported register semantics
+against Unicorn, and a supervised leave-one-fixture-out estimator reports
+generalization behavior without training on the held-out fixture.
 The result is deliberately modest: it demonstrates a reproducible,
 honestly-bounded observation-model bridge, not a general reverse-engineering or
 security classifier. The manuscript is reproducible end to end; every figure and

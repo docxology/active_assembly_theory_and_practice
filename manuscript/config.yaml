@@ -3,6 +3,9 @@ paper:
   subtitle: "Assembly-Code Observations for Active Inference Demonstrations"
   version: "0.1.0"
   date: ""
+  cover:
+    image: "assets/active_assembly_cover.png"
+    alt: "Abstract cover illustration linking x86 assembly instructions, a bounded control-flow graph, and probabilistic state trajectories for active-inference analysis."
 
 authors:
   - name: "Daniel Ari Friedman"
@@ -21,19 +24,24 @@ keywords:
   - "RxInfer"
   - "Bethe Free Energy"
   - "analysis validation"
-  - "red team validation"
+  - "generative model checking"
 
 metadata:
   license: "MIT"
   language: "en"
+  tagged_pdf: true
 
 render:
   formats:
     pdf: true
     html: true
     slides: true
-    docx: false
+    docx: true
     epub: false
+
+rendering:
+  cover_height_fraction: 0.62
+  include_date: true
 
 testing:
   max_test_failures: 0

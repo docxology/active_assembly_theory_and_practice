@@ -1,4 +1,4 @@
-"""Tests for the v0.2 advanced-inference orchestration over the corpus."""
+"""Tests for the current advanced-inference orchestration over the corpus."""
 
 from __future__ import annotations
 
@@ -7,26 +7,51 @@ import json
 import pytest
 
 from src.advanced_inference import (
+    PROJECT_ROOT,
     active_selection_payload,
+    action_sensing_payload_current,
+    cfg_evidence_payload,
+    corpus_coverage_payload_current,
     evaluation_report_payload,
+    held_out_model_payload,
+    memory_evidence_payload,
+    parameter_learning_payload_current,
     phase_segments_payload,
     run_advanced_inference,
     temporal_inference_payload,
 )
+from src.advanced_figures import write_advanced_figures
 from src.features import HIDDEN_STATE_LABELS
+from src.corpus import build_corpus
+from src.disassembly import disassemble_bytes
+from src.emulation import emulate_x86_64
+from src.formal_verification import formal_verification_payload
+from src.information_policy import active_information_payload
+from src.multi_arch import cross_architecture_payload
 from src.figures import (
     plot_ambiguity_ablation,
+    plot_action_sensing,
+    plot_active_information_frontier,
     plot_calibration_curve,
     plot_confusion_matrix,
+    plot_cross_architecture_benchmark,
+    plot_corpus_coverage,
     plot_corpus_stability,
     plot_decoder_calibration,
     plot_generative_model,
+    plot_generative_adequacy,
+    plot_formal_verification_receipt,
+    plot_assembly_cfg,
     plot_model_evidence,
+    plot_memory_access_timeline,
     plot_observation_informativeness,
+    plot_parameter_learning,
     plot_phase_recovery,
     plot_segmentation_ribbons,
     plot_transition_ablation,
+    plot_trace_refinement,
 )
+from src.symbolic_semantics import symbolic_execute
 
 
 def test_temporal_inference_payload_covers_every_fixture() -> None:
@@ -64,15 +89,174 @@ def test_active_selection_is_never_worse_than_fixed() -> None:
         summary["ties"] + summary["active_strictly_fewer_steps"]
         == summary["fixture_count"]
     )
+    assert all(
+        row["predictive_selection"]["policy"] == "predictive"
+        for row in payload["per_fixture"].values()
+    )
 
 
-def test_evaluation_report_temporal_beats_static_and_controls_are_near_chance() -> None:
+def test_held_out_model_payload_is_fixture_level_leakage_safe() -> None:
+    """The generated supervised fit records training complements explicitly."""
+
+    payload = held_out_model_payload()
+    assert payload["fixture_count"] == len(payload["per_fixture"])
+    assert all(
+        row["held_out_fixture"] not in row["training_fixtures"]
+        for row in payload["per_fixture"]
+    )
+
+
+def test_cfg_evidence_preserves_external_branch_target() -> None:
+    """The branch fixture produces multiple blocks and an explicit external edge."""
+
+    payload = cfg_evidence_payload()
+    assert payload["sample_id"] == "x86_guard"
+    assert len(payload["basic_blocks"]) >= 2
+    assert any(
+        edge["target_block_id"].startswith("external_") for edge in payload["cfg_edges"]
+    )
+    assert len(payload["dynamic_addresses"]) == 4
+
+
+def test_assembly_cfg_figure_written_nonempty(tmp_path) -> None:
+    """The CFG evidence is rendered as a deterministic, nonblank figure."""
+
+    path = plot_assembly_cfg(cfg_evidence_payload(), tmp_path / "assembly_cfg.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_trace_refinement_figure_uses_real_symbolic_and_unicorn_rows(tmp_path) -> None:
+    fixture = build_corpus()[0]
+    report = symbolic_execute(
+        disassemble_bytes(fixture.code), emulate_x86_64(fixture.code)
+    )
+    path = plot_trace_refinement(report.to_dict(), tmp_path / "trace_refinement.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_cross_architecture_figure_written_from_real_adapter_payload(tmp_path) -> None:
+    path = plot_cross_architecture_benchmark(
+        cross_architecture_payload(), tmp_path / "cross_architecture_benchmark.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_formal_verification_figure_written_from_compiled_receipt(tmp_path) -> None:
+    path = plot_formal_verification_receipt(
+        formal_verification_payload(), tmp_path / "formal_verification_receipt.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_active_information_frontier_figure_written_from_exact_dp(tmp_path) -> None:
+    path = plot_active_information_frontier(
+        active_information_payload(), tmp_path / "active_information_frontier.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
+    paths = write_advanced_figures()
+    required = {
+        "quotient_classifier",
+        "compiler_transfer",
+        "formal_correspondence",
+        "sensor_costs",
+        "replication_manifest",
+    }
+    assert required.issubset(paths)
+    for key in required:
+        assert (PROJECT_ROOT / paths[key]).is_file()
+        assert (PROJECT_ROOT / paths[key]).stat().st_size > 0
+
+
+def test_memory_evidence_joins_static_operands_to_dynamic_events() -> None:
+    payload = memory_evidence_payload()
+
+    assert payload["sample_id"] == "x86_memory"
+    assert payload["static_memory_instruction_indexes"] == [0, 1]
+    assert payload["summary"] == {
+        "distinct_addresses": 1,
+        "dynamic_event_count": 2,
+        "read_count": 1,
+        "static_memory_instruction_count": 2,
+        "write_count": 1,
+    }
+    assert [event["value"] for event in payload["dynamic_memory_events"]] == [7, 7]
+
+
+def test_memory_evidence_figure_written_nonempty(tmp_path) -> None:
+    path = plot_memory_access_timeline(
+        memory_evidence_payload(), tmp_path / "assembly_memory_timeline.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_corpus_coverage_records_memory_and_alternate_path_variation() -> None:
+    payload = corpus_coverage_payload_current()
+    summary = payload["summary"]
+    assert payload["schema_version"] == "1.0.0"
+    assert summary["fixture_count"] == 6
+    assert summary["memory_fixture_count"] == 1
+    assert summary["alternate_path_fixture_count"] == 1
+    assert summary["repeated_phase_fixture_count"] == 4
+    assert summary["unique_instruction_family_count"] == 5
+    assert summary["unique_memory_mode_count"] == 1
+    assert summary["unique_branch_target_class_count"] == 2
+
+
+def test_action_sensing_payload_is_held_out_and_policy_complete() -> None:
+    payload = action_sensing_payload_current()
+    assert payload["schema_version"] == "1.0.0"
+    assert payload["summary"]["fixture_count"] == 6
+    assert payload["summary"]["leakage_free"] is True
+    assert set(payload["policies"]) == {"active", "fixed", "random", "oracle"}
+    assert payload["summary"]["action_pool_changes_evidence"] is True
+
+
+def test_action_sensing_figure_written_nonempty(tmp_path) -> None:
+    path = plot_action_sensing(
+        action_sensing_payload_current(), tmp_path / "action_sensing.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_parameter_learning_payload_is_leakage_safe_and_figure_is_nonempty(
+    tmp_path,
+) -> None:
+    payload = parameter_learning_payload_current()
+    assert payload["schema_version"] == "1.0.0"
+    assert payload["phase_labels_used_for_fit"] is False
+    assert payload["summary"]["leakage_free"] is True
+    path = plot_parameter_learning(payload, tmp_path / "parameter_learning.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_corpus_coverage_figure_written_nonempty(tmp_path) -> None:
+    path = plot_corpus_coverage(
+        corpus_coverage_payload_current(), tmp_path / "corpus_coverage.png"
+    )
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_evaluation_report_temporal_beats_identity_transition_and_controls_are_near_chance() -> (
+    None
+):
     payload = evaluation_report_payload()
     summary = payload["summary"]
     mean_temporal = summary["mean_temporal_accuracy"]
-    mean_static = summary["mean_static_accuracy"]
-    # The proper temporal model must beat the implicit-identity static filter.
-    assert mean_temporal > mean_static
+    mean_identity_transition = summary["mean_identity_transition_accuracy"]
+    # The proper temporal model must beat the implicit-identity comparator.
+    assert mean_temporal > mean_identity_transition
     # Negative controls must sit well below the temporal model (discriminative metric).
     shuffle = payload["shuffled_label_control"]["mean_accuracy"]
     uniform = payload["uniform_belief_control"]["balanced_accuracy"]
@@ -91,6 +275,20 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
             "phase_segments",
             "active_selection",
             "evaluation_report",
+            "cfg_evidence",
+            "memory_evidence",
+            "held_out_model",
+            "generative_adequacy",
+            "typed_observations",
+            "factorized_observation_model",
+            "corpus_coverage",
+            "action_sensing",
+            "parameter_learning",
+            "cross_architecture_fixtures",
+            "active_information_frontier",
+            "quotient_invariance_protocol",
+            "representation_invariance_benchmark",
+            "scientific_program",
         )
     }
     run_advanced_inference(tmp_path / "output")
@@ -110,6 +308,27 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
         "phase_segments",
         "active_selection",
         "evaluation_report",
+        "cfg_evidence",
+        "memory_evidence",
+        "held_out_model",
+        "generative_adequacy",
+        "typed_observations",
+        "factorized_observation_model",
+        "corpus_coverage",
+        "action_sensing",
+        "parameter_learning",
+        "cross_architecture_fixtures",
+        "active_information_frontier",
+        "quotient_invariance_protocol",
+        "representation_invariance_benchmark",
+        "scientific_program",
+        "research_protocol",
+        "quotient_classifier",
+        "formal_trace_correspondence",
+        "compiler_transfer",
+        "sensor_cost_receipt",
+        "replication_manifest",
+        "theorem_or_countertheorem",
     }
 
 
@@ -158,7 +377,7 @@ def test_ambiguity_ablation_figure_written_nonempty(tmp_path) -> None:
             "blend": 0.0,
             "temporal_accuracy": 0.6,
             "memoryless_accuracy": 0.7,
-            "static_accuracy": 0.3,
+            "identity_transition_accuracy": 0.3,
             "viterbi_accuracy": 0.5,
             "temporal_minus_memoryless": -0.1,
         },
@@ -166,7 +385,7 @@ def test_ambiguity_ablation_figure_written_nonempty(tmp_path) -> None:
             "blend": 1.0,
             "temporal_accuracy": 0.6,
             "memoryless_accuracy": 0.3,
-            "static_accuracy": 0.2,
+            "identity_transition_accuracy": 0.2,
             "viterbi_accuracy": 0.5,
             "temporal_minus_memoryless": 0.3,
         },
@@ -218,18 +437,22 @@ def test_segmentation_ribbons_empty_per_fixture_raises(tmp_path) -> None:
 
 def test_corpus_stability_figure_written_nonempty(tmp_path) -> None:
     stability: dict[str, object] = {
-        "reference": {"temporal": 0.667, "static": 0.389, "memoryless": 0.722},
+        "reference": {
+            "temporal": 0.667,
+            "identity_transition": 0.389,
+            "memoryless": 0.722,
+        },
         "per_holdout": [
             {
                 "held_out_fixture": "x86_accumulator",
                 "temporal": 0.643,
-                "static": 0.429,
+                "identity_transition": 0.429,
                 "memoryless": 0.714,
             },
             {
                 "held_out_fixture": "x86_bitwise",
                 "temporal": 0.714,
-                "static": 0.357,
+                "identity_transition": 0.357,
                 "memoryless": 0.714,
             },
         ],
@@ -276,10 +499,14 @@ def test_decoder_calibration_figure_written_nonempty(tmp_path) -> None:
         "decoders": {
             "memoryless": {"brier": 0.46, "ece": 0.09, "n_steps": 18},
             "temporal": {"brier": 0.5, "ece": 0.19, "n_steps": 18},
-            "static": {"brier": 0.74, "ece": 0.36, "n_steps": 18},
+            "identity_transition": {
+                "brier": 0.74,
+                "ece": 0.36,
+                "n_steps": 18,
+            },
         },
         "best_calibrated": "memoryless",
-        "worst_calibrated": "static",
+        "worst_calibrated": "identity_transition",
     }
     path = plot_decoder_calibration(
         calibration_payload, tmp_path / "decoder_calibration.png"
@@ -334,7 +561,7 @@ def test_model_evidence_figure_written_nonempty(tmp_path) -> None:
     payload: dict[str, object] = {
         "log_evidence": {
             "temporal": -26.72,
-            "static": -29.34,
+            "identity_transition": -29.34,
             "memoryless": -27.47,
         },
         "best_model": "temporal",
@@ -357,17 +584,17 @@ def test_transition_ablation_figure_written_nonempty(tmp_path) -> None:
                 "blend": 0.0,
                 "temporal_mean_accuracy": 0.667,
                 "temporal_minus_memoryless": -0.056,
-                "temporal_minus_static": 0.278,
+                "temporal_minus_identity_transition": 0.278,
             },
             {
                 "blend": 1.0,
                 "temporal_mean_accuracy": 0.722,
                 "temporal_minus_memoryless": 0.0,
-                "temporal_minus_static": 0.333,
+                "temporal_minus_identity_transition": 0.333,
             },
         ],
         "memoryless_mean_accuracy": 0.722,
-        "static_mean_accuracy": 0.389,
+        "identity_transition_mean_accuracy": 0.389,
         "convergence_blend": 0.4,
         "peak_blend": 0.2,
         "peak_temporal_accuracy": 0.778,
@@ -380,3 +607,53 @@ def test_transition_ablation_figure_written_nonempty(tmp_path) -> None:
 def test_transition_ablation_figure_empty_raises(tmp_path) -> None:
     with pytest.raises(ValueError):
         plot_transition_ablation({"rows": []}, tmp_path / "transition_ablation.png")
+
+
+def test_generative_adequacy_figure_written_nonempty(tmp_path) -> None:
+    payload: dict[str, object] = {
+        "replicates": 32,
+        "per_fixture": [
+            {
+                "fixture": "x86_accumulator",
+                "observed": {
+                    "transition_rate": 0.67,
+                    "run_count": 3,
+                    "temporal_recovery_accuracy": 0.75,
+                },
+                "predictive": {
+                    "transition_rate": {"lower": 0.2, "median": 0.5, "upper": 0.8},
+                    "temporal_recovery_accuracy": {
+                        "lower": 0.4,
+                        "median": 0.7,
+                        "upper": 0.95,
+                    },
+                },
+            },
+            {
+                "fixture": "x86_guard",
+                "observed": {
+                    "transition_rate": 0.33,
+                    "run_count": 2,
+                    "temporal_recovery_accuracy": 0.5,
+                },
+                "predictive": {
+                    "transition_rate": {"lower": 0.1, "median": 0.4, "upper": 0.7},
+                    "temporal_recovery_accuracy": {
+                        "lower": 0.3,
+                        "median": 0.6,
+                        "upper": 0.9,
+                    },
+                },
+            },
+        ],
+    }
+    path = plot_generative_adequacy(payload, tmp_path / "generative_adequacy.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+def test_generative_adequacy_figure_empty_raises(tmp_path) -> None:
+    with pytest.raises(ValueError):
+        plot_generative_adequacy(
+            {"per_fixture": []}, tmp_path / "generative_adequacy.png"
+        )

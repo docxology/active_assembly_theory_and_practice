@@ -134,6 +134,108 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         claim_boundary="Disassembly output is fixture-specific and does not infer high-level semantics.",
     ),
     ScholarshipSource(
+        key="quynh2014capstone",
+        title="Capstone: Next-Gen Disassembly Framework",
+        authors="Nguyen Anh Quynh",
+        year=2014,
+        venue="Black Hat USA 2014 conference slides",
+        doi=None,
+        url="https://www.capstone-engine.org/BHUSA2014-capstone.pdf",
+        source_type="technical_report",
+        evidence_tier="assembly_formalism",
+        project_stage="context",
+        project_role="Provides primary technical context for Capstone detail-mode instruction, operand, and implicit-register metadata.",
+        claim_boundary="The presentation documents the decoder's interface and design; it does not validate this project's particular fixture outputs or semantic labels.",
+    ),
+    ScholarshipSource(
+        key="intel_sdm",
+        title="Intel 64 and IA-32 Architectures Software Developer's Manuals",
+        authors="Intel Corporation",
+        year=2026,
+        venue="Intel Architecture Documentation",
+        doi=None,
+        url="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html",
+        source_type="software_documentation",
+        evidence_tier="assembly_formalism",
+        project_stage="context",
+        project_role="Defines the ISA-level reference frame for instruction encodings, operands, and architectural register effects used in the assembly notation.",
+        claim_boundary="The manual constrains the notation and semantics of x86-64; it does not validate this project's Capstone/Unicorn run or establish reverse-engineering performance.",
+    ),
+    ScholarshipSource(
+        key="clang_users_manual",
+        title="Clang Compiler User's Manual",
+        authors="LLVM Project",
+        year=2026,
+        venue="Clang Documentation",
+        doi=None,
+        url="https://clang.llvm.org/docs/UsersManual.html",
+        source_type="software_documentation",
+        evidence_tier="assembly_formalism",
+        project_stage="implemented",
+        project_role=(
+            "Documents the compiler-driver and target-selection contract used by "
+            "the local source-to-object capability receipt."
+        ),
+        claim_boundary=(
+            "The manual documents Clang behavior and options; it does not establish "
+            "that an unavailable target was compiled or that emitted code is semantically correct."
+        ),
+    ),
+    ScholarshipSource(
+        key="dasgupta2019x86semantics",
+        title="A Complete Formal Semantics of x86-64 User-Level Instruction Set Architecture",
+        authors="Sandeep Dasgupta, Daejun Park, Theodoros Kasampalis, Vikram S. Adve, and Grigore Rosu",
+        year=2019,
+        venue="Proceedings of the 40th ACM SIGPLAN Conference on Programming Language Design and Implementation",
+        doi="10.1145/3314221.3314601",
+        url="https://fsl.cs.illinois.edu/publications/dasgupta-park-kasampalis-adve-rosu-2019-pldi.html",
+        source_type="peer_reviewed_binary_analysis",
+        evidence_tier="assembly_formalism",
+        project_stage="context",
+        project_role="Supplies a formal-semantics reference point for distinguishing this package's checked transfer-function subset from complete x86-64 ISA semantics.",
+        claim_boundary="The published semantics are not executed by this package; they motivate the bounded formalism boundary and do not certify unsupported instructions.",
+    ),
+    ScholarshipSource(
+        key="lean_reference",
+        title="The Lean Language Reference",
+        authors="Leonardo de Moura and contributors",
+        year=2026,
+        venue="Lean Documentation",
+        doi=None,
+        url="https://lean-lang.org/doc/reference/latest/",
+        source_type="formal_methods_documentation",
+        evidence_tier="formal_verification",
+        project_stage="implemented",
+        project_role=(
+            "Documents the dependent-type-theoretic proof assistant used for the "
+            "closed operational fragment."
+        ),
+        claim_boundary=(
+            "Lean kernel checking applies only to the declared formal fragment; "
+            "it does not certify the Python pipeline or unsupported ISA effects."
+        ),
+    ),
+    ScholarshipSource(
+        key="demoura2021lean4",
+        title="The Lean 4 Theorem Prover and Programming Language",
+        authors="Leonardo de Moura and Sebastian Ullrich",
+        year=2021,
+        venue="Automated Deduction -- CADE 28, Lecture Notes in Computer Science",
+        doi="10.1007/978-3-030-79876-5_37",
+        url="https://doi.org/10.1007/978-3-030-79876-5_37",
+        source_type="peer_reviewed_formal_methods",
+        evidence_tier="formal_verification",
+        project_stage="context",
+        project_role=(
+            "Provides the primary scholarly account of Lean 4 as the proof "
+            "assistant and programming language used by the formal receipt."
+        ),
+        claim_boundary=(
+            "The paper supports the formal-methods context; only the checked local "
+            "Lean sources support the project-specific theorem status."
+        ),
+    ),
+    ScholarshipSource(
         key="unicorn",
         title="Unicorn: The Ultimate CPU Emulator",
         authors="Unicorn Engine Project",
@@ -148,6 +250,20 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         claim_boundary="The bounded fixture trace is not a sandbox for arbitrary binaries.",
     ),
     ScholarshipSource(
+        key="quynh2015unicorn",
+        title="Unicorn: Next Generation CPU Emulator Framework",
+        authors="Nguyen Anh Quynh and Dang Hoang Vu",
+        year=2015,
+        venue="Black Hat USA 2015 conference slides",
+        doi=None,
+        url="https://www.unicorn-engine.org/BHUSA2015-unicorn.pdf",
+        source_type="technical_report",
+        evidence_tier="assembly_formalism",
+        project_stage="context",
+        project_role="Provides primary technical context for Unicorn's register, memory, and instrumentation-hook execution model.",
+        claim_boundary="The presentation documents emulator capabilities; it does not establish arbitrary-binary safety or validate the project's bounded trace independently.",
+    ),
+    ScholarshipSource(
         key="angr",
         title="angr",
         authors="angr Project",
@@ -159,7 +275,7 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         evidence_tier="roadmap_adapter",
         project_stage="roadmap",
         project_role="Documented as an optional future CFG and symbolic-analysis adapter.",
-        claim_boundary="Optional probe status does not mean angr facts are present in v0.1 outputs.",
+        claim_boundary="Optional probe status does not mean angr facts are present in current fixture outputs.",
     ),
     ScholarshipSource(
         key="shoshitaishvili2016sok",
@@ -212,10 +328,30 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         doi=None,
         url="https://llvm.org/docs/CommandGuide/llvm-objdump.html",
         source_type="software_documentation",
-        evidence_tier="roadmap_adapter",
-        project_stage="roadmap",
-        project_role="Documented as an optional object-dump baseline.",
-        claim_boundary="A command probe is not a semantic agreement proof.",
+        evidence_tier="implemented_dependency",
+        project_stage="implemented",
+        project_role="Documents the local static object-disassembly command used by the compiler capability receipt.",
+        claim_boundary="Static object dumping and decoding are provenance evidence only; they are not a semantic agreement proof or compiler-correctness result.",
+    ),
+    ScholarshipSource(
+        key="necula2000translationvalidation",
+        title="Translation Validation for an Optimizing Compiler",
+        authors="George C. Necula",
+        year=2000,
+        venue="Proceedings of the 2000 ACM SIGPLAN Conference on Programming Language Design and Implementation",
+        doi="10.1145/349299.349314",
+        url="https://doi.org/10.1145/349299.349314",
+        source_type="peer_reviewed_compiler_correctness",
+        evidence_tier="compiler_formalism",
+        project_stage="context",
+        project_role=(
+            "Provides the primary translation-validation precedent for treating "
+            "each compiler output as a separately checkable artifact."
+        ),
+        claim_boundary=(
+            "The precedent motivates the provenance boundary; this package does not "
+            "perform translation validation or prove compiler correctness."
+        ),
     ),
     ScholarshipSource(
         key="keystone",
@@ -257,7 +393,7 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         evidence_tier="binary_analysis_context",
         project_stage="context",
         project_role="Adds peer-reviewed context for binary-analysis platforms and IR-centered analysis.",
-        claim_boundary="Cited for ecosystem context, not as evidence that BAP is run in v0.1.",
+        claim_boundary="Cited for ecosystem context, not as evidence that BAP runs in the current fixture pipeline.",
     ),
     ScholarshipSource(
         key="schulte2019gtirb",
@@ -299,7 +435,7 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         evidence_tier="roadmap_adapter",
         project_stage="roadmap",
         project_role="Documents a higher-level emulation roadmap adapter built above Unicorn.",
-        claim_boundary="Qiling is not an implemented backend in the v0.1 fixture run.",
+        claim_boundary="Qiling is not an implemented backend in the current fixture run.",
     ),
     ScholarshipSource(
         key="miasm",
@@ -341,7 +477,7 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         evidence_tier="roadmap_adapter",
         project_stage="roadmap",
         project_role="Documents a future decompiler-derived observation channel and cautionary comparison surface.",
-        claim_boundary="The manuscript does not claim decompilation or RetDec output in v0.1.",
+        claim_boundary="The manuscript does not claim decompilation or RetDec output in the current fixture pipeline.",
     ),
     ScholarshipSource(
         key="mcsema",
@@ -384,6 +520,103 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         project_stage="context",
         project_role="Canonical reference for hidden Markov model inference (forward, Viterbi, forward-backward) underlying the temporal layer.",
         claim_boundary="Provides standard HMM methodology; the project's left-to-right phase structure is an instance of it, not a new algorithm.",
+    ),
+    ScholarshipSource(
+        key="dempster1977em",
+        title="Maximum Likelihood from Incomplete Data Via the EM Algorithm",
+        authors="Arthur P. Dempster, Nan M. Laird, and Donald B. Rubin",
+        year=1977,
+        venue="Journal of the Royal Statistical Society: Series B (Methodological)",
+        doi="10.1111/j.2517-6161.1977.tb01600.x",
+        url="https://academic.oup.com/jrsssb/article/39/1/1/7027539",
+        source_type="peer_reviewed_theory",
+        evidence_tier="statistical_method",
+        project_stage="implemented",
+        project_role="Grounds the observation-only expectation-maximization estimator for incomplete latent-state assignments in the ordered HMM companion.",
+        claim_boundary="The paper motivates the estimator; finite project outputs remain fixture-bound and do not establish unsupervised phase discovery, semantic identifiability, or population validity.",
+    ),
+    ScholarshipSource(
+        key="gelman2013bda",
+        title="Bayesian Data Analysis",
+        authors="Andrew Gelman, John B. Carlin, Hal S. Stern, David B. Dunson, Aki Vehtari, and Donald B. Rubin",
+        year=2013,
+        venue="CRC Press",
+        doi=None,
+        url="https://www.routledge.com/Bayesian-Data-Analysis/Gelman-Carlin-Stern-Dunson-Vehtari-Rubin/p/book/9781439840955",
+        source_type="methodology_textbook",
+        evidence_tier="statistical_method",
+        project_stage="implemented",
+        project_role="Grounds the use of simulation-based generative adequacy checks as model diagnostics.",
+        claim_boundary="The textbook motivates the diagnostic design; the generated intervals describe this fixed toy model and do not establish posterior or population uncertainty.",
+    ),
+    ScholarshipSource(
+        key="guo2017calibration",
+        title="On Calibration of Modern Neural Networks",
+        authors="Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q. Weinberger",
+        year=2017,
+        venue="Proceedings of the 34th International Conference on Machine Learning",
+        doi=None,
+        url="https://proceedings.mlr.press/v70/guo17a.html",
+        source_type="peer_reviewed_theory",
+        evidence_tier="theory",
+        project_stage="context",
+        project_role="Provides the reliability-diagram and expected-calibration-error context for decoder confidence reporting.",
+        claim_boundary="Calibration metrics describe this labelled fixture corpus and do not establish deployment reliability.",
+    ),
+    ScholarshipSource(
+        key="kass1995bayes",
+        title="Bayes Factors",
+        authors="Robert E. Kass and Adrian E. Raftery",
+        year=1995,
+        venue="Journal of the American Statistical Association",
+        doi="10.1080/01621459.1995.10476572",
+        url="https://doi.org/10.1080/01621459.1995.10476572",
+        source_type="peer_reviewed_theory",
+        evidence_tier="theory",
+        project_stage="context",
+        project_role="Provides the statistical context for interpreting log marginal likelihood and Bayes-factor-style model evidence.",
+        claim_boundary="The evidence comparison is descriptive for fixed toy-model parameters, not a population-level model-selection claim.",
+    ),
+    ScholarshipSource(
+        key="brown2001binomial",
+        title="Interval Estimation for a Binomial Proportion",
+        authors="Lawrence D. Brown, T. Tony Cai, and Anirban DasGupta",
+        year=2001,
+        venue="Statistical Science",
+        doi="10.1214/ss/1009213286",
+        url="https://projecteuclid.org/journals/statistical-science/volume-16/issue-2/Interval-Estimation-for-a-Binomial-Proportion/10.1214/ss/1009213286.pdf",
+        source_type="peer_reviewed_statistics",
+        evidence_tier="statistical_method",
+        project_stage="context",
+        project_role="Supports the Wilson score interval choice for small binomial hit counts and discourages Wald-interval overinterpretation.",
+        claim_boundary="The interval is used descriptively for pooled labelled steps; it does not repair dependence, small-corpus scope, or external-validity limitations.",
+    ),
+    ScholarshipSource(
+        key="wilkinson2016fair",
+        title="The FAIR Guiding Principles for scientific data management and stewardship",
+        authors=(
+            "Mark D. Wilkinson, Michel Dumontier, IJsbrand Jan Aalbersberg, "
+            "Gabrielle Appleton, Myles Axton, Arie Baak, Niklas Blomberg, "
+            "Jan-Willem Boiten, Luiz Bonino da Silva Santos, Philip E. Bourne, "
+            "Jildau Bouwman, Anthony J. Brookes, Tim Clark, Mercè Crosas, "
+            "Ingrid Dillo, Olivier Dumon, Paul Groth, Carole Goble, Jeffrey S. Grethe, "
+            "and collaborators"
+        ),
+        year=2016,
+        venue="Scientific Data",
+        doi="10.1038/sdata.2016.18",
+        url="https://doi.org/10.1038/sdata.2016.18",
+        source_type="peer_reviewed_reproducibility",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Grounds the use of findable, accessible, interoperable, and reusable "
+            "provenance metadata as a stewardship objective for the replication bundle."
+        ),
+        claim_boundary=(
+            "FAIR principles motivate metadata and reuse design; a local manifest "
+            "does not establish independent replication or scientific validity."
+        ),
     ),
 )
 

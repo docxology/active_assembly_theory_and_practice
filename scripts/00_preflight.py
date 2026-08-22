@@ -1,4 +1,4 @@
-"""Preflight imports for the assembly Active Inference scaffold."""
+"""Preflight imports for the assembly Active Inference demonstrator."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ SRC = PROJECT_ROOT / "src"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.rxinfer_bridge import resolve_julia_executable
+from src.rxinfer_bridge import resolve_julia_executable, validate_julia_manifest
 
 
 def main() -> int:
@@ -23,6 +23,7 @@ def main() -> int:
     print("pymdp", getattr(pymdp, "__version__", "installed"))
     print("unicorn", getattr(unicorn, "__version__", "installed"))
     try:
+        validate_julia_manifest()
         julia = resolve_julia_executable()
         completed = subprocess.run(
             [julia, "--version"],
@@ -30,8 +31,8 @@ def main() -> int:
             capture_output=True,
             text=True,
         )
-    except RuntimeError:
-        print("julia not found")
+    except RuntimeError as exc:
+        print(f"native Julia/RxInfer backend unavailable: {exc}")
     else:
         print(completed.stdout.strip())
     print(f"project={PROJECT_ROOT}")

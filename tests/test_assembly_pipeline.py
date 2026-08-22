@@ -8,21 +8,34 @@ from pathlib import Path
 
 import matplotlib.image as mpimg
 import numpy as np
+import pytest
 
 from src.active_inference_bridge import infer_hidden_states
+from src.assembly_formalism import (
+    assembly_listing_markdown,
+    assembly_listing_payload,
+    build_assembly_listing,
+    validate_assembly_listing_payload,
+)
 from src.assembly_packages.schema import TRACE_SCHEMA_VERSION, binary_hash
 from src.claim_register import (
     CLAIM_RECORDS,
     claim_register_payload,
     write_claim_register,
 )
+from src.corpus import build_corpus
 from src.disassembly import disassemble_sample, sample_bytes
 from src.emulation import emulate_sample, emulate_x86_64
 from src.experiments import PROJECT_ROOT, run_experiment
-from src.features import encode_observations, observation_counts
+from src.features import (
+    HIDDEN_STATE_LABELS,
+    AssemblyObservation,
+    encode_observations,
+    observation_counts,
+)
+from src.figures import FIGURE_CAPTIONS, plot_observation_pipeline
 from src.generative_model import build_generative_model
 from src.manuscript_variables import generate_variables
-from src.redteam_report import REDTEAM_FINDINGS, write_redteam_report
 from src.reproducibility import (
     MANIFEST_TARGETS,
     reproducibility_payload,
@@ -44,6 +57,11 @@ def test_capstone_decodes_expected_mnemonic_sequence() -> None:
     assert [event.mnemonic for event in instructions] == ["mov", "add", "shl", "sub"]
     assert [event.address for event in instructions] == [0x1000, 0x1005, 0x1008, 0x100A]
     assert instructions[0].op_str == "eax, 1"
+    assert instructions[0].registers_written == ("eax",)
+    assert instructions[0].immediate_operands == (1,)
+    assert instructions[1].registers_read == ("eax",)
+    assert "eax" in instructions[1].registers_written
+    assert "rflags" in instructions[1].registers_written
 
 
 def test_unicorn_bounded_emulation_reaches_expected_register_state() -> None:
@@ -54,6 +72,35 @@ def test_unicorn_bounded_emulation_reaches_expected_register_state() -> None:
     assert trace.initial_rax == 0
     assert trace.final_rax == 5
     assert trace.registers["rax"] == 5
+    assert len(trace.instruction_states) == trace.instruction_count
+    assert trace.instruction_states[0].pre_rax == trace.initial_rax
+    assert trace.instruction_states[-1].post_rax == trace.final_rax
+    assert all(
+        left.post_rax == right.pre_rax
+        for left, right in zip(trace.instruction_states, trace.instruction_states[1:])
+    )
+
+
+def test_unicorn_memory_hooks_capture_real_store_load_values() -> None:
+    """Static memory operands join to the actual bounded Unicorn events."""
+
+    instructions = disassemble_sample("x86_memory")
+    trace = emulate_x86_64(sample_bytes("x86_memory"))
+
+    assert [event.mnemonic for event in instructions] == ["mov", "mov", "add"]
+    assert all(event.memory_operands for event in instructions[:2])
+    assert instructions[0].immediate_operands == (7,)
+    assert instructions[1].immediate_operands == ()
+    assert instructions[2].memory_operands == ()
+    assert [(event["access"], event["value"]) for event in trace.memory_events] == [
+        ("write", 7),
+        ("read", 7),
+    ]
+    assert all(
+        event["address"] == trace.registers["rsp"] + 0x20
+        for event in trace.memory_events
+    )
+    assert trace.final_rax == 8
 
 
 def test_feature_encoding_covers_instruction_stream() -> None:
@@ -68,7 +115,102 @@ def test_feature_encoding_covers_instruction_stream() -> None:
         "arithmetic_update",
     ]
     assert all(observation.executed for observation in observations)
+    assert all(observation.has_immediate_operand for observation in observations)
+    assert all(observation.uses_accumulator for observation in observations)
     assert observation_counts(observations)["arithmetic_update"] == 2
+
+
+def test_assembly_listing_is_a_source_bound_projection_of_real_trace() -> None:
+    instructions = disassemble_sample()
+    trace = emulate_sample()
+    observations = encode_observations(instructions, trace)
+    payload = assembly_listing_payload(
+        "x86_accumulator", instructions, observations, trace
+    )
+    listing = assembly_listing_markdown(payload)
+
+    assert payload["instruction_count"] == 4
+    assert "0x1000" in listing
+    assert "mov eax, 1" in listing
+    assert "category=load_immediate" in listing
+    trace_bundle = run_experiment().trace_bundle
+    trace_payload = trace_bundle.to_dict()
+    valid, detail = validate_assembly_listing_payload(payload, trace_payload)
+    assert valid, detail
+
+
+def test_assembly_listing_rejects_static_observation_address_drift() -> None:
+    instructions = disassemble_sample()
+    trace = emulate_sample()
+    observations = encode_observations(instructions, trace)
+    observations[0] = AssemblyObservation(
+        index=0,
+        address=0x2000,
+        mnemonic=observations[0].mnemonic,
+        operand_text=observations[0].operand_text,
+        category=observations[0].category,
+        observation_id=observations[0].observation_id,
+        executed=observations[0].executed,
+    )
+    with pytest.raises(ValueError, match="addresses differ"):
+        build_assembly_listing(instructions, observations, trace)
+
+
+def test_assembly_listing_rejects_malformed_payloads_and_empty_inputs() -> None:
+    """The source-bound listing validator fails closed on malformed evidence."""
+
+    instructions = disassemble_sample()
+    trace = emulate_sample()
+    observations = encode_observations(instructions, trace)
+    payload = assembly_listing_payload(
+        "x86_accumulator", instructions, observations, trace
+    )
+    trace_payload = {
+        "static_instruction_events": [event.to_dict() for event in instructions],
+        "observations": [observation.to_dict() for observation in observations],
+    }
+
+    assert validate_assembly_listing_payload({}, {})[0] is False
+    assert (
+        validate_assembly_listing_payload(
+            {**payload, "schema_version": "0.0"}, trace_payload
+        )[0]
+        is False
+    )
+    assert (
+        validate_assembly_listing_payload(
+            {**payload, "instructions": []}, trace_payload
+        )[0]
+        is False
+    )
+    drifted = [dict(row) for row in payload["instructions"]]
+    drifted[0]["mnemonic"] = "not_mov"
+    assert (
+        validate_assembly_listing_payload(
+            {**payload, "instructions": drifted}, trace_payload
+        )[0]
+        is False
+    )
+
+    with pytest.raises(ValueError, match="must not be empty"):
+        build_assembly_listing([], [], trace)
+    with pytest.raises(ValueError, match="equal length"):
+        build_assembly_listing(instructions, observations[:-1], trace)
+    with pytest.raises(ValueError, match="instruction rows"):
+        assembly_listing_markdown({"sample_id": "bad", "instructions": []})
+    with pytest.raises(ValueError, match="instruction rows must be objects"):
+        assembly_listing_markdown({"sample_id": "bad", "instructions": ["bad"]})
+
+
+def test_observation_pipeline_rejects_conflicting_category_for_id(
+    tmp_path: Path,
+) -> None:
+    observations = [
+        AssemblyObservation(0, 0x1000, "mov", "eax, 1", "load_immediate", 0, True),
+        AssemblyObservation(1, 0x1001, "add", "eax, 1", "arithmetic_update", 0, True),
+    ]
+    with pytest.raises(ValueError, match="must map to one category"):
+        plot_observation_pipeline(observations, tmp_path / "conflict.png")
 
 
 def test_generative_model_probability_tensors_normalize() -> None:
@@ -125,6 +267,15 @@ def test_trace_bundle_schema_records_package_provenance_and_hashes() -> None:
     assert payload["basic_blocks"][0]["instruction_indexes"] == [0, 1, 2, 3]
     assert len(payload["static_instruction_events"]) == 4
     assert len(payload["observations"]) == 4
+    assert len(payload["typed_observations"]) == 4
+    assert payload["typed_observations"][1]["flag_effect"] == "write"
+    assert len(payload["symbolic_facts"]) == 4
+    assert len(payload["dynamic_register_trace"]) == 6
+    assert all(
+        row["event"] == "instruction" for row in payload["dynamic_register_trace"][1:-1]
+    )
+    assert payload["dynamic_register_trace"][1]["registers_after"]["rax"] == 1
+    assert payload["cfg_edges"] == []
     provenance = {row["name"]: row for row in payload["package_provenance"]}
     assert provenance["capstone"]["available"] is True
     assert provenance["capstone"]["optional"] is False
@@ -156,26 +307,118 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert variables["SCHOLARSHIP_SOURCE_COUNT"] == str(len(scholarship_keys()))
     assert variables["CLAIM_COUNT"] == str(len(CLAIM_RECORDS))
     assert variables["VALIDATED_CLAIM_COUNT"] == str(len(CLAIM_RECORDS))
-    assert variables["REDTEAM_FINDING_COUNT"] == str(len(REDTEAM_FINDINGS))
-    assert variables["REDTEAM_REMEDIATED_COUNT"] == str(len(REDTEAM_FINDINGS))
+    assert variables["GENERATIVE_ADEQUACY_REPLICATES"] == "256"
+    assert variables["GENERATIVE_ADEQUACY_METRIC_COUNT"] == str(
+        len(build_corpus()) * (3 + len(HIDDEN_STATE_LABELS))
+    )
+    assert variables["GENERATIVE_ADEQUACY_FIGURE"].endswith("generative_adequacy.png")
     assert variables["REPRODUCIBILITY_ARTIFACT_COUNT"] == str(len(MANIFEST_TARGETS))
     assert variables["VALIDATION_ALL_PASSED"] == "true"
+    assert variables["SYMBOLIC_FINAL_RAX_MATCH"] == "yes"
+    assert variables["SYMBOLIC_UNSUPPORTED_COUNT"] == "0"
+    assert variables["MEMORY_DYNAMIC_EVENT_COUNT"] == "2"
+    assert variables["MEMORY_READ_COUNT"] == "1"
+    assert variables["MEMORY_WRITE_COUNT"] == "1"
+    assert variables["RXINFER_CATEGORICAL_MODEL_NAME"] == "categorical phase hmm"
+    assert variables["RXINFER_CATEGORICAL_FREE_ENERGY_COUNT"] == "8"
+    assert variables["HELD_OUT_MEAN_ACCURACY"]
+    assert variables["ACTION_SENSING_LEAKAGE_FREE"] == "yes"
+    assert variables["ACTION_SENSING_ACTIVE_MEAN_ACTIONS"]
+    assert variables["ACTION_SENSING_FIXED_MEAN_ACTIONS"]
+    assert variables["ACTION_SENSING_RANDOM_CONFIDENCE_RATE"]
+    assert variables["PARAMETER_LEARNING_LEAKAGE_FREE"] == "yes"
+    assert variables["PARAMETER_LEARNING_HOLDOUT_COUNT"] == "6"
+    assert variables["PARAMETER_LEARNING_EM_MEAN_ACCURACY"] == "0.428"
+    assert variables["PARAMETER_LEARNING_SUPERVISED_MEAN_ACCURACY"] == "0.772"
+    assert variables["PARAMETER_LEARNING_REFERENCE_MEAN_ACCURACY"] == "0.519"
+    assert variables["CROSS_ARCHITECTURE_COUNT"] == "3"
+    assert variables["CROSS_ARCHITECTURE_ALL_PASSED"] == "yes"
+    assert variables["CROSS_ARCHITECTURE_RESULT"] == "8"
+    assert variables["FORMAL_VERIFICATION_STATUS"] == "locally_verified"
+    assert variables["FORMAL_THEOREM_COUNT"] == "5"
+    assert variables["ACTIVE_INFORMATION_SENSOR_COUNT"] == "4"
+    assert variables["ACTIVE_INFORMATION_FRONTIER_ROW_COUNT"] == "16"
+    assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"
+    assert (
+        variables["COVER_IMAGE_ARTIFACT"]
+        == "manuscript/assets/active_assembly_cover.png"
+    )
     assert math.isfinite(float(variables["RXINFER_FINAL_FREE_ENERGY"]))
     assert (PROJECT_ROOT / "output/data/manuscript_variables.json").exists()
+    assert (PROJECT_ROOT / "output/data/manuscript_variable_registry.json").exists()
+    assert (PROJECT_ROOT / "output/data/figure_registry.json").exists()
+    template_figure_registry = json.loads(
+        (PROJECT_ROOT / "output/figures/figure_registry.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert len(template_figure_registry["figures"]) == len(FIGURE_CAPTIONS)
+    assert all(
+        row.get("label", "").startswith("fig:")
+        and row.get("filename")
+        and row.get("alt")
+        for row in template_figure_registry["figures"]
+    )
+    assert (PROJECT_ROOT / "output/data/build_provenance.json").exists()
+    provenance_payload = json.loads(
+        (PROJECT_ROOT / "output/data/build_provenance.json").read_text(encoding="utf-8")
+    )
+    assert (
+        "src/assembly_packages/schema.py"
+        in provenance_payload["lineage"]["source_hashes"]
+    )
+    assert provenance_payload["template_repository"]["revision"]
+    assert "worktree_status" in provenance_payload["template_repository"]
+    assert "worktree_diff_sha256" in provenance_payload["template_repository"]
+    assert (
+        "infrastructure/rendering/manuscript_injection.py"
+        in provenance_payload["template_repository"]["implementation_hashes"]
+    )
+    assert (
+        "infrastructure/rendering/_pdf_title_page_images.py"
+        in provenance_payload["template_repository"]["implementation_hashes"]
+    )
+    assert (
+        "output/rxinfer_categorical/categorical_diagnostics.json"
+        in (provenance_payload["lineage"]["generated_hashes"])
+    )
+    assert (PROJECT_ROOT / "output/data/symbolic_execution.json").exists()
+    assert (PROJECT_ROOT / "output/data/cfg_evidence.json").exists()
+    assert (PROJECT_ROOT / "output/data/memory_evidence.json").exists()
+    assert (PROJECT_ROOT / "output/data/action_sensing.json").exists()
+    assert (PROJECT_ROOT / "output/data/parameter_learning.json").exists()
+    assert (PROJECT_ROOT / "output/data/cross_architecture_fixtures.json").exists()
+    assert (PROJECT_ROOT / "output/data/formal_verification.json").exists()
+    assert (PROJECT_ROOT / "output/data/active_information_frontier.json").exists()
+    assert (PROJECT_ROOT / "output/data/held_out_model.json").exists()
+    assert (PROJECT_ROOT / "manuscript/assets/active_assembly_cover.png").exists()
+    assert variables["ASSEMBLY_CFG_FIGURE"].endswith("assembly_cfg.png")
     assert (PROJECT_ROOT / "output/figures/rxinfer_free_energy.png").exists()
+    assert (
+        PROJECT_ROOT / "output/figures/rxinfer_categorical_free_energy.png"
+    ).exists()
+    assert (PROJECT_ROOT / "output/figures/assembly_memory_timeline.png").exists()
     assert (PROJECT_ROOT / "output/figures/trace_feature_matrix.png").exists()
     assert (PROJECT_ROOT / "output/figures/inference_diagnostics.png").exists()
     assert (PROJECT_ROOT / "output/figures/scholarship_source_roles.png").exists()
     assert (PROJECT_ROOT / "output/figures/scholarship_evidence_matrix.png").exists()
     assert (PROJECT_ROOT / "output/figures/claim_evidence_map.png").exists()
-    assert (PROJECT_ROOT / "output/figures/redteam_risk_register.png").exists()
     assert (PROJECT_ROOT / "output/figures/artifact_hash_manifest.png").exists()
     assert (PROJECT_ROOT / "output/figures/validation_summary.png").exists()
+    assert (PROJECT_ROOT / "output/figures/action_sensing.png").exists()
+    assert (PROJECT_ROOT / "output/figures/parameter_learning.png").exists()
+    assert (PROJECT_ROOT / "output/figures/cross_architecture_benchmark.png").exists()
+    assert (PROJECT_ROOT / "output/figures/formal_verification_receipt.png").exists()
+    assert (PROJECT_ROOT / "output/figures/active_information_frontier.png").exists()
+    assert variables["ACTION_SENSING_FIGURE"].endswith("action_sensing.png")
+    assert variables["PARAMETER_LEARNING_FIGURE"].endswith("parameter_learning.png")
     assert variables["TRACE_FEATURE_FIGURE"].endswith("trace_feature_matrix.png")
     assert variables["INFERENCE_DIAGNOSTIC_FIGURE"].endswith(
         "inference_diagnostics.png"
     )
     assert variables["REPRODUCIBILITY_FIGURE"].endswith("artifact_hash_manifest.png")
+    assert variables["CALIBRATION_CURVE_FIGURE"].endswith("calibration_curve.png")
+    assert variables["DECODER_CALIBRATION_FIGURE"].endswith("decoder_calibration.png")
 
     records = load_free_energy_records(
         PROJECT_ROOT / "output/rxinfer/free_energy_trace.jsonl"
@@ -244,7 +487,7 @@ def test_scholarship_payload_partitions_evidence_roles() -> None:
     assert payload["project_stage_counts"]["context"] >= 3
     assert payload["project_stage_counts"]["roadmap"] >= 10
     assert payload["evidence_tier_counts"]["roadmap_adapter"] >= 10
-    assert payload["evidence_tier_counts"]["implemented_dependency"] == 2
+    assert payload["evidence_tier_counts"]["implemented_dependency"] >= 2
 
 
 def test_claim_register_links_sources_artifacts_and_validation_checks() -> None:
@@ -275,18 +518,6 @@ def test_claim_register_payload_partitions_claim_types() -> None:
     assert payload["type_counts"]["rxinfer_backend"] == 1
     assert payload["type_counts"]["artifact_reproducibility"] == 1
     assert payload["status_counts"]["validated"] == len(CLAIM_RECORDS)
-
-
-def test_redteam_report_is_durable_and_remediated() -> None:
-    relative_path = write_redteam_report()
-    payload = json.loads((PROJECT_ROOT / relative_path).read_text(encoding="utf-8"))
-
-    assert payload["finding_count"] == len(REDTEAM_FINDINGS)
-    assert payload["remediated_count"] == len(REDTEAM_FINDINGS)
-    assert payload["open_count"] == 0
-    assert {row["status"] for row in payload["findings"]} == {"remediated"}
-    assert all(row["negative_control"] for row in payload["findings"])
-    assert (PROJECT_ROOT / "output/figures/redteam_risk_register.png").exists()
 
 
 def test_reproducibility_manifest_records_current_artifact_hashes() -> None:

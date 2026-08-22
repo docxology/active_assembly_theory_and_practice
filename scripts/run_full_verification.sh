@@ -11,6 +11,8 @@
 #
 set -u
 cd "$(dirname "$0")/.."
+# Keep figure-producing tests deterministic and display-server independent.
+export MPLBACKEND="${MPLBACKEND:-Agg}"
 
 steps=0
 failures=0
@@ -40,12 +42,28 @@ run_step "ruff format --check" \
   uv run ruff format --check src tests scripts
 run_step "mypy" \
   uv run mypy
-run_step "validation gate (70-oracle)" \
+run_step "formal correspondence + Lean receipt" \
+  uv run python scripts/run_formal_verification.py
+run_step "blind replication bundle" \
+  uv run python scripts/run_replication.py verify
+run_step "RxInfer backend receipt" \
+  uv run python scripts/run_rxinfer_backend.py
+run_step "manuscript variables + template hydration" \
+  uv run python scripts/z_generate_manuscript_variables.py
+run_step "validation gate (source-bound oracles)" \
   uv run python scripts/validate_analysis_outputs.py
+run_step "DOCX structural receipt" \
+  uv run python scripts/validate_docx_render.py
+run_step "PDF accessibility receipt" \
+  uv run python scripts/validate_pdf_accessibility.py
+run_step "PDF syntax (qpdf)" \
+  qpdf --check output/pdf/active_assembly_theory_and_practice_combined.pdf
+run_step "PDF/UA-2 (VeraPDF)" \
+  verapdf --format text --flavour ua2 output/pdf/active_assembly_theory_and_practice_combined.pdf
 
 if [ "${1:-}" = "--julia" ]; then
   run_step "Julia backend Pkg.test()" \
-    julia --project=julia/ActiveAssemblyRxInfer -e 'using Pkg; Pkg.test()'
+    uv run python scripts/run_julia_tests.py
 fi
 
 echo ""

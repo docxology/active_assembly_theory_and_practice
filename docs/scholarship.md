@@ -14,12 +14,45 @@ approved source type, stage, and tier, has an HTTPS URL, has a valid DOI shape
 when a DOI is present, and carries non-empty role and boundary text. This
 prevents quiet growth of unused or unsupported scholarship claims.
 
+## Fresh metadata review
+
+On 2026-08-16, the current bibliography was spot-checked against primary or
+authoritative landing pages before the source-bound render was accepted. The
+review used web search with the following inclusion rule: retain a source when
+the landing page or publisher record supports the exact bibliographic metadata
+or the narrowly stated software/ISA role; do not infer project results from a
+software paper or documentation page. No new source was added solely to make a
+claim appear stronger.
+
+| Review target | Query / authority | Decision |
+| --- | --- | --- |
+| RxInfer | DOI `10.21105/joss.05161`; JOSS/TU Eindhoven record | Retained as the peer-reviewed implementation reference; local JSONL values remain project outputs. |
+| pymdp | DOI `10.21105/joss.04098`; JOSS record | Retained as the comparison-software reference; not conflated with RxInfer free energy. |
+| x86-64 formal semantics | DOI `10.1145/3314221.3314601`; Illinois Formal Systems Laboratory / PLDI record | Retained as the formal-semantic contrast; corrected author metadata to Sandeep Dasgupta, Daejun Park, Theodoros Kasampalis, Vikram S. Adve, and Grigore Rosu. |
+| Binomial intervals | DOI `10.1214/ss/1009213286`; Project Euclid record | Retained for Wilson-interval reporting; the intervals are descriptive for dependent fixture steps, not population-level uncertainty. |
+| Capstone and Unicorn | Official project documentation and feature pages | Retained as API and instrumentation authorities; optional adapter names remain roadmap/context evidence only. |
+| Ordered-HMM parameter learning | Dempster--Laird--Rubin (1977), JRSS B publisher record | Added as the primary EM-method source; it motivates incomplete-data estimation but does not support the package's fixture results or semantic claims. |
+
 ## Source Roles
 
 - Free Energy Principle and active inference theory: Friston 2009 and Friston
   et al. 2017.
 - Inference software: RxInfer JOSS paper, RxInfer static-inference docs, RxInfer
   Python integration docs, and pymdp JOSS paper.
+- Assembly formalism: Intel's architecture manuals define the ISA reference
+  frame used to describe bytes, operands, and register effects; the official
+  Capstone and Unicorn technical presentations document the concrete metadata
+  and instrumentation interfaces used by the package.
+- Formal-semantics boundary: Dasgupta et al.'s peer-reviewed x86-64 semantics
+  establish the distinction between a complete ISA semantics and this package's
+  deliberately bounded transfer-function subset.
+- Statistical reporting: Brown, Cai, and DasGupta motivate Wilson score
+  intervals for small binomial hit counts; the project still treats them as
+  descriptive because fixture steps are dependent.
+- Latent-variable estimation: Dempster, Laird, and Rubin provide the EM
+  incomplete-data estimator used by the observation-only ordered-HMM companion;
+  the package reports its finite held-out behavior separately from the method's
+  general statistical motivation.
 - Assembly evidence packages: Capstone, Unicorn, angr, Rizin, radare2,
   LLVM objdump, Keystone, NASM, Ghidra, Qiling, Miasm, Dyninst, RetDec, and
   McSema.
@@ -34,6 +67,13 @@ prevents quiet growth of unused or unsupported scholarship claims.
 - `binary_analysis_context`: peer-reviewed or technical binary-analysis context.
 - `theory`: FEP and active-inference background.
 - `integration_guidance`: documentation that constrains how packages are wired.
+- `assembly_formalism`: authoritative ISA documentation used to constrain
+  assembly notation; it is contextual evidence, not a project-run backend.
+- `statistical_method`: peer-reviewed interval-estimation methodology used to
+  document a reporting choice; it is not a claim of population uncertainty.
+- `formal_verification`: formal-methods documentation used to identify the
+  checked proof-assistant toolchain and its trusted-kernel boundary; it does
+  not certify the project's executable ISA adapters.
 
 ## Boundary Rule
 

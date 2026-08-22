@@ -5,6 +5,7 @@ from .schema import (
     CfgEdge,
     PackageProvenance,
     TraceBundle,
+    build_static_cfg,
     build_trace_bundle,
     trace_bundle_to_json,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "CfgEdge",
     "PackageProvenance",
     "TraceBundle",
+    "build_static_cfg",
     "build_trace_bundle",
     "trace_bundle_to_json",
 ]

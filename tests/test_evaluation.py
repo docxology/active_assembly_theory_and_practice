@@ -19,6 +19,7 @@ from src.evaluation import (
     evaluate_segmentation,
     evaluation_payload,
     free_energy_convergence,
+    generative_adequacy,
     model_evidence,
     observation_informativeness,
     per_phase_recovery_metrics,
@@ -82,6 +83,13 @@ def test_evaluate_decoding_confusion_covers_all_labels() -> None:
         assert set(row.keys()) == set(labels)
 
 
+def test_evaluate_decoding_rejects_unknown_labels() -> None:
+    with pytest.raises(ValueError, match="unknown_predicted"):
+        evaluate_decoding(["a", "unknown"], ["a", "b"], ["a", "b"])
+    with pytest.raises(ValueError, match="unknown_truth"):
+        evaluate_decoding(["a"], ["unknown"], ["a", "b"])
+
+
 # --------------------------------------------------------------------------- #
 # calibration
 # --------------------------------------------------------------------------- #
@@ -125,6 +133,22 @@ def test_calibration_empty_raises() -> None:
         calibration([], [])
 
 
+def test_calibration_records_fixed_bin_count() -> None:
+    result = calibration([[0.6, 0.4]], [0])
+    assert result["n_bins"] == 10
+
+
+def test_calibration_rejects_invalid_probability_contracts() -> None:
+    with pytest.raises(ValueError, match="sum to one"):
+        calibration([[0.6, 0.6]], [0])
+    with pytest.raises(ValueError, match="index"):
+        calibration([[1.0, 0.0]], [2])
+    with pytest.raises(ValueError, match="n_bins"):
+        calibration_bins([[1.0, 0.0]], [0], n_bins=0)
+    with pytest.raises(ValueError, match="index"):
+        calibration_bins([[0.5, 0.5]], [0.5])
+
+
 # --------------------------------------------------------------------------- #
 # free_energy_convergence
 # --------------------------------------------------------------------------- #
@@ -156,6 +180,20 @@ def test_free_energy_convergence_empty_raises() -> None:
         free_energy_convergence([])
 
 
+def test_free_energy_convergence_rejects_nonfinite_values() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        free_energy_convergence([1.0, float("nan")])
+
+
+def test_wilson_ci_rejects_invalid_counts_and_quantile() -> None:
+    with pytest.raises(ValueError, match="0 <= k"):
+        wilson_ci(-1, 4)
+    with pytest.raises(ValueError, match="0 <= k"):
+        wilson_ci(5, 4)
+    with pytest.raises(ValueError, match="positive"):
+        wilson_ci(1, 4, z=0.0)
+
+
 # --------------------------------------------------------------------------- #
 # compare_models
 # --------------------------------------------------------------------------- #
@@ -166,7 +204,7 @@ def test_compare_models_keys_and_ranges() -> None:
     assert set(result.keys()) == {fixture.name for fixture in corpus}
     for entry in result.values():
         assert set(entry.keys()) == {
-            "static_accuracy",
+            "identity_transition_accuracy",
             "memoryless_accuracy",
             "temporal_accuracy",
             "viterbi_accuracy",
@@ -176,7 +214,7 @@ def test_compare_models_keys_and_ranges() -> None:
 
 
 def test_memoryless_decoder_beats_temporal_on_this_corpus() -> None:
-    """Honest comparator (Forge cross-vendor finding): on the short-program
+    """Honest comparator: on the short-program
     corpus a memoryless per-step decoder is the strongest non-temporal baseline
     and outperforms the temporal HMM, so temporal structure earns no net
     advantage here. This is recorded as a measured fact, not hidden."""
@@ -186,21 +224,25 @@ def test_memoryless_decoder_beats_temporal_on_this_corpus() -> None:
     result = compare_models(corpus, model)
     mean_memoryless = np.mean([e["memoryless_accuracy"] for e in result.values()])
     mean_temporal = np.mean([e["temporal_accuracy"] for e in result.values()])
-    mean_static = np.mean([e["static_accuracy"] for e in result.values()])
-    # The temporal HMM beats the sticky filter but not the memoryless decoder.
-    assert mean_temporal > mean_static
+    mean_identity_transition = np.mean(
+        [e["identity_transition_accuracy"] for e in result.values()]
+    )
+    # The temporal HMM beats the identity-transition filter but not the memoryless decoder.
+    assert mean_temporal > mean_identity_transition
     assert mean_memoryless > mean_temporal
 
 
-def test_compare_models_temporal_beats_static_on_average() -> None:
-    """The temporal model should not be worse than the sticky static filter."""
+def test_compare_models_temporal_beats_identity_transition_on_average() -> None:
+    """The temporal model should beat the identity-transition comparator."""
 
     corpus = build_corpus()
     model = build_temporal_model()
     result = compare_models(corpus, model)
     mean_temporal = np.mean([e["temporal_accuracy"] for e in result.values()])
-    mean_static = np.mean([e["static_accuracy"] for e in result.values()])
-    assert mean_temporal > mean_static
+    mean_identity_transition = np.mean(
+        [e["identity_transition_accuracy"] for e in result.values()]
+    )
+    assert mean_temporal > mean_identity_transition
 
 
 # --------------------------------------------------------------------------- #
@@ -387,11 +429,46 @@ def test_evaluation_payload_structure() -> None:
         "observation_informativeness",
         "model_evidence",
         "transition_ablation",
+        "generative_adequacy",
     }
     assert set(payload["per_fixture"].keys()) == {f.name for f in corpus}
     summary = payload["summary"]
     assert summary["fixture_count"] == len(corpus)
-    assert summary["mean_temporal_accuracy"] >= summary["mean_static_accuracy"]
+    assert (
+        summary["mean_temporal_accuracy"]
+        >= summary["mean_identity_transition_accuracy"]
+    )
+
+
+def test_generative_adequacy_is_deterministic_and_structured() -> None:
+    corpus = build_corpus()
+    model = build_temporal_model()
+    first = generative_adequacy(corpus, model, replicates=32, seed=17)
+    second = generative_adequacy(corpus, model, replicates=32, seed=17)
+    assert first == second
+    assert first["method"] == "fixed_parameter_generative_adequacy"
+    assert first["replicates"] == 32
+    assert first["fixture_count"] == len(corpus)
+    assert first["tested_metric_count"] == len(corpus) * (3 + len(HIDDEN_STATE_LABELS))
+    for row in first["per_fixture"]:
+        assert row["length"] > 0
+        assert set(row["observed"]) == {
+            "transition_rate",
+            "run_count",
+            "temporal_recovery_accuracy",
+            "phase_occupancy",
+        }
+        assert all(
+            interval["lower"] <= interval["median"] <= interval["upper"]
+            for interval in row["predictive"]["phase_occupancy"]
+        )
+
+
+def test_generative_adequacy_rejects_invalid_simulation_settings() -> None:
+    with pytest.raises(ValueError):
+        generative_adequacy(build_corpus(), build_temporal_model(), replicates=0)
+    with pytest.raises(ValueError):
+        generative_adequacy(build_corpus(), build_temporal_model(), seed=-1)
 
 
 def test_evaluation_payload_per_fixture_fields() -> None:
@@ -406,7 +483,13 @@ def test_evaluation_payload_per_fixture_fields() -> None:
         assert "calibration" in entry
         assert "free_energy_convergence" in entry
         # calibration now also surfaces per-bin data used by the reliability diagram.
-        assert set(entry["calibration"].keys()) == {"brier", "ece", "bins", "n_steps"}
+        assert set(entry["calibration"].keys()) == {
+            "brier",
+            "ece",
+            "bins",
+            "n_steps",
+            "n_bins",
+        }
 
 
 def test_evaluation_payload_is_json_serializable() -> None:
@@ -462,7 +545,9 @@ def test_pooled_decoding_accuracies_match_summary() -> None:
     pooled = pooled_decoding_accuracies(corpus, model)
     summary = evaluation_payload(corpus, model)["summary"]
     assert pooled["temporal"] == pytest.approx(summary["pooled_temporal_accuracy"])
-    assert pooled["static"] == pytest.approx(summary["pooled_static_accuracy"])
+    assert pooled["identity_transition"] == pytest.approx(
+        summary["pooled_identity_transition_accuracy"]
+    )
     assert pooled["memoryless"] == pytest.approx(summary["pooled_memoryless_accuracy"])
 
 
@@ -472,7 +557,7 @@ def test_corpus_stability_honest_and_deterministic() -> None:
     result = corpus_stability_analysis(corpus, model)
     assert len(result["per_holdout"]) == len(corpus)
     # The headline result survives every single-fixture removal.
-    assert result["all_holdouts_temporal_above_static"] is True
+    assert result["all_holdouts_temporal_above_identity_transition"] is True
     assert result["all_holdouts_temporal_above_chance"] is True
     range_ = result["temporal_pooled_range"]
     assert 0.0 < range_["span"] < 0.5
@@ -532,9 +617,9 @@ def test_decoder_calibration_ordering() -> None:
     decoders = calibration_payload["decoders"]
     # On this corpus calibration tracks accuracy: memoryless < temporal < static.
     assert decoders["memoryless"]["ece"] < decoders["temporal"]["ece"]
-    assert decoders["temporal"]["ece"] < decoders["static"]["ece"]
+    assert decoders["temporal"]["ece"] < decoders["identity_transition"]["ece"]
     assert calibration_payload["best_calibrated"] == "memoryless"
-    assert calibration_payload["worst_calibrated"] == "static"
+    assert calibration_payload["worst_calibrated"] == "identity_transition"
     # Deterministic and consistent with the live computation.
     assert json.dumps(calibration_payload, sort_keys=True) == json.dumps(
         decoder_calibration(corpus, model), sort_keys=True
@@ -566,7 +651,7 @@ def test_model_evidence_temporal_best() -> None:
     evidence_payload = payload["model_evidence"]
     evidence = evidence_payload["log_evidence"]
     # The temporal HMM is the best generative model by marginal likelihood.
-    assert evidence["temporal"] > evidence["static"]
+    assert evidence["temporal"] > evidence["identity_transition"]
     assert evidence["temporal"] > evidence["memoryless"]
     assert evidence_payload["best_model"] == "temporal"
     assert evidence_payload["temporal_margin_over_best_alternative"] > 0
@@ -586,8 +671,8 @@ def test_transition_ablation_converges_to_memoryless() -> None:
     # At uniform B (max blend), temporal converges exactly to memoryless.
     assert abs(rows[-1]["temporal_minus_memoryless"]) < 1e-6
     assert ablation["convergence_blend"] is not None
-    # At the authored B, temporal beats static (the mechanism B provides).
-    assert rows[0]["temporal_minus_static"] > 0
+    # At the authored B, temporal beats the identity-transition comparator (the mechanism B provides).
+    assert rows[0]["temporal_minus_identity_transition"] > 0
     # Deterministic and consistent with the live computation.
     assert json.dumps(ablation, sort_keys=True) == json.dumps(
         transition_ablation(corpus, model), sort_keys=True

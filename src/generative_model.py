@@ -21,6 +21,8 @@ class GenerativeModelSpec:
     def validate(self) -> None:
         """Validate categorical probability tensors."""
 
+        if not (np.all(np.isfinite(self.A)) and np.all(np.isfinite(self.D))):
+            raise ValueError("A and D must contain only finite values")
         if self.A.shape != (
             len(self.observation_labels),
             len(self.hidden_state_labels),

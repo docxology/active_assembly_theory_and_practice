@@ -15,6 +15,14 @@ Phase labelling convention (deterministic, hand-authored):
 * ``guard_check`` for ``cmp`` / ``test`` and conditional jumps,
 * ``exit`` for the final instruction of each program.
 
+The corpus deliberately contains more than one evidence regime.  In addition
+to register-only straight-line programs, it includes a bounded stack-memory
+fixture and a branch-taken companion to the external-target guard fixture.
+These additions are still transparent toy programs, but they make the Phase A
+typed-observation evaluation test memory addressing, repeated phases, and
+dynamic/static path differences instead of merely counting near-duplicate
+register instructions.
+
 All byte fixtures are real machine code: they are decoded with Capstone via
 :func:`disassembly.disassemble_bytes` and executed with Unicorn via
 :func:`emulation.emulate_x86_64`; no instruction sequence is fabricated.
@@ -116,7 +124,31 @@ def build_corpus() -> tuple[CorpusFixture, ...]:
         ),
     )
 
-    return (accumulator, bitwise, guard, long_accumulator)
+    # mov [rsp+0x20],7; mov eax,[rsp+0x20]; add eax,1
+    # -> setup, accumulator update, exit.  The memory operands are real
+    # Capstone/Unicorn evidence and are retained in the typed channel.
+    memory = CorpusFixture(
+        name="x86_memory",
+        code=bytes.fromhex("c7 44 24 20 07 00 00 00 8b 44 24 20 83 c0 01"),
+        phase_labels=("setup", "accumulator_update", "exit"),
+    )
+
+    # mov eax,1; cmp eax,3; jl +3; add eax,1; sub eax,0
+    # -> setup, guard, guard, [unexecuted arithmetic], exit.  The branch is
+    # taken, so static and bounded dynamic paths intentionally differ.
+    guard_taken = CorpusFixture(
+        name="x86_guard_taken",
+        code=bytes.fromhex("b8 01 00 00 00 83 f8 03 7c 03 83 c0 01 83 e8 00"),
+        phase_labels=(
+            "setup",
+            "guard_check",
+            "guard_check",
+            "accumulator_update",
+            "exit",
+        ),
+    )
+
+    return (accumulator, bitwise, guard, long_accumulator, memory, guard_taken)
 
 
 def fixture_observation_ids(fixture: CorpusFixture) -> tuple[int, ...]:

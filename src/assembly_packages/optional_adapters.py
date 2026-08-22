@@ -35,7 +35,7 @@ def _command_probe(
 
 
 def probe_optional_packages() -> list[PackageProvenance]:
-    """Return provenance placeholders for optional packages without importing them eagerly."""
+    """Return availability/provenance records without eager optional imports."""
 
     angr_version = _python_package_version("angr")
     keystone_version = _python_package_version("keystone")

@@ -9,7 +9,27 @@
 - Every figure must carry a generated caption in `output/figures/README.md`
   (`FIGURE_CAPTIONS` in `src/figures.py`). Add a `{{NEW_FIGURE}}` token and a
   manifest target whenever a new figure is introduced.
-- The v0.2 figure tokens are `{{TEMPORAL_BELIEFS_FIGURE}}`,
-  `{{MODEL_COMPARISON_FIGURE}}`, and `{{ACTIVE_EFE_FIGURE}}`; each must appear in
-  the manuscript source so the `manuscript_source_surface` check stays green.
-
+- The current figure tokens include `{{TEMPORAL_BELIEFS_FIGURE}}`,
+  `{{MODEL_COMPARISON_FIGURE}}`, `{{ACTIVE_EFE_FIGURE}}`, and
+  `{{GENERATIVE_ADEQUACY_FIGURE}}`, plus the typed observation tokens
+  `{{TYPED_OBSERVATION_MATRIX_FIGURE}}` and
+  `{{FACTORIZED_OBSERVATION_COMPARISON_FIGURE}}`, the expanded-corpus tokens
+  `{{TEMPORAL_BELIEFS_MEMORY_FIGURE}}`,
+  `{{TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE}}`, and
+  `{{CORPUS_COVERAGE_FIGURE}}`, `{{ACTION_SENSING_FIGURE}}`, and
+  `{{PARAMETER_LEARNING_FIGURE}}`, and
+  `{{REPRESENTATION_BENCHMARK_FIGURE}}` and `{{TRACE_REFINEMENT_FIGURE}}`; every generated manuscript figure token
+  must appear in source so the `manuscript_source_surface` check stays green.
+- The long-horizon program section uses the generated tokens
+  `{{SCIENTIFIC_PROGRAM_ARTIFACT}}`, `{{SCIENTIFIC_PROGRAM_MILESTONE_COUNT}}`,
+  `{{SCIENTIFIC_PROGRAM_IMPLEMENTED_COUNT}}`,
+  `{{SCIENTIFIC_PROGRAM_ACTIVE_COUNT}}`, and
+  `{{SCIENTIFIC_PROGRAM_PLANNED_COUNT}}`; these are status metadata, not
+  scientific outcome claims.
+- `{{QUOTIENT_PROTOCOL_ARTIFACT}}` links the first bounded P3
+  equivalence/near-miss witness artifact; it must not be described as a latent
+  semantic-identifiability result.
+- `{{REPRESENTATION_BENCHMARK_*}}` links the source-family-disjoint P3
+  benchmark and exposes bounded protocol diagnostics, including the deliberately
+  insufficient intervention negative control; it must not be described as a
+  fitted semantic model, universal separation law, or identifiability result.

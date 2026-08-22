@@ -1,22 +1,457 @@
 # Methodology {#sec:methodology}
 
-The scaffold starts with a fixed x86-64 fixture whose instruction sequence is
+The demonstrator starts with a fixed x86-64 fixture whose instruction sequence is
 known and auditable. Capstone decodes the bytes into address, mnemonic, operand,
 and byte-span records. Unicorn then executes the same bytes under a bounded
-instruction count and records the executed addresses and final register state.
+instruction count and records the executed addresses plus pre/post snapshots of
+the bounded architectural slice (`RAX`, `RIP`, `RSP`, and `EFLAGS`). The final
+register state is retained as a summary, not as the only semantic check.
 These evidence streams are joined into trace schema `{{TRACE_SCHEMA_VERSION}}`
 with sample hash `{{BINARY_SHA256}}`. The bundle records
 `{{AVAILABLE_PACKAGE_COUNT}}` available package adapters out of
 `{{TOTAL_PACKAGE_COUNT}}` total adapter slots, including unavailable optional
 packages as explicit provenance rather than silent assumptions.
 
-The feature layer maps instruction mnemonics into six observation categories:
+The feature layer maps instruction mnemonics into `{{OBSERVATION_CATEGORY_COUNT}}`
+observation categories:
 load immediate, arithmetic update, bitwise transform, comparison, control
 transfer, and other. These observations are supplied to a discrete likelihood
-matrix over five latent program-state classes: setup, accumulator update,
+matrix over `{{HIDDEN_STATE_COUNT}}` latent program-state classes: setup, accumulator update,
 representation transform, guard check, and exit. The posterior update uses
 pymdp's softmax routine over log prior and log likelihood terms, producing one
 belief vector and one comparison free-energy diagnostic per observation step.
+
+## Assembly evidence and notation {#sec:assembly-evidence}
+
+The byte fixture is an instruction-semantics test case, not an opaque binary
+sample. In x86-64, an instruction is a variable-length encoding whose bytes,
+decoded operands, architectural effects, and dynamic execution are related but
+not interchangeable. Intel's architecture manuals provide the reference
+vocabulary for instruction encodings and register effects [@intel_sdm].
+Capstone's detail interface exposes instruction identifiers, operand kinds,
+implicit register reads/writes, and architecture-specific operand metadata
+[@capstone;@quynh2014capstone]. Unicorn complements that static view with a
+CPU-state transition interface and code/memory instrumentation hooks
+[@unicorn;@quynh2015unicorn]. The implementation preserves those layers
+separately: Capstone supplies the static decode, Unicorn supplies the bounded
+address/register trace, and the feature mapper supplies the deliberately small
+observation vocabulary. This separation is what makes a later semantic or
+control-flow extension auditable rather than silently replacing decoded
+assembly with a guessed high-level label.
+
+Let $b_{0:L-1}$ be the fixture byte string and
+$a_0={{ASSEMBLY_BASE_ADDRESS}}$
+the load address. The static decoder is represented as
+
+$$
+\delta_{\mathrm{CS}}(b,a_0) = \bigl[(a_i,\ell_i,\mathrm{mnemonic}_i,\mathrm{operands}_i,\mathrm{bytes}_i)\bigr]_{i=0}^{N-1},
+$$ {#eq:capstone-decode}
+
+where $a_i$ is an instruction address, $\ell_i$ its decoded byte length,
+and $N={{INSTRUCTION_COUNT}}$ for the selected fixture. The offsets are
+therefore recovered from the instruction lengths; they are not inferred from a
+fixed-width word assumption. The bounded dynamic record is
+
+$$
+\tau = \bigl(r_0,r_1,\ldots,r_T;\;a^{\mathrm{exec}}_0, a^{\mathrm{exec}}_1,\ldots,a^{\mathrm{exec}}_{T-1}\bigr),
+$$ {#eq:unicorn-trace}
+
+where $r_t$ is the captured register state and
+$a^{\mathrm{exec}}_t$ is the address observed by Unicorn's code hook. The
+join is address-based: a static instruction is marked executed exactly when
+its address occurs in the bounded dynamic trace. That rule is intentionally
+weaker than claiming complete path or control-flow recovery.
+
+[@lst:assembly_fixture] is generated from these live Capstone and Unicorn
+records for architecture `{{ASSEMBLY_ARCHITECTURE}}`; the machine-readable
+source is `{{ASSEMBLY_LISTING_ARTIFACT}}`. The left fields preserve the
+assembly evidence; the trailing fields are the categorical projection consumed
+by the inference model.
+
+```{#lst:assembly_fixture .asm caption="Source-bound x86-64 fixture listing; static decode and bounded dynamic annotations are generated from the canonical trace bundle."}
+{{ASSEMBLY_LISTING}}
+```
+
+The fixture exercises four distinct pieces of x86-64 notation: an immediate
+load into `EAX`, an arithmetic update, a shift-based representation transform,
+and a second arithmetic update. A write to a 32-bit register such as `EAX`
+also determines the corresponding 64-bit `RAX` state according to the x86-64
+architectural rules [@intel_sdm]. Unicorn reports the resulting final register
+state `RAX = {{FINAL_RAX}}`; this is a concrete execution check on the bytes,
+not a claim that the mnemonic sequence constitutes a recovered program
+meaning. The feature map then applies
+
+$$
+\begin{aligned}
+o_i &= \phi(\mathrm{mnemonic}_i,\mathrm{operands}_i) \in \mathcal{O},\\
+\mathcal{O} &= \{\text{load-immediate},\text{arithmetic-update},
+\text{bitwise-transform},\\
+&\qquad \text{comparison},\text{control-transfer},\text{other}\},
+\end{aligned}
+$$ {#eq:assembly-observation-map}
+
+so the model sees a declared categorical channel rather than raw opcode bytes.
+In particular, `add`, `sub`, and their related update mnemonics share the
+`arithmetic_update` channel, while `shl`/`shr`-family instructions share the
+`bitwise_transform` channel. This is a transparent pedagogical abstraction;
+it does not encode flags, memory aliasing, calling conventions, or complete
+instruction semantics.
+
+### Typed evidence channels and factorized scoring {#sec:typed-observation-model}
+
+The roadmap's first expansion retains the discarded evidence as a typed record
+rather than silently changing the six-category benchmark. The schema version is
+`{{TYPED_OBSERVATION_SCHEMA_VERSION}}` and contains `{{TYPED_FIELD_COUNT}}`
+fields (`{{TYPED_STATIC_FIELD_COUNT}}` static fields plus the dynamic execution
+status). The field families are `{{TYPED_FIELD_NAMES}}`. Instruction family and
+operand class are syntactic classifications over the decoded mnemonic and
+operand metadata; register read/write sets and flag effects are taken from
+Capstone's detail API; memory addressing mode is a bounded classification of
+explicit base/index/displacement metadata; branch target class is internal,
+external, return, indirect, or none relative to the decoded span; and dynamic
+status is the address-membership join to the bounded Unicorn code trace
+[@intel_sdm;@capstone;@unicorn]. None of these fields is a phase label.
+
+For instruction $i$, the typed record is
+
+$$
+\mathbf{x}_i = (f_i,o_i,R_i,W_i,\varphi_i,m_i,c_i,d_i),
+$$ {#eq:typed-observation-record}
+
+where $f_i$ is instruction family, $o_i$ operand class, $R_i/W_i$ the
+canonicalized register read/write sets, $\varphi_i$ flag effect, $m_i$ memory
+addressing mode, $c_i$ branch-target class, and $d_i$ dynamic status. The raw
+mnemonic and address remain in the record for auditability but are not treated
+as a high-cardinality semantic target. A missing value is encoded as
+`__MISSING__`; a value not present in the training support is encoded as
+`__UNKNOWN__`. This makes the missing-field policy an explicit model input,
+rather than an implicit zero or an exception.
+
+The typed records are evaluated as a companion to the collapsed channel across
+`{{TYPED_FIXTURE_COUNT}}` complete labelled fixtures. For a training-only
+support $V_f$ for field $f$, a smoothed field factor is
+
+$$
+\widehat{p}_f(v\mid s)=
+\frac{n_{f,v,s}+\alpha}{\sum_{v'\in V_f}n_{f,v',s}+\lvert V_f\rvert\alpha},
+$$ {#eq:typed-field-factor}
+
+and the factorized evidence score is
+
+$$
+\ell_{\mathrm{fact}}(s\mid\mathbf{x}_i)=
+\sum_{f\in\mathcal{F}}\log \widehat{p}_f(x_{i,f}\mid s).
+$$ {#eq:factorized-observation-score}
+
+The hierarchical companion groups fields into instruction semantics, register
+context, control flow, and dynamic context. It averages log scores within each
+active group and then averages groups before normalizing over states:
+
+$$
+\ell_{\mathrm{hier}}(s\mid\mathbf{x}_i)=
+\frac{1}{|\mathcal{G}_i|}\sum_{g\in\mathcal{G}_i}
+\frac{1}{|\mathcal{F}_g|}\sum_{f\in\mathcal{F}_g}
+\log \widehat{p}_f(x_{i,f}\mid s).
+$$ {#eq:hierarchical-observation-score}
+
+This group-balanced score is intentionally called a composite score: it is not
+presented as proof that the fields are conditionally independent, nor as a
+normalized joint distribution over all assembly records. The existing
+six-category likelihood remains the deliberately collapsed reference. The
+complete schema is visualized in [@fig:typed-observation-matrix], while the
+fixture-level comparison, field-family ablation, and masked-memory sensitivity
+are shown in [@fig:factorized-observation-comparison].
+
+![Typed observation record for the canonical fixture. Text cells preserve instruction family, operand class, Capstone register sets, flag effect, memory mode, branch target class, and bounded dynamic status; row shading marks evidence families, and an em dash means missing rather than zero.]({{TYPED_OBSERVATION_MATRIX_FIGURE}}){#fig:typed-observation-matrix width=100%}
+
+The factorized evaluation uses `{{TYPED_FIELD_GROUP_COUNT}}` field groups and
+`{{FACTORIZED_ABLATION_GROUP_COUNT}}` corresponding leave-one-group-out
+ablations, while holding out complete fixtures. For each held-out fixture $f_k$, every field
+support, conditional factor, transition count, and initial-state count is fit on
+$\mathcal{F}_{-k}$; the excluded record is then decoded once. The artifact is
+`{{FACTORIZED_OBSERVATION_ARTIFACT}}`. The resulting comparison is explicitly
+diagnostic: collapsed mean accuracy is `{{FACTORIZED_COLLAPSED_MEAN_ACCURACY}}`,
+static typed factorization is `{{FACTORIZED_STATIC_MEAN_ACCURACY}}`, full
+factorization is `{{FACTORIZED_MEAN_ACCURACY}}`, and the hierarchical composite
+score is `{{HIERARCHICAL_MEAN_ACCURACY}}`. Thus the full typed score changes the
+collapsed reference by `{{FACTORIZED_MINUS_COLLAPSED}}` and changes the static
+typed ablation by `{{FACTORIZED_MINUS_STATIC}}` on this tiny corpus. Masking the
+memory-addressing field yields mean accuracy `{{MISSING_FIELD_MEAN_ACCURACY}}`
+(`{{MISSING_FIELD_MEAN_DELTA}}` relative to full factorization), a useful null
+result because the labelled fixtures contain little memory-mode variation.
+
+![Typed observation model comparison. The left panel reports complete-fixture held-out accuracy for the collapsed categorical, static typed, factorized, and hierarchical composite scores; the middle removes one evidence family at a time; the right masks memory metadata under the explicit missing-field policy. Each fit excludes the displayed fixture, so the figure is a leakage diagnostic rather than a population benchmark.]({{FACTORIZED_OBSERVATION_COMPARISON_FIGURE}}){#fig:factorized-observation-comparison width=100%}
+
+### Fixture-design coverage
+
+The typed comparison is now evaluated on an expanded transparent corpus rather
+than on register-only straight-line variants. The corpus contains
+`{{CORPUS_FIXTURE_COUNT}}` complete fixtures. A source-bound coverage inventory
+records `{{CORPUS_MEMORY_FIXTURE_COUNT}}` fixture with explicit memory addressing,
+`{{CORPUS_ALTERNATE_PATH_FIXTURE_COUNT}}` fixture with a statically decoded but
+unexecuted instruction, and `{{CORPUS_REPEATED_PHASE_FIXTURE_COUNT}}` fixtures
+with repeated authored phase labels. The inventory also records
+`{{CORPUS_UNIQUE_INSTRUCTION_FAMILY_COUNT}}` instruction families,
+`{{CORPUS_UNIQUE_MEMORY_MODE_COUNT}}` non-null memory addressing mode(s), and
+`{{CORPUS_UNIQUE_BRANCH_CLASS_COUNT}}` non-null branch-target class(es). These
+counts are derived from the real Capstone and bounded Unicorn producer path;
+they describe fixture design, not independent binary samples.
+
+For fixture $k$, define the design vector
+
+$$
+\mathbf{c}_k=(N_k,E_k,R_k,M_k,B_k,U_k),
+$$ {#eq:fixture-coverage-vector}
+
+where $N_k$ is the number of statically decoded instructions, $E_k$ is the
+number of distinct dynamically executed addresses, $R_k$ is the number of
+contiguous authored phase runs, $M_k$ is the number of static memory-operand
+instructions, $B_k$ is the number of observed non-null branch-target classes,
+and $U_k$ is the number of typed instruction families. The coverage artifact
+is `{{CORPUS_COVERAGE_ARTIFACT}}`; [@fig:corpus-coverage] visualizes the
+quantitative $N_k/E_k$ distinction and the categorical design flags. The
+artifact is a promotion gate for fixture diversity, not a semantic score: it
+cannot show that a field is intrinsic to program meaning or that six toy
+programs represent arbitrary binaries.
+
+![Transparent fixture-design coverage across the labelled corpus. The left panel separates static decoded span from bounded executed path length; the right panel records memory operands, alternate dynamic paths, repeated authored phases, and direct branch edges. These are design diagnostics rather than independent binary samples.]({{CORPUS_COVERAGE_FIGURE}}){#fig:corpus-coverage width=100%}
+
+### Bounded transfer functions and control-flow formalism
+
+The categorical map is supplemented by a small executable semantics layer.
+Capstone detail provides register read/write sets and direct operand spelling.
+A bounded transfer function executes the documented immediate-register,
+arithmetic, bitwise, shift, comparison, and conditional-branch subset over the
+dynamic path. The report is emitted as {{SYMBOLIC_SEMANTICS_ARTIFACT}}.
+
+For the selected fixture, {{SYMBOLIC_SUPPORTED_COUNT}} instructions are covered
+by the transfer-function subset and {{SYMBOLIC_UNSUPPORTED_COUNT}} executed
+instructions are unsupported; the symbolic final value agrees with Unicorn
+({{SYMBOLIC_FINAL_RAX_MATCH}}). Unsupported executed instructions fail closed
+rather than receiving a guessed effect. This is an auditable explanation layer,
+not a complete x86 lifter, symbolic solver, decompiler, or claim of semantic
+program understanding [@intel_sdm;@capstone;@unicorn;@dasgupta2019x86semantics].
+The distinction is substantive: complete formal x86-64 semantics are a
+separate research object, whereas this package deliberately verifies only a
+small transfer-function subset and fails closed outside it
+[@dasgupta2019x86semantics].
+
+Let q_i be the concrete register state before instruction i and T_i the
+transfer function selected by its decoded mnemonic and operands. For an
+executed supported instruction, the bounded execution is
+
+$$
+q_{i+1}=T_i(q_i), \qquad
+e_{i+1}=\Psi_i(e_i,\mathrm{operands}_i),
+$$ {#eq:bounded-transfer}
+
+where e_i is the parallel readable symbolic expression. The independent
+Unicorn check tests the concrete terminal projection,
+
+$$
+\pi_{RAX}(q_N^{\mathrm{symbolic}})
+=q_N^{\mathrm{Unicorn}},
+$$ {#eq:semantic-crosscheck}
+
+not equality of the textual expression.
+
+The stronger instrument contract now compares the bounded register projection
+at every executed step. Let $u_i^-$ and $u_i^+$ be the pre- and post-step
+Unicorn snapshots aligned to the decoded address, and let
+$\widehat{q}_i^+=T_i(\widehat{q}_i^-)$ be the transfer-function update. The
+stepwise `RAX` endpoint is
+
+$$
+I_i^{RAX}=\mathbb{1}\!\left[\pi_{RAX}(\widehat{q}_i^-)=\pi_{RAX}(u_i^-)
+\;\land\;
+\pi_{RAX}(\widehat{q}_i^+)=\pi_{RAX}(u_i^+)\right],
+$$ {#eq:stepwise-rax-refinement}
+
+and the report records {{SYMBOLIC_STEPWISE_RAX_AGREEMENT_COUNT}} agreements out
+of {{SYMBOLIC_STEPWISE_RAX_COMPARABLE_COUNT}} comparable executed steps. For
+architectural flags, the interpreter compares only bits it defines for a
+particular operation: carry (`CF`), zero (`ZF`), sign (`SF`), and overflow
+(`OF`). It records {{SYMBOLIC_STEPWISE_FLAG_AGREEMENT_COUNT}} agreements out of
+{{SYMBOLIC_STEPWISE_FLAG_COMPARISON_COUNT}} defined bit comparisons. An
+undefined or preserved flag is not silently treated as a match. These are
+trace-refinement checks for a declared subset, not a proof of the complete
+x86-64 transition relation [@intel_sdm;@dasgupta2019x86semantics].
+
+![Stepwise bounded transfer-function refinement. Post-instruction `RAX` markers from the local transfer functions and real Unicorn are overlaid for executed steps; the companion panel counts only explicitly modeled `EFLAGS` bit comparisons. Static instructions not visited by the bounded run are omitted. Exact agreement validates the declared fixture instrument, not complete x86-64 semantics.]({{TRACE_REFINEMENT_FIGURE}}){#fig:trace-refinement width=96%}
+
+### Mechanically checked closed-world semantics {#sec:formal-fragment}
+
+The executable transfer functions are complemented by a small, independent
+operational-semantics fragment in Lean. Its purpose is not to relabel the
+Capstone trace as a proof of x86-64 correctness; it is to make the algebraic
+equivalence witnesses used by the quotient-state program explicit and kernel
+checked. The formal state is a modular word
+$q\in\mathbb{W}_{64}=\{0,\ldots,2^{64}-1\}$, and the closed operation set is
+`mov`, `add`, `sub`, `inc`, and `nop`. The formal step function is
+
+$$
+\begin{aligned}
+\operatorname{step}(\operatorname{mov}\ v,q)&=v,&
+\operatorname{step}(\operatorname{add}\ v,q)&=q+v \pmod{2^{64}},\\
+\operatorname{step}(\operatorname{sub}\ v,q)&=q-v \pmod{2^{64}},&
+\operatorname{step}(\operatorname{inc},q)&=q+1 \pmod{2^{64}},\\
+\operatorname{step}(\operatorname{nop},q)&=q.&
+\end{aligned}
+$$ {#eq:formal-closed-step}
+
+For a finite program $P$, define its observational relation over this formal
+domain by
+
+$$
+P\equiv_{64}Q\quad\Longleftrightarrow\quad
+\forall q\in\mathbb{W}_{64},\;\operatorname{run}(P,q)=\operatorname{run}(Q,q).
+$$ {#eq:formal-observational-equivalence}
+
+The checked receipt is `{{FORMAL_VERIFICATION_ARTIFACT}}`: Lean toolchain
+`{{FORMAL_TOOLCHAIN}}` builds `{{FORMAL_THEOREM_COUNT}}` named theorems and
+reports status `{{FORMAL_VERIFICATION_STATUS}}`. The current theorem manifest
+proves two `inc` operations equal one addition by two, proves that `nop` is
+neutral in a finite program, proves two constant-addition programs equivalent
+under every formal initial word, proves a changed subtraction is *not*
+equivalent by an explicit initial-state witness, and proves that appending a
+`nop` preserves the formal run. The trusted base is the Lean kernel and its
+imported core/standard library; no external solver output is accepted as a
+proof certificate. This is a mechanically checked algebraic prerequisite for
+the local quotient protocol, not a theorem about Capstone, Unicorn, x86
+flags, memory, exceptions, compiler correctness, or all assembly programs.
+Lean 4's scholarly account describes the system as both an extensible theorem
+prover and a programming language [@demoura2021lean4]; here, only the kernel
+checked receipt for the declared local fragment is promoted.
+
+![Kernel-checked formal theorem manifest. Every marker is a theorem declared in the Lean project and is shown as locally checked by the pinned toolchain. The fragment covers only modular accumulator algebra; it does not certify the Python trace adapter or complete x86-64 semantics.]({{FORMAL_VERIFICATION_FIGURE}}){#fig:formal-verification-receipt width=96%}
+
+### Cross-architecture adapter falsification surface {#sec:cross-architecture}
+
+The first architecture extension is deliberately a runtime adapter benchmark,
+not a portability claim. The same declared numeric operation is encoded as
+transparent bytes for x86-64, AArch64, and RISC-V64. Capstone decodes three
+instructions in each fixture; Unicorn executes exactly the two non-returning
+instructions; and the final accumulator is compared with the declared value.
+The receipt `{{CROSS_ARCHITECTURE_ARTIFACT}}` records the bytes, decoder
+mnemonics, API provenance, bounded instruction count, and outcome for all
+`{{CROSS_ARCHITECTURE_COUNT}}` architectures. All bounded executions passed
+(`{{CROSS_ARCHITECTURE_ALL_PASSED}}`) and the common numeric result is
+`{{CROSS_ARCHITECTURE_RESULT}}`.
+
+The adapter contract is intentionally weaker than semantic equivalence. It
+does not compare flags, exception behavior, calling conventions, memory
+effects, ABI obligations, compiler transformations, or complete instruction
+semantics across ISAs. Its scientific value is adversarial at the software
+boundary: a real decoder/emulator path must execute before an architecture is
+counted, and a stale hand-written result cannot satisfy the receipt. The
+benchmark is therefore a falsification surface for adapter drift and a
+starting point for source-family-disjoint cross-compiler work, not evidence of
+cross-architecture latent-state invariance.
+
+![Cross-architecture executable fixture benchmark. The left panel compares three static Capstone decodes with the two bounded Unicorn steps actually executed; the right panel shows the common accumulator outcome. Values are exact fixture counts for three transparent architectures, not population estimates or a cross-ISA semantic-equivalence theorem.]({{CROSS_ARCHITECTURE_FIGURE}}){#fig:cross-architecture-benchmark width=96%}
+
+The static direct-branch partition produces {{CFG_BLOCK_COUNT}} basic blocks and
+{{CFG_EDGE_COUNT}} CFG edges in the current bundle. A target outside the decoded
+span remains an explicit external edge, so the representation records the
+observed boundary without overstating it as whole-binary CFG recovery.
+
+More formally, let each decoded instruction be
+
+$$
+u_i=(a_i,\ell_i,m_i,x_i,R_i,W_i),
+$$ {#eq:instruction-event}
+
+where $a_i$ and $\ell_i$ are its address and byte length, $m_i$ is the mnemonic,
+$x_i$ is the operand string, and $R_i/W_i$ are Capstone-derived register
+read/write sets. Let $L$ contain instruction zero, every in-range direct branch
+target, and the instruction immediately after each branch or return. Sorting
+$L=(\lambda_0,\ldots,\lambda_{K-1})$ yields the bounded basic-block partition
+
+$$
+\mathcal{B}_j=\{u_i:\lambda_j\leq i<\lambda_{j+1}\},\qquad
+\lambda_K=N,\qquad \bigsqcup_{j=0}^{K-1}\mathcal{B}_j=\{u_0,\ldots,u_{N-1}\}.
+$$ {#eq:cfg-partition}
+
+An edge $(\mathcal{B}_j,\mathcal{B}_k,\tau)$ is emitted for a direct jump,
+conditional taken branch, or fall-through successor; an out-of-span target is
+retained as an `external_*` endpoint. This is a finite CFG representation of the
+fixture's decoded span, not whole-program reachability.
+
+For the separate leakage-safe estimation path, let $f_k$ be the held-out fixture
+and $\mathcal{F}_{-k}$ the remaining labelled fixtures. With positive smoothing
+concentrations $\alpha_A,\alpha_B,\alpha_D$, the fitted categorical parameters
+are
+
+$$
+A_{o,s}^{(-k)}=\frac{n_{o,s}^{(-k)}+\alpha_A}
+{\sum_{o'}n_{o',s}^{(-k)}+|\mathcal{O}|\alpha_A},\qquad
+B_{s',s}^{(-k)}=\frac{n_{s',s}^{(-k)}+\alpha_B}
+{\sum_{r}n_{r,s}^{(-k)}+|\mathcal{S}|\alpha_B},\qquad
+D_s^{(-k)}=\frac{n_s^{(-k)}+\alpha_D}
+{\sum_r n_r^{(-k)}+|\mathcal{S}|\alpha_D}.
+$$ {#eq:smoothed-hmm-fit}
+
+The superscript $(-k)$ is an exclusion contract: no observation, phase label,
+or transition count from $f_k$ enters its fitted tensors. The resulting model is
+then scored once on $f_k$ and written to {{HELD_OUT_MODEL_ARTIFACT}}. This is
+supervised fixture-level estimation, not unsupervised phase discovery.
+
+The branch-bearing CFG evidence is retained in {{CFG_EVIDENCE_ARTIFACT}} and
+visualized in [@fig:assembly-cfg]. It makes the distinction between a decoded
+direct branch, a fall-through successor, and an out-of-span target inspectable
+without importing a larger reverse-engineering framework.
+
+![Bounded CFG evidence for the branch-bearing fixture. Blocks retain decoded addresses and mnemonic sequences; colored edges distinguish fall-through from branch-taken relations, blue borders mark the bounded dynamic path, and the dashed external node preserves an out-of-span target rather than inventing a destination.]({{ASSEMBLY_CFG_FIGURE}}){#fig:assembly-cfg width=100%}
+
+### Memory operands and dynamic access provenance
+
+Register traces alone are insufficient for an assembly-to-inference interface:
+an instruction can read or write memory without changing the final accumulator,
+and a static memory operand does not establish that the access occurred. The
+method therefore includes a transparent `x86_memory` fixture in the expanded
+labelled corpus. Capstone
+records the base register, index register, scale, displacement, and operand
+width for every memory operand; Unicorn memory hooks record the access type,
+effective address, width, value, triggering instruction address, and dynamic
+event index. The memory-evidence artifact remains a separately named provenance
+projection even though the same fixture now participates in the typed
+leave-one-fixture-out evaluation; this keeps the store/load join inspectable
+without silently changing the meaning of the collapsed channel.
+
+The static operand relation is written as
+
+$$
+m_i=(b_i,j_i,\sigma_i,d_i,w_i),
+\qquad
+\widehat{a}_{i}=R[b_i]+\sigma_i R[j_i]+d_i,
+$$ {#eq:memory-effective-address}
+
+where $b_i$ and $j_i$ are the base and index registers (either may be absent),
+$\sigma_i$ is the scale, $d_i$ is the signed displacement, and $w_i$ is the
+operand width. A dynamic memory event is
+
+$$
+\mu_k=(k,\rho_k,a_k,w_k,v_k,i_k),
+$$ {#eq:memory-event}
+
+with event order $k$, access relation $\rho_k\in\{\mathrm{read},
+\mathrm{write}\}$, effective address $a_k$, width $w_k$, observed value
+$v_k$, and triggering instruction index $i_k$. The contract joins the two
+streams only when $i_k$ has a declared memory operand and the observed address
+equals the bounded Unicorn register state plus the decoded displacement. It
+does not perform alias analysis, recover heap objects, or infer memory meaning
+from an address alone.
+
+The current provenance artifact is {{MEMORY_EVIDENCE_ARTIFACT}}. It contains
+{{MEMORY_STATIC_INSTRUCTION_COUNT}} static memory instructions and
+{{MEMORY_DYNAMIC_EVENT_COUNT}} dynamic events: {{MEMORY_WRITE_COUNT}} write and
+{{MEMORY_READ_COUNT}} read event(s) at {{MEMORY_DISTINCT_ADDRESS_COUNT}}
+distinct effective address(es). The store and load observe the same fixture
+value, providing a minimal end-to-end check that the static operand, effective
+address, dynamic hook, and terminal register result agree. This is an
+instrumentation demonstration, not evidence of general memory semantics.
+
+![Static-to-dynamic memory provenance for the transparent x86_memory fixture. The left panel marks Capstone memory operands; the right panel orders real Unicorn read/write hooks and reports triggering instruction, stack-relative effective address, and observed value. The store-to-load join is bounded to this fixture and is not heap recovery or alias analysis.]({{ASSEMBLY_MEMORY_FIGURE}}){#fig:assembly-memory-timeline width=100%}
 
 The native RxInfer layer is invoked through `julia --project` and reads the
 same trace bundle. The current model maps observation IDs into numeric event
@@ -26,22 +461,47 @@ Every exposed `result.free_energy` value is written to
 following the RxInfer static-inference interface [@rxinfer_static_docs]. The
 Python-to-RxInfer integration is a native Julia CLI call because the RxInfer
 documentation identifies the server/client route as third-party and not
-maintained by the core team [@rxinfer_python_docs]. This is an implemented
-Bethe Free Energy spine, not yet the planned categorical hidden Markov model
-over instruction phases.
+maintained by the core team [@rxinfer_python_docs]. This Gaussian trajectory is
+the authoritative Bethe Free Energy spine for the project. The same package now
+also runs a validated, namespaced categorical companion,
+`{{RXINFER_CATEGORICAL_MODEL_NAME}}`, over one-hot observation categories and
+fixed left-to-right latent phases. Its diagnostics are written to
+`{{RXINFER_CATEGORICAL_ARTIFACT}}` and contain
+`{{RXINFER_CATEGORICAL_FREE_ENERGY_COUNT}}` finite values, with final value
+`{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`. The Gaussian and categorical
+free-energy values are not compared on an absolute scale: they are distinct
+factor graphs with different variational objectives.
 
-![Assembly observation pipeline generated from decoded bytes.]({{OBSERVATION_FIGURE}}){#fig:observation-pipeline}
+The categorical companion makes the intended phase model explicit. For latent
+states $z_t$ and categorical observations $x_t$,
 
-![Adapter provenance for required and optional assembly packages.]({{PACKAGE_PROVENANCE_FIGURE}}){#fig:package-provenance}
+$$
+p(z_{1:T},x_{1:T})=p(z_1)
+\prod_{t=2}^{T}p(z_t\mid z_{t-1})
+\prod_{t=1}^{T}p(x_t\mid z_t),
+$$ {#eq:categorical-rxinfer-hmm}
 
-![Trace feature matrix linking instruction events, execution status, observation IDs, and category channels.]({{TRACE_FEATURE_FIGURE}}){#fig:trace-feature-matrix}
+where the transition and emission matrices are recorded in the companion
+configuration artifact. RxInfer executes this model through its native
+`Categorical` and `DiscreteTransition` factors; the Julia package tests assert
+finite, correctly namespaced free-energy and posterior artifacts. The companion
+is therefore an implemented method path, while its fixed parameters and small
+fixture input remain insufficient for claims of learned program semantics.
+
+![Categorical RxInfer Bethe Free Energy values for the fixed phase-HMM companion. The trajectory is reported on its own model-specific scale and is not numerically compared with the Gaussian event-code diagnostic.]({{RXINFER_CATEGORICAL_FREE_ENERGY_FIGURE}}){#fig:rxinfer-categorical-free-energy width=88%}
+
+![Source-bound assembly evidence map for the selected x86-64 fixture. Each card shows address, mnemonic/operands, and the categorical observation channel; solid borders mark addresses observed during bounded Unicorn execution, and observation IDs are labels rather than continuous measurements.]({{OBSERVATION_FIGURE}}){#fig:observation-pipeline width=95%}
+
+![Package-provenance audit for required Capstone and Unicorn adapters plus optional roadmap slots. Available probes are distinguished from unavailable probes, and hatching marks optional slots; optional packages are recorded as provenance, not as evidence streams.]({{PACKAGE_PROVENANCE_FIGURE}}){#fig:package-provenance width=90%}
+
+![Trace-feature audit for every decoded instruction. Binary execution/immediate/accumulator flags are shown beside an annotated table of observation IDs, category codes, and semantic labels; categorical codes are not plotted as a continuous scale.]({{TRACE_FEATURE_FIGURE}}){#fig:trace-feature-matrix width=95%}
 
 ## Temporal, active, and evaluated inference {#sec:advanced-methods}
 
-The v0.1 belief update is a sticky filter that carries the previous posterior
+The identity-transition comparison filter carries the previous posterior
 forward unchanged and therefore omits state dynamics — implicitly assuming an
-identity transition over latent phases. The v0.2 model adds a left-to-right
-transition matrix over the five program phases, yielding a genuine discrete
+identity transition over latent phases. The temporal model adds a left-to-right
+transition matrix over the `{{HIDDEN_STATE_COUNT}}` program phases, yielding a genuine discrete
 hidden Markov model. Forward filtering alternates a predict step (the transition
 matrix applied to the previous posterior) with a categorical likelihood update;
 Viterbi decoding recovers the most probable joint phase path; and
@@ -49,18 +509,64 @@ forward–backward smoothing refines the per-step beliefs
 [@friston2017activeinference;@rabiner1989tutorial]. Contiguous program phases are then segmented
 directly from the smoothed beliefs.
 
-The complete Bayesian graph of this model is drawn in Figure
-`fig:generative-model`: the hidden phase states form the left-to-right Markov
+The complete Bayesian graph of this model is drawn in [@fig:generative-model]:
+the hidden phase states form the left-to-right Markov
 backbone, each emits a categorical observation through the likelihood `A`, the
 initial belief is fixed by the prior `D`, and the active layer scores candidate
 observations through the expected free energy.
 
-![Generative model as a Bayesian graph]({{GENERATIVE_MODEL_FIGURE}}){#fig:generative-model}
-*Bayesian-graph (plate) diagram of the generative model. Hidden phase states
-form a left-to-right Markov chain (transition `B`) that emits categorical
-observations (likelihood `A`); `D` is the initial prior. The active layer scores
-candidate observations via the expected free energy `G(pi)`. Rendered from
-constants, so it is deterministic.*
+### Observation-only parameter learning {#sec:observation-only-learning}
+
+The fixed matrices are complemented by an explicitly separated parameter-learning
+path. For each complete-fixture holdout, the training input is the sequence of
+observation-category IDs from the other fixtures; the hand-authored phase labels
+are not passed to fitting. This is an observation-only estimator over a declared
+ordered-state scaffold, not a discovery algorithm. Because categorical latent
+states are label-non-identifiable without a constraint, the fit is initialized
+from the inspectable reference model and retains its ordered phase names only as
+an architectural coordinate system. The held-out labels are introduced exactly
+once, in the scoring layer.
+
+For observation sequence $o_{1:T}$, the E step computes smoothed responsibilities
+
+$$
+\gamma_t(s)=P(s_t=s\mid o_{1:T}),\qquad
+\xi_t(s',s)=P(s_t=s,s_{t+1}=s'\mid o_{1:T}),
+$$ {#eq:em-responsibilities}
+
+using the scaled forward--backward recursions. With positive Dirichlet
+pseudocounts, the M step updates the column-stochastic emission and transition
+parameters as
+
+$$
+\widehat A_{o,s}=
+\frac{\alpha_A+\sum_t\mathbf{1}[o_t=o]\gamma_t(s)}
+{|\mathcal O|\alpha_A+\sum_t\gamma_t(s)},
+$$ {#eq:em-emission-update}
+
+and, for the ordered support
+$\mathcal E=\{(s,s),(s+1,s)\}$,
+
+$$
+\widehat B_{s',s}\propto
+\epsilon + \mathbf{1}[(s',s)\in\mathcal E]
+\left(\alpha_B+\sum_t\xi_t(s',s)\right),
+\qquad
+\widehat D_s\propto\alpha_D+\gamma_1(s).
+$$ {#eq:em-transition-update}
+
+Here $\epsilon$ is a strictly positive transition floor, which keeps the
+shared log-space inference contract valid while making the self/next-state
+prior soft rather than a hard zero. Each training complement is iterated for at
+most `{{PARAMETER_LEARNING_MAX_ITERATIONS}}` updates, and the fitted model is
+scored on the excluded fixture without further adaptation. The complete rows,
+fitted tensors, evidence histories, and fit-input contract are emitted in
+`{{PARAMETER_LEARNING_ARTIFACT}}`. The estimator follows the incomplete-data
+maximum-likelihood logic of the EM algorithm [@dempster1977em] and standard HMM
+forward--backward inference [@rabiner1989tutorial]; the implementation remains
+fixture-bound and does not turn the phase scaffold into learned semantics.
+
+![Conceptual graph of the discrete generative model and its active-selection extension. Hidden phases form a left-to-right Markov chain through transition `B`, emit categorical observations through likelihood `A`, and begin from prior `D`; the right-hand extension scores candidate policies with epistemic value and preference `C`. The schematic is deterministic and source-controlled, not an empirical network diagram.]({{GENERATIVE_MODEL_FIGURE}}){#fig:generative-model width=95%}
 
 ## Formal description
 
@@ -91,7 +597,7 @@ forward-filter normalizer at step `t`.
 ::: {.proposition #prop:forward-normalizer title="Forward-filter normalizer is the evidence"}
 At each step the forward filter's normalizer equals the conditional marginal
 `P(o_t | o_{1:t-1})`, so the cumulative log of the normalizers is exactly the
-model's log marginal likelihood (Definition [@def:model-evidence]).
+model's log marginal likelihood ([@def:model-evidence]).
 :::
 
 ::: {.proposition #prop:transition-collapse title="Uniform transitions collapse temporal to memoryless"}
@@ -100,38 +606,397 @@ temporal forward update reduces exactly to the per-step memoryless posterior
 `P(s_t | o_t) ∝ A[o_t]`; the temporal and memoryless decoders then coincide.
 :::
 
-![Temporal HMM forward-filter beliefs for the accumulator fixture]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs}
-*Forward-filter posterior over the five program phases at each observation step
-for the `x86_accumulator` fixture. Rows are normalized posteriors; the temporal
-model lets the latent phase evolve across steps (via the transition matrix `B`)
-rather than being re-estimated independently. Reading the most-probable phase
-down the column recovers `setup -> accumulator_update ->
-representation_transform -> accumulator_update` once the `shl` is decoded.*
+![Temporal forward-filter beliefs for the `{{SAMPLE_NAME}}` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phase labels after one decoded observation; the cell values expose filtering uncertainty, and the most-probable sequence is `{{TEMPORAL_PHASE_SEQUENCE}}`. The heatmap is a model-state diagnostic, not a discovered control-flow graph.]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs-x86-accumulator width=90%}
 
-To make the *active* in Active Inference explicit, an expected-free-energy
-policy (Definition [@def:expected-free-energy]) scores each candidate observation by an epistemic term (the reduction in
-phase-belief entropy) and a pragmatic term (a log-preference over the
-observation categories), and selects the observation that minimises expected
-free energy [@friston2017activeinference]. This realises an active-disassembly
-ordering in which the agent chooses which instruction to read next rather than
-scanning left to right.
+The companion heatmaps below expose the same filtering contract across the
+labelled fixtures. They are supporting diagnostics rather than additional
+independent experiments: row labels are observation IDs, colors are posterior
+probabilities, and the hand-authored phase labels are not discovered from the
+bytes. The final two panels make the expanded design explicit: one includes
+bounded stack-memory operands, and the other includes a taken branch whose
+static fall-through instruction is not executed.
 
-We flag one deliberate deviation from the canonical terminology. Each
-candidate's observation category is already decoded before selection, so the
-epistemic term here is computed as the *realized* information gain of the
-observation actually revealed — the entropy reduction from that specific
-category — rather than a full expectation over the posterior-predictive
-distribution of possible future observations, which is what the canonical
-expected-free-energy epistemic term averages over. For a single realized
-observation this quantity can even be negative, whereas the true expectation is
-guaranteed non-negative. The policy uses the realized gain because it is exact
-and cheap given the known category; readers should nonetheless interpret the
-"expected free energy" label accordingly.
+![Temporal forward-filter beliefs for the `x86_bitwise` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; observation IDs label rows and are categorical identifiers, not numeric magnitudes.]({{TEMPORAL_BELIEFS_BITWISE_FIGURE}}){#fig:temporal-beliefs-x86-bitwise width=90%}
+
+![Temporal forward-filter beliefs for the `x86_guard` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the heatmap displays filtering uncertainty and is not a discovered control-flow graph.]({{TEMPORAL_BELIEFS_GUARD_FIGURE}}){#fig:temporal-beliefs-x86-guard width=90%}
+
+![Temporal forward-filter beliefs for the `x86_long_accumulator` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the longer fixture makes state persistence visible without changing the inference contract.]({{TEMPORAL_BELIEFS_LONG_ACCUMULATOR_FIGURE}}){#fig:temporal-beliefs-x86-long-accumulator width=90%}
+
+![Temporal forward-filter beliefs for the `x86_memory` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; this fixture adds a bounded stack-relative store/load contrast to the typed evidence surface without claiming general memory semantics.]({{TEMPORAL_BELIEFS_MEMORY_FIGURE}}){#fig:temporal-beliefs-x86-memory width=90%}
+
+![Temporal forward-filter beliefs for the `x86_guard_taken` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the taken branch leaves a statically decoded fall-through instruction outside the bounded dynamic path.]({{TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE}}){#fig:temporal-beliefs-x86-guard-taken width=90%}
+
+To make the *active* in Active Inference explicit, the expected-free-energy
+heuristic ([@def:expected-free-energy]) scores each candidate observation by an
+epistemic term and a pragmatic term (a log-preference over observation
+categories), then selects the observation that minimises expected free energy
+[@friston2017activeinference]. This realises an active-disassembly ordering in
+which the agent chooses which instruction to read next rather than scanning
+left to right.
+
+We retain two explicitly named epistemic quantities. The primary corpus policy
+uses the *realized* information gain of the category already decoded for a
+candidate. Its predictive companion weights that entropy reduction by
+P(o)=A[o,:]D, the prior predictive probability of the category. Therefore
+
+$$
+I(S;O)=\sum_o P(o)\left[H(D)-H(P(S\mid o))\right],
+$$ {#eq:predictive-information-gain}
+
+and the per-category weighted terms sum to the one-step expected information
+gain {{EXPECTED_OBSERVATION_INFO_GAIN}} nats for the authored model. This
+predictive quantity is non-negative in aggregate and provides an honest
+calibration diagnostic. It does not create an unmodelled stochastic sensor:
+candidate categories are still decoded before selection, so the active
+comparison remains a bounded demonstrator rather than a claim of deployment-
+ready active binary acquisition.
+
+### Action-conditioned sensing
+
+The next active-inference tranche changes the information-acquisition contract.
+Rather than scoring a category that is already visible, a sensing action
+`a=(t,f)` requests field `f` from instruction step `t`. The action policy sees
+only a training-only field likelihood and the current phase belief before it
+chooses. The held-out typed value is revealed by the bounded fixture
+environment only after the choice. For a field support `V_f`, the predictive
+outcome distribution is
+
+$$
+P(v\mid b_t,a)=\sum_s \widehat p_f(v\mid s)b_t(s),
+$$ {#eq:action-predictive-outcome}
+
+and the action's expected epistemic value is the mutual-information term
+
+$$
+\operatorname{EIG}(a\mid b_t)=
+\sum_{v\in V_f}P(v\mid b_t,a)\left[H(b_t)-H(b_{t+1}^{(v)})\right].
+$$ {#eq:action-expected-information}
+
+The demonstrator uses a common normalized action cost `c(a)=1` and ranks
+actions by
+
+$$
+G_{\mathrm{sense}}(a\mid b_t)=
+-\operatorname{EIG}(a\mid b_t)+\lambda c(a),
+\qquad \lambda={{ACTION_SENSING_COST_WEIGHT}}.
+$$ {#eq:action-sensing-efe}
+
+Here `lambda` is a fixed configured weight, not a fitted utility or a physical
+cost conversion; the generated artifact also records the active-minus-fixed
+action-count contrast as an outcome. After selection, the observed field value
+updates the belief with the corresponding factor likelihood. The evaluation
+compares this predictive policy with source-order fixed sensing, a seeded-random
+permutation, and an explicitly inadmissible oracle that is allowed to inspect
+the realized outcome before choosing. All policies share the same fixture-level
+holdout, threshold, and action budget. This separation makes the no-peeking
+boundary testable and prevents a favorable realized outcome from being used to
+retroactively justify the active choice.
+
+The action-conditioned output is a bounded sensor-choice mechanism experiment,
+not a claim about autonomous binary analysis. Costs are normalized action units
+rather than wall-clock measurements, and field values remain syntactic
+Capstone/Unicorn evidence rather than discovered program semantics.
+
+### Exact finite-horizon information-per-cost analysis {#sec:information-frontier}
+
+The action-conditioned experiment is paired with a smaller mechanism analysis
+whose optimization problem is exact within its declared finite support. The
+label-blind factorized model supplies one categorical sensor for each selected
+typed field. For sensor $j$ with outcomes $v$ and state-conditioned channel
+$L_j(v\mid s)$, belief $b$ yields predictive probability
+
+$$
+p_j(v\mid b)=\sum_s L_j(v\mid s)b(s),\qquad
+b^{(v)}(s)=\frac{L_j(v\mid s)b(s)}{p_j(v\mid b)}.
+$$ {#eq:finite-sensor-posterior}
+
+The finite-horizon objective is
+
+$$
+J_h(b)=\min_{j\in\mathcal{J}}
+\left\{\lambda c_j+\sum_v p_j(v\mid b)
+J_{h-1}\!\left(b^{(v)};\mathcal{J}\setminus\{j\}\right)\right\},
+$$ {#eq:finite-sensor-dynamic-program}
+
+with terminal value $J_0(b)=H(b)$ and declared sensor costs $c_j>0$.
+The implementation enumerates all positive-probability outcome branches and
+memoizes normalized beliefs, remaining sensors, horizon, and cost weight. It
+therefore supplies an exact result for the finite sensor family and horizons
+in the receipt, while making no claim about an infinite-horizon policy,
+continuous sensing, or operational acquisition time.
+
+The source-bound artifact is `{{ACTIVE_INFORMATION_ARTIFACT}}`, with
+`{{ACTIVE_INFORMATION_SENSOR_COUNT}}` sensors and
+`{{ACTIVE_INFORMATION_FRONTIER_ROW_COUNT}}` frontier rows. Exact branch
+enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`. The costs are
+model-derived unit proxies, so the output is a mechanism frontier rather than
+a wall-clock law; a future theorem must replace these proxies with measured
+acquisition costs and include counterexamples outside the finite family.
+
+![Exact finite-horizon information-per-cost frontier. Each curve is the expected information gain in nats from exhaustive dynamic programming over the declared finite sensor family at one cost weight; increasing horizon permits additional non-repeating field queries. Curves may coincide when the finite contract selects the same frontier at every cost weight, and the figure marks that observation explicitly. The plot is a local mechanism result with proxy costs, not a universal active-sensing law.]({{ACTIVE_INFORMATION_FIGURE}}){#fig:active-information-frontier width=96%}
 
 A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
 carrying a hand-authored ground-truth phase sequence aligned to its decoded
 instructions, supports the project's first quantitative evaluation: decoding
-accuracy, calibration, a free-energy convergence summary, and a
-static-versus-temporal-versus-Viterbi comparison, each guarded by shuffled-label
+accuracy, calibration, a free-energy convergence summary, and an
+identity-transition, temporal, and Viterbi comparison, each guarded by shuffled-label
 and uniform-belief negative controls so that a reported gain cannot be vacuous
 [@heins2022pymdp].
+
+The corpus is a deliberately small, hand-labelled demonstrator rather than a
+sample of arbitrary binaries. The confidence intervals reported below are
+descriptive Wilson score intervals around pooled per-step hit counts; steps
+within a fixture are dependent. In addition to the transparent hand-authored
+model, the project now reports a leakage-safe supervised fit: each
+leave-one-fixture-out row estimates A, B, and D on the other fixtures only, then
+scores the excluded fixture. The calibration summaries follow the
+reliability-diagram and ECE framing of [@guo2017calibration], while remaining
+fixture-specific. Wilson score intervals are used because the displayed
+quantities are binomial hit-rate summaries and the Wilson construction behaves
+more reliably than a Wald approximation for small denominators
+[@brown2001binomial]. This choice does not remove the dependence among steps
+or broaden the corpus into a population sample.
+
+## Source-bound open-roadmap protocol {#sec:open-roadmap-protocol}
+
+The expanded experiments are governed by one versioned protocol rather than by
+independently edited scripts. The protocol receipt is
+`{{RESEARCH_PROTOCOL_ARTIFACT}}`, identified as
+`{{RESEARCH_PROTOCOL_ID}}` and hashed as
+`{{RESEARCH_PROTOCOL_HASH}}`. Every new scientific receipt records that hash,
+its own schema version, a producer-source digest, input hashes or source
+manifests, and the available toolchain versions. A generated number therefore
+has two obligations: it must be reproducible from its producer, and it must
+remain within the frozen scientific contract. A byte-for-byte replay of an
+unfrozen protocol would only reproduce an implementation accident.
+
+The protocol freezes the observational state, interventions, missing/unseen
+tokens, supported instruction boundary, family-level partitions, model
+families, seeds, primary metrics, clustered uncertainty, multiplicity policy,
+deterministic sensing costs, and the external-source safety boundary. The
+public input directory in the local replication bundle is label-blind. A
+missing field is encoded as `__MISSING__`; a value absent from training support
+is encoded as `__UNKNOWN__`. Neither is replaced by zero, an empty string, or a
+silently dropped row. Unsupported instructions, unavailable compilers, build
+failures, and underpowered strata remain represented as structured statuses.
+
+## Assembly state, normalized intermediate representation, and flags
+{#sec:assembly-formalism}
+
+The machine-facing formalism is a normalized instruction intermediate
+representation (IR), not a claim that a mnemonic string is a semantic object.
+For a decoded instruction $i$, the IR records
+
+$$
+I_i=(\mathrm{pc}_i,\mathrm{op}_i,\mathrm{dst}_i,\mathrm{src}_i,
+\mathrm{imm}_i,\mathrm{mem}_i,\mathrm{reads}_i,\mathrm{writes}_i,
+\mathrm{flags}^{r}_i,\mathrm{flags}^{w}_i,\mathrm{target}_i),
+$$ {#eq:normalized-assembly-ir}
+
+where `pc` is the instruction address, `op` is a normalized operation family,
+`dst/src` are canonical register or memory terms, and the remaining fields
+preserve explicit register, flag, memory, and control-flow effects. The
+canonicalization is conservative: it can identify a bounded class of equivalent
+operand descriptions, but it does not infer calling conventions, alias sets,
+compiler intent, or source-level names.
+
+The common bounded state is
+
+$$
+\sigma=(pc,G,F,M,K,i,x),
+$$ {#eq:assembly-machine-state}
+
+with program counter $pc$, modeled general-purpose registers $G$, condition
+flags $F$, bounded byte-addressable memory $M$, bounded stack slice $K$,
+decoded IR record $i$, and an explicit exceptional/unsupported marker $x$. The
+modeled flags are those read or written by the supported operation; they are
+not treated as globally known architectural state when an instruction does not
+define them. A supported small-step transition has the form
+
+$$
+\langle\sigma,I_i\rangle\longrightarrow\sigma'
+$$ {#eq:assembly-small-step}
+
+and is defined only when operand widths, address bounds, flag dependencies, and
+exceptional behavior are within the declared contract. For example, a 64-bit
+addition updates the destination modulo $2^{64}$ and computes its declared
+carry, zero, sign, and overflow bits; a compare updates flags without writing
+the destination; and a conditional branch reads only the flags listed by its
+condition. `movzx`, `movsx`, `lea`, bounded loads/stores, stack operations,
+calls, returns, and branches are admitted only when their width and target
+behavior fit the bounded state. SIMD, floating point, privileged/system state,
+self-modifying code, unmodeled exceptions, undefined behavior, and unbounded
+aliasing are rejected with an unsupported reason.
+
+The assembly listing in [@lst:assembly_fixture] remains the human-readable
+projection of this IR. The new correspondence receipt compares the pre-state,
+decoded address, post-state, modeled flags, memory effects, and control-flow
+target at every bounded step; terminal equality alone is not accepted as a
+trace proof. The Intel manuals specify architectural behavior, Capstone
+supplies a decoding/API boundary, Unicorn supplies bounded execution, and the
+Lean fragment supplies independently checked algebra for a much smaller closed
+subset [@intel_sdm;@capstone;@unicorn;@lean_reference].
+
+```{#lst:normalized_ir .text caption="Normalized assembly intermediate representation and explicit unsupported boundary used by the source-bound correspondence layer."}
+pc      op        dst       src/imm       flags read/write       memory/target
+0x1000  MOV       RAX       1             -- / RAX              none
+0x1005  ADD       RAX       2             CF,ZF,SF,OF / same    none
+0x1009  JCC       --        target        ZF / --               bounded internal target
+```
+
+## Formal correspondence and transfer receipts {#sec:formal-correspondence}
+
+The Python reference interpreter is executed on transparent repository-owned
+fixtures and compared with real Capstone decoding and bounded Unicorn traces.
+The receipt `{{FORMAL_CORRESPONDENCE_ARTIFACT}}` covers
+`{{FORMAL_CORRESPONDENCE_FIXTURE_COUNT}}` fixtures under
+`{{FORMAL_CORRESPONDENCE_INTERVENTION_COUNT}}` declared interventions each,
+with `{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` reference step rows. Its status is
+`{{FORMAL_CORRESPONDENCE_STATUS}}`. The comparison is all-step and fail-closed:
+an unsupported row, environment error, or mismatch cannot be converted into a
+terminal-only success. The Lean prerequisite is reported separately in
+`{{FORMAL_VERIFICATION_ARTIFACT}}`; a compiled Lean theorem about a Word64
+accumulator is not silently promoted to a proof of the Python lifter or the
+complete x86-64 ISA.
+
+![Python reference, Capstone decoding, and bounded Unicorn correspondence. Each fixture bar is marked PASS only when every declared intervention trace matches at every compared step; the workload panel reports reference steps and average steps per intervention for the three transparent fixtures. Comparisons include decoded addresses, RAX/RSP post-state, modeled CF/ZF/SF/OF bits, and terminal RAX. The receipt is a bounded mechanized correspondence for the declared subset, not complete x86-64 semantics.]({{FORMAL_CORRESPONDENCE_FIGURE}}){#fig:formal-correspondence width=100%}
+
+The transfer track is deliberately separate from the transparent-execution
+track. Portable source families are compiled with the exact locally available
+Clang target command, object and disassembly hashes are retained, and emitted
+objects are statically decoded without execution. The Clang manual defines the
+compiler-driver and target-selection interface used for this acquisition
+[@clang_users_manual]. The design is provenance-oriented rather than a
+compiler-correctness claim; translation validation is the relevant precedent
+for treating each produced translation as an individually checkable artifact
+[@necula2000translationvalidation]. The current receipt is
+`{{COMPILER_TRANSFER_ARTIFACT}}` and records
+`{{COMPILER_TRANSFER_VALIDATED_COUNT}}` validated static objects across the
+architectures `{{COMPILER_TRANSFER_ARCHITECTURES}}` and
+`{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` explicit unavailable rows. The
+external-source manifest remains `{{COMPILER_EXTERNAL_STATUS}}`; it therefore
+cannot support an application-facing effectiveness claim. A target absent from
+the local compiler is a missing capability, not evidence about that
+architecture. This is the correct interpretation of the compiler matrix in
+[@fig:compiler-transfer].
+
+![Compiler/source/architecture transfer capability receipt. Check marks indicate exact local compilation followed by Capstone decoding of a static object; dashes are unavailable or failed target rows and are not zero-valued results. The line panel reports decoded-instruction counts only for validated static objects. No compiled object is executed, so the figure supports capability and provenance claims rather than compiler correctness or semantic equivalence.]({{COMPILER_TRANSFER_FIGURE}}){#fig:compiler-transfer width=100%}
+
+## Quotient classes and co-primary classifier portfolio {#sec:quotient-classifier}
+
+The quotient endpoint is pairwise by design. A pair is labelled positive when
+the two transparent programs have equal terminal `RAX` for every intervention
+in the frozen catalog; it is negative when at least one intervention separates
+the terminal outputs. The relation is generated before model fitting and is
+not a mnemonic label, family identifier, transformation name, or model output.
+This is a bounded observational quotient, not complete program equivalence.
+
+The classifier receipt is `{{QUOTIENT_CLASSIFIER_ARTIFACT}}` with status
+`{{QUOTIENT_CLASSIFIER_STATUS}}`. It uses `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` families and
+`{{QUOTIENT_CLASSIFIER_ROW_COUNT}}` pair rows, split into
+`{{QUOTIENT_CLASSIFIER_TRAINING_FAMILY_COUNT}}` training,
+`{{QUOTIENT_CLASSIFIER_DEVELOPMENT_FAMILY_COUNT}}` development, and
+`{{QUOTIENT_CLASSIFIER_HELD_OUT_FAMILY_COUNT}}` held-out families. No family
+occurs in more than one partition. The calibrated interpretable model is a
+regularized binary logistic classifier over typed trace summaries; the temporal
+model is a class-conditional first-order Markov likelihood over typed token
+sequences; and the neural model is a fixed one-layer NumPy tanh recurrent
+network. The three are co-primary. The surface baseline is reported as a
+strong comparator, not as a straw-man control.
+
+The fixed iteration budgets and stopping rules are part of the protocol: the
+logistic and recurrent fits do not inspect the held-out test set, while the
+Markov fit is a smoothed closed-form count estimator. Five deterministic seeds
+are rerun for each stochastic family and their range is recorded separately
+from the source-family bootstrap intervals. The recurrent implementation also
+emits a finite-difference gradient receipt; the checked derivative error is a
+software correctness diagnostic, not a performance interval.
+
+For primary metric $m$ and model $k$, balanced accuracy is the mean of positive
+and negative recall, while macro-F1 averages the F1 values for both quotient
+classes. Let $u$ index source families and let $\widehat\theta_{k,m}^{(b)}$
+be the metric after resampling whole families with replacement. The reported
+interval is the 2.5th--97.5th percentile of the frozen
+`{{CI_LEVEL_PERCENT}}%` cluster bootstrap:
+
+$$
+\mathrm{CI}_{k,m}=\left[Q_{0.025}(\widehat\theta_{k,m}^{(b)}),
+Q_{0.975}(\widehat\theta_{k,m}^{(b)})\right].
+$$ {#eq:quotient-cluster-interval}
+
+Brier score and fixed-bin expected calibration error are retained alongside the
+primary metrics. The five-percentage-point practical margin and Holm
+multiplicity policy are frozen in the protocol. The current held-out values
+are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
+{{QUOTIENT_CLASSIFIER_INTERPRETABLE_MACRO_F1}} for the interpretable model,
+{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}} /
+{{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}} for the temporal model,
+{{QUOTIENT_CLASSIFIER_NEURAL_BALANCED_ACCURACY}} /
+{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}} for the neural model, and
+{{QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY}} /
+{{QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1}} for the surface baseline. These
+numbers are reported as a portfolio: overlapping clustered intervals,
+development/test differences, and the small number of independent families
+preclude a superiority claim unless the preregistered margin and inference
+rule are both satisfied.
+
+![Formal-quotient membership under source-family holdout. The left panel shows balanced accuracy and macro-F1 with source-family-clustered 95% intervals for three co-primary NumPy model families and a surface baseline; the right panel shows held-out Brier score and ten-bin expected calibration error, for which lower is better. The endpoint has {{QUOTIENT_CLASSIFIER_FAMILY_COUNT}} source families and {{QUOTIENT_CLASSIFIER_ROW_COUNT}} pair rows under a three-way split; labels come from the declared intervention relation and are absent from typed features.]({{QUOTIENT_CLASSIFIER_FIGURE}}){#fig:quotient-classifier width=100%}
+
+## Measured sensing costs and finite policy certification {#sec:measured-sensing}
+
+The active-sensing cost model has two layers. The primary layer is a
+deterministic vector
+
+$$
+c(a)=(n_{\mathrm{invoke}},n_{\mathrm{decode}},n_{\mathrm{step}},
+n_{\mathrm{reg/flag}},n_{\mathrm{branch}},n_{\mathrm{memory}},
+n_{\mathrm{bytes}},n_{\mathrm{unsupported}}),
+$$ {#eq:deterministic-sensor-cost}
+
+recorded for every query. It is machine-independent and auditable. The
+optional calibration layer executes a fixed matrix operation after warm-up and
+records median, minimum, maximum, and raw repetition values together with
+Python, operating-system, and package receipts. Wall-clock observations are
+not compared across machines without a matching calibration receipt. The
+source-bound receipt is `{{SENSOR_COST_ARTIFACT}}`. The current sensor receipt
+contains `{{SENSOR_COST_SENSOR_COUNT}}` sensors and
+`{{SENSOR_CERTIFICATE_COUNT}}` exact finite certificates; its maximum reported
+optimality gap is `{{SENSOR_CERTIFICATE_MAX_GAP}}`.
+
+For a finite state/action problem, the oracle value is obtained by exhaustive
+dynamic programming over every positive-probability sensor outcome. The
+implemented policy is certified only when its objective equals the oracle
+within the preregistered five-percent tolerance. The current policy is itself
+the exact finite dynamic-programming oracle, so its zero gap is a certificate
+of the enumerated benchmark—not of an infinite-horizon policy, a physical
+instrument, or a universal active-sensing law. The deterministic/calibrated
+comparison is shown in [@fig:sensor-costs].
+
+![Measured sensing costs and finite policy certificates. The left panel shows four exact components of the eight-component deterministic cost vector, with all components retained in the receipt; the right panel shows machine-specific calibrated nanoseconds per query as medians with five-repetition min--max whiskers. The policy certificates compare the implemented objective with exact finite dynamic programming and are scoped to the frozen sensor/action space.]({{SENSOR_COST_FIGURE}}){#fig:sensor-costs width=100%}
+
+## Frozen blind replication harness {#sec:replication-harness}
+
+The local replication interface is a CLI rather than a notebook state. Its
+metadata follows the stewardship aim of making research objects findable,
+accessible, interoperable, and reusable [@wilkinson2016fair], while the local
+receipt `{{REPLICATION_ARTIFACT}}` makes the narrower claim of deterministic repository replay. The
+generator creates the deterministic public fixture/source input, validation
+checks all hashes and the protocol digest, each model emits predictions, and a
+separate scoring mode joins predictions to the gold labels. The public manifest
+contains `record_id`, typed sequence, and feature values only; the gold file
+contains labels and family/split metadata and is held outside the public input
+directory. The bundle currently contains `{{REPLICATION_PUBLIC_COUNT}}` public
+rows and `{{REPLICATION_GOLD_COUNT}}` gold rows, with label separation reported
+as `{{REPLICATION_LABEL_SEPARATED}}`. Replay is local and no-network; the
+receipt status deliberately distinguishes this from independent external
+replay.
+
+The separation contract is stronger than omitting a visible `label` key. Public
+record identifiers are derived only from public sequence/features, and the
+validator rejects any forbidden family, split, variant, or quotient field in
+the public rows. Exact public/gold row counts, protocol hash, input hashes, and
+prediction identifiers must match. A changed source or protocol hash therefore
+invalidates the receipt rather than silently producing a new benchmark under an
+old claim. The data flow is summarized in [@fig:replication-manifest].
+
+![Frozen local replication harness and provenance boundary. Public feature rows and separately held-out gold-label rows each contain the same number of records; predictions are scored only after exact identifier matching, and receipts bind the process to hashes and the frozen protocol. Public filenames, ordering, and metadata are label-free. The bundle is a no-network local replay package, not evidence of independent public replication.]({{REPLICATION_FIGURE}}){#fig:replication-manifest width=100%}

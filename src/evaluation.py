@@ -1,11 +1,11 @@
-"""Quantitative evaluation of phase decoding with negative controls.
+"""Quantitative evaluation of phase decoding and generative adequacy.
 
 This module turns the labelled :mod:`corpus` into the project's first *measured*
 numbers. It scores how well three decoders recover the ground-truth latent
 phase sequence of each program:
 
-* ``static`` — the original sticky Bayesian filter with an implicit identity
-  transition (``B = I``): ``posterior_t ∝ posterior_{t-1} * A[obs_t]``,
+* ``identity_transition`` — an explicit identity-transition comparator
+  (``B = I``): ``posterior_t ∝ posterior_{t-1} * A[obs_t]``,
 * ``temporal`` — the maximum-a-posteriori labels of the HMM forward filter from
   :func:`temporal_model.forward_filter` (genuine left-to-right dynamics),
 * ``viterbi`` — the most-probable joint path from
@@ -14,7 +14,9 @@ phase sequence of each program:
 Two negative controls keep the metrics honest: a deterministically shuffled
 truth (which a real decoder should beat by a wide margin) and a constant-uniform
 predictor (which should be strictly worse than the temporal decoder). All
-outputs are JSON-safe and deterministic across runs — no RNG is used anywhere.
+outputs are JSON-safe and deterministic across runs. The shuffled control uses a
+seeded local NumPy generator; the seed is part of its explicit contract and no
+ambient/global RNG state is consumed.
 """
 
 from __future__ import annotations
@@ -28,8 +30,10 @@ from .corpus import CorpusFixture, fixture_observation_ids
 from .features import HIDDEN_STATE_LABELS
 from .active_selection import (
     active_observation_order,
+    expected_information_gain,
     fixed_order_steps_to_confidence,
     observation_info_gain,
+    predictive_information_contribution,
 )
 from .temporal_model import (
     TemporalGenerativeModel,
@@ -39,6 +43,11 @@ from .temporal_model import (
 )
 
 _EPS = 1e-12
+
+# Reliability diagrams and ECE use one fixed, source-controlled binning scheme.
+CALIBRATION_BIN_COUNT = 10
+WILSON_Z = 1.96
+WILSON_CONFIDENCE_LEVEL = 0.95
 
 # Upper bound on RNG draws per requested control round, so a corpus admitting
 # very few distinct label permutations cannot spin forever in the loop below.
@@ -71,6 +80,16 @@ def evaluate_decoding(
         raise ValueError("truth must not be empty")
 
     label_list = list(labels)
+    if not label_list or len(set(label_list)) != len(label_list):
+        raise ValueError("labels must be a non-empty unique sequence")
+    label_set = set(label_list)
+    unknown_predicted = sorted(set(predicted) - label_set)
+    unknown_truth = sorted(set(truth) - label_set)
+    if unknown_predicted or unknown_truth:
+        raise ValueError(
+            "predicted and truth must contain only labels from labels; "
+            f"unknown_predicted={unknown_predicted} unknown_truth={unknown_truth}"
+        )
     confusion: dict[str, dict[str, int]] = {
         true_label: {pred_label: 0 for pred_label in label_list}
         for true_label in label_list
@@ -102,7 +121,7 @@ def evaluate_decoding(
     }
 
 
-def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+def wilson_ci(k: int, n: int, z: float = WILSON_Z) -> tuple[float, float]:
     """Return the ``100*(1-alpha)`` Wilson score interval for the ratio ``k/n``.
 
     Unlike the normal approximation, the Wilson interval is well behaved for
@@ -120,6 +139,10 @@ def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
     if n <= 0:
         raise ValueError("n must be positive")
+    if k < 0 or k > n:
+        raise ValueError("k must satisfy 0 <= k <= n")
+    if not math.isfinite(z) or z <= 0:
+        raise ValueError("z must be finite and positive")
     p = k / n
     z2 = z * z
     denominator = 1.0 + z2 / n
@@ -131,7 +154,7 @@ def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 def calibration_bins(
     posteriors: Sequence[Sequence[float]],
     truth_state_ids: Sequence[int],
-    n_bins: int = 10,
+    n_bins: int = CALIBRATION_BIN_COUNT,
 ) -> list[dict[str, Any]]:
     """Return per-bin calibration statistics over max-posterior confidence.
 
@@ -152,9 +175,33 @@ def calibration_bins(
         raise ValueError("posteriors and truth_state_ids must have equal length")
     if not posteriors:
         raise ValueError("posteriors must not be empty")
+    if n_bins <= 0:
+        raise ValueError("n_bins must be positive")
 
     matrix = np.asarray(posteriors, dtype=float)
-    truth = np.asarray(truth_state_ids, dtype=int)
+    truth_values = np.asarray(truth_state_ids, dtype=object)
+    if matrix.ndim != 2 or matrix.shape[1] == 0:
+        raise ValueError("posteriors must be a non-empty 2D matrix")
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError("posteriors must contain only finite values")
+    if np.any(matrix < 0.0) or np.any(matrix > 1.0):
+        raise ValueError("posteriors must lie in [0, 1]")
+    if not np.allclose(matrix.sum(axis=1), 1.0, atol=1e-9):
+        raise ValueError("each posterior row must sum to one")
+    if truth_values.ndim != 1:
+        raise ValueError("truth_state_ids must be a one-dimensional sequence")
+    try:
+        truth_numeric = np.asarray(truth_state_ids, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("truth_state_ids must contain finite integer ids") from exc
+    if (
+        not np.all(np.isfinite(truth_numeric))
+        or not np.all(truth_numeric == np.floor(truth_numeric))
+        or np.any(truth_numeric < 0)
+        or np.any(truth_numeric >= matrix.shape[1])
+    ):
+        raise ValueError("truth_state_ids must index the posterior columns")
+    truth = truth_numeric.astype(int)
     confidences = matrix.max(axis=1)
     predictions = matrix.argmax(axis=1)
     accuracies = (predictions == truth).astype(float)
@@ -194,7 +241,8 @@ def calibration(
 
     Returns:
         A dict with ``brier`` (mean squared error of the full posterior against
-        the one-hot truth), ``ece`` (expected calibration error over 10 equal
+        the one-hot truth), ``ece`` (expected calibration error over the fixed
+        equal-width confidence bins), the bin count, the per-bin
         bins on the per-step maximum posterior probability), the per-bin
         ``bins`` (see :func:`calibration_bins`), and ``n_steps``.
     """
@@ -204,6 +252,7 @@ def calibration(
     if not posteriors:
         raise ValueError("posteriors must not be empty")
 
+    bins = calibration_bins(posteriors, truth_state_ids)
     matrix = np.asarray(posteriors, dtype=float)
     truth = np.asarray(truth_state_ids, dtype=int)
     n_steps, n_states = matrix.shape
@@ -213,7 +262,6 @@ def calibration(
     onehot[np.arange(n_steps), truth] = 1.0
     brier = float(np.mean(np.sum((matrix - onehot) ** 2, axis=1)))
 
-    bins = calibration_bins(posteriors, truth_state_ids)
     ece = float(
         sum(
             (cast(int, bin_["count"]) / n_steps)
@@ -227,6 +275,7 @@ def calibration(
         "ece": ece,
         "bins": bins,
         "n_steps": int(n_steps),
+        "n_bins": CALIBRATION_BIN_COUNT,
     }
 
 
@@ -247,6 +296,8 @@ def free_energy_convergence(
     values = [float(value) for value in free_energy_by_step]
     if not values:
         raise ValueError("free_energy_by_step must not be empty")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("free_energy_by_step must contain only finite values")
 
     if len(values) == 1:
         monotone_fraction = 1.0
@@ -264,11 +315,11 @@ def free_energy_convergence(
     }
 
 
-def _static_filter_labels(
+def _identity_transition_labels(
     observation_ids: Sequence[int],
     model: TemporalGenerativeModel,
 ) -> tuple[str, ...]:
-    """Decode labels with the original sticky filter (implicit ``B = I``).
+    """Decode labels with an explicit identity-transition comparator.
 
     ``posterior_t ∝ posterior_{t-1} * A[obs_t]`` starting from the prior ``D``.
     Returns the per-step MAP labels.
@@ -304,9 +355,8 @@ def _memoryless_decoder_labels(
     ``argmax_s D[s] * A[obs_t, s]`` resets to the prior ``D`` at every step and
     uses no recursion. This is the *strongest honest non-temporal* baseline: it
     is what a decoder with the same observation model but no state memory would
-    report. It is a fairer comparator than the sticky identity-transition filter,
-    because the sticky filter is penalised by belief carried forward, not merely
-    by the absence of dynamics.
+    report. It is a fairer comparator than an identity-transition filter because
+    it isolates the absence of dynamics without carrying a previous posterior.
     """
 
     matrix_a = np.asarray(model.A, dtype=float)
@@ -322,7 +372,7 @@ def compare_models(
     corpus: Sequence[CorpusFixture],
     temporal_model: TemporalGenerativeModel,
 ) -> dict[str, dict[str, float]]:
-    """Compare static, temporal, and Viterbi decoding accuracy per fixture.
+    """Compare identity-transition, temporal, and Viterbi decoding accuracy.
 
     Args:
         corpus: The labelled fixtures.
@@ -330,7 +380,7 @@ def compare_models(
             for all three decoders).
 
     Returns:
-        A dict mapping fixture name to a dict with ``static_accuracy``,
+        A dict mapping fixture name to a dict with ``identity_transition_accuracy``,
         ``temporal_accuracy``, and ``viterbi_accuracy`` — each the overall
         decoding accuracy against the fixture's ``phase_labels``.
     """
@@ -341,7 +391,7 @@ def compare_models(
         observation_ids = fixture_observation_ids(fixture)
         truth = fixture.phase_labels
 
-        static_labels = _static_filter_labels(observation_ids, temporal_model)
+        identity_labels = _identity_transition_labels(observation_ids, temporal_model)
         memoryless_labels = _memoryless_decoder_labels(observation_ids, temporal_model)
         temporal_labels = _temporal_filter_labels(observation_ids, temporal_model)
         viterbi_labels, _ = viterbi_decode(
@@ -349,8 +399,8 @@ def compare_models(
         )
 
         results[fixture.name] = {
-            "static_accuracy": float(
-                evaluate_decoding(static_labels, truth, labels)["accuracy"]
+            "identity_transition_accuracy": float(
+                evaluate_decoding(identity_labels, truth, labels)["accuracy"]
             ),
             "memoryless_accuracy": float(
                 evaluate_decoding(memoryless_labels, truth, labels)["accuracy"]
@@ -678,7 +728,7 @@ def ambiguity_ablation(
 
         temporal = _mean("temporal_accuracy")
         memoryless = _mean("memoryless_accuracy")
-        sticky = _mean("static_accuracy")
+        identity_transition = _mean("identity_transition_accuracy")
         viterbi = _mean("viterbi_accuracy")
         segmentation_temporal = _segmentation_boundary_f1_for_decoder(
             corpus, ambiguous, memoryless=False
@@ -717,7 +767,7 @@ def ambiguity_ablation(
                 "blend": float(blend),
                 "temporal_accuracy": temporal,
                 "memoryless_accuracy": memoryless,
-                "static_accuracy": sticky,
+                "identity_transition_accuracy": identity_transition,
                 "viterbi_accuracy": viterbi,
                 "temporal_minus_memoryless": float(gap),
                 "temporal_segmentation_f1": segmentation_temporal,
@@ -746,6 +796,7 @@ def ambiguity_ablation(
 
     return {
         "blends": [float(v) for v in blends],
+        "fixture_count": int(len(corpus)),
         "rows": rows,
         "crossover_blend": crossover,
         "active_max_advantage_fraction": max_advantage_fraction,
@@ -768,20 +819,22 @@ def pooled_decoding_accuracies(
     not macro, accuracy).
     """
 
-    hits = {"temporal": 0, "static": 0, "memoryless": 0}
+    hits = {"temporal": 0, "identity_transition": 0, "memoryless": 0}
     total = 0
     for fixture in corpus:
         observation_ids = [int(o) for o in fixture_observation_ids(fixture)]
         truth = list(fixture.phase_labels)
         temporal = forward_filter(observation_ids, model).most_likely_states
-        static = _static_filter_labels(observation_ids, model)
+        identity_transition = _identity_transition_labels(observation_ids, model)
         memoryless = _memoryless_decoder_labels(observation_ids, model)
         hits["temporal"] += sum(1 for p, t in zip(temporal, truth) if p == t)
-        hits["static"] += sum(1 for p, t in zip(static, truth) if p == t)
+        hits["identity_transition"] += sum(
+            1 for p, t in zip(identity_transition, truth) if p == t
+        )
         hits["memoryless"] += sum(1 for p, t in zip(memoryless, truth) if p == t)
         total += len(truth)
     if not total:
-        return {"temporal": 0.0, "static": 0.0, "memoryless": 0.0}
+        return {"temporal": 0.0, "identity_transition": 0.0, "memoryless": 0.0}
     return {key: float(count / total) for key, count in hits.items()}
 
 
@@ -795,7 +848,7 @@ def corpus_stability_analysis(
     headline pooled accuracies could in principle be driven by a single fixture.
     This analysis holds out one fixture at a time and recomputes the pooled
     accuracies over the remaining corpus, reporting the resulting range and
-    whether the headline pattern (temporal beats the static filter, and stays
+    whether the headline pattern (temporal beats the identity-transition comparator, and stays
     well above chance) survives every single-fixture removal.
 
     Args:
@@ -810,7 +863,7 @@ def corpus_stability_analysis(
 
     reference = pooled_decoding_accuracies(corpus, model)
     per_holdout: list[dict[str, object]] = []
-    temporal_above_static = True
+    temporal_above_identity_transition = True
     temporal_above_chance = True
     chance_floor = 0.2
     clearance = 0.25  # temporal pooled must stay >= chance+clearance under holdout
@@ -822,13 +875,13 @@ def corpus_stability_analysis(
             {
                 "held_out_fixture": fixture.name,
                 "temporal": accuracies["temporal"],
-                "static": accuracies["static"],
+                "identity_transition": accuracies["identity_transition"],
                 "memoryless": accuracies["memoryless"],
             }
         )
-        if not (accuracies["temporal"] > accuracies["static"]):
-            temporal_above_static = False
-        if not (accuracies["temporal"] > chance_floor + clearance):
+        if not (accuracies["temporal"] > accuracies["identity_transition"]):
+            temporal_above_identity_transition = False
+        if not (accuracies["temporal"] >= chance_floor + clearance):
             temporal_above_chance = False
 
     def _range(key: str) -> dict[str, float]:
@@ -843,11 +896,11 @@ def corpus_stability_analysis(
         "reference": reference,
         "per_holdout": per_holdout,
         "temporal_pooled_range": _range("temporal"),
-        "static_pooled_range": _range("static"),
+        "identity_transition_pooled_range": _range("identity_transition"),
         "memoryless_pooled_range": _range("memoryless"),
         "chance_floor": float(chance_floor),
         "chance_clearance": float(clearance),
-        "all_holdouts_temporal_above_static": temporal_above_static,
+        "all_holdouts_temporal_above_identity_transition": temporal_above_identity_transition,
         "all_holdouts_temporal_above_chance": temporal_above_chance,
     }
 
@@ -917,14 +970,14 @@ def decoder_calibration(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
 ) -> dict[str, Any]:
-    """Calibration (Brier / ECE) of the temporal, static, and memoryless decoders.
+    """Calibration (Brier / ECE) of the temporal, identity, and memoryless decoders.
 
     The evaluation summary reports calibration for the temporal forward-filter
     posterior only. This completes the picture by computing the same Brier/ECE
-    from each decoder's *own* per-step posteriors (static = identity-transition
+    from each decoder's *own* per-step posteriors (identity = identity-transition
     carry; memoryless = reset-to-prior each step), pooled across the corpus. On
     this corpus calibration tracks accuracy: the memoryless decoder is best
-    calibrated, the temporal model middle, and the sticky static filter worst —
+    calibrated, the temporal model middle, and the identity-transition comparator worst —
     so the temporal model is neither the most accurate nor the best calibrated,
     a fact reported honestly rather than cherry-picked.
 
@@ -952,7 +1005,7 @@ def decoder_calibration(
             if kind == "temporal":
                 result = forward_filter(ids, model)
                 posteriors.extend(list(row) for row in result.filtered_posteriors)
-            elif kind == "static":
+            elif kind == "identity_transition":
                 posterior = prior.copy()
                 for obs in ids:
                     unnormalized = posterior * matrix_a[int(obs), :]
@@ -967,10 +1020,12 @@ def decoder_calibration(
             "brier": float(cast(float, metrics["brier"])),
             "ece": float(cast(float, metrics["ece"])),
             "n_steps": int(cast(int, metrics["n_steps"])),
+            "n_bins": int(cast(int, metrics["n_bins"])),
         }
 
     decoders = {
-        name: _pooled_metrics(name) for name in ("temporal", "static", "memoryless")
+        name: _pooled_metrics(name)
+        for name in ("temporal", "identity_transition", "memoryless")
     }
 
     def _ece(name: str) -> float:
@@ -983,8 +1038,9 @@ def decoder_calibration(
         "best_calibrated": best,
         "worst_calibrated": worst,
         "temporal_ece": _ece("temporal"),
-        "static_ece": _ece("static"),
+        "identity_transition_ece": _ece("identity_transition"),
         "memoryless_ece": _ece("memoryless"),
+        "calibration_bin_count": CALIBRATION_BIN_COUNT,
     }
 
 
@@ -1018,6 +1074,7 @@ def observation_informativeness(
     rows: list[dict[str, object]] = []
     for observation_id in range(matrix_a.shape[0]):
         gain = observation_info_gain(prior, matrix_a, observation_id)
+        predictive_probability = float(matrix_a[observation_id, :] @ prior)
         best_phase = model.hidden_state_labels[
             int(np.argmax(matrix_a[observation_id, :]))
         ]
@@ -1026,6 +1083,10 @@ def observation_informativeness(
                 "observation": model.observation_labels[observation_id],
                 "observation_id": int(observation_id),
                 "info_gain": float(gain),
+                "predictive_probability": predictive_probability,
+                "predictive_contribution": float(
+                    predictive_information_contribution(prior, matrix_a, observation_id)
+                ),
                 "posterior_entropy": float(prior_entropy - gain),
                 "best_phase": best_phase,
             }
@@ -1041,6 +1102,7 @@ def observation_informativeness(
             float(cast(float, rows[0]["info_gain"]))
             - float(cast(float, rows[-1]["info_gain"]))
         ),
+        "expected_information_gain": float(expected_information_gain(prior, matrix_a)),
         "observations": rows,
     }
 
@@ -1049,13 +1111,13 @@ def model_evidence(
     corpus: Sequence[CorpusFixture],
     model: TemporalGenerativeModel,
 ) -> dict[str, Any]:
-    """Bayesian model evidence (log marginal likelihood) of the three decoders.
+    """Bayesian model evidence under three transition assumptions.
 
     The per-step-decoding comparisons above are classification metrics. This is a
     complementary, principled *generative* comparison: the log marginal
     likelihood of the observed traces under each generative assumption. Temporal
-    uses the HMM forward-filter evidence; static assumes an identity transition
-    (the sticky filter's generative assumption); memoryless resets to the prior
+    uses the HMM forward-filter evidence; identity-transition assumes ``B = I``;
+    memoryless resets to the prior
     at every step (no transition). Higher is better.
 
     On this corpus the temporal HMM has the highest log marginal likelihood (it
@@ -1070,7 +1132,7 @@ def model_evidence(
     matrix_a = np.asarray(model.A, dtype=float)
 
     temporal_total = 0.0
-    static_total = 0.0
+    identity_transition_total = 0.0
     memoryless_total = 0.0
     observation_count = 0
     temporal_wins_fixtures = 0
@@ -1079,12 +1141,12 @@ def model_evidence(
         ids = [int(o) for o in fixture_observation_ids(fixture)]
         observation_count += len(ids)
         temporal_ll = float(forward_filter(ids, model).log_evidence)
-        static_ll = 0.0
+        identity_ll = 0.0
         posterior = prior.copy()
         for obs in ids:
             unnormalized = posterior * matrix_a[int(obs), :]
             marginal = float(unnormalized.sum())
-            static_ll += float(np.log(max(marginal, _EPS)))
+            identity_ll += float(np.log(max(marginal, _EPS)))
             posterior = unnormalized / marginal
         memoryless_ll = float(
             np.sum(
@@ -1094,26 +1156,26 @@ def model_evidence(
             )
         )
         temporal_total += temporal_ll
-        static_total += static_ll
+        identity_transition_total += identity_ll
         memoryless_total += memoryless_ll
-        if temporal_ll > static_ll and temporal_ll > memoryless_ll:
+        if temporal_ll > identity_ll and temporal_ll > memoryless_ll:
             temporal_wins_fixtures += 1
         per_fixture.append(
             {
                 "fixture": fixture.name,
                 "temporal": float(temporal_ll),
-                "static": float(static_ll),
+                "identity_transition": float(identity_ll),
                 "memoryless": float(memoryless_ll),
             }
         )
 
     evidence = {
         "temporal": float(temporal_total),
-        "static": float(static_total),
+        "identity_transition": float(identity_transition_total),
         "memoryless": float(memoryless_total),
     }
     best = max(evidence, key=lambda name: evidence[name])
-    best_alternative = max(evidence["static"], evidence["memoryless"])
+    best_alternative = max(evidence["identity_transition"], evidence["memoryless"])
     return {
         "fixture_count": int(len(corpus)),
         "observation_count": observation_count,
@@ -1148,7 +1210,8 @@ def transition_ablation(
     corpus a mild blend (not the authored ``B``) happens to give the highest mean
     accuracy — accuracy and generative-optimality need not coincide.
 
-    Returns per-blend mean temporal accuracy plus the memoryless/static (constant)
+    Returns per-blend mean temporal accuracy plus the memoryless and
+    identity-transition (constant) references,
     references, the blend at which temporal converges to memoryless, and the peak.
     """
 
@@ -1170,7 +1233,7 @@ def transition_ablation(
         return float(np.mean(accuracies)) if accuracies else 0.0
 
     memoryless_mean = _mean_accuracy(_memoryless_decoder_labels)
-    static_mean = _mean_accuracy(_static_filter_labels)
+    identity_transition_mean = _mean_accuracy(_identity_transition_labels)
 
     rows: list[dict[str, object]] = []
     for blend in blends:
@@ -1193,7 +1256,9 @@ def transition_ablation(
                 "blend": float(blend),
                 "temporal_mean_accuracy": temporal_mean,
                 "temporal_minus_memoryless": temporal_mean - memoryless_mean,
-                "temporal_minus_static": temporal_mean - static_mean,
+                "temporal_minus_identity_transition": (
+                    temporal_mean - identity_transition_mean
+                ),
             }
         )
 
@@ -1210,10 +1275,264 @@ def transition_ablation(
         "blends": [float(blend) for blend in blends],
         "rows": rows,
         "memoryless_mean_accuracy": memoryless_mean,
-        "static_mean_accuracy": static_mean,
+        "identity_transition_mean_accuracy": identity_transition_mean,
         "convergence_blend": convergence_blend,
         "peak_blend": float(cast(float, peak["blend"])),
         "peak_temporal_accuracy": float(cast(float, peak["temporal_mean_accuracy"])),
+    }
+
+
+def _simulate_hmm_sequence(
+    length: int,
+    model: TemporalGenerativeModel,
+    rng: np.random.Generator,
+) -> tuple[list[int], list[int]]:
+    """Sample one latent-state/observation sequence from the fixed HMM.
+
+    The sampler uses the same column-stochastic convention as
+    :func:`temporal_model.forward_filter`: ``D`` selects the first latent
+    state, ``B[:, current]`` selects the next state, and ``A[:, state]`` emits
+    an observation. Keeping this sampler beside the evaluator makes the
+    generative adequacy check an executable property of the model rather than
+    a hand-authored simulation script.
+    """
+
+    if length <= 0:
+        raise ValueError("length must be positive")
+    model.validate()
+    n_observations = len(model.observation_labels)
+    n_states = len(model.hidden_state_labels)
+    state = int(rng.choice(n_states, p=np.asarray(model.D, dtype=float)))
+    states: list[int] = []
+    observations: list[int] = []
+    for step in range(length):
+        states.append(state)
+        observations.append(
+            int(
+                rng.choice(n_observations, p=np.asarray(model.A[:, state], dtype=float))
+            )
+        )
+        if step + 1 < length:
+            state = int(
+                rng.choice(n_states, p=np.asarray(model.B[:, state], dtype=float))
+            )
+    return states, observations
+
+
+def _sequence_transition_rate(states: Sequence[int]) -> float:
+    """Return the fraction of adjacent latent states that change."""
+
+    if not states:
+        raise ValueError("states must not be empty")
+    if len(states) == 1:
+        return 0.0
+    return float(
+        sum(previous != current for previous, current in zip(states[:-1], states[1:]))
+        / (len(states) - 1)
+    )
+
+
+def _sequence_run_count(states: Sequence[int]) -> int:
+    """Return the number of contiguous latent-state runs."""
+
+    if not states:
+        raise ValueError("states must not be empty")
+    return int(
+        1
+        + sum(previous != current for previous, current in zip(states[:-1], states[1:]))
+    )
+
+
+def _sequence_phase_occupancy(states: Sequence[int], state_count: int) -> list[float]:
+    """Return the state-occupancy vector for one latent sequence."""
+
+    if not states:
+        raise ValueError("states must not be empty")
+    if state_count <= 0:
+        raise ValueError("state_count must be positive")
+    counts = np.bincount(np.asarray(states, dtype=int), minlength=state_count)
+    return [float(value / len(states)) for value in counts[:state_count]]
+
+
+def _predictive_interval(values: Sequence[float]) -> dict[str, float]:
+    """Summarize simulation draws with deterministic percentile intervals."""
+
+    if not values:
+        raise ValueError("predictive values must not be empty")
+    array = np.asarray(values, dtype=float)
+    if not np.all(np.isfinite(array)):
+        raise ValueError("predictive values must be finite")
+    return {
+        "lower": float(np.quantile(array, 0.025)),
+        "median": float(np.quantile(array, 0.5)),
+        "upper": float(np.quantile(array, 0.975)),
+    }
+
+
+def generative_adequacy(
+    corpus: Sequence[CorpusFixture],
+    model: TemporalGenerativeModel,
+    *,
+    replicates: int = 256,
+    seed: int = 20260815,
+) -> dict[str, Any]:
+    """Compare observed fixture structure with fixed-HMM simulations.
+
+    This is a prior-predictive-style model check: ``A``, ``B``, and ``D`` are
+    held fixed, each simulation has the same length as its observed fixture,
+    and a local seeded generator produces latent states and observations. The
+    observed state sequence is the fixture's hand-authored phase annotation,
+    while simulated state sequences are known by construction. The comparison
+    therefore tests structural adequacy and recovery behavior without fitting
+    parameters to the fixture being checked.
+
+    The reported intervals are descriptive simulation intervals, not posterior
+    uncertainty intervals and not population estimates. A mismatch is useful:
+    it identifies a model/data discrepancy for the next scientific iteration.
+    """
+
+    if not corpus:
+        raise ValueError("corpus must not be empty")
+    if replicates <= 0:
+        raise ValueError("replicates must be positive")
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    model.validate()
+    label_index = {
+        label: index for index, label in enumerate(model.hidden_state_labels)
+    }
+    rng = np.random.default_rng(seed)
+    per_fixture: list[dict[str, object]] = []
+    inside_count = 0
+    tested_count = 0
+
+    for fixture in corpus:
+        observed_states = [label_index[label] for label in fixture.phase_labels]
+        observed_observations = [
+            int(value) for value in fixture_observation_ids(fixture)
+        ]
+        observed_filter = forward_filter(observed_observations, model)
+        observed_predictions = [
+            label_index[label] for label in observed_filter.most_likely_states
+        ]
+        observed: dict[str, Any] = {
+            "transition_rate": _sequence_transition_rate(observed_states),
+            "run_count": _sequence_run_count(observed_states),
+            "temporal_recovery_accuracy": float(
+                np.mean(
+                    [
+                        predicted == truth
+                        for predicted, truth in zip(
+                            observed_predictions, observed_states, strict=True
+                        )
+                    ]
+                )
+            ),
+            "phase_occupancy": _sequence_phase_occupancy(
+                observed_states, len(model.hidden_state_labels)
+            ),
+        }
+        draws: dict[str, Any] = {
+            "transition_rate": [],
+            "run_count": [],
+            "temporal_recovery_accuracy": [],
+            "phase_occupancy": [[] for _ in model.hidden_state_labels],
+        }
+        for _ in range(replicates):
+            simulated_states, simulated_observations = _simulate_hmm_sequence(
+                len(observed_states), model, rng
+            )
+            simulated_filter = forward_filter(simulated_observations, model)
+            simulated_predictions = [
+                label_index[label] for label in simulated_filter.most_likely_states
+            ]
+            draws["transition_rate"].append(_sequence_transition_rate(simulated_states))
+            draws["run_count"].append(_sequence_run_count(simulated_states))
+            draws["temporal_recovery_accuracy"].append(
+                float(
+                    np.mean(
+                        [
+                            predicted == truth
+                            for predicted, truth in zip(
+                                simulated_predictions,
+                                simulated_states,
+                                strict=True,
+                            )
+                        ]
+                    )
+                )
+            )
+            occupancy = _sequence_phase_occupancy(
+                simulated_states, len(model.hidden_state_labels)
+            )
+            for state_index, value in enumerate(occupancy):
+                draws["phase_occupancy"][state_index].append(value)
+
+        predictive: dict[str, Any] = {
+            "transition_rate": _predictive_interval(draws["transition_rate"]),
+            "run_count": _predictive_interval(draws["run_count"]),
+            "temporal_recovery_accuracy": _predictive_interval(
+                draws["temporal_recovery_accuracy"]
+            ),
+            "phase_occupancy": [
+                _predictive_interval(values) for values in draws["phase_occupancy"]
+            ],
+        }
+
+        def _inside(value: float, interval: dict[str, float]) -> bool:
+            return interval["lower"] <= value <= interval["upper"]
+
+        metric_inside: dict[str, Any] = {
+            "transition_rate": _inside(
+                float(observed["transition_rate"]), predictive["transition_rate"]
+            ),
+            "run_count": _inside(float(observed["run_count"]), predictive["run_count"]),
+            "temporal_recovery_accuracy": _inside(
+                float(observed["temporal_recovery_accuracy"]),
+                predictive["temporal_recovery_accuracy"],
+            ),
+            "phase_occupancy": [
+                _inside(float(value), interval)
+                for value, interval in zip(
+                    observed["phase_occupancy"],
+                    predictive["phase_occupancy"],
+                    strict=True,
+                )
+            ],
+        }
+        per_fixture.append(
+            {
+                "fixture": fixture.name,
+                "length": len(observed_states),
+                "observed": observed,
+                "predictive": predictive,
+                "inside_interval": metric_inside,
+            }
+        )
+        scalar_inside = sum(
+            bool(metric_inside[name])
+            for name in ("transition_rate", "run_count", "temporal_recovery_accuracy")
+        )
+        occupancy_inside = sum(
+            bool(value) for value in metric_inside["phase_occupancy"]
+        )
+        inside_count += scalar_inside + occupancy_inside
+        tested_count += 3 + len(model.hidden_state_labels)
+
+    return {
+        "method": "fixed_parameter_generative_adequacy",
+        "interval": "central_95_percent_simulation_interval",
+        "replicates": int(replicates),
+        "seed": int(seed),
+        "fixture_count": int(len(corpus)),
+        "tested_metric_count": int(tested_count),
+        "inside_interval_count": int(inside_count),
+        "inside_interval_fraction": float(inside_count / tested_count),
+        "per_fixture": per_fixture,
+        "interpretation": (
+            "Simulation intervals describe the fixed A/B/D model at fixture length; "
+            "they are not posterior or population uncertainty intervals."
+        ),
     }
 
 
@@ -1224,10 +1543,10 @@ def evaluation_payload(
     """Bundle all evaluation metrics into a deterministic, JSON-safe payload.
 
     The payload aggregates per-fixture metrics (observation ids, truth labels,
-    static/temporal/viterbi decoding, calibration of the forward filter, and the
+    identity-transition/temporal/Viterbi decoding, calibration of the forward filter, and the
     free-energy convergence summary), the cross-fixture ``compare_models``
     table, both negative controls, and a top-level summary of mean temporal and
-    static accuracy.
+    identity-transition accuracy.
 
     Args:
         corpus: The labelled fixtures.
@@ -1242,15 +1561,15 @@ def evaluation_payload(
 
     per_fixture: dict[str, object] = {}
     temporal_accuracies: list[float] = []
-    static_accuracies: list[float] = []
+    identity_transition_accuracies: list[float] = []
     memoryless_accuracies: list[float] = []
 
     # Pooled (concatenated-corpus) accumulators for confidence intervals and
     # the confusion-matrix / calibration visualizations.
     temporal_hits = 0
     temporal_total = 0
-    static_hits = 0
-    static_total = 0
+    identity_transition_hits = 0
+    identity_transition_total = 0
     memoryless_hits = 0
     memoryless_total = 0
     pooled_confusion: dict[str, dict[str, int]] = {
@@ -1266,25 +1585,27 @@ def evaluation_payload(
 
         filter_result = forward_filter([int(o) for o in observation_ids], model)
         temporal_labels = filter_result.most_likely_states
-        static_labels = _static_filter_labels(observation_ids, model)
+        identity_labels = _identity_transition_labels(observation_ids, model)
         memoryless_labels = _memoryless_decoder_labels(observation_ids, model)
         viterbi_labels, viterbi_log_prob = viterbi_decode(
             [int(o) for o in observation_ids], model
         )
 
         temporal_metrics = evaluate_decoding(temporal_labels, truth, labels)
-        static_metrics = evaluate_decoding(static_labels, truth, labels)
+        identity_metrics = evaluate_decoding(identity_labels, truth, labels)
         memoryless_metrics = evaluate_decoding(memoryless_labels, truth, labels)
         viterbi_metrics = evaluate_decoding(viterbi_labels, truth, labels)
 
         temporal_accuracies.append(cast(float, temporal_metrics["accuracy"]))
-        static_accuracies.append(cast(float, static_metrics["accuracy"]))
+        identity_transition_accuracies.append(cast(float, identity_metrics["accuracy"]))
         memoryless_accuracies.append(cast(float, memoryless_metrics["accuracy"]))
 
         temporal_hits += sum(1 for p, t in zip(temporal_labels, truth) if p == t)
         temporal_total += len(truth)
-        static_hits += sum(1 for p, t in zip(static_labels, truth) if p == t)
-        static_total += len(truth)
+        identity_transition_hits += sum(
+            1 for p, t in zip(identity_labels, truth) if p == t
+        )
+        identity_transition_total += len(truth)
         memoryless_hits += sum(1 for p, t in zip(memoryless_labels, truth) if p == t)
         memoryless_total += len(truth)
 
@@ -1301,12 +1622,12 @@ def evaluation_payload(
             "observation_ids": [int(o) for o in observation_ids],
             "truth_labels": list(truth),
             "temporal_labels": list(temporal_labels),
-            "static_labels": list(static_labels),
+            "identity_transition_labels": list(identity_labels),
             "memoryless_labels": list(memoryless_labels),
             "viterbi_labels": list(viterbi_labels),
             "viterbi_log_prob": float(viterbi_log_prob),
             "temporal": temporal_metrics,
-            "static": static_metrics,
+            "identity_transition": identity_metrics,
             "memoryless": memoryless_metrics,
             "viterbi": viterbi_metrics,
             "calibration": calibration(
@@ -1319,21 +1640,28 @@ def evaluation_payload(
         }
 
     mean_temporal = float(np.mean(temporal_accuracies))
-    mean_static = float(np.mean(static_accuracies))
+    mean_identity_transition = float(np.mean(identity_transition_accuracies))
     mean_memoryless = float(np.mean(memoryless_accuracies))
-    best_non_temporal = max(mean_static, mean_memoryless)
+    best_non_temporal = max(mean_identity_transition, mean_memoryless)
     summary = {
         "mean_temporal_accuracy": mean_temporal,
-        "mean_static_accuracy": mean_static,
+        "mean_identity_transition_accuracy": mean_identity_transition,
         "mean_memoryless_accuracy": mean_memoryless,
         "best_non_temporal_accuracy": best_non_temporal,
         "temporal_advantage_over_best_non_temporal": mean_temporal - best_non_temporal,
         "temporal_memoryless_diff": mean_temporal - mean_memoryless,
         "pooled_temporal_accuracy": temporal_hits / temporal_total,
-        "pooled_static_accuracy": static_hits / static_total,
+        "pooled_identity_transition_accuracy": identity_transition_hits
+        / identity_transition_total,
         "pooled_memoryless_accuracy": memoryless_hits / memoryless_total,
+        "pooled_step_count": int(temporal_total),
+        "temporal_hits": int(temporal_hits),
+        "identity_transition_hits": int(identity_transition_hits),
+        "memoryless_hits": int(memoryless_hits),
         "temporal_ci95": list(wilson_ci(temporal_hits, temporal_total)),
-        "static_ci95": list(wilson_ci(static_hits, static_total)),
+        "identity_transition_ci95": list(
+            wilson_ci(identity_transition_hits, identity_transition_total)
+        ),
         "memoryless_ci95": list(wilson_ci(memoryless_hits, memoryless_total)),
         "fixture_count": int(len(corpus)),
     }
@@ -1364,4 +1692,5 @@ def evaluation_payload(
         "observation_informativeness": observation_informativeness(model),
         "model_evidence": model_evidence(corpus, model),
         "transition_ablation": transition_ablation(corpus, model),
+        "generative_adequacy": generative_adequacy(corpus, model),
     }

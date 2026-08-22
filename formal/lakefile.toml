@@ -1,0 +1,6 @@
+name = "active_assembly_formal"
+version = "0.1.0"
+defaultTargets = ["ActiveAssembly.Semantics"]
+
+[[lean_lib]]
+name = "ActiveAssembly"

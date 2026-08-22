@@ -262,6 +262,16 @@ def test_forward_filter_empty_raises() -> None:
         forward_filter([], model)
 
 
+def test_forward_filter_rejects_truncated_or_out_of_range_observation_ids() -> None:
+    model = build_temporal_model()
+    with pytest.raises(ValueError, match="finite integers"):
+        forward_filter([0.5], model)
+    with pytest.raises(ValueError, match="out-of-range"):
+        forward_filter([len(model.observation_labels)], model)
+    with pytest.raises(ValueError, match="out-of-range"):
+        viterbi_decode([-1], model)
+
+
 # --------------------------------------------------------------------------- #
 # The temporal correction is real: B != identity changes the answer
 # --------------------------------------------------------------------------- #
@@ -279,7 +289,7 @@ def test_temporal_filter_differs_from_static_identity_filter() -> None:
 
     temporal = forward_filter(ids, model)
 
-    # Reference static filter with B = identity, recomputed independently.
+    # Reference identity-transition filter with B = identity, recomputed independently.
     a = np.asarray(model.A, dtype=float)
     d = np.asarray(model.D, dtype=float)
     posterior = d
@@ -298,7 +308,7 @@ def test_temporal_filter_differs_from_static_identity_filter() -> None:
     assert not np.allclose(temporal_final, static_final, atol=1e-3)
 
     # Concretely: the temporal model should place more mass on the terminal
-    # "exit" phase than the memoryless static filter after the exit-like tail.
+    # "exit" phase than the memoryless comparator after the exit-like tail.
     exit_idx = model.hidden_state_labels.index("exit")
     assert temporal_final[exit_idx] > static_final[exit_idx]
 
