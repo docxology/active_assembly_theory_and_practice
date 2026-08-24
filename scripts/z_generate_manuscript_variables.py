@@ -55,7 +55,7 @@ def _load_template_injection():
     template_root = _resolve_template_root()
     if str(template_root) not in sys.path:
         sys.path.insert(0, str(template_root))
-    from infrastructure.rendering.manuscript_injection import (
+    from infrastructure.rendering.manuscript_injection import (  # type: ignore[import-untyped]
         write_resolved_manuscript_tree,
     )
 

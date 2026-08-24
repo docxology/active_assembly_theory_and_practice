@@ -75,23 +75,44 @@ The project follows the template code-project pattern:
     observation IDs, fit diagnostics, held-out scoring labels, and explicit
     no-labels-in-fit contract; it is separate from the hand-authored reference
     and supervised MAP companion.
-28. `src/formal_verification.py` builds the pinned Lean project, hashes its
+28. `src/formal_correspondence.py` defines the normalized 64-bit machine state,
+    width-aware instruction IR, bounded memory/stack semantics, modeled flag
+    definedness, and stepwise Python reference trace. Real Capstone decoding
+    and bounded Unicorn execution are compared on transparent fixtures; the
+    path fails closed for unsupported instructions and bounds.
+29. `src/formal_verification.py` builds the pinned Lean project, hashes its
     checked sources, and writes a deterministic theorem/build receipt. The
-    `formal/` tree is a closed Word64 accumulator fragment and is not a
-    complete x86 semantics backend.
+    generated `src.lean_bridge` serializes one 64-bit boundary fixture into a
+    generated Lean theorem and records kernel-check status. The `formal/` tree
+    is a declared normalized fragment, not complete x86 semantics.
 29. `src/multi_arch.py` runs real Capstone and Unicorn adapters for one
     transparent numeric operation on x86-64, AArch64, and RISC-V64. Its
     receipt is an adapter benchmark with explicit cross-ISA non-claims.
-30. `src/information_policy.py` projects the label-blind factorized model into
+30. `src.information_policy.py` projects the label-blind factorized model into
     finite sensor channels and solves a bounded information-per-cost policy
-    problem exactly by dynamic programming; proxy costs and finite horizons are
-    part of the artifact scope.
-31. `src/advanced_inference.py` is the thin orchestrator that composes the above
+    problem exactly by dynamic programming. `src.sensor_costs` records an
+    auditable deterministic cost vector for each action and, when requested,
+    overhead-corrected local timing calibration; cross-machine timing and
+    universal cost laws remain out of scope.
+31. `src.external_sources.py` accepts only a pinned, license-cleared manifest,
+    compiles locally in static-only mode, hashes source/object/disassembly
+    products, and never executes emitted external binaries. `src.replication`
+    separates label-blind public inputs from private gold labels and exposes
+    offline replay and hash-validation commands.
+32. `src.intervention_analysis.py` computes the exact finite intervention-power
+    matrix from the source-bound quotient outcomes, enumerating every non-empty
+    subset and retaining the minimum separating sets and one-state negative
+    control. It never derives labels from model predictions.
+33. `src/parameter_learning.py` retains deterministic reference, uniform, and
+    three seeded-random starts for each holdout so initialization sensitivity is
+    visible in the receipt and figure rather than hidden by selecting one fit.
+34. `src.advanced_inference.py` is the thin orchestrator that composes the above
     and writes `temporal_inference.json`, `phase_segments.json`,
     `active_selection.json`, `evaluation_report.json`, `cfg_evidence.json`,
     `memory_evidence.json`, `held_out_model.json`, `generative_adequacy.json`,
     `typed_observations.json`, `factorized_observation_model.json`,
     `action_sensing.json`, `parameter_learning.json`,
+    `intervention_power.json`,
     `cross_architecture_fixtures.json`, and `active_information_frontier.json`.
     The claim register, validation checks, and
     reproducibility-manifest rows bind these artifacts to the same source-bound

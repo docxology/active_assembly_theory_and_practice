@@ -24,12 +24,26 @@ That estimator is a leakage-safe methodological extension, not an unsupervised
 semantic-discovery claim.
 
 The current research extensions also include a pinned Lean proof receipt for a
-closed Word64 accumulator fragment, real Capstone/Unicorn adapter fixtures for
-x86-64, AArch64, and RISC-V64, and an exact finite-horizon
-information-per-cost dynamic program over label-blind typed sensors. These
+closed Word64 accumulator fragment, a generated Python/Lean boundary fixture,
+real Capstone/Unicorn adapter fixtures for x86-64, AArch64, and RISC-V64, and
+an exact finite-horizon information-per-cost dynamic program over label-blind
+typed sensors. The normalized Python state now carries all 16 general-purpose
+registers, explicit operand widths, modeled flag-definedness, bounded
+byte-addressable memory, stack bounds, and structured unsupported states. These
 advances strengthen the local falsification and formalization surface; they do
 not establish complete ISA semantics, cross-compiler invariance, semantic
 identifiability, external validity, or a general active-sensing law.
+
+The current P3--P16 tranche additionally freezes protocol v2, expands the
+co-primary quotient benchmark to 64 source families and eight declared
+classifier interventions, uses an explicit 16-register width-aware normalized
+state model, records exact finite intervention power for the
+separate four-state representation pilot, measures auditable sensing costs,
+and preserves the licensed-source, blind-replay, and theorem gates as explicit
+blocked or unresolved statuses. These are finite identifiability, formal,
+transfer, sensing, replication, and robustness diagnostics: weak starts,
+unresolved controls, unavailable capabilities, and the fail-closed promotion
+boundary remain part of the evidence.
 
 The package also maintains a machine-readable scientific program: its active
 frontier is quotient-state identifiability and representation invariance, with
@@ -83,8 +97,17 @@ Render through the sibling template engine:
 cd /Users/mini/Documents/GitHub/template
 uv run python -m infrastructure.orchestration link-projects --dry-run
 uv run python -m infrastructure.orchestration link-projects
-uv run python scripts/pipeline/stage_03_render.py --project working/active_assembly_theory_and_practice
+uv run python scripts/pipeline/stage_03_render.py \
+  --project working/active_assembly_theory_and_practice \
+  --skip-manuscript-hydration
 ```
+
+The project-side `z_generate_manuscript_variables.py` command above is the
+authoritative hydration step. The render command is deliberately run with
+`--skip-manuscript-hydration` so that the template consumes the already
+validated, source-bound manuscript tree; this also avoids a second hydration
+pass with a shorter renderer timeout. If the source, protocol, or generator
+changes, rerun project-side hydration before rendering again.
 
 ## Outputs
 
@@ -106,9 +129,16 @@ uv run python scripts/pipeline/stage_03_render.py --project working/active_assem
 - `output/data/scientific_program.json`
 - `output/data/quotient_invariance_protocol.json`
 - `output/data/representation_invariance_benchmark.json`
+- `output/data/intervention_power.json`
 - `output/data/formal_verification.json`
 - `output/data/cross_architecture_fixtures.json`
 - `output/data/active_information_frontier.json`
+- `output/data/quotient_classifier.json`
+- `output/data/formal_trace_correspondence.json`
+- `output/data/compiler_transfer.json`
+- `output/data/sensor_cost_receipt.json`
+- `output/data/replication_manifest.json`
+- `output/data/theorem_or_countertheorem.json`
 - `output/docx/active_assembly_theory_and_practice_combined.docx`
 - `output/data/docx_render_receipt.json`
 - `output/data/scholarship_sources.json`
@@ -163,9 +193,15 @@ uv run python scripts/pipeline/stage_03_render.py --project working/active_assem
 - `output/figures/corpus_coverage.png`
 - `output/figures/action_sensing.png`
 - `output/figures/parameter_learning.png`
+- `output/figures/intervention_power.png`
 - `output/figures/cross_architecture_benchmark.png`
 - `output/figures/formal_verification_receipt.png`
 - `output/figures/active_information_frontier.png`
+- `output/figures/quotient_classifier.png`
+- `output/figures/compiler_transfer.png`
+- `output/figures/formal_correspondence.png`
+- `output/figures/sensor_costs.png`
+- `output/figures/replication_manifest.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 - `output/data/figure_registry.json` (generator, inputs, statistics, claims,
   alt text, long descriptions, and machine visual-QA receipt)

@@ -13,6 +13,7 @@ from unicorn import (
     UC_MEM_WRITE,
     UC_MODE_64,
 )
+import unicorn.x86_const as x86_const
 from unicorn.x86_const import (
     UC_X86_REG_EFLAGS,
     UC_X86_REG_RAX,
@@ -25,16 +26,38 @@ from .disassembly import BASE_ADDRESS, sample_bytes
 MAP_SIZE = 2 * 1024 * 1024
 STACK_OFFSET = 0x100000
 
+GENERAL_REGISTER_NAMES = (
+    "rax",
+    "rbx",
+    "rcx",
+    "rdx",
+    "rsi",
+    "rdi",
+    "rbp",
+    "rsp",
+    "r8",
+    "r9",
+    "r10",
+    "r11",
+    "r12",
+    "r13",
+    "r14",
+    "r15",
+)
+
+GENERAL_REGISTER_IDS = {
+    name: int(getattr(x86_const, f"UC_X86_REG_{name.upper()}"))
+    for name in GENERAL_REGISTER_NAMES
+}
+
 
 @dataclass(frozen=True)
 class InstructionState:
     """Architectural register state immediately before and after one step.
 
-    The snapshot is intentionally limited to the registers that the current
-    bounded formalism can either model directly (``RAX``) or expose as an
-    architectural trace boundary (``RIP``, ``RSP``, and ``EFLAGS``).  It is a
-    concrete Unicorn observation, not a symbolic state or a complete machine
-    state.
+    The snapshot includes all sixteen general-purpose registers plus the
+    program counter and modeled flags.  It is a concrete Unicorn observation,
+    not a symbolic state or a complete machine state.
     """
 
     instruction_index: int
@@ -47,6 +70,8 @@ class InstructionState:
     post_rsp: int
     pre_eflags: int
     post_eflags: int
+    pre_registers: dict[str, int] | None = None
+    post_registers: dict[str, int] | None = None
 
     def to_dict(self) -> dict[str, int]:
         """Return a JSON-safe architectural state row."""
@@ -103,19 +128,29 @@ def emulate_x86_64(
     addresses: list[int] = []
     pre_states: list[dict[str, int]] = []
     memory_events: list[dict[str, int | str]] = []
-    current_instruction: dict[str, int] = {"address": base_address, "index": -1}
+    # The code hook always runs before a memory hook for an instruction.  Keep
+    # the pre-hook state explicit instead of using a negative integer sentinel
+    # that could be mistaken for a real instruction index.
+    current_instruction: dict[str, int | None] = {
+        "address": base_address,
+        "index": None,
+    }
+
+    def _snapshot(uc: Uc) -> dict[str, int]:
+        """Capture the declared architectural register and flag state."""
+
+        snapshot = {
+            name: int(uc.reg_read(register_id))
+            for name, register_id in GENERAL_REGISTER_IDS.items()
+        }
+        snapshot["rip"] = int(uc.reg_read(UC_X86_REG_RIP))
+        snapshot["eflags"] = int(uc.reg_read(UC_X86_REG_EFLAGS))
+        return snapshot
 
     def _record_instruction(uc: Uc, address: int, size: int, user_data: object) -> None:
         del size, user_data
         addresses.append(int(address))
-        pre_states.append(
-            {
-                "rax": int(uc.reg_read(UC_X86_REG_RAX)),
-                "rip": int(uc.reg_read(UC_X86_REG_RIP)),
-                "rsp": int(uc.reg_read(UC_X86_REG_RSP)),
-                "eflags": int(uc.reg_read(UC_X86_REG_EFLAGS)),
-            }
-        )
+        pre_states.append(_snapshot(uc))
         current_instruction["address"] = int(address)
         current_instruction["index"] = len(addresses) - 1
         if len(addresses) >= max_instructions:
@@ -130,6 +165,12 @@ def emulate_x86_64(
         user_data: object,
     ) -> None:
         del user_data
+        instruction_index = current_instruction["index"]
+        if instruction_index is None:
+            raise RuntimeError("memory hook fired before the code hook")
+        instruction_address = current_instruction["address"]
+        if instruction_address is None:
+            raise RuntimeError("memory hook has no current instruction address")
         observed_value = int(value)
         if access != UC_MEM_WRITE:
             # Unicorn supplies the write value for write callbacks, but the
@@ -146,8 +187,8 @@ def emulate_x86_64(
                 "address": int(address),
                 "size": int(size),
                 "value": observed_value,
-                "instruction_address": current_instruction["address"],
-                "instruction_index": current_instruction["index"],
+                "instruction_address": instruction_address,
+                "instruction_index": instruction_index,
             }
         )
 
@@ -155,12 +196,7 @@ def emulate_x86_64(
     emulator.hook_add(UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, _record_memory)
     emulator.emu_start(base_address, base_address + len(code), count=max_instructions)
 
-    final_state = {
-        "rax": int(emulator.reg_read(UC_X86_REG_RAX)),
-        "rip": int(emulator.reg_read(UC_X86_REG_RIP)),
-        "rsp": int(emulator.reg_read(UC_X86_REG_RSP)),
-        "eflags": int(emulator.reg_read(UC_X86_REG_EFLAGS)),
-    }
+    final_state = _snapshot(emulator)
     if len(pre_states) != len(addresses):
         raise RuntimeError("Unicorn instruction and state traces are misaligned")
     instruction_states = tuple(
@@ -191,6 +227,20 @@ def emulate_x86_64(
                 if index + 1 < len(pre_states)
                 else final_state["eflags"]
             ),
+            pre_registers={
+                name: value
+                for name, value in pre_state.items()
+                if name not in {"rip", "eflags"}
+            },
+            post_registers={
+                name: value
+                for name, value in (
+                    pre_states[index + 1]
+                    if index + 1 < len(pre_states)
+                    else final_state
+                ).items()
+                if name not in {"rip", "eflags"}
+            },
         )
         for index, (address, pre_state) in enumerate(zip(addresses, pre_states))
     )
@@ -203,12 +253,7 @@ def emulate_x86_64(
         initial_rax=initial_rax,
         final_rax=final_rax,
         final_rip=final_rip,
-        registers={
-            "rax": final_rax,
-            "rip": final_rip,
-            "rsp": final_state["rsp"],
-            "eflags": final_state["eflags"],
-        },
+        registers=dict(final_state),
         memory_events=tuple(memory_events),
         instruction_states=instruction_states,
     )

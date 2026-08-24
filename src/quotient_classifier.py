@@ -31,11 +31,13 @@ import numpy as np
 
 from .disassembly import disassemble_bytes
 from .emulation import emulate_x86_64
-from .provenance import generator_revision, toolchain_versions
+from .provenance import generator_revision, sha256_path, toolchain_versions
+from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import (
     BOOTSTRAP_REPLICATES,
     CONFIDENCE_LEVEL,
     MODEL_FAMILIES,
+    PRIMARY_METRICS,
     PRACTICAL_MARGIN,
     SEEDS,
     scientific_protocol_payload,
@@ -48,9 +50,22 @@ from .typed_observations import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-QUOTIENT_CLASSIFIER_SCHEMA_VERSION = "1.0.0"
+QUOTIENT_CLASSIFIER_SCHEMA_VERSION = "2.0.0"
 QUOTIENT_CLASSIFIER_ARTIFACT = "output/data/quotient_classifier.json"
-INTERVENTIONS = (0, 1, (1 << 32) - 1, (1 << 64) - 1)
+# Keep the benchmark intervention catalog identical to protocol v2.  These
+# values deliberately include ordinary, zero, signed-boundary, and unsigned
+# boundary states; a smaller catalog would make the classifier receipt
+# incomparable with the formal quotient contract.
+INTERVENTIONS = (
+    0,
+    1,
+    2,
+    (1 << 31) - 1,
+    1 << 31,
+    (1 << 32) - 1,
+    1 << 63,
+    (1 << 64) - 1,
+)
 RNG_SEED = 20260821
 RNN_HIDDEN_SIZE = 16
 RNN_EPOCHS = 8
@@ -80,9 +95,45 @@ class PairExample:
     variant_role: str
     variant_index: int
     label: int
+
     reference_tokens: tuple[str, ...]
     variant_tokens: tuple[str, ...]
     feature_vector: tuple[float, ...]
+    reference_code: bytes
+    variant_code: bytes
+
+
+def _cached_quotient_classifier_payload() -> dict[str, Any] | None:
+    """Reuse a matching deterministic benchmark receipt between validations.
+
+    The family-level bootstrap is intentionally expensive. Reusing a receipt
+    is safe only when every source-bound input that defines it is unchanged;
+    protocol or source drift falls through to a complete recomputation.
+    """
+
+    path = PROJECT_ROOT / QUOTIENT_CLASSIFIER_ARTIFACT
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    protocol = scientific_protocol_payload()
+    if payload.get("protocol_sha256") != protocol["protocol_sha256"] or payload.get(
+        "generator_revision"
+    ) != generator_revision(Path(__file__)):
+        return None
+    input_hashes = payload.get("input_hashes")
+    if not isinstance(input_hashes, dict):
+        return None
+    if input_hashes.get("research_protocol.json") != protocol["protocol_sha256"]:
+        return None
+    if input_hashes.get("src/quotient_classifier.py") != sha256_path(Path(__file__)):
+        return None
+    valid, _ = validate_quotient_classifier_payload(payload)
+    return payload if valid else None
 
 
 _FIELD_VALUES: dict[str, tuple[str, ...]] = {
@@ -111,7 +162,7 @@ _FIELD_VALUES: dict[str, tuple[str, ...]] = {
 
 
 def _family_specs() -> tuple[QuotientFamily, ...]:
-    """Return 16 transparent families split by family identity.
+    """Return 64 transparent families split by family identity.
 
     The byte patterns intentionally stay inside the repository's safe
     register-only x86-64 fixture subset.  Several families share an effect
@@ -237,7 +288,86 @@ def _family_specs() -> tuple[QuotientFamily, ...]:
             bytes.fromhex("48 83 c0 05"),
         ),
     )
-    return training + development + held_out
+    base = training + development + held_out
+    generated: list[QuotientFamily] = []
+
+    # The generated families are deterministic source-bound additions.  Each
+    # equivalent variant is a separate encoding or a semantics-preserving
+    # decomposition, while its one-change near miss differs under at least one
+    # declared intervention.  Splits are assigned from the frozen manifest
+    # order so family identity—not row order—remains the sampling unit.
+    for index, constant in enumerate(range(6, 22)):
+        generated.append(
+            QuotientFamily(
+                f"generated_add_{constant:02d}",
+                "training"
+                if index < 24
+                else "development"
+                if index < 36
+                else "held_out",
+                bytes.fromhex(f"48 83 c0 {constant:02x}"),
+                bytes.fromhex(f"48 83 c0 {constant - 1:02x} 48 ff c0"),
+                bytes.fromhex(f"48 83 e8 {constant:02x}"),
+            )
+        )
+    for index, constant in enumerate(range(1, 17), start=16):
+        generated.append(
+            QuotientFamily(
+                f"generated_constant_{constant:02d}",
+                "training"
+                if index < 24
+                else "development"
+                if index < 36
+                else "held_out",
+                bytes.fromhex(f"b8 {constant:02x} 00 00 00"),
+                bytes.fromhex(f"b8 {constant - 1:02x} 00 00 00 83 c0 01"),
+                bytes.fromhex(f"b8 {constant + 1:02x} 00 00 00"),
+            )
+        )
+    masks = (0x0F, 0x1F, 0x3F, 0x7F, 0x0B, 0x1B, 0x2B, 0x5B)
+    for index, mask in enumerate(masks, start=32):
+        generated.append(
+            QuotientFamily(
+                f"generated_mask_{mask:02x}",
+                "training"
+                if index < 24
+                else "development"
+                if index < 36
+                else "held_out",
+                bytes.fromhex(f"48 83 e0 {mask:02x}"),
+                bytes.fromhex(f"48 89 c1 48 83 e1 {mask:02x} 48 89 c8"),
+                bytes.fromhex(f"48 83 e0 {(mask - 1):02x}"),
+            )
+        )
+    for index, constant in enumerate(range(4), start=40):
+        generated.append(
+            QuotientFamily(
+                f"generated_compare_{constant}",
+                "training"
+                if index < 24
+                else "development"
+                if index < 36
+                else "held_out",
+                bytes.fromhex(f"48 83 f8 {constant:02x}"),
+                bytes.fromhex("48 85 c0"),
+                bytes.fromhex("48 83 c0 01"),
+            )
+        )
+    for index, constant in enumerate(range(17, 21), start=44):
+        generated.append(
+            QuotientFamily(
+                f"generated_width_{constant:02d}",
+                "training"
+                if index < 24
+                else "development"
+                if index < 36
+                else "held_out",
+                bytes.fromhex(f"b8 {constant:02x} 00 00 00"),
+                bytes.fromhex(f"48 c7 c0 {constant:02x} 00 00 00"),
+                bytes.fromhex(f"b8 {constant + 1:02x} 00 00 00"),
+            )
+        )
+    return base + tuple(generated)
 
 
 def _pad_nops(code: bytes, count: int) -> bytes:
@@ -349,17 +479,19 @@ def _evaluate_pair(
         reference_tokens=tuple(reference_tokens),
         variant_tokens=tuple(variant_tokens),
         feature_vector=_pair_features(reference_summary, variant_summary),
+        reference_code=bytes(reference_code),
+        variant_code=bytes(variant_code),
     )
 
 
 @lru_cache(maxsize=1)
 def _dataset() -> tuple[PairExample, ...]:
-    """Generate the frozen 16-family, 64-pair-per-family benchmark."""
+    """Generate the frozen 64-family, 64-pair-per-family benchmark."""
 
     rows: list[PairExample] = []
     for family in _family_specs():
         for index in range(64):
-            role = "equivalent" if index % 4 != 3 else "near_miss"
+            role = "equivalent" if index % 2 == 0 else "near_miss"
             reference = _pad_nops(family.reference_code, (index // 4) % 4)
             variant_base = (
                 family.equivalent_code
@@ -530,7 +662,95 @@ def _predict_rnn(
     )
 
 
-def _metrics(labels: np.ndarray, probabilities: np.ndarray) -> dict[str, Any]:
+def _wilson_interval(successes: int, total: int) -> list[float]:
+    """Return a 95% Wilson interval for one Bernoulli proportion."""
+
+    if total <= 0:
+        return [float("nan"), float("nan")]
+    z = 1.959963984540054
+    proportion = successes / total
+    denominator = 1.0 + z**2 / total
+    center = (proportion + z**2 / (2.0 * total)) / denominator
+    radius = (
+        z
+        * math.sqrt(proportion * (1.0 - proportion) / total + z**2 / (4.0 * total**2))
+        / denominator
+    )
+    return [float(max(0.0, center - radius)), float(min(1.0, center + radius))]
+
+
+def _adjusted_mutual_information(labels: np.ndarray, predictions: np.ndarray) -> float:
+    """Compute adjusted mutual information for the binary endpoint.
+
+    The expected mutual information is evaluated under the fixed row/column
+    margins, using the hypergeometric null.  This is deliberately implemented
+    locally so the receipt does not depend on a hidden third-party metric
+    implementation.
+    """
+
+    observed = np.zeros((2, 2), dtype=int)
+    for label, prediction in zip(
+        labels.astype(int), predictions.astype(int), strict=True
+    ):
+        observed[int(label), int(prediction)] += 1
+    total = int(observed.sum())
+    if total == 0:
+        return 0.0
+    row_sums = observed.sum(axis=1)
+    column_sums = observed.sum(axis=0)
+
+    def mutual_information(table: np.ndarray) -> float:
+        n = int(table.sum())
+        if n == 0:
+            return 0.0
+        rows = table.sum(axis=1)
+        columns = table.sum(axis=0)
+        value = 0.0
+        for i in range(table.shape[0]):
+            for j in range(table.shape[1]):
+                cell = int(table[i, j])
+                if cell and rows[i] and columns[j]:
+                    value += (cell / n) * math.log(
+                        (n * cell) / (int(rows[i]) * int(columns[j]))
+                    )
+        return value
+
+    mi = mutual_information(observed)
+    expected_mi = 0.0
+    for row_total in row_sums:
+        for column_total in column_sums:
+            row_count = int(row_total)
+            column_count = int(column_total)
+            if row_count == 0 or column_count == 0:
+                continue
+            denominator = math.comb(total, column_count)
+            lower = max(0, row_count + column_count - total)
+            upper = min(row_count, column_count)
+            for cell in range(lower, upper + 1):
+                probability = (
+                    math.comb(row_count, cell)
+                    * math.comb(total - row_count, column_count - cell)
+                    / denominator
+                )
+                if cell:
+                    expected_mi += (
+                        probability
+                        * (cell / total)
+                        * math.log((total * cell) / (row_count * column_count))
+                    )
+    entropy_rows = -sum(
+        (count / total) * math.log(count / total) for count in row_sums if count
+    )
+    entropy_columns = -sum(
+        (count / total) * math.log(count / total) for count in column_sums if count
+    )
+    denominator = max(entropy_rows, entropy_columns) - expected_mi
+    return float((mi - expected_mi) / denominator) if denominator > 1e-12 else 1.0
+
+
+def _metrics(
+    labels: np.ndarray, probabilities: np.ndarray, *, extended: bool = True
+) -> dict[str, Any]:
     predictions = probabilities >= 0.5
     labels_bool = labels.astype(bool)
     true_positive = int(np.sum(predictions & labels_bool))
@@ -559,7 +779,7 @@ def _metrics(labels: np.ndarray, probabilities: np.ndarray) -> dict[str, Any]:
             calibration_error += float(mask.mean()) * abs(
                 float(probabilities[mask].mean()) - float(labels[mask].mean())
             )
-    return {
+    result: dict[str, Any] = {
         "balanced_accuracy": float(balanced_accuracy),
         "macro_f1": float(np.mean(f1_values)),
         "brier_score": float(np.mean((probabilities - labels) ** 2)),
@@ -579,7 +799,39 @@ def _metrics(labels: np.ndarray, probabilities: np.ndarray) -> dict[str, Any]:
         "rows": int(len(labels)),
         "positive_rows": int(labels.sum()),
         "negative_rows": int(len(labels) - labels.sum()),
+        "wilson_intervals": {
+            "equivalence_recall": _wilson_interval(true_positive, positive_total),
+            "near_miss_separation": _wilson_interval(true_negative, negative_total),
+        },
     }
+    if extended:
+        confidence = np.maximum(probabilities, 1.0 - probabilities)
+        selected = confidence >= 0.75
+        selected_count = int(selected.sum())
+        result.update(
+            {
+                "adjusted_mutual_information": _adjusted_mutual_information(
+                    labels, predictions
+                ),
+                "posterior_equivalence_consistency": float(
+                    np.mean(probabilities[labels_bool])
+                )
+                if positive_total
+                else None,
+                "near_miss_separation_rate": float(negative_recall),
+                "selective_risk_coverage": {
+                    "confidence_threshold": 0.75,
+                    "coverage": float(selected.mean()) if len(selected) else 0.0,
+                    "risk": float(
+                        np.mean(predictions[selected] != labels_bool[selected])
+                    )
+                    if selected_count
+                    else None,
+                    "selected_rows": selected_count,
+                },
+            }
+        )
+    return result
 
 
 def _cluster_bootstrap(
@@ -604,10 +856,67 @@ def _cluster_bootstrap(
         result = _metrics(
             np.asarray([rows[index].label for index in indices], dtype=float),
             probabilities[indices],
+            extended=False,
         )
         for metric in values:
             values[metric].append(float(result[metric]))
     return values
+
+
+def _paired_cluster_bootstrap(
+    rows: Sequence[PairExample],
+    model_probabilities: np.ndarray,
+    baseline_probabilities: np.ndarray,
+    *,
+    seed: int,
+    replicates: int = BOOTSTRAP_REPLICATES,
+) -> dict[str, Any]:
+    """Bootstrap paired model-minus-baseline metrics by source family."""
+
+    families = sorted({row.family_id for row in rows})
+    by_family = {
+        family: [index for index, row in enumerate(rows) if row.family_id == family]
+        for family in families
+    }
+    labels = np.asarray([row.label for row in rows], dtype=float)
+    observed_model = _metrics(labels, model_probabilities)
+    observed_baseline = _metrics(labels, baseline_probabilities)
+    observed = {
+        metric: float(observed_model[metric] - observed_baseline[metric])
+        for metric in PRIMARY_METRICS
+    }
+    rng = np.random.default_rng(seed)
+    values: dict[str, list[float]] = {metric: [] for metric in PRIMARY_METRICS}
+    for _ in range(replicates):
+        sampled = rng.choice(families, size=len(families), replace=True)
+        indices = [index for family in sampled for index in by_family[str(family)]]
+        model = _metrics(labels[indices], model_probabilities[indices], extended=False)
+        baseline = _metrics(
+            labels[indices], baseline_probabilities[indices], extended=False
+        )
+        for metric in PRIMARY_METRICS:
+            values[metric].append(float(model[metric] - baseline[metric]))
+    intervals = {
+        metric: _interval(metric_values) for metric, metric_values in values.items()
+    }
+    raw_p_values = {
+        metric: float(
+            (1 + sum(value <= 0.0 for value in metric_values))
+            / (len(metric_values) + 1)
+        )
+        for metric, metric_values in values.items()
+    }
+    return {
+        "family_count": len(families),
+        "bootstrap_replicates": replicates,
+        "observed_difference": observed,
+        "confidence_intervals": {
+            metric: {"confidence_level": CONFIDENCE_LEVEL, "interval": interval}
+            for metric, interval in intervals.items()
+        },
+        "raw_one_sided_bootstrap_p_values": raw_p_values,
+        "sampling_unit": "source_family",
+    }
 
 
 def _interval(values: Sequence[float]) -> list[float]:
@@ -636,6 +945,19 @@ def _evaluate(
     return summary
 
 
+def _holm_adjust(p_values: dict[str, float]) -> dict[str, float]:
+    """Apply deterministic Holm step-down adjustment to a comparison family."""
+
+    ordered = sorted(p_values.items(), key=lambda item: (item[1], item[0]))
+    adjusted: dict[str, float] = {}
+    running = 0.0
+    total = len(ordered)
+    for rank, (key, value) in enumerate(ordered, start=1):
+        running = max(running, min(1.0, float(value) * (total - rank + 1)))
+        adjusted[key] = running
+    return adjusted
+
+
 def _surface_indices() -> list[int]:
     names = _feature_names()
     surface_names = {
@@ -652,6 +974,104 @@ def _surface_indices() -> list[int]:
         for index, name in enumerate(names)
         if name in surface_names or name.startswith("instruction_family::")
     ]
+
+
+SURFACE_BASELINE_NAMES = (
+    "opcode_histogram",
+    "byte_ngrams",
+    "mnemonic_counts",
+    "instruction_length",
+    "control_flow_summary",
+    "memory_event_counts",
+)
+
+
+def _baseline_vocabulary(rows: Sequence[PairExample]) -> tuple[str, ...]:
+    """Freeze mnemonic categories from the training split only."""
+
+    values: set[str] = set()
+    for row in rows:
+        values.update(
+            instruction.mnemonic
+            for code in (row.reference_code, row.variant_code)
+            for instruction in disassemble_bytes(code)
+        )
+    return tuple(sorted(values))
+
+
+@lru_cache(maxsize=512)
+def _code_descriptor(
+    code: bytes, mnemonic_vocabulary: tuple[str, ...]
+) -> dict[str, np.ndarray]:
+    """Return deterministic surface descriptors for one transparent code blob."""
+
+    instructions = disassemble_bytes(code)
+    trace = emulate_x86_64(code, initial_rax=0)
+    byte_histogram = np.bincount(np.frombuffer(code, dtype=np.uint8), minlength=256)
+    opcode_histogram = np.zeros(256, dtype=float)
+    mnemonic_counts = np.zeros(len(mnemonic_vocabulary), dtype=float)
+    mnemonic_index = {value: index for index, value in enumerate(mnemonic_vocabulary)}
+    branch_count = 0.0
+    call_count = 0.0
+    return_count = 0.0
+    for instruction in instructions:
+        first_byte = int(instruction.bytes_hex.split()[0], 16)
+        opcode_histogram[first_byte] += 1.0
+        if instruction.mnemonic in mnemonic_index:
+            mnemonic_counts[mnemonic_index[instruction.mnemonic]] += 1.0
+        if instruction.mnemonic.startswith("j"):
+            branch_count += 1.0
+        if instruction.mnemonic == "call":
+            call_count += 1.0
+        if instruction.mnemonic == "ret":
+            return_count += 1.0
+    hashed_bigrams = np.zeros(128, dtype=float)
+    for left, right in zip(code, code[1:]):
+        hashed_bigrams[(int(left) * 257 + int(right)) % len(hashed_bigrams)] += 1.0
+    memory_static = float(sum(bool(item.memory_operands) for item in instructions))
+    memory_reads = float(
+        sum(event.get("access") == "read" for event in trace.memory_events)
+    )
+    memory_writes = float(
+        sum(event.get("access") == "write" for event in trace.memory_events)
+    )
+    return {
+        "opcode_histogram": opcode_histogram,
+        "byte_ngrams": np.concatenate((byte_histogram.astype(float), hashed_bigrams)),
+        "mnemonic_counts": mnemonic_counts,
+        "instruction_length": np.asarray(
+            [
+                float(len(code)),
+                float(len(instructions)),
+                float(sum(item.size for item in instructions)),
+            ]
+        ),
+        "control_flow_summary": np.asarray(
+            [branch_count, call_count, return_count, float(len(instructions))]
+        ),
+        "memory_event_counts": np.asarray(
+            [memory_static, memory_reads, memory_writes, memory_reads + memory_writes]
+        ),
+    }
+
+
+def _baseline_matrix(
+    rows: Sequence[PairExample],
+    baseline_name: str,
+    mnemonic_vocabulary: tuple[str, ...],
+) -> np.ndarray:
+    if baseline_name not in SURFACE_BASELINE_NAMES:
+        raise ValueError(f"unknown surface baseline {baseline_name!r}")
+    vectors: list[np.ndarray] = []
+    for row in rows:
+        reference = _code_descriptor(row.reference_code, mnemonic_vocabulary)[
+            baseline_name
+        ]
+        variant = _code_descriptor(row.variant_code, mnemonic_vocabulary)[baseline_name]
+        vectors.append(
+            np.concatenate((np.abs(reference - variant), reference + variant))
+        )
+    return np.asarray(vectors, dtype=float)
 
 
 def _binary_cross_entropy(probability: float, label: int) -> float:
@@ -792,6 +1212,10 @@ def _seed_sensitivity(
 def quotient_classifier_payload() -> dict[str, Any]:
     """Run the frozen co-primary pairwise quotient-classification endpoint."""
 
+    cached = _cached_quotient_classifier_payload()
+    if cached is not None:
+        return cached
+
     rows = _dataset()
     train_rows = [row for row in rows if row.split == "training"]
     development_rows = [row for row in rows if row.split == "development"]
@@ -812,10 +1236,12 @@ def quotient_classifier_payload() -> dict[str, Any]:
         [row.label for row in development_rows], dtype=float
     )
     models: dict[str, dict[str, Any]] = {}
+    test_probabilities: dict[str, np.ndarray] = {}
 
     logistic = _fit_logistic(train_matrix, train_labels, seed=RNG_SEED)
     logistic_development = _predict_logistic(development_matrix, logistic)
     logistic_probabilities = _predict_logistic(test_matrix, logistic)
+    test_probabilities["calibrated_interpretable"] = logistic_probabilities
     logistic_result = _evaluate(
         "calibrated_interpretable", test_rows, logistic_probabilities, seed=11
     )
@@ -825,6 +1251,7 @@ def quotient_classifier_payload() -> dict[str, Any]:
     markov = _fit_markov(train_rows, vocabulary)
     markov_development = _predict_markov(development_rows, vocabulary, markov)
     markov_probabilities = _predict_markov(test_rows, vocabulary, markov)
+    test_probabilities["temporal_probabilistic"] = markov_probabilities
     markov_result = _evaluate(
         "temporal_probabilistic", test_rows, markov_probabilities, seed=23
     )
@@ -834,6 +1261,7 @@ def quotient_classifier_payload() -> dict[str, Any]:
     rnn = _fit_rnn(train_rows, vocabulary, seed=47)
     rnn_development = _predict_rnn(development_rows, vocabulary, rnn)
     rnn_probabilities = _predict_rnn(test_rows, vocabulary, rnn)
+    test_probabilities["neural_sequence"] = rnn_probabilities
     rnn_result = _evaluate("neural_sequence", test_rows, rnn_probabilities, seed=47)
     rnn_result["development"] = _metrics(development_labels, rnn_development)
     models["neural_sequence"] = rnn_result
@@ -844,11 +1272,42 @@ def quotient_classifier_payload() -> dict[str, Any]:
         development_matrix[:, surface], surface_model
     )
     surface_probabilities = _predict_logistic(test_matrix[:, surface], surface_model)
+    test_probabilities["surface_baseline"] = surface_probabilities
     surface_result = _evaluate(
         "surface_baseline", test_rows, surface_probabilities, seed=89
     )
     surface_result["development"] = _metrics(development_labels, surface_development)
     models["surface_baseline"] = surface_result
+
+    baseline_vocabulary = _baseline_vocabulary(train_rows)
+    surface_baselines: dict[str, dict[str, Any]] = {}
+    baseline_probabilities: dict[str, np.ndarray] = {}
+    for baseline_index, baseline_name in enumerate(SURFACE_BASELINE_NAMES):
+        baseline_train = _baseline_matrix(
+            train_rows, baseline_name, baseline_vocabulary
+        )
+        baseline_development = _baseline_matrix(
+            development_rows, baseline_name, baseline_vocabulary
+        )
+        baseline_test = _baseline_matrix(test_rows, baseline_name, baseline_vocabulary)
+        baseline_model = _fit_logistic(
+            baseline_train,
+            train_labels,
+            seed=RNG_SEED + baseline_index + 1,
+        )
+        baseline_test_probabilities = _predict_logistic(baseline_test, baseline_model)
+        baseline_probabilities[baseline_name] = baseline_test_probabilities
+        baseline_result = _evaluate(
+            baseline_name,
+            test_rows,
+            baseline_test_probabilities,
+            seed=101 + baseline_index,
+        )
+        baseline_result["development"] = _metrics(
+            development_labels,
+            _predict_logistic(baseline_development, baseline_model),
+        )
+        surface_baselines[baseline_name] = baseline_result
 
     seed_sensitivity = _seed_sensitivity(
         train_rows,
@@ -858,24 +1317,171 @@ def quotient_classifier_payload() -> dict[str, Any]:
         train_labels,
         vocabulary,
     )
+    test_labels = np.asarray([row.label for row in test_rows], dtype=float)
+    permutation_labels = np.random.default_rng(20260821).permutation(train_labels)
+    permutation_model = _fit_logistic(train_matrix, permutation_labels, seed=20260821)
+    permutation_metrics = _metrics(
+        test_labels, _predict_logistic(test_matrix, permutation_model)
+    )
 
     family_count = len({row.family_id for row in rows})
     test_family_count = len({row.family_id for row in test_rows})
     status = (
-        "validated_bounded_endpoint"
-        if family_count >= 8 and len(rows) >= 64 and test_family_count >= 4
+        "validated_bounded"
+        if family_count >= 64 and len(rows) >= 64 * 64 and test_family_count >= 16
         else "underpowered"
     )
     protocol = scientific_protocol_payload()
+    limitations = [
+        "bounded transparent x86-64 fixtures only",
+        "pairwise quotient membership is not complete semantic equivalence",
+        "held-out uncertainty is clustered over source families",
+        "real-program external validation is a separate unpopulated manifest",
+    ]
+    underpowered_cases = []
+    if status == "underpowered":
+        underpowered_cases.append(
+            "Promotion target requires at least 64 independent families, 64 rows per family, and 16 held-out families."
+        )
+    # The typed-trace summary is retained as the historical surface comparator,
+    # while the six raw surface descriptors are evaluated as a separate
+    # preregistered comparison family. Keeping both namespaces explicit avoids
+    # calling a typed summary an opcode/byte baseline by implication.
+    baseline = models["surface_baseline"]
+    baseline_probability_map = {
+        "surface_baseline": test_probabilities["surface_baseline"],
+        **baseline_probabilities,
+    }
+    comparison_keys = [
+        f"{name}:{baseline_name}:{metric}"
+        for name in MODEL_FAMILIES
+        for baseline_name in baseline_probability_map
+        for metric in PRIMARY_METRICS
+    ]
+    paired_rows: dict[str, dict[str, Any]] = {}
+    raw_p_values: dict[str, float] = {}
+    raw_surface_pairs: dict[str, dict[str, dict[str, Any]]] = {
+        name: {} for name in MODEL_FAMILIES
+    }
+    comparisons: dict[str, dict[str, dict[str, Any]]] = {}
+    for name in MODEL_FAMILIES:
+        comparisons[name] = {}
+        paired = _paired_cluster_bootstrap(
+            test_rows,
+            test_probabilities[name],
+            test_probabilities["surface_baseline"],
+            seed=701 + list(MODEL_FAMILIES).index(name),
+        )
+        for metric in PRIMARY_METRICS:
+            key = f"{name}:surface_baseline:{metric}"
+            difference = float(models[name][metric] - baseline[metric])
+            raw_p = float(paired["raw_one_sided_bootstrap_p_values"][metric])
+            raw_p_values[key] = raw_p
+            paired_rows[key] = {
+                "model": name,
+                "metric": metric,
+                **paired,
+            }
+            comparisons[name][metric] = {
+                "difference_vs_surface_baseline": difference,
+                "practical_margin": PRACTICAL_MARGIN,
+                "margin_passed": bool(difference >= PRACTICAL_MARGIN),
+                "raw_one_sided_bootstrap_p_value": raw_p,
+                "superiority_claim_allowed": False,
+            }
+        for baseline_name in SURFACE_BASELINE_NAMES:
+            model_paired = _paired_cluster_bootstrap(
+                test_rows,
+                test_probabilities[name],
+                baseline_probabilities[baseline_name],
+                seed=1201
+                + list(MODEL_FAMILIES).index(name) * len(SURFACE_BASELINE_NAMES)
+                + list(SURFACE_BASELINE_NAMES).index(baseline_name),
+            )
+            raw_surface_pairs[name][baseline_name] = model_paired
+            for metric in PRIMARY_METRICS:
+                raw_p_values[f"{name}:{baseline_name}:{metric}"] = float(
+                    model_paired["raw_one_sided_bootstrap_p_values"][metric]
+                )
+    holm_p_values = _holm_adjust(raw_p_values)
+    for key in comparison_keys:
+        name, baseline_name, metric = key.split(":", 2)
+        if baseline_name != "surface_baseline":
+            continue
+        comparisons[name][metric]["holm_adjusted_p_value"] = holm_p_values[key]
+        comparisons[name][metric]["superiority_claim_allowed"] = bool(
+            status == "validated_bounded"
+            and comparisons[name][metric]["margin_passed"]
+            and holm_p_values[key] <= 0.05
+        )
+
+    baseline_comparisons: dict[str, dict[str, Any]] = {}
+    raw_surface_comparisons: dict[str, dict[str, dict[str, Any]]] = {
+        name: {} for name in MODEL_FAMILIES
+    }
+    for baseline_name in SURFACE_BASELINE_NAMES:
+        paired = _paired_cluster_bootstrap(
+            test_rows,
+            baseline_probabilities[baseline_name],
+            test_probabilities["surface_baseline"],
+            seed=811 + list(SURFACE_BASELINE_NAMES).index(baseline_name),
+        )
+        baseline_comparisons[baseline_name] = {
+            "metrics": surface_baselines[baseline_name],
+            "paired_vs_typed_surface_baseline": paired,
+            "superiority_claim_allowed": False,
+        }
+        for model_name in MODEL_FAMILIES:
+            model_paired = raw_surface_pairs[model_name][baseline_name]
+            metric_rows: dict[str, Any] = {
+                "model": model_name,
+                "baseline": baseline_name,
+                "sampling_unit": "source_family",
+                "bootstrap_replicates": int(model_paired["bootstrap_replicates"]),
+                "confidence_intervals": model_paired["confidence_intervals"],
+            }
+            for metric in PRIMARY_METRICS:
+                comparison_key = f"{model_name}:{baseline_name}:{metric}"
+                difference = float(
+                    models[model_name][metric]
+                    - surface_baselines[baseline_name][metric]
+                )
+                raw_p = float(model_paired["raw_one_sided_bootstrap_p_values"][metric])
+                metric_rows[metric] = {
+                    "difference": difference,
+                    "practical_margin": PRACTICAL_MARGIN,
+                    "margin_passed": bool(difference >= PRACTICAL_MARGIN),
+                    "raw_one_sided_bootstrap_p_value": raw_p,
+                    "holm_adjusted_p_value": holm_p_values[comparison_key],
+                    "superiority_claim_allowed": bool(
+                        status == "validated_bounded"
+                        and difference >= PRACTICAL_MARGIN
+                        and holm_p_values[comparison_key] <= 0.05
+                    ),
+                }
+            raw_surface_comparisons[model_name][baseline_name] = metric_rows
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes={
+            "research_protocol.json": protocol["protocol_sha256"],
+            "src/quotient_classifier.py": sha256_path(Path(__file__)),
+        },
+        toolchain_versions=toolchain_versions(("capstone", "numpy", "unicorn")),
+        status=status,
+        limitations=limitations,
+        unsupported_cases=(
+            "Unsupported instruction effects are excluded rather than imputed.",
+        ),
+        underpowered_cases=underpowered_cases,
+    )
     return {
+        **envelope,
         "schema_version": QUOTIENT_CLASSIFIER_SCHEMA_VERSION,
-        "protocol_id": protocol["protocol_id"],
-        "protocol_sha256": protocol["protocol_sha256"],
-        "generator_revision": generator_revision(Path(__file__)),
-        "input_hashes": {"research_protocol.json": protocol["protocol_sha256"]},
-        "toolchain_versions": toolchain_versions(("capstone", "numpy", "unicorn")),
         "artifact": QUOTIENT_CLASSIFIER_ARTIFACT,
-        "status": status,
+        "endpoint_status": "pilot_receipt"
+        if status == "underpowered"
+        else "promotion_candidate",
         "endpoint": "same_formal_quotient",
         "label_source": "formal_output_relation_under_declared_interventions",
         "label_blind_features": True,
@@ -915,18 +1521,30 @@ def quotient_classifier_payload() -> dict[str, Any]:
         "primary_metrics": ["balanced_accuracy", "macro_f1"],
         "practical_comparison_margin": PRACTICAL_MARGIN,
         "models": models,
+        "model_comparisons": comparisons,
+        "paired_comparisons": paired_rows,
+        "baseline_models": surface_baselines,
+        "baseline_comparisons": baseline_comparisons,
+        "surface_baseline_comparisons": raw_surface_comparisons,
+        "multiplicity_control": {
+            "method": "Holm",
+            "comparison_family": (
+                "three co-primary models by seven surface baselines and two primary metrics"
+            ),
+            "alpha": 0.05,
+            "practical_margin": PRACTICAL_MARGIN,
+            "superiority_claims_promoted": False,
+        },
         "seed_sensitivity": seed_sensitivity,
         "neural_gradient_check": _rnn_gradient_check(train_rows[0], vocabulary),
         "negative_controls": {
-            "label_permutation": "reserved_in_tests_and_protocol",
+            "label_permutation": permutation_metrics,
+            "label_permutation_seed": 20260821,
             "surface_baseline": models["surface_baseline"],
         },
-        "limitations": [
-            "bounded transparent x86-64 fixtures only",
-            "pairwise quotient membership is not complete semantic equivalence",
-            "held-out uncertainty is clustered over 16 synthetic families",
-            "real-program external validation is a separate unpopulated manifest",
-        ],
+        "limitations": limitations,
+        "unsupported_cases": list(envelope["unsupported_cases"]),
+        "underpowered_cases": underpowered_cases,
     }
 
 
@@ -953,8 +1571,35 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
     if payload["schema_version"] != QUOTIENT_CLASSIFIER_SCHEMA_VERSION:
         return False, "quotient classifier schema mismatch"
     protocol = scientific_protocol_payload()
-    if payload["protocol_sha256"] != protocol["protocol_sha256"]:
-        return False, "quotient classifier protocol hash mismatch"
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"quotient classifier receipt: {receipt_detail}"
+    if payload.get("status") not in {"validated_bounded", "underpowered"}:
+        return False, "quotient classifier evidence status is invalid"
+    family_count = payload.get("family_count")
+    row_count = payload.get("row_count")
+    split_counts = {
+        "training_family_count": 32,
+        "development_family_count": 16,
+        "held_out_family_count": 16,
+    }
+    if not isinstance(family_count, int) or family_count < 1:
+        return False, "quotient classifier family count is invalid"
+    if not isinstance(row_count, int) or row_count != family_count * 64:
+        return False, "quotient classifier row count does not match family count"
+    if any(
+        not isinstance(payload.get(key), int) or payload.get(key) != expected
+        for key, expected in split_counts.items()
+    ):
+        return False, "quotient classifier source-family split counts drift"
+    if (
+        family_count >= 64
+        and row_count >= 64 * 64
+        and payload.get("status") != "validated_bounded"
+    ):
+        return False, "quotient classifier promotion-sized benchmark is not validated"
     if payload["endpoint"] != "same_formal_quotient":
         return False, "quotient classifier endpoint mismatch"
     if payload["label_blind_features"] is not True:
@@ -992,6 +1637,96 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
     gradient = payload.get("neural_gradient_check")
     if not isinstance(gradient, dict) or gradient.get("passed") is not True:
         return False, "quotient classifier neural gradient check failed"
+    negative_controls = payload.get("negative_controls")
+    if not isinstance(negative_controls, dict):
+        return False, "quotient classifier negative controls are missing"
+    permutation = negative_controls.get("label_permutation")
+    if not isinstance(permutation, dict) or not np.isfinite(
+        float(permutation.get("balanced_accuracy", float("nan")))
+    ):
+        return False, "quotient classifier label-permutation control is missing"
+    comparisons = payload.get("model_comparisons")
+    if not isinstance(comparisons, dict) or set(MODEL_FAMILIES) - set(comparisons):
+        return False, "quotient classifier comparison ledger is missing"
+    for name in MODEL_FAMILIES:
+        model_comparison = comparisons.get(name)
+        if not isinstance(model_comparison, dict):
+            return False, f"quotient classifier comparison row missing for {name}"
+        for metric in PRIMARY_METRICS:
+            record = model_comparison.get(metric)
+            if not isinstance(record, dict):
+                return False, f"quotient classifier comparison missing {name}.{metric}"
+            for key in (
+                "difference_vs_surface_baseline",
+                "raw_one_sided_bootstrap_p_value",
+                "holm_adjusted_p_value",
+            ):
+                value = record.get(key)
+                if not isinstance(value, (int, float)) or not np.isfinite(float(value)):
+                    return (
+                        False,
+                        f"quotient classifier comparison value {key} is invalid",
+                    )
+            if not 0.0 <= float(record["holm_adjusted_p_value"]) <= 1.0:
+                return False, "quotient classifier Holm value is out of range"
+    paired = payload.get("paired_comparisons")
+    if not isinstance(paired, dict) or len(paired) != len(MODEL_FAMILIES) * len(
+        PRIMARY_METRICS
+    ):
+        return False, "quotient classifier paired bootstrap ledger is incomplete"
+    baseline_models = payload.get("baseline_models")
+    if not isinstance(baseline_models, dict) or set(SURFACE_BASELINE_NAMES) - set(
+        baseline_models
+    ):
+        return False, "quotient classifier surface baseline portfolio is incomplete"
+    for name in SURFACE_BASELINE_NAMES:
+        record = baseline_models.get(name)
+        if not isinstance(record, dict):
+            return False, f"quotient classifier baseline {name} is malformed"
+        for metric in PRIMARY_METRICS:
+            value = record.get(metric)
+            if not isinstance(value, (int, float)) or not 0.0 <= float(value) <= 1.0:
+                return False, f"quotient classifier baseline {name}.{metric} is invalid"
+    raw_surface_comparisons = payload.get("surface_baseline_comparisons")
+    if not isinstance(raw_surface_comparisons, dict):
+        return False, "quotient classifier raw surface comparison ledger is missing"
+    if set(raw_surface_comparisons) != set(MODEL_FAMILIES):
+        return False, "quotient classifier raw surface model coverage drift"
+    for model_name in MODEL_FAMILIES:
+        model_rows = raw_surface_comparisons.get(model_name)
+        if not isinstance(model_rows, dict) or set(model_rows) != set(
+            SURFACE_BASELINE_NAMES
+        ):
+            return (
+                False,
+                f"quotient classifier raw surface rows missing for {model_name}",
+            )
+        for baseline_name in SURFACE_BASELINE_NAMES:
+            comparison = model_rows.get(baseline_name)
+            if not isinstance(comparison, dict):
+                return False, "quotient classifier raw surface comparison is malformed"
+            for metric in PRIMARY_METRICS:
+                metric_row = comparison.get(metric)
+                if not isinstance(metric_row, dict):
+                    return False, "quotient classifier raw surface metric is missing"
+                for key in (
+                    "difference",
+                    "raw_one_sided_bootstrap_p_value",
+                    "holm_adjusted_p_value",
+                ):
+                    value = metric_row.get(key)
+                    if not isinstance(value, (int, float)) or not np.isfinite(
+                        float(value)
+                    ):
+                        return (
+                            False,
+                            "quotient classifier raw surface statistic is invalid",
+                        )
+                if not 0.0 <= float(metric_row["holm_adjusted_p_value"]) <= 1.0:
+                    return (
+                        False,
+                        "quotient classifier raw surface Holm value is out of range",
+                    )
     return True, "ok"
 
 

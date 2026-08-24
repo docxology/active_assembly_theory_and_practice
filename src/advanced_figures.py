@@ -32,6 +32,8 @@ from .figures import (
     plot_factorized_observation_comparison,
     plot_formal_verification_receipt,
     plot_formal_correspondence,
+    plot_external_source_provenance,
+    plot_intervention_power,
     plot_active_information_frontier,
     plot_model_comparison_bars,
     plot_model_evidence,
@@ -86,6 +88,14 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
 
     figure_dir = output_dir / "figures"
     figure_dir.mkdir(parents=True, exist_ok=True)
+    # Keep the external-source figure on the same producer boundary as its
+    # receipt.  This makes direct figure regeneration deterministic and avoids
+    # accidentally plotting a stale or missing safety-status artifact.
+    external_manifest = output_dir.parent / "configs" / "external_sources.yaml"
+    if external_manifest.is_file():
+        from .external_sources import write_external_source_validation_payload
+
+        write_external_source_validation_payload(output_dir.parent)
     evaluation_path = output_dir / "data" / "evaluation_report.json"
     evaluation_report = json.loads(evaluation_path.read_text(encoding="utf-8"))
 
@@ -173,6 +183,12 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         representation_payload, representation_path
     )
 
+    intervention_power_path = figure_dir / "intervention_power.png"
+    intervention_power_payload = json.loads(
+        (output_dir / "data" / "intervention_power.json").read_text(encoding="utf-8")
+    )
+    plot_intervention_power(intervention_power_payload, intervention_power_path)
+
     cross_architecture_path = figure_dir / "cross_architecture_benchmark.png"
     cross_architecture_payload = json.loads(
         (output_dir / "data" / "cross_architecture_fixtures.json").read_text(
@@ -221,6 +237,14 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     )
     plot_replication_manifest(replication_payload, replication_path)
 
+    external_path = figure_dir / "external_source_provenance.png"
+    external_payload = json.loads(
+        (output_dir / "data" / "external_source_validation.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_external_source_provenance(external_payload, external_path)
+
     information_path = figure_dir / "active_information_frontier.png"
     information_payload = json.loads(
         (output_dir / "data" / "active_information_frontier.json").read_text(
@@ -254,6 +278,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "representation_invariance_benchmark": str(
             representation_path.relative_to(PROJECT_ROOT)
         ),
+        "intervention_power": str(intervention_power_path.relative_to(PROJECT_ROOT)),
         "cross_architecture_benchmark": str(
             cross_architecture_path.relative_to(PROJECT_ROOT)
         ),
@@ -263,6 +288,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "formal_correspondence": str(correspondence_path.relative_to(PROJECT_ROOT)),
         "sensor_costs": str(sensor_path.relative_to(PROJECT_ROOT)),
         "replication_manifest": str(replication_path.relative_to(PROJECT_ROOT)),
+        "external_source_provenance": str(external_path.relative_to(PROJECT_ROOT)),
         "active_information_frontier": str(information_path.relative_to(PROJECT_ROOT)),
     }
 
@@ -340,6 +366,7 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "representation_invariance_benchmark": stats_paths[
             "representation_invariance_benchmark"
         ],
+        "intervention_power": stats_paths["intervention_power"],
         "cross_architecture_benchmark": stats_paths["cross_architecture_benchmark"],
         "formal_verification_receipt": stats_paths["formal_verification_receipt"],
         "quotient_classifier": stats_paths["quotient_classifier"],
@@ -347,6 +374,7 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "formal_correspondence": stats_paths["formal_correspondence"],
         "sensor_costs": stats_paths["sensor_costs"],
         "replication_manifest": stats_paths["replication_manifest"],
+        "external_source_provenance": stats_paths["external_source_provenance"],
         "active_information_frontier": stats_paths["active_information_frontier"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

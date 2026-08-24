@@ -17,8 +17,12 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 
+from .provenance import generator_revision, sha256_path, toolchain_versions
+from .receipt import build_receipt_envelope, validate_receipt_envelope
+from .scientific_protocol import scientific_protocol_payload
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SCIENTIFIC_PROGRAM_SCHEMA_VERSION = "1.0.0"
+SCIENTIFIC_PROGRAM_SCHEMA_VERSION = "2.0.0"
 SCIENTIFIC_PROGRAM_ARTIFACT = "output/data/scientific_program.json"
 
 PROGRAM_STATUSES = frozenset(
@@ -279,11 +283,10 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
                 "equivalence witnesses fail under bounded semantic checking",
             ),
             current_result=(
-                "Implemented bounded tranche: 16 synthetic source families with 64 rows "
-                "per family are split into training/development/held-out families; the "
-                "calibrated, temporal, and neural classifiers are evaluated with clustered "
-                "intervals, seed sensitivity, calibration diagnostics, and a negative control. "
-                "This does not establish identifiability or semantic discovery."
+                "The expanded classifier generator now defines 64 independent source families "
+                "with 64 rows per family, balanced equivalent/near-miss roles, and a 32/16/16 "
+                "family split. The separate representation-invariance witness remains an eight-family "
+                "pilot. This does not establish identifiability or semantic discovery."
             ),
         ),
         ScientificMilestone(
@@ -555,6 +558,423 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
                 "theorem-shaped manuscript claim is promoted."
             ),
         ),
+        ScientificMilestone(
+            milestone_id="P9",
+            phase="identifiability",
+            title="Finite intervention power and separating sets",
+            status="implemented_local",
+            horizon="next",
+            scientific_question=(
+                "How many declared initial-state interventions are required to separate the "
+                "finite quotient benchmark's equivalent and one-change near-miss pairs?"
+            ),
+            conjecture=(
+                "Within a fixed finite catalog, separating-set cardinality is a measurable "
+                "property of the intervention-outcome matrix, but it need not imply semantic "
+                "identifiability outside that catalog."
+            ),
+            primary_endpoint=(
+                "Exact enumeration of every non-empty intervention subset, its equivalent-pair "
+                "consistency and near-miss separation, and the minimum-cardinality fully separating "
+                "sets, including an explicitly non-separating negative control."
+            ),
+            falsifier=(
+                "A subset is omitted or duplicated, the outcome matrix cannot be regenerated from "
+                "the formal benchmark, a negative control is silently removed, or a broad "
+                "identifiability claim is inferred from the finite result."
+            ),
+            sampling_unit="declared transformation pair × intervention subset in the finite catalog",
+            dependencies=("P3", "P4"),
+            required_evidence=(
+                "source-bound intervention-power receipt",
+                "all non-empty subset rows and pairwise separators",
+                "single-state negative-control analysis",
+                "fail-closed promotion status and reproducible digest",
+            ),
+            integrity_gates=(
+                "subsets are enumerated from the formal outcome matrix, not model predictions",
+                "equivalent and near-miss labels remain separate from classifier inputs",
+                "unresolved controls remain visible",
+                "finite separation is not called universal identifiability",
+            ),
+            promotion_rule=(
+                "Promote only a finite benchmark diagnostic unless a stronger theorem supplies "
+                "assumptions and independent evidence for generalization."
+            ),
+            stop_conditions=(
+                "the declared intervention catalog changes after outcomes are inspected",
+                "a separator depends on a hidden label or transformation identifier",
+                "the finite matrix is incomplete or irreproducible",
+            ),
+            current_result=(
+                "Implemented exact finite analysis: all 15 non-empty subsets of four interventions "
+                "are enumerated. Three singleton interventions fully separate the current 16-pair "
+                "catalog, while the all-zero negative control leaves three near-miss families "
+                "unresolved. The receipt explicitly blocks promotion to semantic identifiability."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P10",
+            phase="latent-parameter-robustness",
+            title="Initialization robustness of observation-only parameter learning",
+            status="implemented_local",
+            horizon="next",
+            scientific_question=(
+                "How sensitive is observation-only ordered-HMM parameter learning to deterministic "
+                "initialization on complete-fixture holdouts?"
+            ),
+            conjecture=(
+                "A single observation-only fit is insufficient evidence of a stable latent-parameter "
+                "estimate; multi-start agreement and held-out performance spread must be reported "
+                "before any mechanistic interpretation."
+            ),
+            primary_endpoint=(
+                "Held-out accuracy, convergence diagnostics, and pairwise label agreement across a "
+                "frozen reference, uniform, and three deterministic random initializations for every "
+                "complete-fixture holdout."
+            ),
+            falsifier=(
+                "Held-out phase labels enter fitting, initialization choices are tuned on the test "
+                "fixture, unstable starts are hidden, or the multi-start rows cannot be reproduced "
+                "from the protocol and training complements."
+            ),
+            sampling_unit="held-out transparent fixture × deterministic initialization",
+            dependencies=("P2",),
+            required_evidence=(
+                "multi-start parameter-learning receipt",
+                "fit-input leakage guard",
+                "per-initialization held-out scores and diagnostics",
+                "seed sensitivity summary separated from sampling uncertainty",
+            ),
+            integrity_gates=(
+                "phase labels are used only for scoring",
+                "development and held-out fixtures remain outside fitting",
+                "all declared starts are reported, including unstable or weak starts",
+                "robustness is not presented as latent-semantic discovery",
+            ),
+            promotion_rule=(
+                "Report initialization sensitivity as a robustness result; do not promote a model "
+                "to a scientific explanation without independent data and external validation."
+            ),
+            stop_conditions=(
+                "a requested start fails without an explicit underpowered or unsupported state",
+                "the seed ledger or fit-input contract is incomplete",
+                "model selection uses held-out labels or post-hoc start selection",
+            ),
+            current_result=(
+                "Implemented multi-start tranche: 30 observation-only fits across six holdouts and "
+                "five fixed starts are retained. The current accuracy range and modest pairwise label "
+                "agreement expose material initialization sensitivity, so no stability or semantic "
+                "promotion is made."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P11",
+            phase="formal-semantics",
+            title="Complete normalized machine-state correspondence",
+            status="active",
+            horizon="current",
+            scientific_question=(
+                "Can the declared x86-64 integer subset be represented by one explicit "
+                "64-bit state and matched step-by-step across Python, Capstone, Unicorn, and Lean?"
+            ),
+            conjecture=(
+                "For the frozen bounded instruction subset, a normalized IR and explicit "
+                "machine state admit deterministic trace refinement with no hidden register "
+                "or flag semantics."
+            ),
+            primary_endpoint=(
+                "Stepwise agreement of decoded instruction, pre/post state, modeled flags, "
+                "memory effects, and control-flow target across the declared fixtures and "
+                "exhaustive reduced-state tests."
+            ),
+            falsifier=(
+                "A supported instruction requires a synthetic state encoding, disagrees with "
+                "Unicorn on a declared effect, or cannot be represented in the Lean state."
+            ),
+            sampling_unit="instruction family × bounded machine state × fixture",
+            dependencies=("P4",),
+            required_evidence=(
+                "normalized IR and machine-state schemas",
+                "Python/Lean serialized fixture bundle",
+                "real Capstone/Unicorn stepwise comparison",
+                "exhaustive boundary-value and unsupported tests",
+            ),
+            integrity_gates=(
+                "64-bit arithmetic and operand widths are explicit",
+                "INC and DEC preserve CF",
+                "no hidden register or negative memory sentinel exists",
+                "undefined and unsupported effects fail closed",
+            ),
+            promotion_rule=(
+                "Promote only the declared subset and theorem-backed properties; never "
+                "call this complete x86-64 semantics."
+            ),
+            stop_conditions=(
+                "reference and Unicorn traces disagree",
+                "Lean and Python serialization diverges",
+                "unsupported effects receive invented values",
+            ),
+            current_result=(
+                "An explicit 16-GPR, width-aware bounded Python state now matches the transparent "
+                "Capstone/Unicorn fixtures step by step, including flags, memory effects, and branch "
+                "targets. Lean compiles a normalized-state schema and boundary theorems; a generated "
+                "cross-language proof bridge and exhaustive full-subset coverage remain unresolved."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P12",
+            phase="transfer-and-identifiability",
+            title="Scaled quotient and transfer benchmark",
+            status="active",
+            horizon="next",
+            scientific_question=(
+                "Does quotient-conditioned inference remain calibrated when source families, "
+                "compiler configurations, optimizations, and architectures are held out?"
+            ),
+            conjecture=(
+                "A semantics-grounded observation channel can preserve more equivalence and "
+                "near-miss information than surface baselines under strict source-disjoint splits."
+            ),
+            primary_endpoint=(
+                "Clustered balanced accuracy, macro-F1, adjusted mutual information, calibration, "
+                "invariance gap, and near-miss separation on at least 64 independent families."
+            ),
+            falsifier=(
+                "Performance is explained by compiler, architecture, mnemonic, byte, or family "
+                "identity, or the expanded benchmark cannot be reproduced from its manifest."
+            ),
+            sampling_unit="source family × compiler/optimization × architecture × transformation",
+            dependencies=("P3", "P5", "P11"),
+            required_evidence=(
+                "hashed source-family manifest",
+                "source/compiler/architecture-disjoint splits",
+                "co-primary model and leakage portfolio",
+                "clustered statistics and negative controls",
+            ),
+            integrity_gates=(
+                "test families are frozen before final scoring",
+                "labels are formal-output-derived and absent from features",
+                "unavailable targets remain explicit",
+                "underpowered strata cannot be promoted",
+            ),
+            promotion_rule=(
+                "Promote only bounded transfer evidence that meets the preregistered family, "
+                "split, uncertainty, and practical-margin gates."
+            ),
+            stop_conditions=(
+                "duplicate or near-duplicate family leakage",
+                "a baseline or model cannot be computed",
+                "independent-family target is not reached",
+            ),
+            current_result=(
+                "The 64-family, 4096-row classifier benchmark is now generated with the declared "
+                "co-primary models and family-clustered statistics. The compiler/architecture matrix "
+                "and external-source track remain capability or blocked receipts, so broad transfer "
+                "and identifiability promotion remain unearned until the expanded scoring receipt passes."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P13",
+            phase="external-validity",
+            title="Licensed-source static external validation",
+            status="blocked_by_evidence",
+            horizon="long",
+            scientific_question=(
+                "Do the source-bound observations and quotient contracts survive labeled, "
+                "license-cleared real-source builds without unsafe binary execution?"
+            ),
+            conjecture=(
+                "A carefully documented source-level label contract can support static emitted-object "
+                "coverage and project-held-out transfer diagnostics."
+            ),
+            primary_endpoint=(
+                "Project-held-out descriptive and inferential transfer results with complete license, "
+                "revision, build, label-contract, and static-safety provenance."
+            ),
+            falsifier=(
+                "License or revision provenance is incomplete, builds cannot be reproduced, labels "
+                "depend on unsafe execution, or source overlap contaminates evaluation."
+            ),
+            sampling_unit="licensed project × revision × source function × compiler target",
+            dependencies=("P5", "P11", "P12"),
+            required_evidence=(
+                "pinned external-source manifest",
+                "at least five projects and 100 labelable examples for promotion",
+                "static-only compilation and disassembly receipts",
+                "independent acquisition/build replay",
+            ),
+            integrity_gates=(
+                "network retrieval is manifest-controlled",
+                "external binaries are never executed",
+                "unsupported cases remain visible",
+                "application claims remain blocked below the gate",
+            ),
+            promotion_rule=(
+                "Keep external results descriptive until every external-validity gate passes; "
+                "then promote only the measured endpoint actually supported."
+            ),
+            stop_conditions=(
+                "ambiguous license or source lineage",
+                "build commands require uncontrolled network or execution",
+                "fewer than the preregistered projects or examples are labelable",
+            ),
+            current_result=(
+                "The repository currently has a local static compiler capability receipt and no "
+                "licensed external-source effectiveness result."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P14",
+            phase="active-sensing",
+            title="Measured active-sensing robustness",
+            status="active",
+            horizon="next",
+            scientific_question=(
+                "Do active policies retain an information-per-measured-cost advantage under "
+                "alternative budgets, calibration runs, and non-oracle controls?"
+            ),
+            conjecture=(
+                "Finite policy certificates remain informative when deterministic instrumentation "
+                "costs are supplemented by machine-specific calibrated acquisition measurements."
+            ),
+            primary_endpoint=(
+                "Regret, information per deterministic and calibrated cost, and finite optimality "
+                "gap across held-out programs and declared policy baselines."
+            ),
+            falsifier=(
+                "The active policy does not beat fixed/random controls under measured costs or the "
+                "certificate is invalidated by a reproducible finite counterexample."
+            ),
+            sampling_unit="source program × sensor budget × policy family",
+            dependencies=("P6", "P12"),
+            required_evidence=(
+                "eight-component deterministic cost vectors",
+                "warm-up and repeated wall-clock calibration",
+                "exact dynamic-program reference",
+                "policy stress and residual diagnostics",
+            ),
+            integrity_gates=(
+                "actions cannot inspect unrevealed values",
+                "oracle remains an inadmissible reference",
+                "cross-machine comparisons require matching receipts",
+                "finite certificates are not universal laws",
+            ),
+            promotion_rule=(
+                "Promote only finite measured policy evidence unless a separate theorem and "
+                "independent replication support a broader statement."
+            ),
+            stop_conditions=(
+                "runtime language is used without a matching local calibration receipt",
+                "policy selection inspects held-out values",
+                "calibration residuals or action costs are not reproducible",
+            ),
+            current_result=(
+                "The current finite policy and local calibration receipts are valid bounded "
+                "diagnostics; broader active-sensing law remains unearned."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P15",
+            phase="replication",
+            title="Blind replication and adversarial audit",
+            status="blocked_by_evidence",
+            horizon="long",
+            scientific_question=(
+                "Do the primary quotient, transfer, and sensing endpoints survive a frozen public "
+                "manifest, no-network replay, and independently controlled analysis?"
+            ),
+            conjecture=(
+                "The source-bound receipts and primary endpoint definitions are sufficiently explicit "
+                "for an independent implementation to reproduce or falsify them."
+            ),
+            primary_endpoint=(
+                "Blind reproduction of preregistered primary endpoints, negative controls, and "
+                "failure cases with no original-code access to private labels."
+            ),
+            falsifier=(
+                "An independent analysis cannot reconstruct the data lineage, public hashes do not "
+                "freeze the benchmark, or the endpoint changes after unblinding."
+            ),
+            sampling_unit="independent implementation × frozen benchmark × primary endpoint",
+            dependencies=("P7", "P11", "P12", "P14"),
+            required_evidence=(
+                "public/private manifest separation",
+                "offline replay receipt",
+                "independent implementation or external replay record",
+                "adversarial leakage and counterexample report",
+            ),
+            integrity_gates=(
+                "gold labels remain outside public inputs",
+                "negative replication is preserved",
+                "original authors cannot edit the external result",
+                "replay status is not inferred from local reruns",
+            ),
+            promotion_rule=(
+                "Do not promote broad scientific or deployment claims without an external "
+                "replication receipt."
+            ),
+            stop_conditions=(
+                "public inputs contain recoverable labels",
+                "source or protocol hash changes do not invalidate receipts",
+                "the benchmark cannot be reconstructed from public materials",
+            ),
+            current_result=(
+                "A frozen local no-network harness exists; independent external replay has not "
+                "been observed and remains blocked."
+            ),
+        ),
+        ScientificMilestone(
+            milestone_id="P16",
+            phase="theory-and-publication",
+            title="Theorem/countertheorem synthesis and promotion",
+            status="planned",
+            horizon="long",
+            scientific_question=(
+                "Which theorem, impossibility result, or bounded countertheorem is genuinely "
+                "supported after the formal, empirical, transfer, sensing, and replication work?"
+            ),
+            conjecture=(
+                "The integrated evidence will either support a reusable theorem about bounded "
+                "observational quotients and sensing or produce a decisive counterexample that "
+                "changes the scientific interpretation of the program."
+            ),
+            primary_endpoint=(
+                "A checked theorem, explicit countertheorem, or unresolved result with complete "
+                "assumptions, proof/counterexample artifact, independent review status, and claim map."
+            ),
+            falsifier=(
+                "The proposed theorem is definitional, the assumptions hide the desired result, "
+                "or empirical success is substituted for formal proof."
+            ),
+            sampling_unit="formal model class and independently reviewed evidence bundle",
+            dependencies=("P11", "P12", "P13", "P14", "P15"),
+            required_evidence=(
+                "Lean or independently audited proof/counterexample",
+                "complete assumption and axiom report",
+                "external review receipt",
+                "source-bound publication artifact",
+            ),
+            integrity_gates=(
+                "theorem and empirical evidence remain separate",
+                "counterexamples are first-class outputs",
+                "publication language is generated from status receipts",
+                "recognition language is not used as evidence",
+            ),
+            promotion_rule=(
+                "Promote only the narrowest checked conclusion; retain unresolved or falsified "
+                "status where the evidence does not support a stronger claim."
+            ),
+            stop_conditions=(
+                "the result is only an engineering benchmark",
+                "proof review is unavailable",
+                "the evidence bundle is stale or source-unbound",
+            ),
+            current_result=(
+                "The existing theorem phase is fail-closed with a local Lean fragment and bounded "
+                "counterexample; this synthesis milestone is not yet started."
+            ),
+        ),
     )
 
 
@@ -565,8 +985,28 @@ def scientific_program_payload() -> dict[str, object]:
     status_counts: dict[str, int] = {}
     for milestone in milestones:
         status_counts[milestone.status] = status_counts.get(milestone.status, 0) + 1
+    protocol = scientific_protocol_payload()
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes={"src/scientific_program.py": sha256_path(Path(__file__))},
+        toolchain_versions=toolchain_versions(()),
+        status="implemented_local",
+        limitations=(
+            "This artifact is a falsifiable research contract, not evidence that future milestones have been achieved.",
+            "Promotion remains gated by source-bound receipts, negative controls, and independent evidence.",
+        ),
+        unsupported_cases=(
+            "The roadmap does not substitute for a complete x86-64 theorem, universal identifiability, or external validity.",
+        ),
+        underpowered_cases=(
+            "P13, P15, and P16 remain blocked or planned until their evidence gates pass.",
+        ),
+    )
     return {
+        **envelope,
         "schema_version": SCIENTIFIC_PROGRAM_SCHEMA_VERSION,
+        "artifact": SCIENTIFIC_PROGRAM_ARTIFACT,
         "program_id": "active-assembly-quotient-inference",
         "program_title": "Operationally invariant inference for computational motifs",
         "central_question": (
@@ -594,8 +1034,8 @@ def scientific_program_payload() -> dict[str, object]:
         "current_evidence_boundary": (
             "The repository demonstrates a source-bound x86-64 observation bridge, controlled "
             "temporal mechanisms, typed/action-conditioned diagnostics, leakage-safe ordered-HMM "
-            "parameter learning on six transparent fixtures, and bounded P3-P8 implementation "
-            "receipts. The extensions remain local or finite: they do not establish semantic "
+            "parameter learning on six transparent fixtures, and bounded P3-P10 implementation "
+            "receipts with active P11-P16 promotion contracts. The extensions remain local or finite: they do not establish semantic "
             "identifiability, broad cross-architecture/compiler invariance, external validity, a "
             "general theorem, or independent replication."
         ),
@@ -624,6 +1064,14 @@ def validate_scientific_program_payload(
 
     if payload.get("schema_version") != SCIENTIFIC_PROGRAM_SCHEMA_VERSION:
         return False, f"schema={payload.get('schema_version')}"
+    protocol = scientific_protocol_payload()
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"scientific program receipt: {receipt_detail}"
+    if payload.get("status") != "implemented_local":
+        return False, "scientific program evidence status is invalid"
     milestones = payload.get("milestones")
     if not isinstance(milestones, list) or not milestones:
         return False, "milestones must be a non-empty list"

@@ -81,8 +81,9 @@ tranche now makes that boundary explicit. `action_sensing.json` chooses typed
 field queries before revealing held-out values and compares active, fixed,
 seeded-random, and inadmissible-oracle policies under one normalized budget.
 This is a genuine sensor-choice mechanism test, but it remains a small
-fixture-level result: normalized costs are not runtime measurements, the oracle
-is not deployable, and no autonomous sensing claim is made.
+fixture-level result: the normalized action budget is not the primary measured
+cost vector, local timing calibration is machine-specific, the oracle is not
+deployable, and no autonomous sensing claim is made.
 
 Three further tranches make the roadmap more rigorous without inflating the
 claim. First, the formal receipt `{{FORMAL_VERIFICATION_ARTIFACT}}` reports a
@@ -98,8 +99,10 @@ adapter-drift benchmark, not cross-ISA semantic equivalence or compiler
 invariance. Third, the exact finite sensor analysis
 `{{ACTIVE_INFORMATION_ARTIFACT}}` contains `{{ACTIVE_INFORMATION_SENSOR_COUNT}}`
 channels and `{{ACTIVE_INFORMATION_FRONTIER_ROW_COUNT}}` frontier rows, with
-exhaustive enumeration recorded as `{{ACTIVE_INFORMATION_EXACT}}`. Its proxy
-costs and finite horizon preclude a general information-per-cost law.
+exhaustive enumeration recorded as `{{ACTIVE_INFORMATION_EXACT}}`. The
+companion measured-cost receipt records deterministic sensor vectors and
+optional local calibration; both analyses remain finite and therefore preclude
+a general information-per-cost law.
 
 The research program now proceeds through coupled measurement, formal,
 identifiability, transfer, active-sensing, and replication expansions. The
@@ -162,19 +165,27 @@ sensitivity check rather than a competing fitted model.
 
 ![Primary final-`RAX` equivalence consistency and near-miss separation for the source-family benchmark, alongside the deliberately insufficient single-state negative control. Bars are family-level endpoint proportions and whiskers are descriptive 95% Wilson intervals; unresolved negative-control near misses remain visible as a protocol-sensitivity result rather than being silently excluded.]({{REPRESENTATION_BENCHMARK_FIGURE}}){#fig:representation-invariance-benchmark width=88%}
 
-## Current promotion ledger for P3--P8 {#sec:promotion-ledger}
+## Current promotion ledger for P3--P16 {#sec:promotion-ledger}
 
 The open roadmap is now executable in bounded local tranches, but its
 promotion state remains deliberately asymmetric:
 
 | Phase | Earned local evidence | What remains unearned |
 | --- | --- | --- |
-| P3 quotient benchmark | source-family-disjoint quotient labels, three-way classifier portfolio, clustered intervals, calibration, and negative controls | larger independent family count, independent implementation, and any claim of semantic discovery |
-| P4 formal correspondence | Python reference versus real Capstone/Unicorn step comparison plus a separately kernel-checked Lean fragment | broad Lean/Python correspondence theorem for the full declared user-mode subset |
-| P5 transfer | local Clang capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
-| P6 active sensing | deterministic vectors, local calibration, and exact finite dynamic-program certificates | measured acquisition model across hardware and non-oracle near-optimal policy evidence |
-| P7 replication | frozen no-network CLI, public/gold separation, hash validation, and replay metadata | independent external replay by a separately controlled implementation |
+| P3 quotient benchmark | 64-family source-disjoint quotient labels, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent implementation and any claim of semantic discovery |
+| P4 formal correspondence | explicit 16-register/width-aware Python state, real Capstone/Unicorn step comparison, and a separately kernel-checked Lean fragment | broad Lean/Python correspondence theorem for the full declared user-mode subset |
+| P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
+| P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |
+| P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, and replay metadata | independent external replay by a separately controlled implementation |
 | P8 theorem phase | proved small algebraic theorem group and automatically generated bounded counterexample | broad trace theorem, transfer guarantee, or field-changing general result |
+| P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
+| P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
+| P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
+| P12 scaled transfer/quotient | 64-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
+| P13 licensed external validation | pinned manifest, static-only acquisition/compiler path, and explicit blocked receipt | application-facing effectiveness until project/revision/example/replay gates pass |
+| P14 measured policy robustness | deterministic/calibrated cost receipts and finite oracle certificate | universal cost law or non-oracle near-optimality claim |
+| P15 blind replication | public/private label separation and offline replay interface | independent replication until a separately controlled replay receipt exists |
+| P16 promotion hardening | theorem/countertheorem status map, source-bound claim/figure/scholarship closure, and accessible regeneration path | publication or award-level claim absent independent scientific review |
 
 The theorem/countertheorem receipt is
 `{{THEOREM_COUNTERTHEOREM_ARTIFACT}}`. Its fail-closed status is
@@ -186,13 +197,15 @@ true.” The local formal proof count is `{{THEOREM_PROVED_COUNT}}`, while
 `{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` result(s) remain computationally
 validated rather than kernel proved.
 
-The application-facing gate is still closed. The compiler track's external
-manifest is `{{COMPILER_EXTERNAL_STATUS}}`; the correspondence is
-`{{FORMAL_CORRESPONDENCE_STATUS}}`; and the replication bundle reports only
-local label separation `{{REPLICATION_LABEL_SEPARATED}}`. Until licensed-source
-provenance, project-held-out labels, static-only safety, reproducible local
-builds, and independent replay all pass together, the manuscript will use
-“demonstrator,” “bounded endpoint,” and “capability receipt,” not “general
+Application-facing promotion remains closed: the compiler track's external
+manifest is `{{COMPILER_EXTERNAL_STATUS}}`, the licensed-source receipt is
+`{{EXTERNAL_SOURCE_STATUS}}` with `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` project
+families and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples,
+the correspondence is `{{FORMAL_CORRESPONDENCE_STATUS}}`, and the replication
+bundle reports only local label separation
+`{{REPLICATION_LABEL_SEPARATED}}`. Until licensed provenance,
+project-held-out labels, static-only safety, reproducible builds, and
+independent replay pass together, this manuscript uses “demonstrator,”
+“bounded endpoint,” and “capability receipt” rather than “general
 reverse-engineering system,” “architecture invariant,” or “application
-effectiveness.” This is not a rhetorical limitation; it is the promotion rule
-that keeps ambitious extension compatible with scientific integrity.
+effectiveness.” This rule protects scientific integrity.

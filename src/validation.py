@@ -34,12 +34,22 @@ from .docx_validation import (
     validate_docx_render_payload,
     validate_docx_render_receipt,
 )
+from .external_sources import (
+    EXTERNAL_MANIFEST_SCHEMA_VERSION,
+    external_source_validation_payload,
+    validate_external_source_validation_payload,
+)
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .factorized_model import FACTOR_MODEL_SCHEMA_VERSION
 from .information_policy import (
     INFORMATION_POLICY_SCHEMA_VERSION,
     active_information_payload,
     validate_active_information_payload,
+)
+from .intervention_analysis import (
+    INTERVENTION_ANALYSIS_SCHEMA_VERSION,
+    intervention_power_payload,
+    validate_intervention_power_payload,
 )
 from .formal_verification import (
     FORMAL_SCHEMA_VERSION,
@@ -1837,6 +1847,42 @@ def _representation_invariance_checks(
     ]
 
 
+def _intervention_power_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate exact finite intervention-subset enumeration and freshness."""
+
+    path = project_root / "output" / "data" / "intervention_power.json"
+    if not path.exists():
+        return [
+            _check("intervention_power_contract", False, "artifact missing"),
+            _check("intervention_power_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_intervention_power_payload(payload)
+        fresh = intervention_power_payload()
+        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
+            fresh, sort_keys=True
+        )
+    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
+        return [
+            _check("intervention_power_contract", False, str(exc)),
+            _check("intervention_power_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check(
+            "intervention_power_contract",
+            valid
+            and payload.get("schema_version") == INTERVENTION_ANALYSIS_SCHEMA_VERSION,
+            detail,
+        ),
+        _check(
+            "intervention_power_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
 def _cross_architecture_checks(project_root: Path) -> list[ValidationCheck]:
     """Validate the real multi-architecture Capstone/Unicorn fixture receipt."""
 
@@ -2102,7 +2148,10 @@ def _sensor_cost_checks(project_root: Path) -> list[ValidationCheck]:
     try:
         payload = _load_json(path)
         valid, detail = validate_sensor_cost_payload(payload)
-        fresh = sensor_cost_payload()
+        # Reuse the matching local calibration receipt. Timing samples are
+        # measured observations, not deterministic source values; regenerating
+        # them during a freshness check would manufacture a false mismatch.
+        fresh = sensor_cost_payload(project_root, reuse_existing=True)
         fresh_match = _stable_sensor_cost_payload(
             payload
         ) == _stable_sensor_cost_payload(fresh)
@@ -2121,6 +2170,41 @@ def _sensor_cost_checks(project_root: Path) -> list[ValidationCheck]:
             "sensor_cost_freshness",
             fresh_match,
             f"stable_recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
+def _external_source_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate the offline, static-only external-source promotion boundary."""
+
+    path = project_root / "output" / "data" / "external_source_validation.json"
+    if not path.exists():
+        return [
+            _check("external_source_contract", False, "artifact missing"),
+            _check("external_source_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_external_source_validation_payload(payload)
+        fresh = external_source_validation_payload(project_root)
+        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
+            fresh, sort_keys=True
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return [
+            _check("external_source_contract", False, str(exc)),
+            _check("external_source_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check(
+            "external_source_contract",
+            valid and payload.get("schema_version") == EXTERNAL_MANIFEST_SCHEMA_VERSION,
+            detail,
+        ),
+        _check(
+            "external_source_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
         ),
     ]
 
@@ -2642,6 +2726,7 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_scientific_program_checks(project_root))
     checks.extend(_quotient_invariance_checks(project_root))
     checks.extend(_representation_invariance_checks(project_root))
+    checks.extend(_intervention_power_checks(project_root))
     checks.extend(_cross_architecture_checks(project_root))
     checks.extend(_formal_verification_checks(project_root))
     checks.extend(_active_information_checks(project_root))
@@ -2650,6 +2735,7 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_formal_correspondence_checks(project_root))
     checks.extend(_compiler_transfer_checks(project_root))
     checks.extend(_sensor_cost_checks(project_root))
+    checks.extend(_external_source_checks(project_root))
     checks.extend(_replication_checks(project_root))
     checks.extend(_theorem_countertheorem_checks(project_root))
     checks.extend(

@@ -18,24 +18,48 @@ from typing import Any
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_MODE_64, Cs
 
-from .provenance import generator_revision, toolchain_versions
+from .provenance import generator_revision, sha256_path, toolchain_versions
+from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-COMPILER_TRANSFER_SCHEMA_VERSION = "1.0.0"
+COMPILER_TRANSFER_SCHEMA_VERSION = "2.0.0"
 COMPILER_TRANSFER_ARTIFACT = "output/data/compiler_transfer.json"
 _HEX_LINE = re.compile(r"^\s*[0-9a-fA-F]+:\s+((?:[0-9a-fA-F]{2}\s+)+)")
 _WORD_LINE = re.compile(r"^\s*[0-9a-fA-F]+:\s+([0-9a-fA-F]{8})\s+")
 
 SOURCE_FAMILIES = {
-    "arithmetic_branch": (
+    "straight_line_arithmetic": (
         "unsigned long aa_add(unsigned long x) { return x + 1; }\n"
-        "unsigned long aa_branch(unsigned long x) { return x > 7 ? x + 2 : x - 2; }\n"
+        "unsigned long aa_mix(unsigned long x) { return (x + 3) * 2; }\n"
     ),
-    "memory_local": (
-        "unsigned long aa_memory(unsigned long x) { unsigned long y = x + 3; return y * 2; }\n"
+    "flag_sensitive_branch": (
+        "unsigned long aa_branch(unsigned long x) { return x > 7 ? x + 2 : x - 2; }\n"
+        "unsigned long aa_zero(unsigned long x) { return x == 0 ? 17 : x; }\n"
+    ),
+    "bounded_memory": (
+        "unsigned long aa_memory(unsigned long x) {\n"
+        "  unsigned long values[2] = {x, x + 1};\n"
+        "  return values[0] + values[1];\n"
+        "}\n"
+    ),
+    "stack_local": (
+        "unsigned long aa_stack(unsigned long x) {\n"
+        "  unsigned long local = x ^ 0x55UL;\n"
+        "  return local + 9;\n"
+        "}\n"
+    ),
+    "call_return": (
+        "static unsigned long aa_helper(unsigned long x) { return x + 4; }\n"
+        "unsigned long aa_call(unsigned long x) { return aa_helper(x) * 2; }\n"
+    ),
+    "bitwise_rewrite": (
+        "unsigned long aa_bits(unsigned long x) {\n"
+        "  return ((x << 1) | (x >> 3)) ^ 0xA5UL;\n"
+        "}\n"
     ),
 }
+OPTIMIZATION_LEVELS = ("-O0", "-O2")
 TARGETS = {
     "x86_64": "x86_64-apple-darwin",
     "aarch64": "aarch64-apple-darwin",
@@ -105,8 +129,14 @@ def _decode_bytes(code: bytes, architecture: str) -> list[dict[str, Any]]:
 
 
 def _compile_one(
-    source_id: str, source: str, target_id: str, target: str
+    source_id: str,
+    source: str,
+    target_id: str,
+    target: str,
+    optimization: str = "-O0",
 ) -> dict[str, Any]:
+    if optimization not in OPTIMIZATION_LEVELS:
+        raise ValueError(f"unsupported optimization level {optimization!r}")
     source_bytes = source.encode("utf-8")
     base: dict[str, Any] = {
         "source_id": source_id,
@@ -115,7 +145,7 @@ def _compile_one(
         "source_sha256": _sha256_bytes(source_bytes),
         "compiler": "clang",
         "compiler_version": _compiler_version(),
-        "optimization": "-O0",
+        "optimization": optimization,
         "execution_performed": False,
         "analysis_mode": "static_object_disassembly_only",
     }
@@ -126,7 +156,7 @@ def _compile_one(
             "-target",
             target,
             "-c",
-            "-O0",
+            optimization,
             "-x",
             "c",
             "-o",
@@ -180,33 +210,55 @@ def _compile_one(
 def compiler_transfer_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
     """Compile the portable source families and record exact capabilities."""
 
-    del project_root
     rows = [
-        _compile_one(source_id, source, target_id, target)
+        _compile_one(source_id, source, target_id, target, optimization)
         for source_id, source in SOURCE_FAMILIES.items()
         for target_id, target in TARGETS.items()
+        for optimization in OPTIMIZATION_LEVELS
     ]
     available = [row for row in rows if row["status"] == "validated_static_object"]
     protocol = scientific_protocol_payload()
-    return {
-        "schema_version": COMPILER_TRANSFER_SCHEMA_VERSION,
-        "artifact": COMPILER_TRANSFER_ARTIFACT,
-        "protocol_id": protocol["protocol_id"],
-        "protocol_sha256": protocol["protocol_sha256"],
-        "generator_revision": generator_revision(Path(__file__)),
-        "input_hashes": {
-            f"source:{source_id}": _sha256_bytes(source.encode("utf-8"))
-            for source_id, source in SOURCE_FAMILIES.items()
-        },
-        "toolchain_versions": {
+    limitations = [
+        "local compiler capability is not a cross-version compiler study",
+        "static object disassembly does not establish semantic equivalence",
+        "RISC-V remains explicit unavailable when local Clang lacks the target",
+    ]
+    unsupported_cases = [
+        "No emitted object is executed; external validation is static-only.",
+        "Instruction effects outside the declared formal subset remain unsupported for semantic scoring.",
+    ]
+    underpowered_cases = [
+        "The local matrix is a capability receipt, not a 64-family transfer study.",
+        "The licensed-source external manifest is not yet populated.",
+    ]
+    source_hashes = {
+        f"source:{source_id}": _sha256_bytes(source.encode("utf-8"))
+        for source_id, source in SOURCE_FAMILIES.items()
+    }
+    source_hashes["src/compiler_transfer.py"] = sha256_path(Path(__file__))
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes=source_hashes,
+        toolchain_versions={
             **toolchain_versions(("capstone",)),
             "clang": _compiler_version(),
             "objdump": "local executable",
         },
-        "status": "local_capability_receipt",
+        status="implemented_local",
+        limitations=limitations,
+        unsupported_cases=unsupported_cases,
+        underpowered_cases=underpowered_cases,
+    )
+    return {
+        **envelope,
+        "schema_version": COMPILER_TRANSFER_SCHEMA_VERSION,
+        "artifact": COMPILER_TRANSFER_ARTIFACT,
+        "endpoint_status": "local_capability_receipt",
         "source_family_disjoint": True,
         "compiler_matrix_claim": "only rows with validated_static_object status",
         "architecture_matrix_claim": "only targets with validated_static_object status",
+        "optimization_matrix_claim": "only declared optimization levels with validated_static_object status",
         "execution_performed": False,
         "source_families": [
             {
@@ -221,6 +273,10 @@ def compiler_transfer_payload(project_root: Path = PROJECT_ROOT) -> dict[str, An
             "validated_static_objects": len(available),
             "unavailable_rows": len(rows) - len(available),
             "architectures_validated": sorted({row["target_id"] for row in available}),
+            "optimization_levels_validated": sorted(
+                {row["optimization"] for row in available}
+            ),
+            "source_family_count": len(SOURCE_FAMILIES),
             "compiler": "clang",
         },
         "external_source_manifest": {
@@ -230,11 +286,9 @@ def compiler_transfer_payload(project_root: Path = PROJECT_ROOT) -> dict[str, An
             "arbitrary_external_execution": False,
         },
         "rows": rows,
-        "limitations": [
-            "local compiler capability is not a cross-version compiler study",
-            "static object disassembly does not establish semantic equivalence",
-            "RISC-V remains explicit unavailable when local Clang lacks the target",
-        ],
+        "limitations": limitations,
+        "unsupported_cases": unsupported_cases,
+        "underpowered_cases": underpowered_cases,
     }
 
 
@@ -246,8 +300,13 @@ def validate_compiler_transfer_payload(payload: object) -> tuple[bool, str]:
     if payload.get("schema_version") != COMPILER_TRANSFER_SCHEMA_VERSION:
         return False, "compiler transfer schema mismatch"
     protocol = scientific_protocol_payload()
-    if payload.get("protocol_sha256") != protocol["protocol_sha256"]:
-        return False, "compiler transfer protocol hash mismatch"
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"compiler transfer receipt: {receipt_detail}"
+    if payload.get("status") != "implemented_local":
+        return False, "compiler transfer evidence status is invalid"
     if (
         not isinstance(payload.get("generator_revision"), str)
         or not isinstance(payload.get("input_hashes"), dict)
@@ -266,6 +325,8 @@ def validate_compiler_transfer_payload(payload: object) -> tuple[bool, str]:
             return False, "compiler transfer row is not an object"
         if row.get("status") not in {"validated_static_object", "unavailable"}:
             return False, "compiler transfer row has unknown status"
+        if row.get("optimization") not in OPTIMIZATION_LEVELS:
+            return False, "compiler transfer row has unknown optimization level"
         if row.get("execution_performed") is not False:
             return False, "compiler transfer row execution flag drift"
         if row.get("status") == "validated_static_object":

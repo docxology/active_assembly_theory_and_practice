@@ -27,7 +27,9 @@ checks the artifacts that a normal test suite can miss:
 - fixed-parameter generative adequacy contract and freshness;
 - action-conditioned sensing contract, held-out freshness, and no-peeking guard;
 - observation-only ordered-HMM parameter-learning contract, held-out freshness,
-  and no-labels-in-fit guard;
+  no-labels-in-fit guard, and complete multi-start/seed-sensitivity rows;
+- exact finite intervention-power contract, subset enumeration, negative
+  control, fail-closed promotion status, and freshness;
 - bounded quotient protocol and source-family representation-invariance
   witnesses, including retained negative-control separation failures;
 - real multi-architecture Capstone/Unicorn fixture contract and freshness;

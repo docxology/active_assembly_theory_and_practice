@@ -22,6 +22,8 @@ their deterministic artifacts under ``output/data``:
   witnesses for the next quotient-state research tranche.
 * ``representation_invariance_benchmark.json`` — source-family-disjoint
   transformation families, preregistered P3 endpoints, and protocol diagnostics.
+* ``intervention_power.json`` — exact enumeration of every non-empty intervention
+  subset, its near-miss separation power, and finite minimal separators.
 * ``cross_architecture_fixtures.json`` — real Capstone/Unicorn execution of one
   transparent numeric operation on x86-64, AArch64, and RISC-V64.
 * ``formal_verification.json`` — a source-bound receipt for the compiled Lean
@@ -64,10 +66,12 @@ from .generative_model import build_generative_model
 from .model_fitting import leave_one_fixture_out_evaluation
 from .multi_arch import cross_architecture_payload, validate_cross_architecture_payload
 from .compiler_transfer import write_compiler_transfer
+from .external_sources import write_external_source_validation_payload
 from .information_policy import (
     active_information_payload,
     validate_active_information_payload,
 )
+from .intervention_analysis import write_intervention_power_payload
 from .parameter_learning import parameter_learning_payload
 from .phase_segmentation import segment_phases
 from .quotient_invariance import write_quotient_invariance_protocol
@@ -467,6 +471,9 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "representation_invariance_benchmark": write_representation_invariance_benchmark(
             output_dir.parent
         ),
+        "intervention_power": str(
+            local_path(write_intervention_power_payload(output_dir.parent))
+        ),
         "scientific_program": write_scientific_program(output_dir.parent),
         "research_protocol": local_path(write_scientific_protocol(output_dir.parent)),
         "quotient_classifier": str(
@@ -497,6 +504,14 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
             data_dir / "held_out_model.json", held_out_model_payload()
         ),
     }
+    # The canonical checkout has the pinned external-source manifest.  Small
+    # temporary roots used by unit tests intentionally do not; absence there
+    # must not turn a local fixture test into an implicit network operation.
+    external_manifest = output_dir.parent / "configs" / "external_sources.yaml"
+    if external_manifest.is_file():
+        paths["external_source_validation"] = str(
+            local_path(write_external_source_validation_payload(output_dir.parent))
+        )
     if output_dir.resolve() == OUTPUT_DIR.resolve():
         paths["formal_verification"] = write_formal_verification(PROJECT_ROOT)
     return paths

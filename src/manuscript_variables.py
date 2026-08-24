@@ -92,6 +92,11 @@ def generate_variables() -> dict[str, str]:
             ADVANCED_OUTPUT_DIR / "data" / "representation_invariance_benchmark.json"
         ).read_text(encoding="utf-8")
     )
+    intervention_power_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "intervention_power.json").read_text(
+            encoding="utf-8"
+        )
+    )
     cross_architecture_report = json.loads(
         (ADVANCED_OUTPUT_DIR / "data" / "cross_architecture_fixtures.json").read_text(
             encoding="utf-8"
@@ -142,6 +147,11 @@ def generate_variables() -> dict[str, str]:
             encoding="utf-8"
         )
     )
+    external_source_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "external_source_validation.json").read_text(
+            encoding="utf-8"
+        )
+    )
     memory_evidence = json.loads(
         (ADVANCED_OUTPUT_DIR / "data" / "memory_evidence.json").read_text(
             encoding="utf-8"
@@ -178,6 +188,7 @@ def generate_variables() -> dict[str, str]:
         for row in representation_benchmark_report["negative_control"]["pairs"]
         if row["variant_role"] == "near_miss"
     )
+    intervention_negative_control = intervention_power_report["negative_control"]
     temporal_phase_sequence = " -> ".join(
         str(label).replace("_", " ")
         for label in first_fixture_evaluation["temporal_labels"]
@@ -389,6 +400,12 @@ def generate_variables() -> dict[str, str]:
         "PARAMETER_LEARNING_LEAKAGE_FREE": (
             "yes" if parameter_learning_summary["leakage_free"] else "no"
         ),
+        "PARAMETER_LEARNING_MULTI_START_COUNT": str(
+            parameter_learning_summary["multi_start_count"]
+        ),
+        "PARAMETER_LEARNING_MULTI_START_MEAN_ACCURACY": f"{parameter_learning_summary['multi_start_mean_accuracy']:.3f}",
+        "PARAMETER_LEARNING_MULTI_START_MEAN_RANGE": f"{parameter_learning_summary['multi_start_mean_accuracy_range']:.3f}",
+        "PARAMETER_LEARNING_MULTI_START_MEAN_AGREEMENT": f"{parameter_learning_summary['multi_start_mean_pairwise_label_agreement']:.3f}",
         "SCIENTIFIC_PROGRAM_ARTIFACT": f"../{advanced_paths['scientific_program']}",
         "SCIENTIFIC_PROGRAM_MILESTONE_COUNT": str(
             len(scientific_program_report["milestones"])
@@ -421,6 +438,23 @@ def generate_variables() -> dict[str, str]:
         "REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_UNSEPARATED_COUNT": str(
             representation_negative_control_unseparated_count
         ),
+        "INTERVENTION_POWER_ARTIFACT": f"../{advanced_paths['intervention_power']}",
+        "INTERVENTION_POWER_SUBSET_COUNT": str(
+            intervention_power_report["subset_count"]
+        ),
+        "INTERVENTION_POWER_PAIR_COUNT": str(intervention_power_report["pair_count"]),
+        "INTERVENTION_POWER_MINIMAL_CARDINALITY": str(
+            intervention_power_report["minimal_separating_cardinality"]
+            if intervention_power_report["minimal_separating_cardinality"] is not None
+            else "not available"
+        ),
+        "INTERVENTION_POWER_MINIMAL_SET_COUNT": str(
+            len(intervention_power_report["minimal_separating_sets"])
+        ),
+        "INTERVENTION_POWER_SINGLE_STATE_SEPARATION": f"{intervention_negative_control['near_miss_separation']:.3f}",
+        "INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT": str(
+            len(intervention_negative_control["unresolved_near_miss_families"])
+        ),
         "CROSS_ARCHITECTURE_ARTIFACT": f"../{advanced_paths['cross_architecture_fixtures']}",
         "CROSS_ARCHITECTURE_COUNT": str(
             cross_architecture_summary["architecture_count"]
@@ -436,7 +470,11 @@ def generate_variables() -> dict[str, str]:
         "FORMAL_VERIFICATION_ARTIFACT": f"../{advanced_paths['formal_verification']}",
         "FORMAL_TOOLCHAIN": str(formal_verification_report["toolchain"]),
         "FORMAL_THEOREM_COUNT": str(len(formal_verification_report["theorems"])),
-        "FORMAL_VERIFICATION_STATUS": str(formal_verification_report["status"]),
+        "FORMAL_VERIFICATION_STATUS": str(
+            formal_verification_report.get(
+                "endpoint_status", formal_verification_report["status"]
+            )
+        ),
         "ACTIVE_INFORMATION_ARTIFACT": f"../{advanced_paths['active_information_frontier']}",
         "ACTIVE_INFORMATION_SENSOR_COUNT": str(
             len(active_information_report["sensors"])
@@ -465,6 +503,9 @@ def generate_variables() -> dict[str, str]:
         "QUOTIENT_CLASSIFIER_HELD_OUT_FAMILY_COUNT": str(
             quotient_classifier_report["held_out_family_count"]
         ),
+        "QUOTIENT_CLASSIFIER_INTERVENTION_COUNT": str(
+            len(quotient_classifier_report["interventions"])
+        ),
         "QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY": f"{quotient_classifier_report['models']['calibrated_interpretable']['balanced_accuracy']:.3f}",
         "QUOTIENT_CLASSIFIER_INTERPRETABLE_MACRO_F1": f"{quotient_classifier_report['models']['calibrated_interpretable']['macro_f1']:.3f}",
         "QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY": f"{quotient_classifier_report['models']['temporal_probabilistic']['balanced_accuracy']:.3f}",
@@ -473,6 +514,17 @@ def generate_variables() -> dict[str, str]:
         "QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1": f"{quotient_classifier_report['models']['neural_sequence']['macro_f1']:.3f}",
         "QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY": f"{quotient_classifier_report['models']['surface_baseline']['balanced_accuracy']:.3f}",
         "QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1": f"{quotient_classifier_report['models']['surface_baseline']['macro_f1']:.3f}",
+        "QUOTIENT_CLASSIFIER_RAW_BASELINE_COUNT": str(
+            len(quotient_classifier_report["baseline_models"])
+        ),
+        "QUOTIENT_CLASSIFIER_RAW_COMPARISON_COUNT": str(
+            sum(
+                len(rows)
+                for rows in quotient_classifier_report[
+                    "surface_baseline_comparisons"
+                ].values()
+            )
+        ),
         "FORMAL_CORRESPONDENCE_ARTIFACT": f"../{advanced_paths['formal_trace_correspondence']}",
         "FORMAL_CORRESPONDENCE_STATUS": str(formal_correspondence_report["status"]),
         "FORMAL_CORRESPONDENCE_FIXTURE_COUNT": str(
@@ -500,6 +552,15 @@ def generate_variables() -> dict[str, str]:
         "COMPILER_EXTERNAL_STATUS": str(
             compiler_transfer_report["external_source_manifest"]["status"]
         ),
+        "EXTERNAL_SOURCE_ARTIFACT": f"../{advanced_paths['external_source_validation']}",
+        "EXTERNAL_SOURCE_STATUS": str(external_source_report["status"]),
+        "EXTERNAL_SOURCE_PROJECT_COUNT": str(external_source_report["project_count"]),
+        "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": str(
+            external_source_report["labelable_example_count"]
+        ),
+        "EXTERNAL_SOURCE_GATE_COUNT": str(
+            len(external_source_report["promotion_gate"])
+        ),
         "SENSOR_COST_ARTIFACT": f"../{advanced_paths['sensor_cost_receipt']}",
         "SENSOR_COST_SENSOR_COUNT": str(len(sensor_cost_report["sensors"])),
         "SENSOR_CERTIFICATE_COUNT": str(len(sensor_cost_report["policy_certificates"])),
@@ -523,7 +584,7 @@ def generate_variables() -> dict[str, str]:
         ),
         "THEOREM_COMPUTATIONAL_ONLY_COUNT": str(
             sum(
-                item.get("status") == "computationally_validated_only"
+                item.get("status") == "computationally_validated"
                 for item in theorem_report["candidate_theorems"]
             )
         ),
@@ -655,6 +716,7 @@ def generate_variables() -> dict[str, str]:
         "REPRESENTATION_BENCHMARK_FIGURE": (
             f"../{advanced_figure_paths['representation_invariance_benchmark']}"
         ),
+        "INTERVENTION_POWER_FIGURE": f"../{advanced_figure_paths['intervention_power']}",
         "CROSS_ARCHITECTURE_FIGURE": (
             f"../{advanced_figure_paths['cross_architecture_benchmark']}"
         ),
@@ -669,6 +731,9 @@ def generate_variables() -> dict[str, str]:
         "FORMAL_CORRESPONDENCE_FIGURE": f"../{advanced_figure_paths['formal_correspondence']}",
         "SENSOR_COST_FIGURE": f"../{advanced_figure_paths['sensor_costs']}",
         "REPLICATION_FIGURE": f"../{advanced_figure_paths['replication_manifest']}",
+        "EXTERNAL_SOURCE_PROVENANCE_FIGURE": (
+            f"../{advanced_figure_paths['external_source_provenance']}"
+        ),
         "COVER_IMAGE_ARTIFACT": "manuscript/assets/active_assembly_cover.png",
         "DOCX_RENDER_ARTIFACT": (
             "../output/docx/active_assembly_theory_and_practice_combined.docx"

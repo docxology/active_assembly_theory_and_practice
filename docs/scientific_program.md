@@ -8,8 +8,9 @@ feature roadmap. The program is generated as a machine-readable receipt at
 
 The current repository is not a prize-level result. It is a carefully bounded
 measurement and inference demonstrator whose core temporal corpus contains six
-transparent x86-64 fixtures, augmented by a separate 16-family quotient
-benchmark and bounded P3--P8 research receipts.
+transparent x86-64 fixtures, augmented by a 64-family co-primary quotient
+benchmark, a separate four-state representation pilot, and bounded P3--P16
+research receipts.
 Its value is that it supplies a trustworthy starting instrument: the trace
 lineage is visible, the observation channel is explicit, negative results are
 retained, the manuscript is hydrated from producer artifacts, and the PDF is
@@ -82,12 +83,20 @@ the generated program receipt. The abbreviated sequence is:
 | P0 | Source-bound assembly observation bridge | Implemented locally | Exact trace lineage and fail-closed bounded semantics |
 | P1 | Temporal inference under controlled ambiguity | Implemented locally | A preregistered mechanism result with both null and positive directions |
 | P2 | Observation-only parameter learning | Implemented locally | Leakage-safe held-out estimation with negative result preserved |
-| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 16-family source-disjoint benchmark, co-primary classifier portfolio, clustered statistics, and non-separating control; only four held-out families prevent a broad claim |
-| P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Real Capstone/Unicorn step matching plus a separate Lean fragment; no full-ISA Lean/Python theorem |
-| P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local Clang/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
-| P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Deterministic cost vectors, local calibration, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
-| P7 | Independent implementation and open challenge | Implemented local frozen harness; independent replay unearned | No-network CLI, label-separated public/gold manifests, hash validation, and replay receipt |
+| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 64-family source-disjoint co-primary benchmark, clustered statistics, leakage controls, and a separate four-state representation pilot; no semantic-discovery claim |
+| P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Explicit 16-register, width-aware Python state, real Capstone/Unicorn step matching, and a separate Lean fragment; no full-ISA Lean/Python theorem |
+| P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local compiler/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
+| P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Eight-component deterministic costs, local calibration with overhead/regression diagnostics, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
+| P7 | Independent implementation and open challenge | Implemented local frozen harness; independent replay unearned | No-network CLI, digest-ordered label-blind public inputs, private gold separation, hash validation, and replay receipt |
 | P8 | General theorem or decisive countertheorem | Implemented fail-closed phase; broad theorem unresolved | Checked local theorem group, finite computational certificate, and generated bounded counterexample; no broad theorem promotion |
+| P9 | Finite intervention power and separating sets | Implemented finite diagnostic; identifiability promotion blocked | Exhaustive enumeration of the separate four-state pilot catalog, minimum separating sets, and one-state negative control; no universal identifiability claim |
+| P10 | Initialization robustness of observation-only learning | Implemented finite robustness diagnostic; stability promotion blocked | Five-start holdout ledger with accuracy spread and sequence agreement; no stable latent-parameter claim |
+| P11 | Complete normalized machine-state correspondence | Active bounded implementation; cross-language bridge unresolved | 64-bit all-GPR state, width/flag/memory boundary tests, Lean normalized-state definitions, and explicit unsupported outcomes |
+| P12 | Scaled transfer and quotient evaluation | Active promotion candidate; external evidence absent | 64-family classifier receipt, compiler/source/architecture capability matrix, and source-bound split/leakage receipts |
+| P13 | Licensed-source external validation | Blocked by evidence | Pinned license/revision/archive/build manifest, static-only acquisition, five-project/two-revision/100-example gates, and independent replay |
+| P14 | Measured active-sensing robustness | Active bounded implementation | Deterministic vectors, calibrated local timing, finite oracle regret, non-oracle baselines, and matching calibration receipts |
+| P15 | Blind replication and adversarial audit | Blocked by evidence | Public/private separation, offline replay, adversarial internal replay, and independently controlled external replay receipt |
+| P16 | Theorem/countertheorem synthesis and publication promotion | Planned; fail closed | Kernel-checked theorem or preserved counterexample, claim-evidence closure, regenerated accessible package, and owner/reviewer promotion gates |
 
 The order is deliberate. The project does not jump from six toy fixtures to a
 large opaque corpus. It first defines what a semantic object is, then builds
@@ -146,8 +155,8 @@ features.
 The first source-family benchmark receipt is
 `output/data/representation_invariance_benchmark.json`, and the co-primary
 classifier receipt is `output/data/quotient_classifier.json`. The classifier
-benchmark freezes 16 transparent x86-64 families with 64 pair rows per family,
-disjoint training/development/held-out family partitions, and a four-family
+benchmark freezes 64 transparent x86-64 families with 64 pair rows per family,
+disjoint training/development/held-out family partitions, and a 16-family
 held-out test. Labels are generated from the declared intervention/output
 relation before model fitting; model inputs retain missing versus unseen
 values and omit family, transformation, byte, and quotient fields. The
@@ -238,9 +247,11 @@ explicit equivalence and counterexample theorems. The resulting
 `trace_refinement.png`, `formal_trace_correspondence.json`, and
 `formal_verification.json` are stronger than a single final-state check. The
 Python/Capstone/Unicorn correspondence is now checked step by step for the
-transparent fixture subset, but it still does not prove correspondence between
-the full Python adapter and the Lean operations. The shared broad-state
-theorem and exhaustive full-subset proof remain open.
+transparent fixture subset, and a generated Lean bridge kernel-checks one
+shared 64-bit boundary fixture. These are distinct receipts: the bridge is not
+a proof that the full Python adapter, Capstone, Unicorn, and Lean semantics
+correspond for every supported instruction. The shared broad-state theorem and
+exhaustive full-subset proof remain open.
 
 ### Level 2: quotient soundness
 
@@ -354,7 +365,7 @@ prize narrative.
 
 The generated program receipt is the operational source of truth for this
 document. Current status is intentionally conservative: P0–P2 are implemented
-locally, and P3–P8 have implemented bounded tranches with explicit receipts.
+locally, and P3–P10 have implemented bounded tranches with explicit receipts.
 The remaining promotion gates are not implied: P3 has a small held-out family
 count, P4 lacks a full-ISA theorem, P5 lacks licensed external validity, P6 is
 finite-benchmark optimality, P7 lacks independent replay, and P8 lacks a broad

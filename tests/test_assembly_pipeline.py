@@ -335,7 +335,7 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert variables["CROSS_ARCHITECTURE_ALL_PASSED"] == "yes"
     assert variables["CROSS_ARCHITECTURE_RESULT"] == "8"
     assert variables["FORMAL_VERIFICATION_STATUS"] == "locally_verified"
-    assert variables["FORMAL_THEOREM_COUNT"] == "5"
+    assert variables["FORMAL_THEOREM_COUNT"] == "10"
     assert variables["ACTIVE_INFORMATION_SENSOR_COUNT"] == "4"
     assert variables["ACTIVE_INFORMATION_FRONTIER_ROW_COUNT"] == "16"
     assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"
@@ -390,6 +390,7 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert (PROJECT_ROOT / "output/data/cross_architecture_fixtures.json").exists()
     assert (PROJECT_ROOT / "output/data/formal_verification.json").exists()
     assert (PROJECT_ROOT / "output/data/active_information_frontier.json").exists()
+    assert (PROJECT_ROOT / "output/data/intervention_power.json").exists()
     assert (PROJECT_ROOT / "output/data/held_out_model.json").exists()
     assert (PROJECT_ROOT / "manuscript/assets/active_assembly_cover.png").exists()
     assert variables["ASSEMBLY_CFG_FIGURE"].endswith("assembly_cfg.png")
@@ -410,8 +411,10 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert (PROJECT_ROOT / "output/figures/cross_architecture_benchmark.png").exists()
     assert (PROJECT_ROOT / "output/figures/formal_verification_receipt.png").exists()
     assert (PROJECT_ROOT / "output/figures/active_information_frontier.png").exists()
+    assert (PROJECT_ROOT / "output/figures/intervention_power.png").exists()
     assert variables["ACTION_SENSING_FIGURE"].endswith("action_sensing.png")
     assert variables["PARAMETER_LEARNING_FIGURE"].endswith("parameter_learning.png")
+    assert variables["INTERVENTION_POWER_FIGURE"].endswith("intervention_power.png")
     assert variables["TRACE_FEATURE_FIGURE"].endswith("trace_feature_matrix.png")
     assert variables["INFERENCE_DIAGNOSTIC_FIGURE"].endswith(
         "inference_diagnostics.png"

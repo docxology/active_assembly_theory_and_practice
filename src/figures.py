@@ -1063,32 +1063,45 @@ def plot_action_sensing(payload: dict[str, object], output_path: Path) -> Path:
 
 
 def plot_parameter_learning(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot held-out observation-only EM against supervised and fixed models."""
+    """Plot held-out observation-only EM and penalized robustness comparators."""
 
     summary = payload.get("summary")
     rows = payload.get("per_fixture")
     if not isinstance(summary, dict) or not isinstance(rows, list) or not rows:
         raise ValueError("parameter-learning payload must contain summary and rows")
-    methods = ("weakly_supervised_em", "supervised_map", "fixed_reference")
+    methods = (
+        "weakly_supervised_em",
+        "supervised_map",
+        "fixed_reference",
+        "penalized_dirichlet_map",
+    )
     labels = {
         "weakly_supervised_em": "ordered EM",
         "supervised_map": "supervised MAP",
         "fixed_reference": "fixed reference",
+        "penalized_dirichlet_map": "penalized MAP",
     }
     colors = {
         "weakly_supervised_em": PALETTE[0],
         "supervised_map": PALETTE[1],
         "fixed_reference": PALETTE[3],
+        "penalized_dirichlet_map": PALETTE[4],
     }
     markers = {
         "weakly_supervised_em": "o",
         "supervised_map": "s",
         "fixed_reference": "^",
+        "penalized_dirichlet_map": "D",
     }
     fixture_names = [str(row["held_out_fixture"]).removeprefix("x86_") for row in rows]
     x = np.arange(len(rows), dtype=float)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 5.2))
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(13.6, 5.2),
+        gridspec_kw={"width_ratios": (1.25, 1.15, 0.95)},
+    )
     means_by_method: dict[str, float] = {}
     for method in methods:
         values = [
@@ -1136,7 +1149,7 @@ def plot_parameter_learning(payload: dict[str, object], output_path: Path) -> Pa
         legend_labels,
         frameon=False,
         fontsize=7,
-        ncol=3,
+        ncol=4,
         loc="upper center",
         bbox_to_anchor=(0.52, 0.865),
     )
@@ -1172,6 +1185,91 @@ def plot_parameter_learning(payload: dict[str, object], output_path: Path) -> Pa
     axes[1].set_ylabel("training log evidence")
     axes[1].set_title("Observation-only EM convergence", loc="left", fontsize=10)
     axes[1].legend(frameon=False, fontsize=7, loc="lower right")
+
+    initialization_order = (
+        "reference",
+        "uniform",
+        "random_11",
+        "random_23",
+        "random_47",
+    )
+    initialization_labels = {
+        "reference": "reference",
+        "uniform": "uniform",
+        "random_11": "random 11",
+        "random_23": "random 23",
+        "random_47": "random 47",
+    }
+    initialization_colors = {
+        name: PALETTE[index % len(PALETTE)]
+        for index, name in enumerate(initialization_order)
+    }
+    for index, initialization in enumerate(initialization_order):
+        start_values: list[float] = []
+        for row in rows:
+            starts = row.get("multi_start")
+            if not isinstance(starts, list):
+                raise ValueError("parameter-learning row lacks multi-start records")
+            match = next(
+                (
+                    start
+                    for start in starts
+                    if isinstance(start, dict)
+                    and start.get("initialization") == initialization
+                ),
+                None,
+            )
+            if not isinstance(match, dict):
+                raise ValueError(f"missing multi-start {initialization}")
+            held_out_score = match.get("held_out_score")
+            accuracy = (
+                held_out_score.get("accuracy")
+                if isinstance(held_out_score, dict)
+                else None
+            )
+            if not isinstance(accuracy, (int, float)) or isinstance(accuracy, bool):
+                raise ValueError("multi-start held-out accuracy is not numeric")
+            start_values.append(float(accuracy))
+        jitter = (
+            np.arange(len(start_values), dtype=float) - (len(start_values) - 1) / 2
+        ) * 0.018
+        x_position = np.full(len(start_values), float(index)) + jitter
+        axes[2].scatter(
+            x_position,
+            start_values,
+            s=24,
+            color=initialization_colors[initialization],
+            alpha=0.72,
+            edgecolor="white",
+            linewidth=0.35,
+            zorder=3,
+        )
+        mean_value = float(np.mean(start_values))
+        axes[2].plot(
+            [index - 0.22, index + 0.22],
+            [mean_value, mean_value],
+            color=initialization_colors[initialization],
+            linewidth=2.0,
+            zorder=4,
+        )
+    axes[2].set_xticks(
+        np.arange(len(initialization_order)),
+        [initialization_labels[name] for name in initialization_order],
+        rotation=28,
+        ha="right",
+        fontsize=7.5,
+    )
+    axes[2].set_ylim(0.0, 1.08)
+    axes[2].set_ylabel("held-out temporal accuracy")
+    axes[2].set_title("Initialization sensitivity", loc="left", fontsize=10)
+    axes[2].text(
+        0.02,
+        0.03,
+        "dots = holdouts; bar = mean",
+        transform=axes[2].transAxes,
+        fontsize=7.5,
+        color=MUTED,
+    )
     for ax in axes:
         _style_axes(ax, grid_axis="y")
 
@@ -1196,16 +1294,23 @@ def plot_parameter_learning(payload: dict[str, object], output_path: Path) -> Pa
         fontsize=8,
         color=MUTED,
     )
+    multi_start_count = int(summary.get("multi_start_count", 0))
     fig.text(
         0.07,
         0.015,
-        "Accuracy is held-out; training log evidence is an optimization diagnostic, not a held-out or population score.",
+        (
+            "Accuracy is held-out; training log evidence is an optimization diagnostic. "
+            "Penalized MAP uses fixed Dirichlet pseudocounts and posterior-predictive checks "
+            "use observation summaries only. "
+            f"The sensitivity panel retains {multi_start_count} declared-start fits; "
+            "none is a population uncertainty interval."
+        ),
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.22, top=0.78, wspace=0.30)
+    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.24, top=0.78, wspace=0.34)
     return _save_figure(fig, output_path)
 
 
@@ -3400,11 +3505,12 @@ def plot_factorized_observation_comparison(
 def plot_representation_invariance_benchmark(
     payload: dict[str, object], output_path: Path
 ) -> Path:
-    """Plot primary and negative-control P3 endpoints with family-level intervals.
+    """Plot the underpowered representation-invariance pilot endpoints.
 
-    The chart intentionally presents protocol diagnostics rather than a model
-    score: each bar is a binary endpoint aggregated over source-program families,
-    and each whisker is the descriptive Wilson interval stored in the receipt.
+    The chart intentionally presents a bounded pilot diagnostic rather than a
+    model score: each bar is a binary endpoint aggregated over source-program
+    families, and each whisker is the descriptive Wilson interval stored in the
+    receipt. The scaled co-primary classifier benchmark is a separate receipt.
     """
 
     summary = payload.get("summary")
@@ -3488,7 +3594,7 @@ def plot_representation_invariance_benchmark(
         zip(
             axes,
             (primary_values, negative_values),
-            ("Primary four-state catalog", "Negative control: one state"),
+            ("Pilot four-state catalog", "Pilot negative control: one state"),
             strict=True,
         )
     ):
@@ -3554,7 +3660,7 @@ def plot_representation_invariance_benchmark(
         )
         _style_axes(ax, grid_axis="y")
     fig.suptitle(
-        "Representation-invariance protocol diagnostics",
+        "Representation-invariance pilot diagnostics",
         y=1.02,
         fontsize=12,
         color=INK,
@@ -3562,13 +3668,196 @@ def plot_representation_invariance_benchmark(
     fig.text(
         0.5,
         -0.01,
-        "Intervals are family-clustered and descriptive; no fitted semantic model or population claim is shown.",
+        "Pilot intervals are family-clustered and descriptive; no fitted semantic model or population claim is shown.",
         ha="center",
         va="top",
         fontsize=8,
         color=MUTED,
     )
     fig.subplots_adjust(left=0.10, right=0.98, bottom=0.20, top=0.82, wspace=0.12)
+    return _save_figure(fig, output_path)
+
+
+def plot_intervention_power(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot exact finite intervention-subset separation power.
+
+    The first panel preserves every enumerated subset as a point while the band
+    summarizes the minimum/mean/maximum near-miss separation at each cardinality.
+    The second panel isolates singleton interventions. This is an exact finite
+    combinatorial visualization and therefore has no sampling-error bars.
+    """
+
+    catalog = payload.get("intervention_catalog")
+    subset_rows = payload.get("subset_evaluations")
+    curve = payload.get("subset_curve")
+    pair_count = payload.get("pair_count")
+    if (
+        not isinstance(catalog, list)
+        or not catalog
+        or not isinstance(subset_rows, list)
+        or not subset_rows
+        or not isinstance(curve, list)
+        or not curve
+        or not isinstance(pair_count, int)
+        or isinstance(pair_count, bool)
+        or pair_count <= 0
+    ):
+        raise ValueError("intervention-power payload is incomplete")
+
+    def numeric(row: dict[str, object], key: str) -> float:
+        value = row.get(key)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise ValueError(f"intervention-power field {key!r} is not numeric")
+        numeric_value = float(value)
+        if not np.isfinite(numeric_value) or not 0.0 <= numeric_value <= 1.0:
+            raise ValueError(f"intervention-power field {key!r} is outside [0, 1]")
+        return numeric_value
+
+    subset_points: list[tuple[int, float]] = []
+    for raw_row in subset_rows:
+        if not isinstance(raw_row, dict):
+            raise ValueError("intervention-power subset row is not an object")
+        values = raw_row.get("values")
+        size = raw_row.get("size")
+        if (
+            not isinstance(values, list)
+            or not values
+            or not isinstance(size, int)
+            or isinstance(size, bool)
+            or size != len(values)
+        ):
+            raise ValueError("intervention-power subset row has malformed values")
+        subset_points.append((size, numeric(raw_row, "near_miss_separation")))
+
+    curve_rows = sorted(
+        (row for row in curve if isinstance(row, dict)),
+        key=lambda row: int(row.get("size", -1)),
+    )
+    if len(curve_rows) != len(curve):
+        raise ValueError("intervention-power curve contains a non-object row")
+    sizes = np.asarray([int(row["size"]) for row in curve_rows], dtype=float)
+    minimum = np.asarray(
+        [numeric(row, "min_near_miss_separation") for row in curve_rows], dtype=float
+    )
+    mean = np.asarray(
+        [numeric(row, "mean_near_miss_separation") for row in curve_rows], dtype=float
+    )
+    maximum = np.asarray(
+        [numeric(row, "max_near_miss_separation") for row in curve_rows], dtype=float
+    )
+
+    singleton_rows = [
+        row for row in subset_rows if isinstance(row, dict) and row.get("size") == 1
+    ]
+    singleton_rows.sort(key=lambda row: int(cast(list[int], row["values"])[0]))
+    if len(singleton_rows) != len(catalog):
+        raise ValueError("intervention-power singleton catalog is incomplete")
+
+    def intervention_label(value: int) -> str:
+        if value == 0:
+            return "0"
+        if value == 1:
+            return "1"
+        if value == 2**32 - 1:
+            return "2³²−1"
+        if value == 2**64 - 1:
+            return "2⁶⁴−1"
+        return f"{value:,}"
+
+    singleton_labels = [
+        intervention_label(cast(list[int], row["values"])[0]) for row in singleton_rows
+    ]
+    singleton_values = np.asarray(
+        [numeric(row, "near_miss_separation") for row in singleton_rows], dtype=float
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(
+        1, 2, figsize=(9.2, 4.6), gridspec_kw={"width_ratios": (1.35, 1.0)}
+    )
+    point_sizes = np.asarray([point[0] for point in subset_points], dtype=float)
+    point_values = np.asarray([point[1] for point in subset_points], dtype=float)
+    axes[0].scatter(
+        point_sizes,
+        point_values,
+        s=20,
+        color=PALETTE[1],
+        alpha=0.42,
+        edgecolors="none",
+        label="individual subset",
+        zorder=3,
+    )
+    axes[0].fill_between(
+        sizes,
+        minimum,
+        maximum,
+        color=PALETTE[0],
+        alpha=0.15,
+        label="minimum--maximum",
+        zorder=1,
+    )
+    axes[0].plot(
+        sizes,
+        mean,
+        color=PALETTE[0],
+        marker="o",
+        linewidth=1.8,
+        label="mean subset separation",
+        zorder=4,
+    )
+    axes[0].axhline(1.0, color=MUTED, linestyle="--", linewidth=1.0)
+    axes[0].set_xticks(sizes)
+    axes[0].set_xlabel("Number of interventions in subset")
+    axes[0].set_ylabel("Near-miss separation (exact proportion)")
+    axes[0].set_ylim(-0.02, 1.08)
+    axes[0].set_title("All non-empty subsets", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[0].legend(frameon=False, fontsize=7.5, loc="lower right")
+
+    colors = [PALETTE[0] if value >= 1.0 else PALETTE[1] for value in singleton_values]
+    bars = axes[1].barh(
+        np.arange(len(singleton_labels)),
+        singleton_values,
+        color=colors,
+        edgecolor="white",
+        linewidth=0.7,
+    )
+    axes[1].set_yticks(np.arange(len(singleton_labels)), singleton_labels)
+    axes[1].set_xlabel("Near-miss separation")
+    axes[1].set_title("Singleton intervention power", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[1].set_xlim(0.0, 1.08)
+    axes[1].axvline(1.0, color=MUTED, linestyle="--", linewidth=1.0)
+    for bar, value in zip(bars, singleton_values, strict=True):
+        axes[1].text(
+            min(value + 0.025, 1.015),
+            bar.get_y() + bar.get_height() / 2,
+            f"{value:.3f}",
+            va="center",
+            fontsize=8,
+            color=INK,
+        )
+
+    for ax in axes:
+        _style_axes(ax, grid_axis="y")
+    fig.suptitle(
+        "Finite intervention power in the declared quotient catalog",
+        x=0.08,
+        ha="left",
+        fontsize=12,
+        color=INK,
+    )
+    fig.text(
+        0.08,
+        0.01,
+        (
+            f"Exact enumeration of {len(subset_rows)} subsets over {pair_count} pair outcomes; "
+            "no population uncertainty or universal identifiability claim is shown."
+        ),
+        ha="left",
+        va="bottom",
+        fontsize=8,
+        color=MUTED,
+    )
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.20, top=0.80, wspace=0.34)
     return _save_figure(fig, output_path)
 
 
@@ -3849,7 +4138,7 @@ def plot_formal_verification_receipt(
 ) -> Path:
     """Plot the theorem manifest and checked status of the formal fragment."""
 
-    if payload.get("status") != "locally_verified":
+    if payload.get("endpoint_status", payload.get("status")) != "locally_verified":
         raise ValueError("formal verification receipt is not locally verified")
     theorem_names = payload.get("theorems")
     if not isinstance(theorem_names, list) or not theorem_names:
@@ -4184,7 +4473,7 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
         {str(cast(dict[str, object], row)["target_id"]) for row in rows}
     )
     table = np.full((len(source_ids), len(target_ids)), np.nan, dtype=float)
-    counts = np.zeros_like(table)
+    valid_counts = np.zeros_like(table)
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("compiler-transfer row is not an object")
@@ -4196,7 +4485,7 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
             count = row.get("decoded_instruction_count")
             if not isinstance(count, int) or count <= 0:
                 raise ValueError("validated transfer row lacks decoded count")
-            counts[i, j] = count
+            valid_counts[i, j] += 1.0
         elif status != "unavailable":
             raise ValueError("compiler-transfer row has unknown status")
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -4238,7 +4527,7 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
     x = np.arange(len(target_ids), dtype=float)
     for i, source_id in enumerate(source_ids):
         values = [
-            counts[i, j] if np.isfinite(table[i, j]) else np.nan
+            valid_counts[i, j] if np.isfinite(table[i, j]) else np.nan
             for j in range(len(target_ids))
         ]
         axes[1].plot(
@@ -4250,13 +4539,13 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
             label=source_id,
         )
     axes[1].set_xticks(x, target_ids)
-    axes[1].set_ylabel("Capstone-decoded instructions")
-    axes[1].set_title("Validated static objects", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[1].set_ylabel("Validated compiler configurations")
+    axes[1].set_title("Validated optimization rows", fontsize=10, pad=AXIS_TITLE_PAD)
     axes[1].legend(frameon=False, fontsize=7.5, loc="best")
     axes[1].text(
         0.5,
         -0.18,
-        "Counts are static disassembly coverage; no compiled object was executed.",
+        "Counts are validated source × optimization rows; no compiled object was executed.",
         transform=axes[1].transAxes,
         ha="center",
         va="top",
@@ -4642,6 +4931,155 @@ def plot_replication_manifest(payload: dict[str, object], output_path: Path) -> 
     return _save_figure(fig, output_path)
 
 
+def plot_external_source_provenance(
+    payload: dict[str, object], output_path: Path
+) -> Path:
+    """Plot the pinned-source safety boundary and promotion gates."""
+
+    manifest = payload.get("manifest")
+    gate = payload.get("promotion_gate")
+    if not isinstance(manifest, dict) or not isinstance(gate, dict):
+        raise ValueError("external-source provenance receipt is incomplete")
+    status = str(payload.get("status", "unknown"))
+    source_count = len(manifest.get("sources", []))
+    gate_rows = (
+        ("immutable revision", "required"),
+        ("license + archive hash", "required"),
+        ("static compile only", "enforced"),
+        ("project/revision/example gate", "not observed"),
+        ("independent replay", "not observed"),
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(
+        1, 2, figsize=(9.0, 4.35), gridspec_kw={"width_ratios": (1.0, 1.3)}
+    )
+    ax = axes[0]
+    ax.set_axis_off()
+    stages = (
+        ("Pinned manifest", "license · revision · hashes"),
+        ("Local acquisition", "explicit network opt-in"),
+        ("Static object analysis", "decode and hash; never execute"),
+    )
+    colors = (PALETTE[0], PALETTE[2], PALETTE[3])
+    for index, (title, subtitle) in enumerate(stages):
+        y = 0.78 - index * 0.25
+        patch = FancyBboxPatch(
+            (0.08, y),
+            0.84,
+            0.14,
+            boxstyle="round,pad=0.012,rounding_size=0.02",
+            facecolor=colors[index],
+            edgecolor=INK,
+            linewidth=0.8,
+            alpha=0.92,
+            transform=ax.transAxes,
+        )
+        ax.add_patch(patch)
+        ax.text(
+            0.50,
+            y + 0.087,
+            title,
+            transform=ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=9,
+            color="white",
+            weight="bold",
+        )
+        ax.text(
+            0.50,
+            y + 0.035,
+            subtitle,
+            transform=ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=7.5,
+            color="white",
+        )
+        if index < len(stages) - 1:
+            ax.add_patch(
+                FancyArrowPatch(
+                    (0.50, y - 0.015),
+                    (0.50, y - 0.09),
+                    transform=ax.transAxes,
+                    arrowstyle="-|>",
+                    mutation_scale=11,
+                    linewidth=1.0,
+                    color=INK,
+                )
+            )
+    ax.text(
+        0.50,
+        0.08,
+        f"status: {status}\nmanifested source families: {source_count}",
+        transform=ax.transAxes,
+        ha="center",
+        va="center",
+        fontsize=8.5,
+        color=MUTED,
+    )
+    ax.set_title("Static-only provenance path", fontsize=10, pad=AXIS_TITLE_PAD)
+
+    ax = axes[1]
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, len(gate_rows) + 1.5)
+    ax.text(
+        0.03,
+        len(gate_rows) + 1.15,
+        "Promotion gate",
+        fontsize=10,
+        weight="bold",
+        color=INK,
+    )
+    ax.text(0.76, len(gate_rows) + 1.15, "state", fontsize=10, weight="bold", color=INK)
+    for index, (label, state) in enumerate(gate_rows):
+        y = len(gate_rows) - index - 0.05
+        color = PALETTE[2] if state in {"required", "enforced"} else PALETTE[4]
+        ax.add_patch(
+            FancyBboxPatch(
+                (0.02, y - 0.32),
+                0.94,
+                0.48,
+                boxstyle="round,pad=0.008,rounding_size=0.015",
+                facecolor="#F5F7FA",
+                edgecolor="#D6DCE5",
+                linewidth=0.6,
+            )
+        )
+        ax.text(0.05, y - 0.08, label, fontsize=8.2, va="center", color=INK)
+        ax.text(
+            0.78, y - 0.08, state, fontsize=8.2, va="center", color=color, weight="bold"
+        )
+    ax.text(
+        0.03,
+        0.20,
+        "Blocked or unavailable is retained as a status,\nnever rendered as a zero-valued performance result.",
+        fontsize=8,
+        va="bottom",
+        color=MUTED,
+    )
+    ax.set_title("External-validity boundary", fontsize=10, pad=AXIS_TITLE_PAD)
+    fig.suptitle(
+        "Licensed-source provenance and application gate",
+        x=0.08,
+        ha="left",
+        fontsize=12,
+        color=INK,
+    )
+    fig.text(
+        0.08,
+        0.02,
+        "The canonical manifest is intentionally empty; no arbitrary external binary is executed.",
+        ha="left",
+        va="bottom",
+        fontsize=8,
+        color=MUTED,
+    )
+    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.12, top=0.80, wspace=0.20)
+    return _save_figure(fig, output_path)
+
+
 # ---------------------------------------------------------------------------
 # Figure caption registry
 # ---------------------------------------------------------------------------
@@ -4818,11 +5256,14 @@ FIGURE_CAPTIONS: dict[str, str] = {
     ),
     "parameter_learning": (
         "Leakage-safe ordered-HMM parameter learning. The left panel compares held-out temporal accuracy "
-        "for observation-only ordered Baum--Welch EM, supervised MAP fitting, and the fixed hand-authored "
-        "reference on complete-fixture holdouts; the right panel shows training log-evidence convergence "
-        "for each EM fit and their mean. Phase labels are reserved for scoring and are not used in the EM "
-        "fit; training log evidence is an optimization diagnostic rather than a held-out or population score "
-        "[@dempster1977em;@rabiner1989tutorial]."
+        "for observation-only ordered Baum--Welch EM, supervised MAP fitting, a fixed hand-authored "
+        "reference, and a fixed-penalty Dirichlet MAP comparator on complete-fixture holdouts; the middle "
+        "panel shows training log-evidence convergence for the primary EM fit and its mean; the right panel "
+        "shows held-out accuracy for five deterministic initializations, with dots for holdouts and bars for "
+        "within-start means. The receipt also records label-free posterior-predictive checks for the penalized "
+        "fit. Phase labels are reserved for scoring and are not used in fitting; training evidence, predictive "
+        "checks, and start-spread diagnostics are optimization/robustness diagnostics rather than held-out or "
+        "population uncertainty [@dempster1977em;@rabiner1989tutorial]."
     ),
     "model_comparison": (
         "Phase-decoder accuracy across the {fixture_count}-fixture labelled corpus. The left panel shows "
@@ -4903,13 +5344,27 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "groups and is not interpreted as a normalized joint likelihood [@rabiner1989tutorial;@gelman2013bda]."
     ),
     "representation_invariance_benchmark": (
-        "Primary and negative-control endpoints for the source-family-disjoint representation-invariance "
-        "protocol. Bars report final-RAX equivalence consistency and near-miss separation over the same "
-        "{representation_family_count} source-program families; whiskers are descriptive 95% Wilson "
-        "intervals computed at the family level. The single-zero-state catalog is intentionally insufficient "
-        "and leaves {representation_negative_control_unresolved} near-miss families unresolved. These are "
-        "bounded Capstone/Unicorn protocol diagnostics, not fitted semantic-model performance, population "
-        "uncertainty, or evidence of universal separation."
+        "Primary and negative-control endpoints for the separate, underpowered "
+        "source-family-disjoint representation-invariance pilot. Bars report final-RAX "
+        "equivalence consistency and near-miss separation over {representation_family_count} "
+        "source-program families; whiskers are descriptive 95% Wilson intervals computed at "
+        "the family level. The single-zero-state catalog is intentionally insufficient and "
+        "leaves {representation_negative_control_unresolved} near-miss families unresolved. "
+        "These are bounded Capstone/Unicorn protocol diagnostics, not fitted semantic-model "
+        "performance, population uncertainty, or evidence of universal separation. The scaled "
+        "64-family co-primary classifier benchmark is reported separately."
+    ),
+    "intervention_power": (
+        "Exact finite intervention-power analysis for the source-family-disjoint quotient catalog. "
+        "The left panel shows every one of the {intervention_power_subset_count} non-empty intervention "
+        "subsets as a point and the exact minimum--maximum envelope by subset cardinality; the right "
+        "panel resolves singleton interventions. Across {intervention_power_pair_count} equivalent and "
+        "one-change near-miss pair outcomes, the smallest fully separating cardinality is "
+        "{intervention_power_minimal_cardinality} with {intervention_power_minimal_set_count} tied set(s). "
+        "The all-zero negative control separates {intervention_power_single_state_separation} of near-misses "
+        "and leaves {intervention_power_single_state_unresolved_count} unresolved. No sampling uncertainty "
+        "is shown because this is exact enumeration of a finite receipt, not a population estimate or a "
+        "semantic-identifiability theorem."
     ),
     "trace_refinement": (
         "Stepwise trace-refinement check for the canonical bounded x86-64 execution. The left panel overlays "
@@ -4944,8 +5399,9 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "point is obtained by exhaustive dynamic programming over sensor/outcome "
         "branches, with no Monte Carlo approximation. Curves may coincide when the "
         "finite contract selects the same information frontier at each weight. The "
-        "costs are unit proxies derived from the model contract, so this is a "
-        "mechanism frontier rather than a deployment cost law "
+        "the plotted frontier uses unit action costs from the finite model channel; the separate sensor-cost receipt "
+        "reports deterministic vectors and local timing calibration, so this panel is a mechanism frontier rather than "
+        "a deployment cost law "
         "[@friston2017activeinference;@parr2022activeinference]."
     ),
     "quotient_classifier": (
@@ -4954,7 +5410,8 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "percentile intervals over held-out source families for the calibrated interpretable, temporal "
         "probabilistic, neural sequence, and surface-baseline models; the right panel reports Brier score "
         "and ten-bin expected calibration error. The benchmark contains {quotient_family_count} families, "
-        "{quotient_row_count} pair rows, and a three-way training/development/held-out split. Labels are "
+        "{quotient_row_count} pair rows, and a three-way training/development/held-out split. Six additional "
+        "byte/opcode/mnemonic/structure baselines and source-family-paired Holm comparisons are retained in the receipt. Labels are "
         "generated from the declared terminal-observation relation and are not supplied as model features; "
         "these results are bounded endpoint evidence, not complete semantic equivalence or application performance."
     ),
@@ -4963,7 +5420,8 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "statically disassembled objects. A check mark means the exact Clang target command produced an object "
         "whose text bytes were decoded by Capstone; a dash means the requested target was unavailable or failed "
         "and was retained as an explicit missing cell. The matrix includes {compiler_architecture_count} validated "
-        "architecture target(s) and {compiler_unavailable_count} unavailable row(s). No emitted object was executed, "
+        "architecture target(s) and {compiler_unavailable_count} unavailable row(s); the line panel counts "
+        "validated source-family-by-optimization rows. No emitted object was executed, "
         "so the figure supports capability and provenance claims only, not compiler correctness or semantic transfer."
     ),
     "formal_correspondence": (
@@ -4971,14 +5429,16 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "whether every intervention trace for each fixture matched; the right panel reports reference-step workload "
         "across {formal_correspondence_fixture_count} fixtures and {formal_correspondence_intervention_count} bounded "
         "interventions per fixture. Matching compares decoded addresses, modeled RAX/RSP state, declared EFLAGS bits, "
-        "and terminal output between the Python reference and bounded Unicorn. The result is a mechanized fixture-bounded "
-        "correspondence, not a complete proof of x86-64 semantics."
+        "and terminal output between the Python reference and bounded Unicorn; a generated Word64 boundary fixture is also "
+        "kernel-checked in Lean. The result is a mechanized fixture-bounded correspondence, not a complete proof of x86-64 semantics."
     ),
     "sensor_costs": (
         "Two-layer sensing-cost receipt for the finite active-sensing benchmark. The left panel displays four of the "
         "eight deterministic cost-vector components as exact counts; the right panel displays local wall-clock medians "
-        "with five-repetition min--max whiskers. The package also contains {sensor_certificate_count} exact dynamic-program "
-        "certificates with zero measured regret under the frozen finite state/action space. Deterministic counts are the "
+        "with five-repetition min--max whiskers; the receipt additionally records IQR, p95, timing-overhead correction, "
+        "and a deterministic-vector calibration regression. The package also contains {sensor_certificate_count} exact dynamic-program "
+        "certificates with zero measured regret under the frozen finite state/action space; fixed, greedy, seeded-random, "
+        "and abstaining policy rows are also reported. Deterministic counts are the "
         "primary auditable endpoint; calibrated nanoseconds are machine-specific and are not generalized across hardware."
     ),
     "replication_manifest": (
@@ -4987,6 +5447,14 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "receipts carry hashes tied to the protocol. Arrows show the local generation, scoring, and validation path; "
         "public filenames, ordering, and metadata are label-free. This bundle demonstrates replayability and blind separation "
         "inside the repository, not independent external replication."
+    ),
+    "external_source_provenance": (
+        "Licensed-source provenance and application gate for the separate external-validation track. The left panel shows "
+        "the pinned-manifest, explicitly opt-in acquisition, and static-only object-analysis path; the right panel lists "
+        "the immutable revision, license/hash, safety, project/revision/example, and independent-replay requirements. "
+        "The canonical receipt is blocked_external with an empty source manifest, so no application-performance value is "
+        "plotted and unavailable evidence is not treated as zero. This is a source-bound safety and promotion diagnostic, "
+        "not evidence of external validity."
     ),
 }
 
@@ -5086,6 +5554,7 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
         "unicorn",
         "brown2001binomial",
     ),
+    "intervention_power": ("capstone", "unicorn", "intel_sdm"),
     "trace_refinement": ("intel_sdm", "dasgupta2019x86semantics", "unicorn"),
     "cross_architecture_benchmark": ("capstone", "unicorn"),
     "formal_verification_receipt": (
@@ -5116,6 +5585,7 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     ),
     "sensor_costs": ("friston2017activeinference", "parr2022activeinference"),
     "replication_manifest": ("wilkinson2016fair",),
+    "external_source_provenance": ("wilkinson2016fair",),
 }
 
 
@@ -5143,6 +5613,12 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
         "repeated_phase_fixture_count": "configured",
         "representation_family_count": "configured",
         "representation_negative_control_unresolved": "configured",
+        "intervention_power_subset_count": "configured",
+        "intervention_power_pair_count": "configured",
+        "intervention_power_minimal_cardinality": "not available",
+        "intervention_power_minimal_set_count": "configured",
+        "intervention_power_single_state_separation": "configured",
+        "intervention_power_single_state_unresolved_count": "configured",
         "cross_architecture_count": "configured",
         "formal_theorem_count": "configured",
         "formal_toolchain": "configured",
@@ -5273,6 +5749,34 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
     except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
         pass
     try:
+        intervention = json.loads(
+            (data_dir / "intervention_power.json").read_text(encoding="utf-8")
+        )
+        context["intervention_power_subset_count"] = str(
+            len(intervention.get("subset_evaluations", []))
+        )
+        context["intervention_power_pair_count"] = str(
+            intervention.get("pair_count", context["intervention_power_pair_count"])
+        )
+        minimal_cardinality = intervention.get("minimal_separating_cardinality")
+        context["intervention_power_minimal_cardinality"] = (
+            str(minimal_cardinality)
+            if minimal_cardinality is not None
+            else "not available"
+        )
+        context["intervention_power_minimal_set_count"] = str(
+            len(intervention.get("minimal_separating_sets", []))
+        )
+        negative = intervention.get("negative_control", {})
+        context["intervention_power_single_state_separation"] = str(
+            negative.get("near_miss_separation", "not available")
+        )
+        context["intervention_power_single_state_unresolved_count"] = str(
+            len(negative.get("unresolved_near_miss_families", []))
+        )
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
+        pass
+    try:
         cross_architecture = json.loads(
             (data_dir / "cross_architecture_fixtures.json").read_text(encoding="utf-8")
         )
@@ -5398,8 +5902,9 @@ def _figure_registry_rows(
         "factorized_observation_comparison": "leave-one-fixture-out typed-model evaluation and field-family ablations",
         "corpus_coverage": "source-bound fixture-design inventory from Capstone and bounded Unicorn records",
         "action_sensing": "held-out transparent fixtures with typed field actions and training-only field likelihoods",
-        "parameter_learning": "complete-fixture holdouts with observation-only ordered HMM EM and supervised/fixed comparators",
+        "parameter_learning": "complete-fixture holdouts with observation-only ordered HMM EM, fixed-penalty Dirichlet MAP, supervised/fixed comparators, and label-free predictive checks",
         "representation_invariance_benchmark": "source-family-disjoint transparent x86-64 transformation families and negative-control witness rows",
+        "intervention_power": "exact finite intervention-subset enumeration over the source-bound quotient outcome matrix",
         "trace_refinement": "executed instruction steps in the canonical bounded x86-64 fixture",
         "cross_architecture_benchmark": "real Capstone/Unicorn bounded fixtures for x86-64, AArch64, and RISC-V64",
         "formal_verification_receipt": "source-bound Lean theorem manifest for the closed Word64 accumulator fragment",
@@ -5409,6 +5914,7 @@ def _figure_registry_rows(
         "formal_correspondence": "transparent x86-64 fixtures compared step-by-step between the Python reference and bounded Unicorn",
         "sensor_costs": "finite typed-field sensor actions with deterministic vectors and local timing calibration",
         "replication_manifest": "frozen local public/gold/prediction/receipt bundle",
+        "external_source_provenance": "pinned licensed-source manifest and static-only external-validation gate",
         "artifact_hash_manifest": "reproducibility manifest rows",
         "validation_summary": "generated validation checks",
     }
@@ -5431,17 +5937,19 @@ def _figure_registry_rows(
         "factorized_observation_comparison": "Held-out accuracy, field-family ablation, and masked-memory sensitivity under the recorded missing-field policy.",
         "corpus_coverage": "Static-versus-dynamic instruction counts and binary evidence-regime flags per transparent fixture.",
         "action_sensing": "Censored action budget, final posterior confidence, confidence rate, and equal normalized action costs by policy.",
-        "parameter_learning": "Held-out accuracy by fitting strategy and training log-evidence convergence across observation-only EM fits.",
+        "parameter_learning": "Held-out accuracy by fitting strategy, training log-evidence convergence, five-start initialization sensitivity, and receipt-level posterior-predictive checks; start dots are holdouts and bars are within-start means.",
         "representation_invariance_benchmark": "Family-level final-RAX consistency and near-miss separation with descriptive Wilson intervals.",
+        "intervention_power": "Exact subset-level near-miss separation and singleton intervention power; no sampling uncertainty is applicable.",
         "trace_refinement": "Per-step symbolic/Unicorn RAX agreement and modeled EFLAGS bit comparisons.",
         "cross_architecture_benchmark": "Decoded instruction count, executed instruction count, and final accumulator agreement across three real architecture adapters.",
         "formal_verification_receipt": "Declared theorem count and locally verified Lean receipt status; no population uncertainty is claimed.",
-        "active_information_frontier": "Expected information gain by horizon and cost weight from exact branch enumeration; coincident curves are explicitly marked when the finite contract yields the same frontier; costs are model-derived proxies.",
-        "quotient_classifier": "Balanced accuracy and macro-F1 use source-family-clustered percentile intervals; Brier score and ten-bin ECE use held-out probabilities.",
+        "active_information_frontier": "Expected information gain by horizon and cost weight from exact branch enumeration; coincident curves are explicitly marked when the finite contract yields the same frontier; the plotted action cost is a unit model-channel quantity, not wall-clock time.",
+        "quotient_classifier": "Balanced accuracy and macro-F1 use source-family-clustered percentile intervals; Brier score and ten-bin ECE use held-out probabilities; paired baseline comparisons use source-family bootstrap and Holm adjustment.",
         "compiler_transfer": "Validated/unavailable status is a capability receipt; decoded instruction counts are static coverage diagnostics without execution.",
-        "formal_correspondence": "All-step match status and reference-step counts are deterministic fixture checks; no population uncertainty is claimed.",
-        "sensor_costs": "Deterministic vector counts are primary; local timing medians span five repetition values; policy certificates compare exact dynamic-program objectives.",
+        "formal_correspondence": "All-step match status and reference-step counts are deterministic fixture checks, with a generated Lean boundary fixture; no population uncertainty is claimed.",
+        "sensor_costs": "Deterministic vector counts are primary; local timing medians span five repetition values with IQR, p95, overhead correction, and regression residuals; policy certificates compare exact dynamic-program, fixed, greedy, seeded-random, and abstaining objectives.",
         "replication_manifest": "Public and gold counts plus protocol/hash separation are deterministic provenance checks; independent replay is not claimed.",
+        "external_source_provenance": "Status, manifest cardinality, and five promotion gates are deterministic provenance checks; blocked or unavailable cells are retained as status values rather than plotted as performance zeros.",
     }
     rows: list[dict[str, Any]] = []
     for stem, raw_caption in FIGURE_CAPTIONS.items():
@@ -5501,6 +6009,11 @@ def _figure_registry_rows(
             input_artifacts = ["output/data/parameter_learning.json"]
         elif stem == "representation_invariance_benchmark":
             input_artifacts = ["output/data/representation_invariance_benchmark.json"]
+        elif stem == "intervention_power":
+            input_artifacts = [
+                "output/data/intervention_power.json",
+                "output/data/representation_invariance_benchmark.json",
+            ]
         elif stem == "cross_architecture_benchmark":
             input_artifacts = ["output/data/cross_architecture_fixtures.json"]
         elif stem == "formal_verification_receipt":
@@ -5530,8 +6043,13 @@ def _figure_registry_rows(
         elif stem == "replication_manifest":
             input_artifacts = [
                 "output/data/replication_manifest.json",
-                "output/replication/public_manifest.json",
-                "output/replication/gold_labels.json",
+                "output/replication/public/public_manifest.json",
+                "output/replication/private/gold_labels.json",
+            ]
+        elif stem == "external_source_provenance":
+            input_artifacts = [
+                "output/data/external_source_validation.json",
+                "configs/external_sources.yaml",
             ]
         elif stem == "trace_refinement":
             input_artifacts = ["output/data/symbolic_execution.json"]

@@ -1,0 +1,8 @@
+schema_version: "2.0.0"
+manifest_id: "active-assembly-external-sources-v1"
+network_policy: "explicit_acquisition_only"
+static_only: true
+# Entries are added only after license, revision, archive digest, label
+# contract, and a safety review are independently recorded.  An empty list is
+# an explicit blocked-external state, not a zero-performance result.
+sources: []

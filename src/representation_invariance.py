@@ -18,15 +18,18 @@ from pathlib import Path
 from statistics import NormalDist, fmean
 from typing import Iterable, cast
 
+from .provenance import generator_revision, sha256_path, toolchain_versions
 from .quotient_invariance import (
     INTERVENTION_INITIAL_RAX,
     TransformationPair,
     U64_MAX,
     evaluate_transformation_pair,
 )
+from .receipt import build_receipt_envelope, validate_receipt_envelope
+from .scientific_protocol import scientific_protocol_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-REPRESENTATION_INVARIANCE_SCHEMA_VERSION = "1.1.0"
+REPRESENTATION_INVARIANCE_SCHEMA_VERSION = "2.0.0"
 REPRESENTATION_INVARIANCE_ARTIFACT = (
     "output/data/representation_invariance_benchmark.json"
 )
@@ -377,8 +380,40 @@ def representation_invariance_payload(
         for split in BENCHMARK_SPLITS
     }
     summary = _summary(pair_rows)
+    protocol = scientific_protocol_payload()
+    family_manifest_sha256 = _manifest_sha256(family_specs)
+    status = "validated_bounded" if len(family_specs) >= 64 else "underpowered"
+    limitations = [
+        "This is a source-family-disjoint transparent fixture protocol diagnostic; no fitted model is used.",
+        "The finite quotient relation does not establish complete-ISA equivalence or posterior invariance.",
+    ]
+    underpowered_cases = (
+        [
+            "Promotion target requires at least 64 independent families and 16 held-out families; the current pilot has fewer."
+        ]
+        if status == "underpowered"
+        else []
+    )
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes={
+            "family_manifest": family_manifest_sha256,
+            "src/representation_invariance.py": sha256_path(Path(__file__)),
+        },
+        toolchain_versions=toolchain_versions(("capstone", "numpy", "unicorn")),
+        status=status,
+        limitations=limitations,
+        unsupported_cases=(
+            "Unsupported instruction effects are excluded from the formal-output relation rather than assigned labels.",
+        ),
+        underpowered_cases=underpowered_cases,
+    )
     return {
+        **envelope,
         "schema_version": REPRESENTATION_INVARIANCE_SCHEMA_VERSION,
+        "artifact": REPRESENTATION_INVARIANCE_ARTIFACT,
+        "endpoint_status": "pilot_protocol_diagnostic",
         "benchmark_id": BENCHMARK_ID,
         "architecture": "x86_64",
         "output_relation": "final_RAX",
@@ -412,7 +447,7 @@ def representation_invariance_payload(
             set(families_by_split[DEVELOPMENT_SPLIT])
             & set(families_by_split[HELD_OUT_SPLIT])
         ),
-        "family_manifest_sha256": _manifest_sha256(family_specs),
+        "family_manifest_sha256": family_manifest_sha256,
         "family_count": len(family_specs),
         "pair_count": len(pair_rows),
         "equivalent_pair_count": sum(
@@ -467,6 +502,9 @@ def representation_invariance_payload(
             "no fitted model, latent semantic discovery, complete-ISA equivalence, "
             "cross-architecture transfer, or posterior invariance claim"
         ),
+        "limitations": limitations,
+        "unsupported_cases": list(envelope["unsupported_cases"]),
+        "underpowered_cases": underpowered_cases,
     }
 
 
@@ -511,6 +549,14 @@ def validate_representation_invariance_payload(
 
     if payload.get("schema_version") != REPRESENTATION_INVARIANCE_SCHEMA_VERSION:
         return False, f"schema={payload.get('schema_version')}"
+    protocol = scientific_protocol_payload()
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"representation-invariance receipt: {receipt_detail}"
+    if payload.get("status") not in {"validated_bounded", "underpowered"}:
+        return False, "representation-invariance evidence status is invalid"
     if payload.get("initial_state_interventions") != list(INTERVENTION_INITIAL_RAX):
         return False, "primary intervention catalog differs from canonical protocol"
     intervention_catalogs = payload.get("intervention_catalogs")

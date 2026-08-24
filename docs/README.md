@@ -27,6 +27,23 @@ folder and the `manuscript/` sources are authored interfaces.
   also retains a deliberately insufficient single-state intervention catalog as
   a negative control, so the primary witness rate cannot be read as a universal
   separation law.
+- The P9 intervention-power receipt is emitted at
+  `output/data/intervention_power.json`; it exactly enumerates all non-empty
+  intervention subsets, records minimum separating sets, and retains the
+  deliberately underpowered one-state control. It is a finite diagnostic, not
+  semantic identifiability.
+- The P10 parameter-learning robustness surface is emitted in
+  `output/data/parameter_learning.json` and `output/figures/parameter_learning.png`;
+  five deterministic starts per complete-fixture holdout are retained, including
+  weak or unstable fits.
+- The P11--P16 promotion tranche is emitted through
+  `scripts/run_scientific_program.py`: the normalized machine-state and
+  generated Lean bridge receipts, 64-family quotient portfolio, compiler and
+  static-only external-source manifests, measured sensing-cost certificates,
+  label-separated offline replication bundle, theorem/countertheorem ledger,
+  and source-bound manuscript registries are all separate evidence surfaces.
+  `blocked_external`, `underpowered`, `unavailable`, `falsified`, and
+  `unresolved` statuses remain visible and are not promoted to positive claims.
 - `reproducibility.md` defines the generated artifact hash manifest, build receipt, and figure/variable registries.
 - `analysis_validation.md` defines the generated-output validation oracle.
 - `assembly_packages.md` also documents the pinned Lean formal fragment, real

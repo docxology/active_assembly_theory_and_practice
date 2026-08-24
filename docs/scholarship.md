@@ -32,6 +32,8 @@ claim appear stronger.
 | Binomial intervals | DOI `10.1214/ss/1009213286`; Project Euclid record | Retained for Wilson-interval reporting; the intervals are descriptive for dependent fixture steps, not population-level uncertainty. |
 | Capstone and Unicorn | Official project documentation and feature pages | Retained as API and instrumentation authorities; optional adapter names remain roadmap/context evidence only. |
 | Ordered-HMM parameter learning | Dempster--Laird--Rubin (1977), JRSS B publisher record | Added as the primary EM-method source; it motivates incomplete-data estimation but does not support the package's fixture results or semantic claims. |
+| Clustered uncertainty and multiplicity | Cameron--Gelbach--Miller (2008), MIT Press; Holm (1979), JSTOR record | Added to bind the source-family bootstrap and Holm-adjusted comparison family; neither source supplies population validity for this finite fixture benchmark. |
+| Behavioral equivalence and information gain | Sangiorgi (2011), Cambridge University Press; Lindley (1956), Project Euclid | Added to distinguish the finite observation quotient from bisimulation and to ground the model-derived expected-information objective without implying a universal sensing law. |
 
 ## Source Roles
 
@@ -46,9 +48,17 @@ claim appear stronger.
 - Formal-semantics boundary: Dasgupta et al.'s peer-reviewed x86-64 semantics
   establish the distinction between a complete ISA semantics and this package's
   deliberately bounded transfer-function subset.
+- Quotient semantics: Sangiorgi supplies the behavioral-equivalence and
+  bisimulation vocabulary; the package's finite observational quotient is
+  explicitly weaker than a transition-system bisimulation.
 - Statistical reporting: Brown, Cai, and DasGupta motivate Wilson score
   intervals for small binomial hit counts; the project still treats them as
-  descriptive because fixture steps are dependent.
+  descriptive because fixture steps are dependent. Cameron, Gelbach, and
+  Miller motivate resampling at the source-family level, and Holm supplies the
+  declared step-down multiplicity adjustment.
+- Active sensing: Lindley's expected-information formulation motivates the
+  finite model-derived information objective; it does not calibrate physical
+  sensor time or establish a general policy theorem.
 - Latent-variable estimation: Dempster, Laird, and Rubin provide the EM
   incomplete-data estimator used by the observation-only ordered-HMM companion;
   the package reports its finite held-out behavior separately from the method's

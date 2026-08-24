@@ -50,6 +50,14 @@ def test_parameter_learning_payload_is_complete_and_leakage_safe() -> None:
     rows = cast(list[dict[str, object]], payload["per_fixture"])
     assert summary["leakage_free"] is True
     assert summary["fixture_count"] == 6
+    assert summary["multi_start_count"] == 30
+    assert set(summary["multi_start_initializations"]) == {
+        "reference",
+        "uniform",
+        "random_11",
+        "random_23",
+        "random_47",
+    }
     for row in rows:
         training_names = cast(list[object], row["training_fixtures"])
         observation_ids = cast(list[object], row["observation_ids"])
@@ -63,6 +71,15 @@ def test_parameter_learning_payload_is_complete_and_leakage_safe() -> None:
         assert len(observation_ids) == len(truth_labels)
         diagnostics = cast(dict[str, object], row["fit_diagnostics"])
         assert diagnostics["phase_labels_used_for_fit"] is False
+        starts = cast(list[dict[str, object]], row["multi_start"])
+        assert len(starts) == 5
+        assert all(
+            cast(dict[str, object], start["fit_diagnostics"])[
+                "phase_labels_used_for_fit"
+            ]
+            is False
+            for start in starts
+        )
 
 
 def test_parameter_learning_validator_rejects_label_leakage() -> None:
@@ -96,3 +113,127 @@ def test_ordered_em_rejects_empty_or_invalid_fit_inputs() -> None:
         fit_ordered_hmm_em([[0]], max_iterations=0)
     with pytest.raises(ValueError, match="out-of-range"):
         fit_ordered_hmm_em([[999]])
+
+
+def test_parameter_learning_validator_exercises_fail_closed_contract_matrix() -> None:
+    """Cover the receipt validator's negative scientific-integrity branches."""
+
+    payload = parameter_learning_payload(build_corpus())
+    rows = cast(list[dict[str, object]], payload["per_fixture"])
+    first = rows[0]
+
+    def row_mutation(mutator):
+        mutated = copy.deepcopy(payload)
+        mutated_rows = cast(list[dict[str, object]], mutated["per_fixture"])
+        mutator(mutated_rows[0], cast(dict[str, object], mutated["summary"]))
+        return mutated
+
+    mutations = [
+        lambda row, summary: row.update(training_fixtures=[]),
+        lambda row, summary: row.update(training_fixtures=[row["held_out_fixture"]]),
+        lambda row, summary: row.update(fit_input_contract={"observation_only": True}),
+        lambda row, summary: row.update(observation_ids=[]),
+        lambda row, summary: row.update(truth_labels_for_scoring_only=["extra"]),
+        lambda row, summary: row.update(fit_diagnostics={}),
+        lambda row, summary: row.update(
+            fit_diagnostics={"history": [], "phase_labels_used_for_fit": False}
+        ),
+        lambda row, summary: row.update(
+            fit_diagnostics={
+                "history": [{"log_evidence_before": float("nan")}],
+                "iterations_used": 1,
+                "phase_labels_used_for_fit": False,
+            }
+        ),
+        lambda row, summary: row.update(learned_model={}),
+        lambda row, summary: row.update(
+            learned_model={"A": [[1.0]], "B": [[1.0]], "D": [1.0]}
+        ),
+        lambda row, summary: row.update(weakly_supervised_em={}),
+        lambda row, summary: cast(dict[str, object], row["fixed_reference"]).update(
+            accuracy=2.0
+        ),
+        lambda row, summary: row.update(posterior_predictive_check={}),
+        lambda row, summary: row.update(
+            posterior_predictive_check={"uses_phase_labels": True, "checks": {}}
+        ),
+        lambda row, summary: row.update(penalized_fit_diagnostics={}),
+        lambda row, summary: row.update(multi_start=[]),
+        lambda row, summary: row.update(multi_start=[{}]),
+        lambda row, summary: row.update(
+            multi_start=[
+                {
+                    "initialization": "reference",
+                    "held_out_score": {"accuracy": 2.0},
+                    "fit_diagnostics": {"phase_labels_used_for_fit": False},
+                    "learned_model": {},
+                }
+            ]
+        ),
+        lambda row, summary: row.update(
+            multi_start=[
+                {
+                    "initialization": "reference",
+                    "held_out_score": {
+                        "accuracy": 0.5,
+                        "balanced_accuracy": 0.5,
+                        "log_evidence": 0.0,
+                        "temporal_labels": [],
+                    },
+                    "fit_diagnostics": {"phase_labels_used_for_fit": True},
+                    "learned_model": {},
+                },
+                {
+                    "initialization": "reference",
+                    "held_out_score": {
+                        "accuracy": 0.5,
+                        "balanced_accuracy": 0.5,
+                        "log_evidence": 0.0,
+                        "temporal_labels": [],
+                    },
+                    "fit_diagnostics": {"phase_labels_used_for_fit": False},
+                    "learned_model": {},
+                },
+                {
+                    "initialization": "random",
+                    "held_out_score": {
+                        "accuracy": 0.5,
+                        "balanced_accuracy": 0.5,
+                        "log_evidence": 0.0,
+                        "temporal_labels": [],
+                    },
+                    "fit_diagnostics": {"phase_labels_used_for_fit": False},
+                    "learned_model": {},
+                },
+            ]
+        ),
+        lambda row, summary: row.update(training_observation_sequences=[]),
+        lambda row, summary: row.update(training_observation_sequences=[[999]]),
+    ]
+    for mutation in mutations:
+        assert validate_parameter_learning_payload(row_mutation(mutation))[0] is False
+
+    top_level_mutations = [
+        lambda candidate: candidate.update(schema_version="1.0.0"),
+        lambda candidate: candidate.update(status="failed"),
+        lambda candidate: candidate.update(phase_labels_used_for_fit=True),
+        lambda candidate: candidate.update(per_fixture=[]),
+        lambda candidate: candidate.update(fixture_count=99),
+        lambda candidate: cast(dict[str, object], candidate["summary"]).update(
+            leakage_free=False
+        ),
+        lambda candidate: candidate.update(
+            model_selection_ledger={"held_out_labels_available_to_selection": True}
+        ),
+        lambda candidate: cast(dict[str, object], candidate["summary"]).update(
+            multi_start_count=0
+        ),
+    ]
+    for mutation in top_level_mutations:
+        candidate = copy.deepcopy(payload)
+        mutation(candidate)
+        assert validate_parameter_learning_payload(candidate)[0] is False
+
+    assert first["held_out_fixture"] not in cast(
+        list[object], first["training_fixtures"]
+    )

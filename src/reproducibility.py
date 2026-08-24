@@ -222,6 +222,16 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
+        path="output/data/intervention_power.json",
+        artifact_type="intervention_power",
+        generated_by="src.intervention_analysis.write_intervention_power_payload",
+        claim_ids=("CLM-034",),
+        validation_checks=(
+            "intervention_power_contract",
+            "intervention_power_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
         path="output/data/cross_architecture_fixtures.json",
         artifact_type="cross_architecture_benchmark",
         generated_by="src.advanced_inference.cross_architecture_payload_current",
@@ -283,6 +293,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("replication_contract", "replication_freshness"),
     ),
     ArtifactManifestTarget(
+        path="output/data/external_source_validation.json",
+        artifact_type="external_source_validation",
+        generated_by="src.external_sources.write_external_source_validation_payload",
+        claim_ids=("CLM-036",),
+        validation_checks=("external_source_contract", "external_source_freshness"),
+    ),
+    ArtifactManifestTarget(
         path="output/data/theorem_or_countertheorem.json",
         artifact_type="theorem_phase",
         generated_by="src.theorem_phase.write_theorem_or_countertheorem",
@@ -293,14 +310,14 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
-        path="output/replication/public_manifest.json",
+        path="output/replication/public/public_manifest.json",
         artifact_type="replication_public_input",
         generated_by="src.replication.write_replication_bundle",
         claim_ids=("CLM-032",),
         validation_checks=("replication_contract",),
     ),
     ArtifactManifestTarget(
-        path="output/replication/gold_labels.json",
+        path="output/replication/private/gold_labels.json",
         artifact_type="replication_gold_labels",
         generated_by="src.replication.write_replication_bundle",
         claim_ids=("CLM-032",),
@@ -635,6 +652,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_representation_invariance_benchmark",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/intervention_power.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_intervention_power",
+        claim_ids=("CLM-034",),
+        validation_checks=("figure_intervention_power",),
+    ),
+    ArtifactManifestTarget(
         path="output/figures/cross_architecture_benchmark.png",
         artifact_type="figure",
         generated_by="src.figures.plot_cross_architecture_benchmark",
@@ -654,6 +678,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         generated_by="src.figures.plot_active_information_frontier",
         claim_ids=("CLM-031",),
         validation_checks=("figure_active_information_frontier",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/external_source_provenance.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_advanced_figures",
+        claim_ids=("CLM-036",),
+        validation_checks=("figure_external_source_provenance",),
     ),
     ArtifactManifestTarget(
         path="output/data/temporal_inference.json",

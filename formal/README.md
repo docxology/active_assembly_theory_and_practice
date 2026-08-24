@@ -32,5 +32,9 @@ as a proof certificate.
 The next formal milestone is a separately proved correspondence between this
 small-step state and the bounded executable trace, with exhaustive bounded
 state tests and explicit counterexamples for every unsupported effect. Until
-that work is complete, the receipt should be cited as a local formalization
-prerequisite rather than as a complete semantics theorem.
+that work is complete, the generated `ActiveAssembly/GeneratedCorrespondence.lean`
+fixture provides a narrower checked bridge: a Python-selected Word64 boundary
+fragment is serialized into Lean and compiled with a kernel-checked equality.
+The bridge is evidence for that generated fixture only; it does not turn the
+Python lifter, Capstone decoder, Unicorn comparison, or the full declared
+instruction subset into a mechanized x86 theorem.
