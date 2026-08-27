@@ -4,8 +4,11 @@ The demonstrator starts with a fixed x86-64 fixture whose instruction sequence i
 known and auditable. Capstone decodes the bytes into address, mnemonic, operand,
 and byte-span records. Unicorn then executes the same bytes under a bounded
 instruction count and records the executed addresses plus pre/post snapshots of
-the bounded architectural slice (`RAX`, `RIP`, `RSP`, and `EFLAGS`). The final
-register state is retained as a summary, not as the only semantic check.
+all sixteen general-purpose registers, `RIP`, and `EFLAGS`. The Python reference
+state additionally carries definedness for modeled flags, bounded byte memory,
+bounded stack bounds, the decoded instruction, and an explicit execution status.
+The final register state is retained as a summary, not as the only semantic
+check.
 These evidence streams are joined into trace schema `{{TRACE_SCHEMA_VERSION}}`
 with sample hash `{{BINARY_SHA256}}`. The bundle records
 `{{AVAILABLE_PACKAGE_COUNT}}` available package adapters out of
@@ -316,9 +319,13 @@ under every formal initial word, proves a changed subtraction is *not*
 equivalent by an explicit initial-state witness, and proves that appending a
 `nop` preserves the formal run. The trusted base is the Lean kernel and its
 imported core/standard library; no external solver output is accepted as a
-proof certificate. This is a mechanically checked algebraic prerequisite for
-the local quotient protocol, not a theorem about Capstone, Unicorn, x86
-flags, memory, exceptions, compiler correctness, or all assembly programs.
+proof certificate. The generated bridge also serializes a transparent boundary
+program from the Python reference path and checks its expected modular
+`Word64` result in Lean. This shared fixture is a checked cross-language anchor,
+while the broader Python/Capstone/Unicorn correspondence remains computational
+evidence. This is a mechanically checked algebraic prerequisite for the local
+quotient protocol, not a theorem about Capstone, Unicorn, x86 flags, memory,
+exceptions, compiler correctness, or all assembly programs.
 Lean 4's scholarly account describes the system as both an extensible theorem
 prover and a programming language [@demoura2021lean4]; here, only the kernel
 checked receipt for the declared local fragment is promoted.
@@ -566,6 +573,36 @@ maximum-likelihood logic of the EM algorithm [@dempster1977em] and standard HMM
 forward--backward inference [@rabiner1989tutorial]; the implementation remains
 fixture-bound and does not turn the phase scaffold into learned semantics.
 
+Robustness is not summarized by selecting the most favorable start. A fixed-
+penalty Dirichlet-MAP comparator is fit from the same observation-only inputs,
+and its held-out likelihood remains separate from the primary ordered-EM score.
+For each held-out sequence, a label-free posterior-predictive check simulates
+same-length categorical sequences and compares observation entropy, category
+support, and adjacent-change rate with central 95% simulation intervals. The
+model-selection ledger records that any reference choice uses training evidence
+only; held-out phase labels enter only after fitting. Non-convergence, weak
+local optima, and seed spread remain visible in the receipt rather than being
+filtered from the figure.
+
+To make initialization sensitivity part of the estimand rather than an invisible
+implementation choice, each holdout is fit from five frozen starts: the
+reference parameterization, a uniform parameterization, and three deterministic
+random starts with seeds recorded in the receipt. Let
+$\mathcal I$ denote these starts and let $\widehat y_{h,i}$ be the held-out
+sequence predicted for holdout $h$ from start $i$. We retain the within-holdout
+accuracy range
+
+$$
+R_h=\max_{i\in\mathcal I}\operatorname{Acc}(\widehat y_{h,i},y_h)
+     -\min_{i\in\mathcal I}\operatorname{Acc}(\widehat y_{h,i},y_h),
+$$ {#eq:multi-start-range}
+
+and the mean pairwise sequence agreement across starts. These are robustness
+diagnostics, not uncertainty intervals over fixtures: a large $R_h$ or low
+agreement is evidence that the latent fit is initialization-sensitive. Start
+selection is not performed using held-out labels, and every start—including
+weak or unstable fits—is retained in `{{PARAMETER_LEARNING_ARTIFACT}}`.
+
 ![Conceptual graph of the discrete generative model and its active-selection extension. Hidden phases form a left-to-right Markov chain through transition `B`, emit categorical observations through likelihood `A`, and begin from prior `D`; the right-hand extension scores candidate policies with epistemic value and preference `C`. The schematic is deterministic and source-controlled, not an empirical network diagram.]({{GENERATIVE_MODEL_FIGURE}}){#fig:generative-model width=95%}
 
 ## Formal description
@@ -728,12 +765,14 @@ continuous sensing, or operational acquisition time.
 The source-bound artifact is `{{ACTIVE_INFORMATION_ARTIFACT}}`, with
 `{{ACTIVE_INFORMATION_SENSOR_COUNT}}` sensors and
 `{{ACTIVE_INFORMATION_FRONTIER_ROW_COUNT}}` frontier rows. Exact branch
-enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`. The costs are
-model-derived unit proxies, so the output is a mechanism frontier rather than
-a wall-clock law; a future theorem must replace these proxies with measured
-acquisition costs and include counterexamples outside the finite family.
+enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`. That information
+frontier uses model-derived unit costs and is therefore a
+mechanism result, not a wall-clock law. The measured-cost receipt in
+Section @sec:measured-sensing is a separate, deterministic/calibrated layer;
+neither artifact supports a universal cost claim or a policy guarantee outside
+the finite declared family.
 
-![Exact finite-horizon information-per-cost frontier. Each curve is the expected information gain in nats from exhaustive dynamic programming over the declared finite sensor family at one cost weight; increasing horizon permits additional non-repeating field queries. Curves may coincide when the finite contract selects the same frontier at every cost weight, and the figure marks that observation explicitly. The plot is a local mechanism result with proxy costs, not a universal active-sensing law.]({{ACTIVE_INFORMATION_FIGURE}}){#fig:active-information-frontier width=96%}
+![Exact finite-horizon information-per-cost frontier. Each curve is the expected information gain in nats from exhaustive dynamic programming over the declared finite sensor family at one cost weight; increasing horizon permits additional non-repeating field queries. Curves may coincide when the finite contract selects the same frontier at every cost weight, and the figure marks that observation explicitly. The plot is a local mechanism result using the finite sensor likelihood model; the separately measured receipt in Section @sec:measured-sensing supplies auditable cost vectors rather than a universal active-sensing law.]({{ACTIVE_INFORMATION_FIGURE}}){#fig:active-information-frontier width=96%}
 
 A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
 carrying a hand-authored ground-truth phase sequence aligned to its decoded
@@ -780,8 +819,34 @@ is encoded as `__UNKNOWN__`. Neither is replaced by zero, an empty string, or a
 silently dropped row. Unsupported instructions, unavailable compilers, build
 failures, and underpowered strata remain represented as structured statuses.
 
-## Assembly state, normalized intermediate representation, and flags
-{#sec:assembly-formalism}
+### Protocol-v2 artifact envelope and manuscript closure {#sec:artifact-receipt-contract}
+
+The protocol contract is layered rather than destructive. Every project-owned
+JSON artifact currently carries the common receipt schema
+`{{ARTIFACT_RECEIPT_SCHEMA_VERSION}}` above its domain-specific `schema_version`.
+The common envelope requires `{{ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT}}` fields:
+the protocol identifier and digest, producer revision, input hashes, toolchain
+versions, evidence status, limitations, unsupported cases, and underpowered
+cases. This separation keeps a trace-schema migration distinguishable from a
+provenance-contract migration and allows domain validators to retain their
+existing interpretation.
+
+The current generated surface contains `{{ARTIFACT_RECEIPT_COUNT}}` JSON
+artifacts, of which `{{ARTIFACT_RECEIPT_ERROR_COUNT}}` fail the receipt audit.
+Producers write through an atomic temporary-file replacement, so a failed
+serialization cannot expose a partially written receipt. Legacy payloads may
+be migrated only by an explicit producer-stage command; validation is
+read-only and fails closed when a payload bypasses that stage. The canonical
+audit command is
+`{{ARTIFACT_RECEIPT_AUDIT_COMMAND}}`. This is a provenance and publication-
+integrity mechanism informed by PROV-O, RO-Crate, and reproducible-computing
+practice [@w3cprov2013;@rocrate2023;@sandve2013repro]. Its receipt count is not
+a scientific sample size, and its passing state cannot promote semantic
+identifiability, external validity, or independent replication. The local
+versus independently reproduced distinction follows the terminology used by
+the ACM artifact-review policy [@acm2020artifact].
+
+## Assembly state, normalized intermediate representation, and flags {#sec:assembly-formalism}
 
 The machine-facing formalism is a normalized instruction intermediate
 representation (IR), not a claim that a mnemonic string is a semantic object.
@@ -812,6 +877,74 @@ decoded IR record $i$, and an explicit exceptional/unsupported marker $x$. The
 modeled flags are those read or written by the supported operation; they are
 not treated as globally known architectural state when an instruction does not
 define them. A supported small-step transition has the form
+
+::: {.definition #def:normalized-machine-state title="Normalized bounded machine state"}
+The register component is the explicit 16-register file
+$G=(g_0,\ldots,g_{15})\in(\mathbb{W}_{64})^{16}$, with `RIP` represented by
+$pc$ rather than hidden in memory. A byte-addressable memory is a finite partial
+map $M:\mathbb{W}_{64}\rightharpoonup\mathbb{W}_{8}$ whose declared domain is
+the bounded memory interval; the stack slice $K$ is a named subinterval of that
+domain. Each flag is a pair `(value, definedness)`, so a preserved or undefined
+flag is never coerced to a Boolean observation. The state also records the
+instruction index, the normalized instruction, and one of `running`,
+`halted`, `unsupported`, `exceptional`, or `bound_exceeded`.
+:::
+
+Operand width is part of the transition, not an annotation added after the
+fact. For a value $v$ written to a register whose current value is $g$, the
+write operator is
+
+$$
+\operatorname{write}_w(g,v)=
+\begin{cases}
+v\bmod 2^{64}, & w=64,\\
+v\bmod 2^{32}, & w=32,\\
+(g\mathbin{\&}\neg(2^w-1))\mathbin{|}(v\bmod 2^w), & w\in\{8,16\}.
+\end{cases}
+$$ {#eq:register-width-write}
+
+Thus a 32-bit write zero-extends into the 64-bit architectural register, while
+8- and 16-bit writes preserve their untouched upper bits. For a memory operand
+with base $b$, index $j$, scale $s\in\{1,2,4,8\}$, and signed displacement
+$d$, the effective address is
+
+$$
+a=(b+s\,j+d)\bmod 2^{64},\qquad
+\operatorname{valid}(a,n)\iff [a,a+n-1]\subseteq\operatorname{dom}(M).
+$$ {#eq:bounded-effective-address}
+
+Loads and stores are admitted only when `valid` holds for every byte. The
+reference interpreter does not turn a failed bounds check into a wrapped or
+zero-filled value; it returns a structured bound or unsupported result.
+
+For $w$-bit operands $a,b$ and result $r$, the arithmetic flags are defined by
+
+$$
+\begin{aligned}
+CF_{+}&=\mathbf{1}[a+b\ge 2^w], & CF_{-}&=\mathbf{1}[a<b],\\
+ZF&=\mathbf{1}[r=0], & SF&=\operatorname{bit}_{w-1}(r),\\
+OF_{+}&=\mathbf{1}[\operatorname{sign}(a)=\operatorname{sign}(b)\ne\operatorname{sign}(r)],\\
+OF_{-}&=\mathbf{1}[\operatorname{sign}(a)\ne\operatorname{sign}(b)\land
+\operatorname{sign}(r)\ne\operatorname{sign}(a)].
+\end{aligned}
+$$ {#eq:integer-flag-semantics}
+
+`ADC` and `SBB` include the incoming defined `CF` in the arithmetic before
+computing their outgoing flags. `INC` and `DEC` use the corresponding
+add/subtract result but preserve the incoming `CF`; `CMP` uses subtraction to
+set flags without writing its destination, and `TEST` uses a logical AND
+without writing either operand. Logical and shift operations mark only the
+flags explicitly defined by the contract. These cases are separately exercised
+at zero, all-ones, sign-transition, carry/borrow, and shift-boundary values.
+
+::: {.proposition #prop:bounded-step-determinism title="Determinism of a supported bounded step"}
+For a normalized instruction whose operands, defined flag reads, memory range,
+and control-flow target satisfy the protocol bounds, the reference transition
+$\langle\sigma,I_i\rangle\to\sigma'$ is deterministic. If any precondition is
+not satisfied, the transition returns one structured non-running status rather
+than an architectural value. This proposition is about the implemented finite
+interpreter; it is not a completeness or total-correctness theorem for x86-64.
+:::
 
 $$
 \langle\sigma,I_i\rangle\longrightarrow\sigma'
@@ -855,9 +988,9 @@ with `{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` reference step rows. Its status is
 `{{FORMAL_CORRESPONDENCE_STATUS}}`. The comparison is all-step and fail-closed:
 an unsupported row, environment error, or mismatch cannot be converted into a
 terminal-only success. The Lean prerequisite is reported separately in
-`{{FORMAL_VERIFICATION_ARTIFACT}}`; a compiled Lean theorem about a Word64
-accumulator is not silently promoted to a proof of the Python lifter or the
-complete x86-64 ISA.
+`{{FORMAL_VERIFICATION_ARTIFACT}}`; a generated Lean bridge checks one shared
+Word64 boundary fixture, but a compiled Lean theorem is not silently promoted
+to a proof of the Python lifter or the complete x86-64 ISA.
 
 ![Python reference, Capstone decoding, and bounded Unicorn correspondence. Each fixture bar is marked PASS only when every declared intervention trace matches at every compared step; the workload panel reports reference steps and average steps per intervention for the three transparent fixtures. Comparisons include decoded addresses, RAX/RSP post-state, modeled CF/ZF/SF/OF bits, and terminal RAX. The receipt is a bounded mechanized correspondence for the declared subset, not complete x86-64 semantics.]({{FORMAL_CORRESPONDENCE_FIGURE}}){#fig:formal-correspondence width=100%}
 
@@ -874,13 +1007,40 @@ for treating each produced translation as an individually checkable artifact
 `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` validated static objects across the
 architectures `{{COMPILER_TRANSFER_ARCHITECTURES}}` and
 `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` explicit unavailable rows. The
-external-source manifest remains `{{COMPILER_EXTERNAL_STATUS}}`; it therefore
+separate licensed-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`; it therefore
 cannot support an application-facing effectiveness claim. A target absent from
 the local compiler is a missing capability, not evidence about that
 architecture. This is the correct interpretation of the compiler matrix in
 [@fig:compiler-transfer].
 
-![Compiler/source/architecture transfer capability receipt. Check marks indicate exact local compilation followed by Capstone decoding of a static object; dashes are unavailable or failed target rows and are not zero-valued results. The line panel reports decoded-instruction counts only for validated static objects. No compiled object is executed, so the figure supports capability and provenance claims rather than compiler correctness or semantic equivalence.]({{COMPILER_TRANSFER_FIGURE}}){#fig:compiler-transfer width=100%}
+The separate licensed-source receipt is `{{EXTERNAL_SOURCE_ARTIFACT}}` with
+status `{{EXTERNAL_SOURCE_STATUS}}`, `{{EXTERNAL_SOURCE_PROJECT_COUNT}}`
+manifested projects, and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}`
+labelable examples. The pinned manifest now records ten source rows spanning
+five projects and two revisions per project, but static coverage and
+source-level labels remain separate evidence surfaces. The static receipt
+`{{EXTERNAL_STATIC_ARTIFACT}}` is `{{EXTERNAL_STATIC_STATUS}}`: it retains
+`{{EXTERNAL_STATIC_VALIDATED_COUNT}}` successfully compiled-and-decoded rows
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`, including the older libpng compile failure
+as an explicit row. No static object is treated as an equivalence label. Each
+row binds an immutable revision, license-file digest, archive digest, compiler
+argument vector, target triple, derived configuration-file hash where needed,
+object hash, disassembly hash, and Capstone coverage; emitted objects are not
+executed by the canonical pipeline.
+
+The external-source gate is therefore a safety and provenance interface, not a
+permission to execute downloaded software. Acquisition requires the explicit
+network opt-in command and a pinned manifest; replay, scoring, and manuscript
+generation remain offline. The current receipt records
+`{{EXTERNAL_SOURCE_GATE_COUNT}}` gate fields and keeps failed static rows,
+absent labels, and the missing separate replay as `underpowered` or
+`not_yet_observed` evidence rather than inventing a denominator. The local
+compiler capability receipt is `{{EXTERNAL_CAPABILITIES_ARTIFACT}}` with
+status `{{EXTERNAL_CAPABILITIES_STATUS}}` and `{{EXTERNAL_CAPABILITY_TARGET_COUNT}}`
+target probes that produced a static object. A compiler-advertised target is
+not counted unless this empirical probe succeeds.
+
+![Compiler/source/architecture transfer capability receipt. Check marks indicate exact local compilation followed by Capstone decoding of a static object; dashes are unavailable or failed target rows and are not zero-valued results. The line panel reports the count of validated source-family-by-optimization rows for each target, not decoded instruction totals. No compiled object is executed, so the figure supports capability and provenance claims rather than compiler correctness or semantic equivalence.]({{COMPILER_TRANSFER_FIGURE}}){#fig:compiler-transfer width=100%}
 
 ## Quotient classes and co-primary classifier portfolio {#sec:quotient-classifier}
 
@@ -889,7 +1049,10 @@ the two transparent programs have equal terminal `RAX` for every intervention
 in the frozen catalog; it is negative when at least one intervention separates
 the terminal outputs. The relation is generated before model fitting and is
 not a mnemonic label, family identifier, transformation name, or model output.
-This is a bounded observational quotient, not complete program equivalence.
+This is a bounded observational quotient, not complete program equivalence. In
+formal-methods terms it is an observation relation over a finite intervention
+catalog, not a bisimulation relation preserved by every transition
+[@sangiorgi2011bisimulation].
 
 The classifier receipt is `{{QUOTIENT_CLASSIFIER_ARTIFACT}}` with status
 `{{QUOTIENT_CLASSIFIER_STATUS}}`. It uses `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` families and
@@ -901,10 +1064,17 @@ occurs in more than one partition. The calibrated interpretable model is a
 regularized binary logistic classifier over typed trace summaries; the temporal
 model is a class-conditional first-order Markov likelihood over typed token
 sequences; and the neural model is a fixed one-layer NumPy tanh recurrent
-network. The three are co-primary. The surface baseline is reported as a
-strong comparator, not as a straw-man control.
+network. The three are co-primary. A typed-trace summary is retained as the
+historical surface comparator, and six additional raw surface baselines are fit
+independently from training-only vocabularies: opcode histograms, hashed byte
+bigrams, mnemonic counts, instruction-length summaries, control-flow summaries,
+and memory-event counts. These baselines are not collapsed into one favorable
+“surface” score; each receives the same held-out predictions, family-level
+bootstrap, and development/test separation as the model portfolio.
 
-The fixed iteration budgets and stopping rules are part of the protocol: the
+The fixed iteration budgets and stopping rules are part of the protocol, as is
+the eight-state intervention catalog (`{{QUOTIENT_CLASSIFIER_INTERVENTION_COUNT}}`
+initial register values): the
 logistic and recurrent fits do not inspect the held-out test set, while the
 Markov fit is a smoothed closed-form count estimator. Five deterministic seeds
 are rerun for each stochastic family and their range is recorded separately
@@ -915,8 +1085,11 @@ software correctness diagnostic, not a performance interval.
 For primary metric $m$ and model $k$, balanced accuracy is the mean of positive
 and negative recall, while macro-F1 averages the F1 values for both quotient
 classes. Let $u$ index source families and let $\widehat\theta_{k,m}^{(b)}$
-be the metric after resampling whole families with replacement. The reported
-interval is the 2.5th--97.5th percentile of the frozen
+be the metric after resampling whole families with replacement. Resampling the
+source family, rather than treating repeated intervention rows as independent,
+is the declared dependence safeguard; the small-cluster caveat remains explicit
+[@cameron2008clusterbootstrap]. The reported interval is the 2.5th--97.5th
+percentile of the frozen
 `{{CI_LEVEL_PERCENT}}%` cluster bootstrap:
 
 $$
@@ -926,7 +1099,8 @@ $$ {#eq:quotient-cluster-interval}
 
 Brier score and fixed-bin expected calibration error are retained alongside the
 primary metrics. The five-percentage-point practical margin and Holm
-multiplicity policy are frozen in the protocol. The current held-out values
+multiplicity policy are frozen in the protocol [@holm1979multiple]. Holm adjustment spans the
+co-primary model-by-baseline-by-metric comparison family. The current held-out values
 are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_INTERPRETABLE_MACRO_F1}} for the interpretable model,
 {{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}} /
@@ -938,9 +1112,55 @@ are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
 numbers are reported as a portfolio: overlapping clustered intervals,
 development/test differences, and the small number of independent families
 preclude a superiority claim unless the preregistered margin and inference
-rule are both satisfied.
+rule are both satisfied. The receipt retains
+`{{QUOTIENT_CLASSIFIER_RAW_BASELINE_COUNT}}` raw baseline models and
+`{{QUOTIENT_CLASSIFIER_RAW_COMPARISON_COUNT}}` model-by-baseline comparison rows;
+no post-hoc baseline winner is promoted.
 
 ![Formal-quotient membership under source-family holdout. The left panel shows balanced accuracy and macro-F1 with source-family-clustered 95% intervals for three co-primary NumPy model families and a surface baseline; the right panel shows held-out Brier score and ten-bin expected calibration error, for which lower is better. The endpoint has {{QUOTIENT_CLASSIFIER_FAMILY_COUNT}} source families and {{QUOTIENT_CLASSIFIER_ROW_COUNT}} pair rows under a three-way split; labels come from the declared intervention relation and are absent from typed features.]({{QUOTIENT_CLASSIFIER_FIGURE}}){#fig:quotient-classifier width=100%}
+
+### Exact intervention power and finite separating sets {#sec:intervention-power}
+
+The quotient relation is only as informative as its declared intervention
+catalog. We therefore compute intervention power directly from the source-bound
+terminal-output matrix, before any classifier is fitted. For the separate
+representation-invariance pilot, let $\mathcal U_{\mathrm{pilot}}$ be its four
+initial-state interventions and let $e_{p,u}\in\{0,1\}$ indicate
+whether pair $p$ has equal terminal output under intervention $u$. For every
+non-empty subset $S\subseteq\mathcal U$, the near-miss separation and
+equivalent-pair consistency are
+
+$$
+\operatorname{Sep}(S)=
+\frac{1}{|\mathcal N|}\sum_{p\in\mathcal N}
+\mathbf 1\left[\exists u\in S:e_{p,u}=0\right],
+\qquad
+\operatorname{Cons}(S)=
+\frac{1}{|\mathcal E|}\sum_{p\in\mathcal E}
+\mathbf 1\left[\forall u\in S:e_{p,u}=1\right],
+$$ {#eq:intervention-power}
+
+where $\mathcal E$ and $\mathcal N$ are the declared equivalent and near-miss
+sets. A subset is *fully separating* only when both quantities equal one. The
+producer enumerates all `{{INTERVENTION_POWER_SUBSET_COUNT}}` non-empty subsets
+over `{{INTERVENTION_POWER_PAIR_COUNT}}` pair outcomes, retains the tied
+minimum separating sets, and keeps the one-state negative control visible. The
+receipt is `{{INTERVENTION_POWER_ARTIFACT}}`; its minimum fully separating
+cardinality is `{{INTERVENTION_POWER_MINIMAL_CARDINALITY}}` with
+`{{INTERVENTION_POWER_MINIMAL_SET_COUNT}}` tied set(s). Under the deliberately
+insufficient one-state control, separation is
+`{{INTERVENTION_POWER_SINGLE_STATE_SEPARATION}}` and
+`{{INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT}}` near-miss families remain
+unresolved.
+
+This construction is exact for the finite matrix and cannot by itself identify
+the underlying semantic quotient. In particular, a singleton separator may be
+an artifact of the chosen interventions, while an unresolved control can be a
+useful counterexample to an underpowered catalog. No intervention subset is
+allowed to be chosen after inspecting a model prediction, and the promotion
+status remains fail closed.
+
+![Exact finite intervention power for the declared quotient catalog. Every non-empty intervention subset is shown as an individual point, with the exact minimum--maximum envelope and mean at each subset cardinality; singleton bars show the separation contribution of each initial-state intervention. The analysis enumerates `{{INTERVENTION_POWER_SUBSET_COUNT}}` subsets over `{{INTERVENTION_POWER_PAIR_COUNT}}` pair outcomes, has minimum fully separating cardinality `{{INTERVENTION_POWER_MINIMAL_CARDINALITY}}`, and retains the one-state negative control with `{{INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT}}` unresolved near-miss families. No sampling uncertainty is shown because the result is exact finite enumeration.]({{INTERVENTION_POWER_FIGURE}}){#fig:intervention-power width=100%}
 
 ## Measured sensing costs and finite policy certification {#sec:measured-sensing}
 
@@ -955,8 +1175,9 @@ $$ {#eq:deterministic-sensor-cost}
 
 recorded for every query. It is machine-independent and auditable. The
 optional calibration layer executes a fixed matrix operation after warm-up and
-records median, minimum, maximum, and raw repetition values together with
-Python, operating-system, and package receipts. Wall-clock observations are
+records median, IQR, 95th percentile, minimum, maximum, and raw repetition
+values together with fixed-loop overhead, a deterministic-vector regression,
+and Python, operating-system, and package receipts. Wall-clock observations are
 not compared across machines without a matching calibration receipt. The
 source-bound receipt is `{{SENSOR_COST_ARTIFACT}}`. The current sensor receipt
 contains `{{SENSOR_COST_SENSOR_COUNT}}` sensors and
@@ -965,12 +1186,19 @@ optimality gap is `{{SENSOR_CERTIFICATE_MAX_GAP}}`.
 
 For a finite state/action problem, the oracle value is obtained by exhaustive
 dynamic programming over every positive-probability sensor outcome. The
-implemented policy is certified only when its objective equals the oracle
+expected-information component follows the classical view of an experiment as
+changing uncertainty under a stated prior, while the cost layer is separately
+audited [@lindley1956information]. The implemented policy is certified only when its objective equals the oracle
 within the preregistered five-percent tolerance. The current policy is itself
 the exact finite dynamic-programming oracle, so its zero gap is a certificate
 of the enumerated benchmark—not of an infinite-horizon policy, a physical
 instrument, or a universal active-sensing law. The deterministic/calibrated
 comparison is shown in [@fig:sensor-costs].
+The same receipt evaluates fixed-first, greedy-information, seeded-random, and
+abstaining policies under the same finite outcome tree. Their regret and
+deterministic cost vectors are comparison diagnostics; the oracle is an
+inadmissible reference and the non-oracle policies receive no certificate
+unless they independently satisfy the preregistered tolerance.
 
 ![Measured sensing costs and finite policy certificates. The left panel shows four exact components of the eight-component deterministic cost vector, with all components retained in the receipt; the right panel shows machine-specific calibrated nanoseconds per query as medians with five-repetition min--max whiskers. The policy certificates compare the implemented objective with exact finite dynamic programming and are scoped to the frozen sensor/action space.]({{SENSOR_COST_FIGURE}}){#fig:sensor-costs width=100%}
 
@@ -983,13 +1211,16 @@ receipt `{{REPLICATION_ARTIFACT}}` makes the narrower claim of deterministic rep
 generator creates the deterministic public fixture/source input, validation
 checks all hashes and the protocol digest, each model emits predictions, and a
 separate scoring mode joins predictions to the gold labels. The public manifest
-contains `record_id`, typed sequence, and feature values only; the gold file
+contains `record_id`, typed sequence, and feature values only, in deterministic
+digest order; the gold file
 contains labels and family/split metadata and is held outside the public input
 directory. The bundle currently contains `{{REPLICATION_PUBLIC_COUNT}}` public
 rows and `{{REPLICATION_GOLD_COUNT}}` gold rows, with label separation reported
-as `{{REPLICATION_LABEL_SEPARATED}}`. Replay is local and no-network; the
+as `{{REPLICATION_LABEL_SEPARATED}}`. The public protocol, toolchain receipt,
+and offline instructions are part of the hashed public bundle
+(`{{REPLICATION_PUBLIC_BUNDLE_SHA256}}`). Replay is local and no-network; the
 receipt status deliberately distinguishes this from independent external
-replay.
+replay, currently `{{INDEPENDENT_REPLAY_STATUS}}`.
 
 The separation contract is stronger than omitting a visible `label` key. Public
 record identifiers are derived only from public sequence/features, and the
@@ -997,6 +1228,12 @@ validator rejects any forbidden family, split, variant, or quotient field in
 the public rows. Exact public/gold row counts, protocol hash, input hashes, and
 prediction identifiers must match. A changed source or protocol hash therefore
 invalidates the receipt rather than silently producing a new benchmark under an
-old claim. The data flow is summarized in [@fig:replication-manifest].
+old claim. The stable commands are `generate-public`, `verify-public`,
+`run-model`, `score --gold-path`, `verify-separation`, `replay --offline`,
+`write-replay-receipt`, `ingest-replay`, and `write-receipts`; the label-blind
+model path never opens the private gold directory. Receipt ingestion requires
+an explicit separately controlled-run attestation and a protected scoring
+boundary, so a local rerun cannot promote itself. The data flow is summarized
+in [@fig:replication-manifest].
 
 ![Frozen local replication harness and provenance boundary. Public feature rows and separately held-out gold-label rows each contain the same number of records; predictions are scored only after exact identifier matching, and receipts bind the process to hashes and the frozen protocol. Public filenames, ordering, and metadata are label-free. The bundle is a no-network local replay package, not evidence of independent public replication.]({{REPLICATION_FIGURE}}){#fig:replication-manifest width=100%}

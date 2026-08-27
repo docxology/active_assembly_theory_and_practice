@@ -8,13 +8,39 @@ feature roadmap. The program is generated as a machine-readable receipt at
 
 The current repository is not a prize-level result. It is a carefully bounded
 measurement and inference demonstrator whose core temporal corpus contains six
-transparent x86-64 fixtures, augmented by a separate 16-family quotient
-benchmark and bounded P3--P8 research receipts.
+transparent x86-64 fixtures, augmented by a 64-family co-primary quotient
+benchmark, a separate four-state representation pilot, and bounded P3--P17
+research receipts.
 Its value is that it supplies a trustworthy starting instrument: the trace
 lineage is visible, the observation channel is explicit, negative results are
 retained, the manuscript is hydrated from producer artifacts, and the PDF is
 tagged and checked. The next program must earn a much deeper scientific claim
 on top of that instrument.
+
+## Protocol-v2 artifact closure
+
+The research protocol is now accompanied by a separate receipt schema. Domain
+payloads retain their own `schema_version`; the common envelope adds
+`receipt_schema_version`, protocol and producer digests, input hashes, toolchain
+versions, status, limitations, unsupported cases, and underpowered cases. This
+is intentionally a provenance contract rather than a semantic result. Producers
+write atomically, legacy migration is explicit, and the validator never repairs
+an unsealed artifact while claiming that validation passed.
+
+The canonical local commands are:
+
+```bash
+uv run python scripts/run_scientific_program.py all
+uv run python scripts/run_scientific_program.py audit-artifacts
+```
+
+`all` runs the source-bound orchestration summary and writes a machine-readable
+result; `audit-artifacts` is read-only and reports every unsealed or
+mixed-protocol JSON artifact. The closure figure and manuscript variables are
+generated from this same surface. This design follows provenance and research-
+object packaging practice [@w3cprov2013;@rocrate2023;@sandve2013repro] and
+keeps local reproducibility distinct from independent reproduction
+[@acm2020artifact].
 
 ## The scientific center of gravity
 
@@ -82,12 +108,21 @@ the generated program receipt. The abbreviated sequence is:
 | P0 | Source-bound assembly observation bridge | Implemented locally | Exact trace lineage and fail-closed bounded semantics |
 | P1 | Temporal inference under controlled ambiguity | Implemented locally | A preregistered mechanism result with both null and positive directions |
 | P2 | Observation-only parameter learning | Implemented locally | Leakage-safe held-out estimation with negative result preserved |
-| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 16-family source-disjoint benchmark, co-primary classifier portfolio, clustered statistics, and non-separating control; only four held-out families prevent a broad claim |
-| P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Real Capstone/Unicorn step matching plus a separate Lean fragment; no full-ISA Lean/Python theorem |
-| P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local Clang/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
-| P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Deterministic cost vectors, local calibration, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
-| P7 | Independent implementation and open challenge | Implemented local frozen harness; independent replay unearned | No-network CLI, label-separated public/gold manifests, hash validation, and replay receipt |
+| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 64-family source-disjoint co-primary benchmark, clustered statistics, leakage controls, and a separate four-state representation pilot; no semantic-discovery claim |
+| P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Explicit 16-register, width-aware Python state, real Capstone/Unicorn step matching, and a separate Lean fragment; no full-ISA Lean/Python theorem |
+| P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local compiler/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
+| P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Eight-component deterministic costs, local calibration with overhead/regression diagnostics, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
+| P7 | Independent implementation and open challenge | Implemented local frozen harness; independent replay unearned | No-network CLI, digest-ordered label-blind public inputs, private gold separation, hash validation, and replay receipt |
 | P8 | General theorem or decisive countertheorem | Implemented fail-closed phase; broad theorem unresolved | Checked local theorem group, finite computational certificate, and generated bounded counterexample; no broad theorem promotion |
+| P9 | Finite intervention power and separating sets | Implemented finite diagnostic; identifiability promotion blocked | Exhaustive enumeration of the separate four-state pilot catalog, minimum separating sets, and one-state negative control; no universal identifiability claim |
+| P10 | Initialization robustness of observation-only learning | Implemented finite robustness diagnostic; stability promotion blocked | Five-start holdout ledger with accuracy spread and sequence agreement; no stable latent-parameter claim |
+| P11 | Complete normalized machine-state correspondence | Active bounded implementation; cross-language bridge unresolved | 64-bit all-GPR state, width/flag/memory boundary tests, Lean normalized-state definitions, and explicit unsupported outcomes |
+| P12 | Scaled transfer and quotient evaluation | Active promotion candidate; external evidence absent | 64-family classifier receipt, compiler/source/architecture capability matrix, and source-bound split/leakage receipts |
+| P13 | Licensed-source external validation | Underpowered after pinned acquisition | Ten pinned rows across five projects and two revisions, 9/10 static rows currently decoded, zero source-bound label contracts, and explicit project/revision/example/replay gates |
+| P14 | Measured active-sensing robustness | Active bounded implementation | Deterministic vectors, calibrated local timing, finite oracle regret, non-oracle baselines, and matching calibration receipts |
+| P15 | Blind replication and adversarial audit | Local harness implemented; separate replay not yet observed | Public/private separation, hashed protocol/toolchain/instructions, offline replay, pending receipt schema, protected scoring, and independently controlled external replay receipt |
+| P16 | Theorem/countertheorem synthesis and publication promotion | Planned; fail closed | Kernel-checked theorem or preserved counterexample, claim-evidence closure, regenerated accessible package, and owner/reviewer promotion gates |
+| P17 | Protocol-v2 artifact and manuscript closure | Implemented locally; integrity-only | Shared receipt envelope, atomic producer writes, fail-closed artifact audit, source-bound figure/variable closure, and post-render document lineage |
 
 The order is deliberate. The project does not jump from six toy fixtures to a
 large opaque corpus. It first defines what a semantic object is, then builds
@@ -146,8 +181,8 @@ features.
 The first source-family benchmark receipt is
 `output/data/representation_invariance_benchmark.json`, and the co-primary
 classifier receipt is `output/data/quotient_classifier.json`. The classifier
-benchmark freezes 16 transparent x86-64 families with 64 pair rows per family,
-disjoint training/development/held-out family partitions, and a four-family
+benchmark freezes 64 transparent x86-64 families with 64 pair rows per family,
+disjoint training/development/held-out family partitions, and a 16-family
 held-out test. Labels are generated from the declared intervention/output
 relation before model fitting; model inputs retain missing versus unseen
 values and omit family, transformation, byte, and quotient fields. The
@@ -238,9 +273,11 @@ explicit equivalence and counterexample theorems. The resulting
 `trace_refinement.png`, `formal_trace_correspondence.json`, and
 `formal_verification.json` are stronger than a single final-state check. The
 Python/Capstone/Unicorn correspondence is now checked step by step for the
-transparent fixture subset, but it still does not prove correspondence between
-the full Python adapter and the Lean operations. The shared broad-state
-theorem and exhaustive full-subset proof remain open.
+transparent fixture subset, and a generated Lean bridge kernel-checks one
+shared 64-bit boundary fixture. These are distinct receipts: the bridge is not
+a proof that the full Python adapter, Capstone, Unicorn, and Lean semantics
+correspond for every supported instruction. The shared broad-state theorem and
+exhaustive full-subset proof remain open.
 
 ### Level 2: quotient soundness
 
@@ -354,9 +391,10 @@ prize narrative.
 
 The generated program receipt is the operational source of truth for this
 document. Current status is intentionally conservative: P0–P2 are implemented
-locally, and P3–P8 have implemented bounded tranches with explicit receipts.
+locally, and P3–P17 have implemented bounded tranches with explicit receipts.
 The remaining promotion gates are not implied: P3 has a small held-out family
 count, P4 lacks a full-ISA theorem, P5 lacks licensed external validity, P6 is
-finite-benchmark optimality, P7 lacks independent replay, and P8 lacks a broad
-theorem. The source-bound status is therefore “implemented, bounded, and
-fail-closed,” not “scientifically complete.”
+finite-benchmark optimality, P7 lacks independent replay, P13 has no
+source-bound label examples, and P16 lacks a broad theorem. The source-bound
+status is therefore “implemented, bounded, and fail-closed,” not
+“scientifically complete.”

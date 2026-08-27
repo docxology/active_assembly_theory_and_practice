@@ -41,6 +41,21 @@ contracts, not evidence of scientific generality.
 
 ![Reproducibility-manifest coverage by artifact class. Bar height is total tracked file size in KiB and annotations give file counts; each file is independently recorded with SHA-256 and byte size.]({{REPRODUCIBILITY_FIGURE}}){#fig:artifact-hash-manifest width=92%}
 
+The shared artifact boundary is separately audited rather than inferred from
+the reproducibility manifest. The current receipt layer is schema
+`{{ARTIFACT_RECEIPT_SCHEMA_VERSION}}`, with
+`{{ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT}}` required common fields across
+`{{ARTIFACT_RECEIPT_COUNT}}` project-owned JSON artifacts and
+`{{ARTIFACT_RECEIPT_ERROR_COUNT}}` envelope errors. The audit command is
+`{{ARTIFACT_RECEIPT_AUDIT_COMMAND}}`. Domain schema versions remain intact;
+the receipt layer adds protocol, producer, input, toolchain, limitation, and
+status lineage. This design follows provenance and research-object packaging
+practice [@w3cprov2013;@rocrate2023;@sandve2013repro], while preserving the
+important distinction between local reproducibility and independent replication
+[@acm2020artifact].
+
+![Protocol-v2 artifact receipt closure for {{ARTIFACT_RECEIPT_COUNT}} project-owned JSON artifacts. The flow binds the protocol to producers, sealed domain payloads, validation, and the hydrated manuscript/DOCX/tagged-PDF boundary; the companion status bars retain blocked and planned roadmap states. Counts are deterministic provenance checks with no inferential uncertainty, and unavailable evidence is not rendered as zero performance.]({{ARTIFACT_RECEIPT_CLOSURE_FIGURE}}){#fig:artifact-receipt-closure width=100%}
+
 The analysis validator reports `{{VALIDATION_PASS_COUNT}}` passing checks out
 of `{{VALIDATION_TOTAL_COUNT}}`, with `{{VALIDATION_FAIL_COUNT}}` failures and
 `all_passed = {{VALIDATION_ALL_PASSED}}`. The report is written to
@@ -61,7 +76,7 @@ future edit reports RxInfer free energy without finite JSONL values, adds a
 source-ledger entry without a bibliography record, drops a required adapter
 provenance row, changes observation labels without updating category IDs, drops
 RxInfer posterior/configuration artifacts, changes a manifest-tracked artifact
-after hash recording, adds an unlinked claim, or renders empty figures while
+after hash recording, bypasses the common artifact envelope, adds an unlinked claim, or renders empty figures while
 the basic pipeline still exits successfully.
 
 ## Open-roadmap receipt gates {#sec:open-roadmap-validation}
@@ -84,11 +99,13 @@ The new source-bound artifact family is:
 | formal correspondence | real Capstone decode, bounded Unicorn trace, Python reference step alignment, modeled flags, and Lean prerequisite | declared transparent subset only; no complete x86-64 theorem |
 | compiler transfer | exact local target command, source/object/disassembly hashes, Capstone decode, no object execution, explicit unavailable cells | capability receipt only; no compiler-generalization or application claim |
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |
-| replication bundle | public/gold field separation, identifier/hash equality, no-network replay metadata | local harness only until independent replay is observed |
+| external static corpus | ten pinned source rows, archive/license digests, static compilation, disassembly hashes, Capstone coverage, and explicit failed rows | static coverage only; no source-equivalence labels or application effectiveness |
+| replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | local harness only until a separately controlled receipt is ingested |
+| replay ingestion | pending external receipt schema, protected scoring boundary, explicit separate-control attestation, mismatch retention | `{{INDEPENDENT_REPLAY_STATUS}}`; independent replay does not imply independent reimplementation |
 | theorem phase | checked Lean theorem list plus generated bounded counterexample | fail-closed; unresolved claims remain unresolved |
 
-The registry and figure validator apply the same source-bound rule to the five
-new visualizations. A caption is not accepted merely because it exists: its
+The registry and figure validator apply the same source-bound rule to the
+visualization suite. A caption is not accepted merely because it exists: its
 input artifacts, claim IDs, uncertainty method, sample hierarchy, units, and
 alt text are generated from the figure registry. Missing, unseen, unsupported,
 and unavailable cells must be described rather than drawn as zero. The

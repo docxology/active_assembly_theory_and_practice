@@ -1,0 +1,5734 @@
+{
+  "confidence_threshold": 0.85,
+  "cost": {
+    "interpretation": "equal proxy cost for this demonstrator; not a wall-clock measurement",
+    "per_action": 1.0,
+    "unit": "normalized action units",
+    "weight_in_expected_free_energy": 0.05
+  },
+  "fields": [
+    "instruction_family",
+    "operand_class",
+    "register_read_set",
+    "register_write_set",
+    "flag_effect",
+    "memory_addressing_mode",
+    "branch_target_class",
+    "dynamic_status"
+  ],
+  "interpretation": "This is a bounded sensor-choice mechanism test. Active selection is evaluated against fixed, seeded-random, and explicitly inadmissible oracle policies on held-out transparent fixtures; it is not evidence of autonomous sensing over arbitrary binaries.",
+  "max_steps": 8,
+  "method": "bounded_action_conditioned_typed_field_sensing",
+  "per_fixture": [
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_3__instruction_family",
+          "action_index": 24,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__operand_class",
+          "action_index": 25,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_read_set",
+          "action_index": 26,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_write_set",
+          "action_index": 27,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__flag_effect",
+          "action_index": 28,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__memory_addressing_mode",
+          "action_index": 29,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__branch_target_class",
+          "action_index": 30,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__dynamic_status",
+          "action_index": 31,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 3
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_accumulator",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__flag_effect",
+              "action_index": 4,
+              "cost": 1.0,
+              "expected_free_energy": -0.17857864734361534,
+              "expected_information_gain": 0.22857864734361535,
+              "field": "flag_effect",
+              "posterior": [
+                0.9488894982177132,
+                0.023526185906224295,
+                0.01069372086646559,
+                0.009048533040855499,
+                0.007842061968741432
+              ],
+              "posterior_confidence": 0.9488894982177132,
+              "posterior_entropy": 0.26712046873176337,
+              "realized_information_gain": 0.682473198984975,
+              "revealed_value": "none",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9488894982177132,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 417,
+          "selected_action_ids": [
+            "step_0__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.17566356908793268,
+              "expected_information_gain": 0.2256635690879327,
+              "field": "instruction_family",
+              "posterior": [
+                0.949458774294797,
+                0.023540300189127204,
+                0.010261156492696473,
+                0.008893002293670276,
+                0.007846766729709067
+              ],
+              "posterior_confidence": 0.949458774294797,
+              "posterior_entropy": 0.26452086247131035,
+              "realized_information_gain": 0.685072805245428,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.949458774294797,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 417,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.1585404122007114,
+              "expected_information_gain": 0.2085404122007114,
+              "field": "register_read_set",
+              "posterior": [
+                0.9567418315692593,
+                0.009664058904739993,
+                0.012885411872986658,
+                0.011044638748274277,
+                0.009664058904739993
+              ],
+              "posterior_confidence": 0.9567418315692593,
+              "posterior_entropy": 0.23781645284987235,
+              "realized_information_gain": 0.711777214866866,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9567418315692593,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 417,
+          "selected_action_ids": [
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_1__register_write_set",
+              "action_index": 11,
+              "cost": 1.0,
+              "expected_free_energy": -0.1520429027055492,
+              "expected_information_gain": 0.20204290270554923,
+              "field": "register_write_set",
+              "posterior": [
+                0.26521239954075776,
+                0.21699196326061998,
+                0.22502870264064295,
+                0.027554535017221583,
+                0.26521239954075776
+              ],
+              "posterior_confidence": 0.26521239954075776,
+              "posterior_entropy": 1.4701345908078722,
+              "realized_information_gain": -0.5205409230911339,
+              "revealed_value": "eax|rflags",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_2__register_write_set",
+              "action_index": 19,
+              "cost": 1.0,
+              "expected_free_energy": -0.15996844950102235,
+              "expected_information_gain": 0.20996844950102236,
+              "field": "register_write_set",
+              "posterior": [
+                0.03649426368252774,
+                0.2687304871167952,
+                0.28900507805153286,
+                0.004333270641339101,
+                0.40143690050780517
+              ],
+              "posterior_confidence": 0.40143690050780517,
+              "posterior_entropy": 1.2226600425523753,
+              "realized_information_gain": 0.24747454825549697,
+              "revealed_value": "eax|rflags",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_2__operand_class",
+              "action_index": 17,
+              "cost": 1.0,
+              "expected_free_energy": 0.04677938895017515,
+              "expected_information_gain": 0.003220611049824853,
+              "field": "operand_class",
+              "posterior": [
+                0.03737241047353311,
+                0.2751968407596529,
+                0.27204338871786005,
+                0.004290844840089789,
+                0.41109651520886414
+              ],
+              "posterior_confidence": 0.41109651520886414,
+              "posterior_entropy": 1.2208841700342057,
+              "realized_information_gain": 0.0017758725181695745,
+              "revealed_value": "mixed",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.008161169427922159,
+              "expected_information_gain": 0.05816116942792216,
+              "field": "register_read_set",
+              "posterior": [
+                0.24193205192012257,
+                0.1979444061164639,
+                0.26090157560927985,
+                0.0035272362295394543,
+                0.2956947301245942
+              ],
+              "posterior_confidence": 0.2956947301245942,
+              "posterior_entropy": 1.3947019003123793,
+              "realized_information_gain": -0.1738177302781736,
+              "revealed_value": "<none>",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.2441180620641023,
+              "expected_information_gain": 0.2941180620641023,
+              "field": "instruction_family",
+              "posterior": [
+                0.6830805744316333,
+                0.15242293809631485,
+                0.08757257336439407,
+                0.0010260725041428935,
+                0.07589784160351479
+              ],
+              "posterior_confidence": 0.6830805744316333,
+              "posterior_entropy": 0.9630915339017704,
+              "realized_information_gain": 0.4316103664106089,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_3__register_write_set",
+              "action_index": 27,
+              "cost": 1.0,
+              "expected_free_energy": -0.1503215571072578,
+              "expected_information_gain": 0.2003215571072578,
+              "field": "register_write_set",
+              "posterior": [
+                0.18420415506382096,
+                0.36993065851659906,
+                0.22041054874075297,
+                0.00031622593415697514,
+                0.22513841174467
+              ],
+              "posterior_confidence": 0.36993065851659906,
+              "posterior_entropy": 1.3510514846442727,
+              "realized_information_gain": -0.38795995074250234,
+              "revealed_value": "eax|rflags",
+              "step_index": 3
+            },
+            {
+              "action_id": "step_0__register_write_set",
+              "action_index": 3,
+              "cost": 1.0,
+              "expected_free_energy": -0.09333593061089711,
+              "expected_information_gain": 0.1433359306108971,
+              "field": "register_write_set",
+              "posterior": [
+                0.5043603269071405,
+                0.3376296403262676,
+                0.08940670676422821,
+                0.00010994827423360968,
+                0.06849337772813018
+              ],
+              "posterior_confidence": 0.5043603269071405,
+              "posterior_entropy": 1.112328897047602,
+              "realized_information_gain": 0.23872258759667075,
+              "revealed_value": "eax",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_0__operand_class",
+              "action_index": 1,
+              "cost": 1.0,
+              "expected_free_energy": 0.04869517410915919,
+              "expected_information_gain": 0.0013048258908408142,
+              "field": "operand_class",
+              "posterior": [
+                0.5080325994210667,
+                0.34008793845542484,
+                0.08278029302537235,
+                0.00010708769527527298,
+                0.06899208140286091
+              ],
+              "posterior_confidence": 0.5080325994210667,
+              "posterior_entropy": 1.1025467832503246,
+              "realized_information_gain": 0.009782113797277336,
+              "revealed_value": "mixed",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": null,
+          "actions_used": 8,
+          "final_confidence": 0.5080325994210667,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": false,
+          "seed": 417,
+          "selected_action_ids": [
+            "step_1__register_write_set",
+            "step_2__register_write_set",
+            "step_2__operand_class",
+            "step_0__register_read_set",
+            "step_0__instruction_family",
+            "step_3__register_write_set",
+            "step_0__register_write_set",
+            "step_0__operand_class"
+          ],
+          "threshold": 0.85,
+          "total_cost": 8.0
+        }
+      },
+      "training_fixtures": [
+        "x86_bitwise",
+        "x86_guard",
+        "x86_long_accumulator",
+        "x86_memory",
+        "x86_guard_taken"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.06666666666666667,
+            0.09090909090909091,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.2,
+            0.2727272727272727,
+            0.23076923076923078,
+            0.2
+          ],
+          [
+            0.2,
+            0.2,
+            0.2727272727272727,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.06666666666666667,
+            0.09090909090909091,
+            0.38461538461538464,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.4666666666666667,
+            0.2727272727272727,
+            0.23076923076923078,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "external",
+            "internal",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed",
+            "not_executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "stack_relative"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags",
+            "rsp"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "external": 0.23076923076923078,
+              "internal": 0.23076923076923078,
+              "none": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "external": 0.09090909090909091,
+              "internal": 0.09090909090909091,
+              "none": 0.6363636363636364
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.6428571428571429,
+              "not_executed": 0.21428571428571427
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "executed": 0.7,
+              "not_executed": 0.1
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.2,
+              "read": 0.06666666666666667,
+              "write": 0.6
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.38461538461538464,
+              "write": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "none": 0.09090909090909091,
+              "read": 0.09090909090909091,
+              "write": 0.6363636363636364
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.17647058823529413
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.17647058823529413,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.06666666666666667,
+              "comparison": 0.3333333333333333,
+              "control_transfer": 0.3333333333333333,
+              "data_transfer": 0.06666666666666667
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "arithmetic": 0.07692307692307693,
+              "bitwise": 0.5384615384615384,
+              "comparison": 0.07692307692307693,
+              "control_transfer": 0.07692307692307693,
+              "data_transfer": 0.07692307692307693
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.7857142857142857,
+              "stack_relative": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "none": 0.75,
+              "stack_relative": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "none": 0.7,
+              "stack_relative": 0.1
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "mixed": 0.7777777777777778
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "rflags": 0.0625,
+              "rsp": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.35714285714285715,
+              "rflags": 0.35714285714285715,
+              "rsp": 0.07142857142857142
+            },
+            "representation_transform": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.5833333333333334,
+              "rflags": 0.08333333333333333,
+              "rsp": 0.08333333333333333
+            },
+            "setup": {
+              "<none>": 0.5625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.1875,
+              "eax|rflags": 0.5625,
+              "rflags": 0.0625
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.35714285714285715,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.07142857142857142,
+              "rflags": 0.35714285714285715
+            },
+            "representation_transform": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.08333333333333333,
+              "eax|rflags": 0.5833333333333334,
+              "rflags": 0.08333333333333333
+            },
+            "setup": {
+              "<none>": 0.1875,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_bitwise",
+          "x86_guard",
+          "x86_long_accumulator",
+          "x86_memory",
+          "x86_guard_taken"
+        ]
+      }
+    },
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_3__instruction_family",
+          "action_index": 24,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__operand_class",
+          "action_index": 25,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_read_set",
+          "action_index": 26,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_write_set",
+          "action_index": 27,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__flag_effect",
+          "action_index": 28,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__memory_addressing_mode",
+          "action_index": 29,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__branch_target_class",
+          "action_index": 30,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__dynamic_status",
+          "action_index": 31,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 3
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_bitwise",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.18193354622134222,
+              "expected_information_gain": 0.2319335462213422,
+              "field": "instruction_family",
+              "posterior": [
+                0.9500404475021478,
+                0.02107527743480189,
+                0.012134250644279877,
+                0.00889845047247191,
+                0.007851573946298743
+              ],
+              "posterior_confidence": 0.9500404475021478,
+              "posterior_entropy": 0.26364080423295544,
+              "realized_information_gain": 0.6859528634837829,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9500404475021478,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 418,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.18193354622134222,
+              "expected_information_gain": 0.2319335462213422,
+              "field": "instruction_family",
+              "posterior": [
+                0.9500404475021478,
+                0.02107527743480189,
+                0.012134250644279877,
+                0.00889845047247191,
+                0.007851573946298743
+              ],
+              "posterior_confidence": 0.9500404475021478,
+              "posterior_entropy": 0.26364080423295544,
+              "realized_information_gain": 0.6859528634837829,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9500404475021478,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 418,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.1559480112568119,
+              "expected_information_gain": 0.20594801125681192,
+              "field": "register_read_set",
+              "posterior": [
+                0.9553057223379489,
+                0.008577380223011888,
+                0.015439284401421397,
+                0.011028060286729568,
+                0.009649552750888373
+              ],
+              "posterior_confidence": 0.9553057223379489,
+              "posterior_entropy": 0.24338058203221505,
+              "realized_information_gain": 0.7062130856845233,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9553057223379489,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 418,
+          "selected_action_ids": [
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_0__branch_target_class",
+              "action_index": 6,
+              "cost": 1.0,
+              "expected_free_energy": 0.02526848991736773,
+              "expected_information_gain": 0.024731510082632274,
+              "field": "branch_target_class",
+              "posterior": [
+                0.7678973112155525,
+                0.07279532118961242,
+                0.05288548975313724,
+                0.03661303136755655,
+                0.06980884647414115
+              ],
+              "posterior_confidence": 0.7678973112155525,
+              "posterior_entropy": 0.8559188885635429,
+              "realized_information_gain": 0.09367477915319544,
+              "revealed_value": "none",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_2__instruction_family",
+              "action_index": 16,
+              "cost": 1.0,
+              "expected_free_energy": -0.15588239651213642,
+              "expected_information_gain": 0.20588239651213644,
+              "field": "instruction_family",
+              "posterior": [
+                0.567554036611563,
+                0.04813964207884071,
+                0.3020416548458732,
+                0.030668844953580975,
+                0.0515958215101421
+              ],
+              "posterior_confidence": 0.567554036611563,
+              "posterior_entropy": 1.0889257921502271,
+              "realized_information_gain": -0.2330069035866842,
+              "revealed_value": "bitwise",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_2__dynamic_status",
+              "action_index": 23,
+              "cost": 1.0,
+              "expected_free_energy": 0.034651781475846896,
+              "expected_information_gain": 0.01534821852415311,
+              "field": "dynamic_status",
+              "posterior": [
+                0.6097438876584401,
+                0.04525339314124461,
+                0.25812047016709067,
+                0.0314509865188209,
+                0.05543126251440367
+              ],
+              "posterior_confidence": 0.6097438876584401,
+              "posterior_entropy": 1.0604513799230133,
+              "realized_information_gain": 0.028474412227213808,
+              "revealed_value": "executed",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_3__instruction_family",
+              "action_index": 24,
+              "cost": 1.0,
+              "expected_free_energy": -0.22094160973945348,
+              "expected_information_gain": 0.27094160973945347,
+              "field": "instruction_family",
+              "posterior": [
+                0.22286964785871224,
+                0.014799598734465267,
+                0.7290413466628567,
+                0.013028529665901147,
+                0.020260877078064756
+              ],
+              "posterior_confidence": 0.7290413466628567,
+              "posterior_entropy": 0.7628632682192978,
+              "realized_information_gain": 0.29758811170371546,
+              "revealed_value": "bitwise",
+              "step_index": 3
+            },
+            {
+              "action_id": "step_2__register_write_set",
+              "action_index": 19,
+              "cost": 1.0,
+              "expected_free_energy": -0.10155896895245224,
+              "expected_information_gain": 0.15155896895245224,
+              "field": "register_write_set",
+              "posterior": [
+                0.03461962970301197,
+                0.022478203286560697,
+                0.905969626717536,
+                0.0023129105898793186,
+                0.034619629703011974
+              ],
+              "posterior_confidence": 0.905969626717536,
+              "posterior_entropy": 0.4216859434322492,
+              "realized_information_gain": 0.34117732478704865,
+              "revealed_value": "eax|rflags",
+              "step_index": 2
+            }
+          ],
+          "actions_to_confidence": 5,
+          "actions_used": 5,
+          "final_confidence": 0.905969626717536,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": true,
+          "seed": 418,
+          "selected_action_ids": [
+            "step_0__branch_target_class",
+            "step_2__instruction_family",
+            "step_2__dynamic_status",
+            "step_3__instruction_family",
+            "step_2__register_write_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 5.0
+        }
+      },
+      "training_fixtures": [
+        "x86_accumulator",
+        "x86_guard",
+        "x86_long_accumulator",
+        "x86_memory",
+        "x86_guard_taken"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.058823529411764705,
+            0.1111111111111111,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.4666666666666667,
+            0.17647058823529413,
+            0.3333333333333333,
+            0.23076923076923078,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.29411764705882354,
+            0.1111111111111111,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.058823529411764705,
+            0.1111111111111111,
+            0.38461538461538464,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.4117647058823529,
+            0.3333333333333333,
+            0.23076923076923078,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "external",
+            "internal",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed",
+            "not_executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "stack_relative"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags",
+            "rsp"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "external": 0.058823529411764705,
+              "internal": 0.058823529411764705,
+              "none": 0.7647058823529411
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "external": 0.23076923076923078,
+              "internal": 0.23076923076923078,
+              "none": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "external": 0.1111111111111111,
+              "internal": 0.1111111111111111,
+              "none": 0.5555555555555556
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "executed": 0.6875,
+              "not_executed": 0.1875
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "executed": 0.625,
+              "not_executed": 0.125
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "none": 0.17647058823529413,
+              "read": 0.058823529411764705,
+              "write": 0.6470588235294118
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.38461538461538464,
+              "write": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "none": 0.1111111111111111,
+              "read": 0.1111111111111111,
+              "write": 0.5555555555555556
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.05263157894736842,
+              "__UNKNOWN__": 0.05263157894736842,
+              "arithmetic": 0.5789473684210527,
+              "bitwise": 0.05263157894736842,
+              "comparison": 0.05263157894736842,
+              "control_transfer": 0.05263157894736842,
+              "data_transfer": 0.15789473684210525
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.6470588235294118,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.06666666666666667,
+              "comparison": 0.3333333333333333,
+              "control_transfer": 0.3333333333333333,
+              "data_transfer": 0.06666666666666667
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "arithmetic": 0.09090909090909091,
+              "bitwise": 0.45454545454545453,
+              "comparison": 0.09090909090909091,
+              "control_transfer": 0.09090909090909091,
+              "data_transfer": 0.09090909090909091
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "none": 0.6875,
+              "stack_relative": 0.1875
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.7857142857142857,
+              "stack_relative": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "none": 0.75,
+              "stack_relative": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "none": 0.625,
+              "stack_relative": 0.125
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "mixed": 0.8666666666666667
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "representation_transform": {
+              "__MISSING__": 0.14285714285714285,
+              "__UNKNOWN__": 0.14285714285714285,
+              "mixed": 0.7142857142857143
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.05555555555555555,
+              "__MISSING__": 0.05555555555555555,
+              "__UNKNOWN__": 0.05555555555555555,
+              "eax": 0.6111111111111112,
+              "rflags": 0.05555555555555555,
+              "rsp": 0.16666666666666666
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "rflags": 0.0625,
+              "rsp": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.35714285714285715,
+              "rflags": 0.35714285714285715,
+              "rsp": 0.07142857142857142
+            },
+            "representation_transform": {
+              "<none>": 0.1,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.5,
+              "rflags": 0.1,
+              "rsp": 0.1
+            },
+            "setup": {
+              "<none>": 0.5625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.05555555555555555,
+              "__MISSING__": 0.05555555555555555,
+              "__UNKNOWN__": 0.05555555555555555,
+              "eax": 0.16666666666666666,
+              "eax|rflags": 0.6111111111111112,
+              "rflags": 0.05555555555555555
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.35714285714285715,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.07142857142857142,
+              "rflags": 0.35714285714285715
+            },
+            "representation_transform": {
+              "<none>": 0.1,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.1,
+              "eax|rflags": 0.5,
+              "rflags": 0.1
+            },
+            "setup": {
+              "<none>": 0.1875,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_accumulator",
+          "x86_guard",
+          "x86_long_accumulator",
+          "x86_memory",
+          "x86_guard_taken"
+        ]
+      }
+    },
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_3__instruction_family",
+          "action_index": 24,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__operand_class",
+          "action_index": 25,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_read_set",
+          "action_index": 26,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_write_set",
+          "action_index": 27,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__flag_effect",
+          "action_index": 28,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__memory_addressing_mode",
+          "action_index": 29,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__branch_target_class",
+          "action_index": 30,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__dynamic_status",
+          "action_index": 31,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 3
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_guard",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__flag_effect",
+              "action_index": 4,
+              "cost": 1.0,
+              "expected_free_energy": -0.18037950269294767,
+              "expected_information_gain": 0.23037950269294766,
+              "field": "flag_effect",
+              "posterior": [
+                0.9492610429411557,
+                0.0207665274342985,
+                0.009052076061104473,
+                0.013075220977150906,
+                0.007845132586290543
+              ],
+              "posterior_confidence": 0.9492610429411557,
+              "posterior_entropy": 0.2672151811384009,
+              "realized_information_gain": 0.6823784865783374,
+              "revealed_value": "none",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9492610429411557,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 419,
+          "selected_action_ids": [
+            "step_0__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.1765825474790541,
+              "expected_information_gain": 0.2265825474790541,
+              "field": "instruction_family",
+              "posterior": [
+                0.9500404475021477,
+                0.021075277434801885,
+                0.008898450472471908,
+                0.012134250644279875,
+                0.007851573946298741
+              ],
+              "posterior_confidence": 0.9500404475021477,
+              "posterior_entropy": 0.26364080423295533,
+              "realized_information_gain": 0.685952863483783,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9500404475021477,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 419,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.1588493921710873,
+              "expected_information_gain": 0.2088493921710873,
+              "field": "register_read_set",
+              "posterior": [
+                0.9553057223379489,
+                0.008577380223011888,
+                0.011028060286729568,
+                0.015439284401421397,
+                0.009649552750888373
+              ],
+              "posterior_confidence": 0.9553057223379489,
+              "posterior_entropy": 0.24338058203221505,
+              "realized_information_gain": 0.7062130856845233,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9553057223379489,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 419,
+          "selected_action_ids": [
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_2__dynamic_status",
+              "action_index": 23,
+              "cost": 1.0,
+              "expected_free_energy": 0.04188604329883563,
+              "expected_information_gain": 0.008113956701164375,
+              "field": "dynamic_status",
+              "posterior": [
+                0.752136752136752,
+                0.05982905982905983,
+                0.06526806526806526,
+                0.054390054390054385,
+                0.06837606837606837
+              ],
+              "posterior_confidence": 0.752136752136752,
+              "posterior_entropy": 0.902659265337513,
+              "realized_information_gain": 0.046934402379225415,
+              "revealed_value": "executed",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_1__memory_addressing_mode",
+              "action_index": 13,
+              "cost": 1.0,
+              "expected_free_energy": 0.03913749052042031,
+              "expected_information_gain": 0.010862509479579695,
+              "field": "memory_addressing_mode",
+              "posterior": [
+                0.7311408339889851,
+                0.06219774455809075,
+                0.07402045633359561,
+                0.05140309467610805,
+                0.08123787044322056
+              ],
+              "posterior_confidence": 0.7311408339889851,
+              "posterior_entropy": 0.9509170443312058,
+              "realized_information_gain": -0.04825777899369288,
+              "revealed_value": "none",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.16354667243192816,
+              "expected_information_gain": 0.21354667243192815,
+              "field": "register_read_set",
+              "posterior": [
+                0.9559295859551209,
+                0.008031644326440488,
+                0.012289269240929011,
+                0.011947900650903204,
+                0.01180159982660643
+              ],
+              "posterior_confidence": 0.9559295859551209,
+              "posterior_entropy": 0.24118234883660172,
+              "realized_information_gain": 0.7097346954946041,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 3,
+          "actions_used": 3,
+          "final_confidence": 0.9559295859551209,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": true,
+          "seed": 419,
+          "selected_action_ids": [
+            "step_2__dynamic_status",
+            "step_1__memory_addressing_mode",
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 3.0
+        }
+      },
+      "training_fixtures": [
+        "x86_accumulator",
+        "x86_bitwise",
+        "x86_long_accumulator",
+        "x86_memory",
+        "x86_guard_taken"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.058823529411764705,
+            0.07692307692307693,
+            0.1111111111111111,
+            0.2
+          ],
+          [
+            0.4666666666666667,
+            0.17647058823529413,
+            0.23076923076923078,
+            0.3333333333333333,
+            0.2
+          ],
+          [
+            0.2,
+            0.29411764705882354,
+            0.23076923076923078,
+            0.1111111111111111,
+            0.2
+          ],
+          [
+            0.2,
+            0.058823529411764705,
+            0.07692307692307693,
+            0.3333333333333333,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.4117647058823529,
+            0.38461538461538464,
+            0.1111111111111111,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "internal",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed",
+            "not_executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "stack_relative"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags",
+            "rsp"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "internal": 0.0625,
+              "none": 0.8125
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "internal": 0.07142857142857142,
+              "none": 0.7857142857142857
+            },
+            "guard_check": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "internal": 0.375,
+              "none": 0.375
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "internal": 0.08333333333333333,
+              "none": 0.75
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "internal": 0.07142857142857142,
+              "none": 0.7857142857142857
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "executed": 0.6875,
+              "not_executed": 0.1875
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "executed": 0.625,
+              "not_executed": 0.125
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "none": 0.17647058823529413,
+              "read": 0.058823529411764705,
+              "write": 0.6470588235294118
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "none": 0.1111111111111111,
+              "read": 0.3333333333333333,
+              "write": 0.3333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.07692307692307693,
+              "write": 0.6923076923076923
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.05263157894736842,
+              "__UNKNOWN__": 0.05263157894736842,
+              "arithmetic": 0.5789473684210527,
+              "bitwise": 0.05263157894736842,
+              "comparison": 0.05263157894736842,
+              "control_transfer": 0.05263157894736842,
+              "data_transfer": 0.15789473684210525
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.17647058823529413,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "arithmetic": 0.09090909090909091,
+              "bitwise": 0.09090909090909091,
+              "comparison": 0.2727272727272727,
+              "control_transfer": 0.2727272727272727,
+              "data_transfer": 0.09090909090909091
+            },
+            "representation_transform": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.6,
+              "comparison": 0.06666666666666667,
+              "control_transfer": 0.06666666666666667,
+              "data_transfer": 0.06666666666666667
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "none": 0.6875,
+              "stack_relative": 0.1875
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.7857142857142857,
+              "stack_relative": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "none": 0.625,
+              "stack_relative": 0.125
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "none": 0.75,
+              "stack_relative": 0.08333333333333333
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "mixed": 0.8666666666666667
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.14285714285714285,
+              "__UNKNOWN__": 0.14285714285714285,
+              "mixed": 0.7142857142857143
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.05555555555555555,
+              "__MISSING__": 0.05555555555555555,
+              "__UNKNOWN__": 0.05555555555555555,
+              "eax": 0.6111111111111112,
+              "rflags": 0.05555555555555555,
+              "rsp": 0.16666666666666666
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "rflags": 0.0625,
+              "rsp": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.1,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.3,
+              "rflags": 0.3,
+              "rsp": 0.1
+            },
+            "representation_transform": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.6428571428571429,
+              "rflags": 0.07142857142857142,
+              "rsp": 0.07142857142857142
+            },
+            "setup": {
+              "<none>": 0.5625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.05555555555555555,
+              "__MISSING__": 0.05555555555555555,
+              "__UNKNOWN__": 0.05555555555555555,
+              "eax": 0.16666666666666666,
+              "eax|rflags": 0.6111111111111112,
+              "rflags": 0.05555555555555555
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.3,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.1,
+              "eax|rflags": 0.1,
+              "rflags": 0.3
+            },
+            "representation_transform": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.6428571428571429,
+              "rflags": 0.07142857142857142
+            },
+            "setup": {
+              "<none>": 0.1875,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_accumulator",
+          "x86_bitwise",
+          "x86_long_accumulator",
+          "x86_memory",
+          "x86_guard_taken"
+        ]
+      }
+    },
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_3__instruction_family",
+          "action_index": 24,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__operand_class",
+          "action_index": 25,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_read_set",
+          "action_index": 26,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_write_set",
+          "action_index": 27,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__flag_effect",
+          "action_index": 28,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__memory_addressing_mode",
+          "action_index": 29,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__branch_target_class",
+          "action_index": 30,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__dynamic_status",
+          "action_index": 31,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_4__instruction_family",
+          "action_index": 32,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__operand_class",
+          "action_index": 33,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__register_read_set",
+          "action_index": 34,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__register_write_set",
+          "action_index": 35,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__flag_effect",
+          "action_index": 36,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__memory_addressing_mode",
+          "action_index": 37,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__branch_target_class",
+          "action_index": 38,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__dynamic_status",
+          "action_index": 39,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_5__instruction_family",
+          "action_index": 40,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__operand_class",
+          "action_index": 41,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__register_read_set",
+          "action_index": 42,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__register_write_set",
+          "action_index": 43,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__flag_effect",
+          "action_index": 44,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__memory_addressing_mode",
+          "action_index": 45,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__branch_target_class",
+          "action_index": 46,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 5
+        },
+        {
+          "action_id": "step_5__dynamic_status",
+          "action_index": 47,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 5
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_long_accumulator",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__flag_effect",
+              "action_index": 4,
+              "cost": 1.0,
+              "expected_free_energy": -0.16512969590355175,
+              "expected_information_gain": 0.21512969590355174,
+              "field": "flag_effect",
+              "posterior": [
+                0.9408406285683214,
+                0.031809037028981565,
+                0.010603012342993857,
+                0.008971779674840955,
+                0.007775542384862161
+              ],
+              "posterior_confidence": 0.9408406285683214,
+              "posterior_entropy": 0.2953134974944725,
+              "realized_information_gain": 0.6542801702222658,
+              "revealed_value": "none",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9408406285683214,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 420,
+          "selected_action_ids": [
+            "step_0__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.15879981454988779,
+              "expected_information_gain": 0.20879981454988777,
+              "field": "instruction_family",
+              "posterior": [
+                0.9426311373896369,
+                0.030562102992289567,
+                0.010187367664096522,
+                0.008829051975550319,
+                0.007790339978426752
+              ],
+              "posterior_confidence": 0.9426311373896369,
+              "posterior_entropy": 0.2885966911838798,
+              "realized_information_gain": 0.6609969765328585,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9426311373896369,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 420,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.1479619167650521,
+              "expected_information_gain": 0.19796191676505212,
+              "field": "register_read_set",
+              "posterior": [
+                0.9536697247706424,
+                0.01284403669724771,
+                0.01284403669724771,
+                0.011009174311926608,
+                0.009633027522935782
+              ],
+              "posterior_confidence": 0.9536697247706424,
+              "posterior_entropy": 0.2514709667248031,
+              "realized_information_gain": 0.6981227009919353,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9536697247706424,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 420,
+          "selected_action_ids": [
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_1__register_read_set",
+              "action_index": 10,
+              "cost": 1.0,
+              "expected_free_energy": -0.1479619167650521,
+              "expected_information_gain": 0.19796191676505212,
+              "field": "register_read_set",
+              "posterior": [
+                0.25163398692810457,
+                0.1525054466230937,
+                0.21350762527233116,
+                0.13071895424836602,
+                0.2516339869281046
+              ],
+              "posterior_confidence": 0.2516339869281046,
+              "posterior_entropy": 1.5768418309588368,
+              "realized_information_gain": -0.6272481632420984,
+              "revealed_value": "eax",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_5__flag_effect",
+              "action_index": 44,
+              "cost": 1.0,
+              "expected_free_energy": -0.20041203480678438,
+              "expected_information_gain": 0.25041203480678437,
+              "field": "flag_effect",
+              "posterior": [
+                0.036726348511734015,
+                0.1517617707096447,
+                0.2974530705909036,
+                0.11006897655864342,
+                0.4039898336290742
+              ],
+              "posterior_confidence": 0.4039898336290742,
+              "posterior_entropy": 1.3771991081029256,
+              "realized_information_gain": 0.19964272285591123,
+              "revealed_value": "write",
+              "step_index": 5
+            },
+            {
+              "action_id": "step_1__operand_class",
+              "action_index": 9,
+              "cost": 1.0,
+              "expected_free_energy": 0.04656592265425854,
+              "expected_information_gain": 0.003434077345741461,
+              "field": "operand_class",
+              "posterior": [
+                0.03825417564630592,
+                0.14530136003897817,
+                0.28479066567639716,
+                0.11085786652895352,
+                0.42079593210936517
+              ],
+              "posterior_confidence": 0.42079593210936517,
+              "posterior_entropy": 1.3708949167506124,
+              "realized_information_gain": 0.006304191352313193,
+              "revealed_value": "mixed",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_2__register_write_set",
+              "action_index": 19,
+              "cost": 1.0,
+              "expected_free_energy": -0.09770549239913,
+              "expected_information_gain": 0.14770549239913,
+              "field": "register_write_set",
+              "posterior": [
+                0.004543021372403576,
+                0.11503880259585537,
+                0.3156664743230271,
+                0.015046115647881329,
+                0.5497055860608328
+              ],
+              "posterior_confidence": 0.5497055860608328,
+              "posterior_entropy": 1.0293325622223952,
+              "realized_information_gain": 0.34156235452821715,
+              "revealed_value": "eax|rflags",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_4__dynamic_status",
+              "action_index": 39,
+              "cost": 1.0,
+              "expected_free_energy": 0.02442745600096776,
+              "expected_information_gain": 0.025572543999032242,
+              "field": "dynamic_status",
+              "posterior": [
+                0.00492176362847184,
+                0.07930958549523692,
+                0.30467570363850205,
+                0.0155595481926964,
+                0.5955333990450927
+              ],
+              "posterior_confidence": 0.5955333990450927,
+              "posterior_entropy": 0.9627052242700156,
+              "realized_information_gain": 0.06662733795237963,
+              "revealed_value": "executed",
+              "step_index": 4
+            },
+            {
+              "action_id": "step_3__register_read_set",
+              "action_index": 26,
+              "cost": 1.0,
+              "expected_free_energy": 0.020501761612343333,
+              "expected_information_gain": 0.02949823838765667,
+              "field": "register_read_set",
+              "posterior": [
+                0.0004913375843569246,
+                0.05278294949416716,
+                0.2838793702875095,
+                0.008876017854899707,
+                0.6539703247790668
+              ],
+              "posterior_confidence": 0.6539703247790668,
+              "posterior_entropy": 0.8361410516582237,
+              "realized_information_gain": 0.12656417261179187,
+              "revealed_value": "eax",
+              "step_index": 3
+            },
+            {
+              "action_id": "step_1__dynamic_status",
+              "action_index": 15,
+              "cost": 1.0,
+              "expected_free_energy": 0.03484815977832559,
+              "expected_information_gain": 0.015151840221674418,
+              "field": "dynamic_status",
+              "posterior": [
+                0.0005175057347030063,
+                0.03537807433349202,
+                0.26638048430470407,
+                0.008923802737399459,
+                0.6888001328897015
+              ],
+              "posterior_confidence": 0.6888001328897015,
+              "posterior_entropy": 0.7734125510577279,
+              "realized_information_gain": 0.06272850060049584,
+              "revealed_value": "executed",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_4__register_write_set",
+              "action_index": 35,
+              "cost": 1.0,
+              "expected_free_energy": 0.029151095871884653,
+              "expected_information_gain": 0.02084890412811535,
+              "field": "register_write_set",
+              "posterior": [
+                5.019654232254695e-05,
+                0.02287713142078189,
+                0.24115585845331167,
+                0.000989237439173787,
+                0.7349275761444101
+              ],
+              "posterior_confidence": 0.7349275761444101,
+              "posterior_entropy": 0.6631063581042079,
+              "realized_information_gain": 0.11030619295351995,
+              "revealed_value": "eax|rflags",
+              "step_index": 4
+            }
+          ],
+          "actions_to_confidence": null,
+          "actions_used": 8,
+          "final_confidence": 0.7349275761444101,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": false,
+          "seed": 420,
+          "selected_action_ids": [
+            "step_1__register_read_set",
+            "step_5__flag_effect",
+            "step_1__operand_class",
+            "step_2__register_write_set",
+            "step_4__dynamic_status",
+            "step_3__register_read_set",
+            "step_1__dynamic_status",
+            "step_4__register_write_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 8.0
+        }
+      },
+      "training_fixtures": [
+        "x86_accumulator",
+        "x86_bitwise",
+        "x86_guard",
+        "x86_memory",
+        "x86_guard_taken"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.09090909090909091,
+            0.09090909090909091,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.09090909090909091,
+            0.09090909090909091,
+            0.23076923076923078,
+            0.2
+          ],
+          [
+            0.2,
+            0.2727272727272727,
+            0.2727272727272727,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.09090909090909091,
+            0.09090909090909091,
+            0.38461538461538464,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.45454545454545453,
+            0.45454545454545453,
+            0.23076923076923078,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "external",
+            "internal",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed",
+            "not_executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "stack_relative"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags",
+            "rsp"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "external": 0.09090909090909091,
+              "internal": 0.09090909090909091,
+              "none": 0.6363636363636364
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "external": 0.23076923076923078,
+              "internal": 0.23076923076923078,
+              "none": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "external": 0.09090909090909091,
+              "internal": 0.09090909090909091,
+              "none": 0.6363636363636364
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "executed": 0.5,
+              "not_executed": 0.3
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "executed": 0.7,
+              "not_executed": 0.1
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "none": 0.2727272727272727,
+              "read": 0.09090909090909091,
+              "write": 0.45454545454545453
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.38461538461538464,
+              "write": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "none": 0.09090909090909091,
+              "read": 0.09090909090909091,
+              "write": 0.6363636363636364
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "arithmetic": 0.38461538461538464,
+              "bitwise": 0.07692307692307693,
+              "comparison": 0.07692307692307693,
+              "control_transfer": 0.07692307692307693,
+              "data_transfer": 0.23076923076923078
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.17647058823529413,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.06666666666666667,
+              "comparison": 0.3333333333333333,
+              "control_transfer": 0.3333333333333333,
+              "data_transfer": 0.06666666666666667
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "arithmetic": 0.07692307692307693,
+              "bitwise": 0.5384615384615384,
+              "comparison": 0.07692307692307693,
+              "control_transfer": 0.07692307692307693,
+              "data_transfer": 0.07692307692307693
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "none": 0.5,
+              "stack_relative": 0.3
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.7857142857142857,
+              "stack_relative": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "none": 0.75,
+              "stack_relative": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "none": 0.7,
+              "stack_relative": 0.1
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "mixed": 0.7777777777777778
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "representation_transform": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "mixed": 0.7777777777777778
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.4166666666666667,
+              "rflags": 0.08333333333333333,
+              "rsp": 0.25
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "rflags": 0.0625,
+              "rsp": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.35714285714285715,
+              "rflags": 0.35714285714285715,
+              "rsp": 0.07142857142857142
+            },
+            "representation_transform": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.5833333333333334,
+              "rflags": 0.08333333333333333,
+              "rsp": 0.08333333333333333
+            },
+            "setup": {
+              "<none>": 0.5625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.25,
+              "eax|rflags": 0.4166666666666667,
+              "rflags": 0.08333333333333333
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.35714285714285715,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.07142857142857142,
+              "rflags": 0.35714285714285715
+            },
+            "representation_transform": {
+              "<none>": 0.08333333333333333,
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "eax": 0.08333333333333333,
+              "eax|rflags": 0.5833333333333334,
+              "rflags": 0.08333333333333333
+            },
+            "setup": {
+              "<none>": 0.1875,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_accumulator",
+          "x86_bitwise",
+          "x86_guard",
+          "x86_memory",
+          "x86_guard_taken"
+        ]
+      }
+    },
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_memory",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__register_write_set",
+              "action_index": 3,
+              "cost": 1.0,
+              "expected_free_energy": -0.20950680884720857,
+              "expected_information_gain": 0.25950680884720856,
+              "field": "register_write_set",
+              "posterior": [
+                0.5539568345323742,
+                0.05035971223021584,
+                0.057553956834532384,
+                0.28776978417266197,
+                0.05035971223021584
+              ],
+              "posterior_confidence": 0.5539568345323742,
+              "posterior_entropy": 1.1509741484723883,
+              "realized_information_gain": -0.20138048075564996,
+              "revealed_value": "<none>",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_1__register_write_set",
+              "action_index": 11,
+              "cost": 1.0,
+              "expected_free_energy": -0.2971679374145539,
+              "expected_information_gain": 0.3471679374145539,
+              "field": "register_write_set",
+              "posterior": [
+                0.924816721260334,
+                0.007643113398845734,
+                0.00998284199032912,
+                0.049914209951645624,
+                0.007643113398845734
+              ],
+              "posterior_confidence": 0.924816721260334,
+              "posterior_entropy": 0.34239286226134086,
+              "realized_information_gain": 0.8085812862110475,
+              "revealed_value": "eax",
+              "step_index": 1
+            }
+          ],
+          "actions_to_confidence": 2,
+          "actions_used": 2,
+          "final_confidence": 0.924816721260334,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 421,
+          "selected_action_ids": [
+            "step_0__register_write_set",
+            "step_1__register_write_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 2.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.20798393907592672,
+              "expected_information_gain": 0.2579839390759267,
+              "field": "instruction_family",
+              "posterior": [
+                0.9659393294305482,
+                0.007982969664715275,
+                0.009047365620010645,
+                0.009047365620010645,
+                0.007982969664715275
+              ],
+              "posterior_confidence": 0.9659393294305482,
+              "posterior_entropy": 0.19573730117526728,
+              "realized_information_gain": 0.753856366541471,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9659393294305482,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 421,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.20798393907592672,
+              "expected_information_gain": 0.2579839390759267,
+              "field": "instruction_family",
+              "posterior": [
+                0.9659393294305482,
+                0.007982969664715275,
+                0.009047365620010645,
+                0.009047365620010645,
+                0.007982969664715275
+              ],
+              "posterior_confidence": 0.9659393294305482,
+              "posterior_entropy": 0.19573730117526728,
+              "realized_information_gain": 0.753856366541471,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9659393294305482,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 421,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_2__operand_class",
+              "action_index": 17,
+              "cost": 1.0,
+              "expected_free_energy": 0.049670548627148085,
+              "expected_information_gain": 0.0003294513728519192,
+              "field": "operand_class",
+              "posterior": [
+                0.7365799667957941,
+                0.06696181516325402,
+                0.06474820143884892,
+                0.06474820143884892,
+                0.06696181516325402
+              ],
+              "posterior_confidence": 0.7365799667957941,
+              "posterior_entropy": 0.9417443547532801,
+              "realized_information_gain": 0.007849312963458255,
+              "revealed_value": "mixed",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_1__flag_effect",
+              "action_index": 12,
+              "cost": 1.0,
+              "expected_free_energy": -0.2058849538229009,
+              "expected_information_gain": 0.2558849538229009,
+              "field": "flag_effect",
+              "posterior": [
+                0.9662113112914937,
+                0.007985217448690032,
+                0.008909126905563261,
+                0.008909126905563261,
+                0.007985217448690032
+              ],
+              "posterior_confidence": 0.9662113112914937,
+              "posterior_entropy": 0.19446537594995753,
+              "realized_information_gain": 0.7472789788033226,
+              "revealed_value": "none",
+              "step_index": 1
+            }
+          ],
+          "actions_to_confidence": 2,
+          "actions_used": 2,
+          "final_confidence": 0.9662113112914937,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": true,
+          "seed": 421,
+          "selected_action_ids": [
+            "step_2__operand_class",
+            "step_1__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 2.0
+        }
+      },
+      "training_fixtures": [
+        "x86_accumulator",
+        "x86_bitwise",
+        "x86_guard",
+        "x86_long_accumulator",
+        "x86_guard_taken"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.06666666666666667,
+            0.07692307692307693,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.2,
+            0.23076923076923078,
+            0.23076923076923078,
+            0.2
+          ],
+          [
+            0.2,
+            0.3333333333333333,
+            0.23076923076923078,
+            0.07692307692307693,
+            0.2
+          ],
+          [
+            0.3333333333333333,
+            0.06666666666666667,
+            0.07692307692307693,
+            0.38461538461538464,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.3333333333333333,
+            0.38461538461538464,
+            0.23076923076923078,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "external",
+            "internal",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed",
+            "not_executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "external": 0.23076923076923078,
+              "internal": 0.23076923076923078,
+              "none": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "external": 0.07692307692307693,
+              "internal": 0.07692307692307693,
+              "none": 0.6923076923076923
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "external": 0.06666666666666667,
+              "internal": 0.06666666666666667,
+              "none": 0.7333333333333333
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.6428571428571429,
+              "not_executed": 0.21428571428571427
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "executed": 0.75,
+              "not_executed": 0.08333333333333333
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "executed": 0.7857142857142857,
+              "not_executed": 0.07142857142857142
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.38461538461538464,
+              "write": 0.38461538461538464
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.07692307692307693,
+              "write": 0.6923076923076923
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.6470588235294118,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.17647058823529413,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.06666666666666667,
+              "comparison": 0.3333333333333333,
+              "control_transfer": 0.3333333333333333,
+              "data_transfer": 0.06666666666666667
+            },
+            "representation_transform": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.6,
+              "comparison": 0.06666666666666667,
+              "control_transfer": 0.06666666666666667,
+              "data_transfer": 0.06666666666666667
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.8461538461538461
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "none": 0.8181818181818182
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "none": 0.8181818181818182
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.8461538461538461
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.06666666666666667,
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "eax": 0.7333333333333333,
+              "rflags": 0.06666666666666667
+            },
+            "exit": {
+              "<none>": 0.06666666666666667,
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "eax": 0.7333333333333333,
+              "rflags": 0.06666666666666667
+            },
+            "guard_check": {
+              "<none>": 0.07692307692307693,
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "eax": 0.38461538461538464,
+              "rflags": 0.38461538461538464
+            },
+            "representation_transform": {
+              "<none>": 0.07692307692307693,
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "eax": 0.6923076923076923,
+              "rflags": 0.07692307692307693
+            },
+            "setup": {
+              "<none>": 0.7333333333333333,
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "eax": 0.06666666666666667,
+              "rflags": 0.06666666666666667
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.35714285714285715,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.07142857142857142,
+              "rflags": 0.35714285714285715
+            },
+            "representation_transform": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.6428571428571429,
+              "rflags": 0.07142857142857142
+            },
+            "setup": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_accumulator",
+          "x86_bitwise",
+          "x86_guard",
+          "x86_long_accumulator",
+          "x86_guard_taken"
+        ]
+      }
+    },
+    {
+      "action_candidates": [
+        {
+          "action_id": "step_0__instruction_family",
+          "action_index": 0,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__operand_class",
+          "action_index": 1,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_read_set",
+          "action_index": 2,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__register_write_set",
+          "action_index": 3,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__flag_effect",
+          "action_index": 4,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__memory_addressing_mode",
+          "action_index": 5,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__branch_target_class",
+          "action_index": 6,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_0__dynamic_status",
+          "action_index": 7,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 0
+        },
+        {
+          "action_id": "step_1__instruction_family",
+          "action_index": 8,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__operand_class",
+          "action_index": 9,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_read_set",
+          "action_index": 10,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__register_write_set",
+          "action_index": 11,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__flag_effect",
+          "action_index": 12,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__memory_addressing_mode",
+          "action_index": 13,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__branch_target_class",
+          "action_index": 14,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_1__dynamic_status",
+          "action_index": 15,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 1
+        },
+        {
+          "action_id": "step_2__instruction_family",
+          "action_index": 16,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__operand_class",
+          "action_index": 17,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_read_set",
+          "action_index": 18,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__register_write_set",
+          "action_index": 19,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__flag_effect",
+          "action_index": 20,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__memory_addressing_mode",
+          "action_index": 21,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__branch_target_class",
+          "action_index": 22,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_2__dynamic_status",
+          "action_index": 23,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 2
+        },
+        {
+          "action_id": "step_3__instruction_family",
+          "action_index": 24,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__operand_class",
+          "action_index": 25,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_read_set",
+          "action_index": 26,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__register_write_set",
+          "action_index": 27,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__flag_effect",
+          "action_index": 28,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__memory_addressing_mode",
+          "action_index": 29,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__branch_target_class",
+          "action_index": 30,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_3__dynamic_status",
+          "action_index": 31,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 3
+        },
+        {
+          "action_id": "step_4__instruction_family",
+          "action_index": 32,
+          "cost": 1.0,
+          "field": "instruction_family",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__operand_class",
+          "action_index": 33,
+          "cost": 1.0,
+          "field": "operand_class",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__register_read_set",
+          "action_index": 34,
+          "cost": 1.0,
+          "field": "register_read_set",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__register_write_set",
+          "action_index": 35,
+          "cost": 1.0,
+          "field": "register_write_set",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__flag_effect",
+          "action_index": 36,
+          "cost": 1.0,
+          "field": "flag_effect",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__memory_addressing_mode",
+          "action_index": 37,
+          "cost": 1.0,
+          "field": "memory_addressing_mode",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__branch_target_class",
+          "action_index": 38,
+          "cost": 1.0,
+          "field": "branch_target_class",
+          "step_index": 4
+        },
+        {
+          "action_id": "step_4__dynamic_status",
+          "action_index": 39,
+          "cost": 1.0,
+          "field": "dynamic_status",
+          "step_index": 4
+        }
+      ],
+      "fields": [
+        "instruction_family",
+        "operand_class",
+        "register_read_set",
+        "register_write_set",
+        "flag_effect",
+        "memory_addressing_mode",
+        "branch_target_class",
+        "dynamic_status"
+      ],
+      "held_out_fixture": "x86_guard_taken",
+      "leakage_free": true,
+      "policies": {
+        "active": {
+          "actions": [
+            {
+              "action_id": "step_0__flag_effect",
+              "action_index": 4,
+              "cost": 1.0,
+              "expected_free_energy": -0.17492610010963627,
+              "expected_information_gain": 0.2249261001096363,
+              "field": "flag_effect",
+              "posterior": [
+                0.9466399197592779,
+                0.023470411233701107,
+                0.009027081243731194,
+                0.01303911735205617,
+                0.007823470411233702
+              ],
+              "posterior_confidence": 0.9466399197592779,
+              "posterior_entropy": 0.2770028786025391,
+              "realized_information_gain": 0.6725907891141993,
+              "revealed_value": "none",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9466399197592779,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "active",
+          "reached_confidence": true,
+          "seed": 422,
+          "selected_action_ids": [
+            "step_0__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "fixed": {
+          "actions": [
+            {
+              "action_id": "step_0__instruction_family",
+              "action_index": 0,
+              "cost": 1.0,
+              "expected_free_energy": -0.1697643258203056,
+              "expected_information_gain": 0.2197643258203056,
+              "field": "instruction_family",
+              "posterior": [
+                0.9476907010965016,
+                0.02349646366354963,
+                0.008876441828452082,
+                0.012104238856980112,
+                0.007832154554516543
+              ],
+              "posterior_confidence": 0.9476907010965016,
+              "posterior_entropy": 0.27239783476555834,
+              "realized_information_gain": 0.67719583295118,
+              "revealed_value": "data_transfer",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9476907010965016,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "fixed",
+          "reached_confidence": true,
+          "seed": 422,
+          "selected_action_ids": [
+            "step_0__instruction_family"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "oracle": {
+          "actions": [
+            {
+              "action_id": "step_0__register_read_set",
+              "action_index": 2,
+              "cost": 1.0,
+              "expected_free_energy": -0.1542054199004697,
+              "expected_information_gain": 0.2042054199004697,
+              "field": "register_read_set",
+              "posterior": [
+                0.9542825667860095,
+                0.00963921784632333,
+                0.011016248967226661,
+                0.015422748554117327,
+                0.00963921784632333
+              ],
+              "posterior_confidence": 0.9542825667860095,
+              "posterior_entropy": 0.2481527817896712,
+              "realized_information_gain": 0.7014408859270671,
+              "revealed_value": "<none>",
+              "step_index": 0
+            }
+          ],
+          "actions_to_confidence": 1,
+          "actions_used": 1,
+          "final_confidence": 0.9542825667860095,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "oracle",
+          "reached_confidence": true,
+          "seed": 422,
+          "selected_action_ids": [
+            "step_0__register_read_set"
+          ],
+          "threshold": 0.85,
+          "total_cost": 1.0
+        },
+        "random": {
+          "actions": [
+            {
+              "action_id": "step_2__instruction_family",
+              "action_index": 16,
+              "cost": 1.0,
+              "expected_free_energy": -0.1697643258203056,
+              "expected_information_gain": 0.2197643258203056,
+              "field": "instruction_family",
+              "posterior": [
+                0.5860510171133355,
+                0.053277365192121416,
+                0.06038101388440427,
+                0.24701323861801744,
+                0.053277365192121416
+              ],
+              "posterior_confidence": 0.5860510171133355,
+              "posterior_entropy": 1.1404961590255451,
+              "realized_information_gain": -0.19090249130880677,
+              "revealed_value": "control_transfer",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_0__memory_addressing_mode",
+              "action_index": 5,
+              "cost": 1.0,
+              "expected_free_energy": 0.03457510643344468,
+              "expected_information_gain": 0.015424893566555326,
+              "field": "memory_addressing_mode",
+              "posterior": [
+                0.5773665933250273,
+                0.052487872120457024,
+                0.0694006309148265,
+                0.2365930599369085,
+                0.0641518437027808
+              ],
+              "posterior_confidence": 0.5773665933250273,
+              "posterior_entropy": 1.1741983242768308,
+              "realized_information_gain": -0.033702165251285665,
+              "revealed_value": "none",
+              "step_index": 0
+            },
+            {
+              "action_id": "step_2__flag_effect",
+              "action_index": 20,
+              "cost": 1.0,
+              "expected_free_energy": -0.22281964572435747,
+              "expected_information_gain": 0.27281964572435746,
+              "field": "flag_effect",
+              "posterior": [
+                0.29501893751921116,
+                0.026819903410837374,
+                0.04091754494730317,
+                0.6044637321760694,
+                0.03277988194657901
+              ],
+              "posterior_confidence": 0.6044637321760694,
+              "posterior_entropy": 1.0043005099656594,
+              "realized_information_gain": 0.16989781431117135,
+              "revealed_value": "read",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_3__operand_class",
+              "action_index": 25,
+              "cost": 1.0,
+              "expected_free_energy": 0.038385293189731204,
+              "expected_information_gain": 0.011614706810268799,
+              "field": "operand_class",
+              "posterior": [
+                0.32618773698577924,
+                0.029653430635070838,
+                0.04374493692859623,
+                0.5641708135632449,
+                0.0362430818873088
+              ],
+              "posterior_confidence": 0.5641708135632449,
+              "posterior_entropy": 1.0498098800659408,
+              "realized_information_gain": -0.04550937010028133,
+              "revealed_value": "mixed",
+              "step_index": 3
+            },
+            {
+              "action_id": "step_2__branch_target_class",
+              "action_index": 22,
+              "cost": 1.0,
+              "expected_free_energy": -0.04687175257060336,
+              "expected_information_gain": 0.09687175257060336,
+              "field": "branch_target_class",
+              "posterior": [
+                0.2280365069714705,
+                0.02073059154286095,
+                0.035678889990089196,
+                0.6902166218320825,
+                0.025337389663496714
+              ],
+              "posterior_confidence": 0.6902166218320825,
+              "posterior_entropy": 0.8853989587083364,
+              "realized_information_gain": 0.16441092135760438,
+              "revealed_value": "__UNKNOWN__",
+              "step_index": 2
+            },
+            {
+              "action_id": "step_4__branch_target_class",
+              "action_index": 38,
+              "cost": 1.0,
+              "expected_free_energy": -0.03247869732722462,
+              "expected_information_gain": 0.08247869732722463,
+              "field": "branch_target_class",
+              "posterior": [
+                0.3576576580779428,
+                0.03251433255254025,
+                0.053415967255971704,
+                0.5166723023271071,
+                0.039739739786438084
+              ],
+              "posterior_confidence": 0.5166723023271071,
+              "posterior_entropy": 1.1049818879837154,
+              "realized_information_gain": -0.21958292927537904,
+              "revealed_value": "none",
+              "step_index": 4
+            },
+            {
+              "action_id": "step_1__register_read_set",
+              "action_index": 10,
+              "cost": 1.0,
+              "expected_free_energy": -0.16171252226276178,
+              "expected_information_gain": 0.2117125222627618,
+              "field": "register_read_set",
+              "posterior": [
+                0.08687606493337922,
+                0.0710804167636739,
+                0.1334560191528333,
+                0.6024056420093168,
+                0.10618185714079681
+              ],
+              "posterior_confidence": 0.6024056420093168,
+              "posterior_entropy": 1.2124101398519913,
+              "realized_information_gain": -0.10742825186827587,
+              "revealed_value": "eax",
+              "step_index": 1
+            },
+            {
+              "action_id": "step_1__flag_effect",
+              "action_index": 12,
+              "cost": 1.0,
+              "expected_free_energy": -0.10536406504562033,
+              "expected_information_gain": 0.15536406504562034,
+              "field": "flag_effect",
+              "posterior": [
+                0.013806248394362185,
+                0.10166419272212153,
+                0.22024401919833134,
+                0.4786682001609822,
+                0.18561733952420267
+              ],
+              "posterior_confidence": 0.4786682001609822,
+              "posterior_entropy": 1.29002290573648,
+              "realized_information_gain": -0.07761276588448873,
+              "revealed_value": "write",
+              "step_index": 1
+            }
+          ],
+          "actions_to_confidence": null,
+          "actions_used": 8,
+          "final_confidence": 0.4786682001609822,
+          "initial_confidence": 0.7333333333333334,
+          "max_steps": 8,
+          "policy": "random",
+          "reached_confidence": false,
+          "seed": 422,
+          "selected_action_ids": [
+            "step_2__instruction_family",
+            "step_0__memory_addressing_mode",
+            "step_2__flag_effect",
+            "step_3__operand_class",
+            "step_2__branch_target_class",
+            "step_4__branch_target_class",
+            "step_1__register_read_set",
+            "step_1__flag_effect"
+          ],
+          "threshold": 0.85,
+          "total_cost": 8.0
+        }
+      },
+      "training_fixtures": [
+        "x86_accumulator",
+        "x86_bitwise",
+        "x86_guard",
+        "x86_long_accumulator",
+        "x86_memory"
+      ],
+      "training_model": {
+        "B": [
+          [
+            0.06666666666666667,
+            0.06666666666666667,
+            0.07692307692307693,
+            0.1111111111111111,
+            0.2
+          ],
+          [
+            0.4666666666666667,
+            0.2,
+            0.23076923076923078,
+            0.1111111111111111,
+            0.2
+          ],
+          [
+            0.2,
+            0.3333333333333333,
+            0.23076923076923078,
+            0.1111111111111111,
+            0.2
+          ],
+          [
+            0.2,
+            0.06666666666666667,
+            0.07692307692307693,
+            0.3333333333333333,
+            0.2
+          ],
+          [
+            0.06666666666666667,
+            0.3333333333333333,
+            0.38461538461538464,
+            0.3333333333333333,
+            0.2
+          ]
+        ],
+        "D": [
+          0.7333333333333333,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667,
+          0.06666666666666667
+        ],
+        "alpha": 0.5,
+        "field_support": {
+          "branch_target_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "external",
+            "none"
+          ],
+          "dynamic_status": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "executed"
+          ],
+          "flag_effect": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "read",
+            "write"
+          ],
+          "instruction_family": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "arithmetic",
+            "bitwise",
+            "comparison",
+            "control_transfer",
+            "data_transfer"
+          ],
+          "memory_addressing_mode": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "none",
+            "stack_relative"
+          ],
+          "operand_class": [
+            "__MISSING__",
+            "__UNKNOWN__",
+            "mixed"
+          ],
+          "register_read_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "rflags",
+            "rsp"
+          ],
+          "register_write_set": [
+            "<none>",
+            "__MISSING__",
+            "__UNKNOWN__",
+            "eax",
+            "eax|rflags",
+            "rflags"
+          ]
+        },
+        "fields": [
+          "instruction_family",
+          "operand_class",
+          "register_read_set",
+          "register_write_set",
+          "flag_effect",
+          "memory_addressing_mode",
+          "branch_target_class",
+          "dynamic_status"
+        ],
+        "hidden_state_labels": [
+          "setup",
+          "accumulator_update",
+          "representation_transform",
+          "guard_check",
+          "exit"
+        ],
+        "missing_field_policy": {
+          "missing": "__MISSING__",
+          "unseen_training_support": "__UNKNOWN__"
+        },
+        "probabilities": {
+          "branch_target_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "external": 0.07142857142857142,
+              "none": 0.7857142857142857
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "external": 0.07142857142857142,
+              "none": 0.7857142857142857
+            },
+            "guard_check": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "external": 0.375,
+              "none": 0.375
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "external": 0.08333333333333333,
+              "none": 0.75
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "external": 0.07142857142857142,
+              "none": 0.7857142857142857
+            }
+          },
+          "dynamic_status": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "executed": 0.8461538461538461
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "executed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.14285714285714285,
+              "__UNKNOWN__": 0.14285714285714285,
+              "executed": 0.7142857142857143
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "executed": 0.8181818181818182
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "executed": 0.8461538461538461
+            }
+          },
+          "flag_effect": {
+            "accumulator_update": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.2,
+              "read": 0.06666666666666667,
+              "write": 0.6
+            },
+            "exit": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.06666666666666667,
+              "read": 0.06666666666666667,
+              "write": 0.7333333333333333
+            },
+            "guard_check": {
+              "__MISSING__": 0.1111111111111111,
+              "__UNKNOWN__": 0.1111111111111111,
+              "none": 0.1111111111111111,
+              "read": 0.3333333333333333,
+              "write": 0.3333333333333333
+            },
+            "representation_transform": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "none": 0.07692307692307693,
+              "read": 0.07692307692307693,
+              "write": 0.6923076923076923
+            },
+            "setup": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "none": 0.7333333333333333,
+              "read": 0.06666666666666667,
+              "write": 0.06666666666666667
+            }
+          },
+          "instruction_family": {
+            "accumulator_update": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.17647058823529413
+            },
+            "exit": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.5294117647058824,
+              "bitwise": 0.17647058823529413,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.058823529411764705
+            },
+            "guard_check": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "arithmetic": 0.09090909090909091,
+              "bitwise": 0.09090909090909091,
+              "comparison": 0.2727272727272727,
+              "control_transfer": 0.2727272727272727,
+              "data_transfer": 0.09090909090909091
+            },
+            "representation_transform": {
+              "__MISSING__": 0.06666666666666667,
+              "__UNKNOWN__": 0.06666666666666667,
+              "arithmetic": 0.06666666666666667,
+              "bitwise": 0.6,
+              "comparison": 0.06666666666666667,
+              "control_transfer": 0.06666666666666667,
+              "data_transfer": 0.06666666666666667
+            },
+            "setup": {
+              "__MISSING__": 0.058823529411764705,
+              "__UNKNOWN__": 0.058823529411764705,
+              "arithmetic": 0.058823529411764705,
+              "bitwise": 0.058823529411764705,
+              "comparison": 0.058823529411764705,
+              "control_transfer": 0.058823529411764705,
+              "data_transfer": 0.6470588235294118
+            }
+          },
+          "memory_addressing_mode": {
+            "accumulator_update": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            },
+            "exit": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.7857142857142857,
+              "stack_relative": 0.07142857142857142
+            },
+            "guard_check": {
+              "__MISSING__": 0.125,
+              "__UNKNOWN__": 0.125,
+              "none": 0.625,
+              "stack_relative": 0.125
+            },
+            "representation_transform": {
+              "__MISSING__": 0.08333333333333333,
+              "__UNKNOWN__": 0.08333333333333333,
+              "none": 0.75,
+              "stack_relative": 0.08333333333333333
+            },
+            "setup": {
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "none": 0.6428571428571429,
+              "stack_relative": 0.21428571428571427
+            }
+          },
+          "operand_class": {
+            "accumulator_update": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "exit": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            },
+            "guard_check": {
+              "__MISSING__": 0.14285714285714285,
+              "__UNKNOWN__": 0.14285714285714285,
+              "mixed": 0.7142857142857143
+            },
+            "representation_transform": {
+              "__MISSING__": 0.09090909090909091,
+              "__UNKNOWN__": 0.09090909090909091,
+              "mixed": 0.8181818181818182
+            },
+            "setup": {
+              "__MISSING__": 0.07692307692307693,
+              "__UNKNOWN__": 0.07692307692307693,
+              "mixed": 0.8461538461538461
+            }
+          },
+          "register_read_set": {
+            "accumulator_update": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.6875,
+              "rflags": 0.0625,
+              "rsp": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.1,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.3,
+              "rflags": 0.3,
+              "rsp": 0.1
+            },
+            "representation_transform": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.6428571428571429,
+              "rflags": 0.07142857142857142,
+              "rsp": 0.07142857142857142
+            },
+            "setup": {
+              "<none>": 0.5625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "rflags": 0.0625,
+              "rsp": 0.1875
+            }
+          },
+          "register_write_set": {
+            "accumulator_update": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.1875,
+              "eax|rflags": 0.5625,
+              "rflags": 0.0625
+            },
+            "exit": {
+              "<none>": 0.0625,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.0625,
+              "eax|rflags": 0.6875,
+              "rflags": 0.0625
+            },
+            "guard_check": {
+              "<none>": 0.3,
+              "__MISSING__": 0.1,
+              "__UNKNOWN__": 0.1,
+              "eax": 0.1,
+              "eax|rflags": 0.1,
+              "rflags": 0.3
+            },
+            "representation_transform": {
+              "<none>": 0.07142857142857142,
+              "__MISSING__": 0.07142857142857142,
+              "__UNKNOWN__": 0.07142857142857142,
+              "eax": 0.07142857142857142,
+              "eax|rflags": 0.6428571428571429,
+              "rflags": 0.07142857142857142
+            },
+            "setup": {
+              "<none>": 0.1875,
+              "__MISSING__": 0.0625,
+              "__UNKNOWN__": 0.0625,
+              "eax": 0.5625,
+              "eax|rflags": 0.0625,
+              "rflags": 0.0625
+            }
+          }
+        },
+        "schema_version": "1.0.0",
+        "training_fixtures": [
+          "x86_accumulator",
+          "x86_bitwise",
+          "x86_guard",
+          "x86_long_accumulator",
+          "x86_memory"
+        ]
+      }
+    }
+  ],
+  "policies": [
+    "active",
+    "fixed",
+    "random",
+    "oracle"
+  ],
+  "schema_version": "1.0.0",
+  "selection_contract": {
+    "active": "select from predictive field likelihoods before reading the held-out field value",
+    "fixed": "reveal candidates in source step/field order",
+    "oracle": "inadmissible upper-bound reference that reads the realized value before selecting",
+    "random": "reveal a seeded permutation of the same candidate pool"
+  },
+  "summary": {
+    "action_pool_changes_evidence": true,
+    "active_minus_fixed_actions": 0.16666666666666666,
+    "active_not_worse_count": 5,
+    "confidence_rate": {
+      "active": 1.0,
+      "fixed": 1.0,
+      "oracle": 1.0,
+      "random": 0.5
+    },
+    "field_count": 8,
+    "fixture_count": 6,
+    "leakage_free": true,
+    "mean_actions_used": {
+      "active": 1.1666666666666667,
+      "fixed": 1.0,
+      "oracle": 1.0,
+      "random": 5.666666666666667
+    },
+    "mean_final_confidence": {
+      "active": 0.9434147097081583,
+      "fixed": 0.9509668062026299,
+      "oracle": 0.9568741495387262,
+      "random": 0.7582898166151014
+    },
+    "mean_total_cost": {
+      "active": 1.1666666666666667,
+      "fixed": 1.0,
+      "oracle": 1.0,
+      "random": 5.666666666666667
+    }
+  }
+}

@@ -353,6 +353,123 @@ def validate_categorical_rxinfer_outputs(
     return records
 
 
+def _cached_rxinfer_outputs(
+    trace_bundle_path: Path,
+    output_dir: Path,
+    *,
+    iterations: int,
+    categorical: bool,
+) -> tuple[list[dict[str, Any]], dict[str, Any]] | None:
+    """Return a validated local RxInfer result when its lineage still matches.
+
+    Julia/RxInfer startup and compilation are materially slower than the Python
+    producer graph.  The manuscript generator calls this bridge more than once
+    during template hydration, so rerunning an identical native inference job
+    would make a deterministic render needlessly fragile and exceed the
+    template's hydration timeout.  Cache reuse is fail-closed: every artifact
+    is revalidated, the trace hash and iteration count must match, and the
+    declared model, mode, and pinned toolchain must be unchanged.  Any missing
+    or malformed artifact returns ``None`` so the normal native execution path
+    repairs it.
+    """
+
+    try:
+        expected_data_hash = file_sha256(trace_bundle_path)
+        if categorical:
+            records = validate_categorical_rxinfer_outputs(
+                output_dir, expected_data_hash=expected_data_hash
+            )
+            diagnostics_path = output_dir / "categorical_diagnostics.json"
+            expected_model = "categorical_phase_hmm"
+            expected_mode = "categorical"
+        else:
+            records = validate_rxinfer_outputs(
+                output_dir, expected_data_hash=expected_data_hash
+            )
+            diagnostics_path = output_dir / "diagnostics.json"
+            expected_model = "gaussian_event_code_model"
+            expected_mode = "static"
+        diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+        if not isinstance(diagnostics, dict):
+            return None
+        if (
+            diagnostics.get("data_hash") != expected_data_hash
+            or diagnostics.get("iteration_count") != iterations
+            or diagnostics.get("model_name") != expected_model
+            or diagnostics.get("mode") != expected_mode
+            or len(records) != iterations
+        ):
+            return None
+        validate_backend_versions(
+            str(diagnostics["julia_version"]),
+            str(diagnostics["rxinfer_version"]),
+        )
+    except (
+        OSError,
+        KeyError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+        RuntimeError,
+    ):
+        return None
+    return records, diagnostics
+
+
+def _result_from_outputs(
+    output_dir: Path,
+    records: list[dict[str, Any]],
+    diagnostics: dict[str, Any],
+    *,
+    categorical: bool,
+    figure_path: Path,
+) -> RxInferRunResult:
+    """Build the public bridge result from already validated artifacts."""
+
+    def artifact_path(path: Path) -> str:
+        """Serialize project paths and isolated test/output-root paths safely."""
+
+        try:
+            return str(path.relative_to(PROJECT_ROOT))
+        except ValueError:
+            return str(path)
+
+    if categorical:
+        trace_name = "categorical_free_energy_trace.jsonl"
+        posteriors_name = "categorical_posteriors.json"
+        diagnostics_name = "categorical_diagnostics.json"
+        model_config_name = "categorical_model_config.json"
+        figure_name = "rxinfer_categorical_free_energy"
+    else:
+        trace_name = "free_energy_trace.jsonl"
+        posteriors_name = "posteriors.json"
+        diagnostics_name = "diagnostics.json"
+        model_config_name = "model_config.json"
+        figure_name = "rxinfer_free_energy"
+    artifact_paths = {
+        "free_energy_trace": artifact_path(output_dir / trace_name),
+        "posteriors": artifact_path(output_dir / posteriors_name),
+        "diagnostics": artifact_path(output_dir / diagnostics_name),
+        "model_config": artifact_path(output_dir / model_config_name),
+        "stdout": artifact_path(output_dir / "stdout.log"),
+        "stderr": artifact_path(output_dir / "stderr.log"),
+    }
+    return RxInferRunResult(
+        run_id=str(diagnostics["run_id"]),
+        sample_id=str(diagnostics["sample_id"]),
+        model_name=str(diagnostics["model_name"]),
+        mode=str(diagnostics["mode"]),
+        free_energy_values=tuple(float(record["value"]) for record in records),
+        final_free_energy=float(diagnostics["free_energy_final"]),
+        data_hash=str(diagnostics["data_hash"]),
+        config_hash=str(diagnostics["config_hash"]),
+        rxinfer_version=str(diagnostics["rxinfer_version"]),
+        julia_version=str(diagnostics["julia_version"]),
+        artifact_paths=artifact_paths,
+        figure_paths={figure_name: str(figure_path.relative_to(PROJECT_ROOT))},
+    )
+
+
 def run_rxinfer_backend(
     trace_bundle_path: Path,
     *,
@@ -374,6 +491,27 @@ def run_rxinfer_backend(
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
     stdout_path = rxinfer_dir / "stdout.log"
     stderr_path = rxinfer_dir / "stderr.log"
+
+    cached = _cached_rxinfer_outputs(
+        trace_bundle_path,
+        rxinfer_dir,
+        iterations=iterations,
+        categorical=False,
+    )
+    if cached is not None:
+        records, diagnostics = cached
+        figure_path = plot_rxinfer_free_energy(
+            records,
+            OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
+            title="RxInfer Bethe Free Energy: Gaussian event-code",
+        )
+        return _result_from_outputs(
+            rxinfer_dir,
+            records,
+            diagnostics,
+            categorical=False,
+            figure_path=figure_path,
+        )
 
     stdout_chunks: list[str] = []
     stderr_chunks: list[str] = []
@@ -440,41 +578,17 @@ def run_rxinfer_backend(
         str(diagnostics["julia_version"]),
         str(diagnostics["rxinfer_version"]),
     )
-    free_energy_values = tuple(float(record["value"]) for record in records)
     figure_path = plot_rxinfer_free_energy(
         records,
         OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
         title="RxInfer Bethe Free Energy: Gaussian event-code",
     )
-    artifact_paths = {
-        "free_energy_trace": str(
-            (rxinfer_dir / "free_energy_trace.jsonl").relative_to(PROJECT_ROOT)
-        ),
-        "posteriors": str((rxinfer_dir / "posteriors.json").relative_to(PROJECT_ROOT)),
-        "diagnostics": str(
-            (rxinfer_dir / "diagnostics.json").relative_to(PROJECT_ROOT)
-        ),
-        "model_config": str(
-            (rxinfer_dir / "model_config.json").relative_to(PROJECT_ROOT)
-        ),
-        "stdout": str(stdout_path.relative_to(PROJECT_ROOT)),
-        "stderr": str(stderr_path.relative_to(PROJECT_ROOT)),
-    }
-    return RxInferRunResult(
-        run_id=str(diagnostics["run_id"]),
-        sample_id=str(diagnostics["sample_id"]),
-        model_name=str(diagnostics["model_name"]),
-        mode=str(diagnostics["mode"]),
-        free_energy_values=free_energy_values,
-        final_free_energy=float(diagnostics["free_energy_final"]),
-        data_hash=str(diagnostics["data_hash"]),
-        config_hash=str(diagnostics["config_hash"]),
-        rxinfer_version=str(diagnostics["rxinfer_version"]),
-        julia_version=str(diagnostics["julia_version"]),
-        artifact_paths=artifact_paths,
-        figure_paths={
-            "rxinfer_free_energy": str(figure_path.relative_to(PROJECT_ROOT))
-        },
+    return _result_from_outputs(
+        rxinfer_dir,
+        records,
+        diagnostics,
+        categorical=False,
+        figure_path=figure_path,
     )
 
 
@@ -505,6 +619,26 @@ def run_rxinfer_categorical_backend(
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
     stdout_path = rxinfer_dir / "stdout.log"
     stderr_path = rxinfer_dir / "stderr.log"
+
+    cached = _cached_rxinfer_outputs(
+        trace_bundle_path,
+        rxinfer_dir,
+        iterations=iterations,
+        categorical=True,
+    )
+    if cached is not None:
+        records, diagnostics = cached
+        figure_path = plot_rxinfer_categorical_free_energy(
+            records,
+            OUTPUT_DIR / "figures" / "rxinfer_categorical_free_energy.png",
+        )
+        return _result_from_outputs(
+            rxinfer_dir,
+            records,
+            diagnostics,
+            categorical=True,
+            figure_path=figure_path,
+        )
 
     stdout_chunks: list[str] = []
     stderr_chunks: list[str] = []
@@ -575,39 +709,10 @@ def run_rxinfer_categorical_backend(
         records,
         OUTPUT_DIR / "figures" / "rxinfer_categorical_free_energy.png",
     )
-    artifact_paths = {
-        "free_energy_trace": str(
-            (rxinfer_dir / "categorical_free_energy_trace.jsonl").relative_to(
-                PROJECT_ROOT
-            )
-        ),
-        "posteriors": str(
-            (rxinfer_dir / "categorical_posteriors.json").relative_to(PROJECT_ROOT)
-        ),
-        "diagnostics": str(
-            (rxinfer_dir / "categorical_diagnostics.json").relative_to(PROJECT_ROOT)
-        ),
-        "model_config": str(
-            (rxinfer_dir / "categorical_model_config.json").relative_to(PROJECT_ROOT)
-        ),
-        "stdout": str(stdout_path.relative_to(PROJECT_ROOT)),
-        "stderr": str(stderr_path.relative_to(PROJECT_ROOT)),
-    }
-    return RxInferRunResult(
-        run_id=str(diagnostics["run_id"]),
-        sample_id=str(diagnostics["sample_id"]),
-        model_name=str(diagnostics["model_name"]),
-        mode=str(diagnostics["mode"]),
-        free_energy_values=tuple(float(record["value"]) for record in records),
-        final_free_energy=float(diagnostics["free_energy_final"]),
-        data_hash=str(diagnostics["data_hash"]),
-        config_hash=str(diagnostics["config_hash"]),
-        rxinfer_version=str(diagnostics["rxinfer_version"]),
-        julia_version=str(diagnostics["julia_version"]),
-        artifact_paths=artifact_paths,
-        figure_paths={
-            "rxinfer_categorical_free_energy": str(
-                figure_path.relative_to(PROJECT_ROOT)
-            )
-        },
+    return _result_from_outputs(
+        rxinfer_dir,
+        records,
+        diagnostics,
+        categorical=True,
+        figure_path=figure_path,
     )

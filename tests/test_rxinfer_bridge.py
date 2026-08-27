@@ -8,6 +8,7 @@ contract is exercised with plain string arguments.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -15,9 +16,12 @@ from src.rxinfer_bridge import (
     EXPECTED_JULIA_VERSION,
     EXPECTED_RXINFER_VERSION,
     JULIA_MANIFEST,
+    _cached_rxinfer_outputs,
     julia_available,
     load_free_energy_records,
     resolve_julia_executable,
+    run_rxinfer_backend,
+    run_rxinfer_categorical_backend,
     validate_backend_versions,
     validate_free_energy_records,
     validate_julia_manifest,
@@ -200,3 +204,61 @@ def test_validate_rxinfer_outputs_round_trips_records(tmp_path) -> None:
     records = validate_rxinfer_outputs(output_dir)
     assert len(records) == 1
     assert records[0]["value"] == 1.0
+
+
+def test_cached_rxinfer_outputs_requires_matching_lineage(tmp_path) -> None:
+    """A valid local native receipt is reusable only for the same trace hash."""
+
+    trace = tmp_path / "trace.json"
+    trace.write_text('{"sample": "fixture"}\n', encoding="utf-8")
+    from src.rxinfer_bridge import file_sha256
+
+    data_hash = file_sha256(trace)
+    output_dir = tmp_path / "rxinfer"
+    output_dir.mkdir()
+    record = _valid_free_energy_record()
+    record["data_hash"] = data_hash
+    (output_dir / "free_energy_trace.jsonl").write_text(
+        json.dumps(record) + "\n", encoding="utf-8"
+    )
+    for name in ("posteriors.json", "diagnostics.json", "model_config.json"):
+        (output_dir / name).write_text("{}", encoding="utf-8")
+    (output_dir / "diagnostics.json").write_text(
+        json.dumps(
+            {
+                "data_hash": data_hash,
+                "iteration_count": 1,
+                "model_name": "gaussian_event_code_model",
+                "mode": "static",
+                "julia_version": EXPECTED_JULIA_VERSION,
+                "rxinfer_version": EXPECTED_RXINFER_VERSION,
+            }
+        ),
+        encoding="utf-8",
+    )
+    cached = _cached_rxinfer_outputs(trace, output_dir, iterations=1, categorical=False)
+    assert cached is not None
+    trace.write_text('{"sample": "changed"}\n', encoding="utf-8")
+    assert (
+        _cached_rxinfer_outputs(trace, output_dir, iterations=1, categorical=False)
+        is None
+    )
+
+
+def test_native_backends_execute_real_julia_in_isolated_output_roots(tmp_path) -> None:
+    """Exercise both native execution paths, not only cached receipt reuse."""
+
+    if not julia_available():
+        pytest.skip("pinned Julia unavailable")
+    trace = Path("output/data/trace_bundle.json").resolve()
+    gaussian = run_rxinfer_backend(
+        trace, output_dir=tmp_path / "gaussian", iterations=1, instantiate=False
+    )
+    categorical = run_rxinfer_categorical_backend(
+        trace, output_dir=tmp_path / "categorical", iterations=1, instantiate=False
+    )
+    assert gaussian.mode == "static"
+    assert categorical.mode == "categorical"
+    assert len(gaussian.free_energy_values) == 1
+    assert len(categorical.free_energy_values) == 1
+    assert str(tmp_path) in gaussian.artifact_paths["diagnostics"]

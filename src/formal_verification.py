@@ -10,16 +10,22 @@ it does not certify the Python lifter, Capstone, Unicorn, or the whole x86 ISA.
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 from typing import Any
 
+from .artifact_contract import write_json_artifact
+from .provenance import generator_revision, toolchain_versions
+from .receipt import build_receipt_envelope, validate_receipt_envelope
+from .scientific_protocol import scientific_protocol_payload
+from .lean_bridge import run_generated_lean_fixture
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FORMAL_PROJECT_DIR = PROJECT_ROOT / "formal"
 FORMAL_ARTIFACT = "output/data/formal_verification.json"
-FORMAL_SCHEMA_VERSION = "1.0.0"
+FORMAL_SCHEMA_VERSION = "2.0.0"
 FORMAL_TOOLCHAIN = "leanprover/lean4:v4.28.0"
 FORMAL_THEOREMS = (
     "ActiveAssembly.inc_inc_eq_add_two",
@@ -27,6 +33,13 @@ FORMAL_THEOREMS = (
     "ActiveAssembly.neutral_nop_equivalence",
     "ActiveAssembly.changed_subtraction_is_not_equivalent",
     "ActiveAssembly.run_nop_append",
+    "ActiveAssembly.write32_zero_extends",
+    "ActiveAssembly.inc_preserves_cf",
+    "ActiveAssembly.adc_zero_carry",
+    "ActiveAssembly.unsupported_is_explicit",
+    "ActiveAssembly.explicit_unsupported_is_not_supported",
+    "ActiveAssembly.declared_opcode_has_decidable_status",
+    "ActiveAssembly.generated_trace_matches",
 )
 
 
@@ -47,6 +60,38 @@ def _formal_source_hashes(project_root: Path = PROJECT_ROOT) -> dict[str, str]:
         for path in sorted(formal_root.rglob("*"))
         if path.is_file()
         if ".lake" not in path.parts
+    }
+
+
+def _axiom_report(project_root: Path = PROJECT_ROOT) -> dict[str, object]:
+    """Scan Lean sources for unfinished proofs or undocumented escape hatches."""
+
+    findings: dict[str, list[str]] = {
+        "sorry": [],
+        "admit": [],
+        "unsafe": [],
+        "axiom": [],
+    }
+    for path in sorted((project_root / "formal").rglob("*.lean")):
+        if ".lake" in path.parts:
+            continue
+        text = path.read_text(encoding="utf-8")
+        relative = str(path.relative_to(project_root))
+        for key, pattern in (
+            ("sorry", r"\bsorry\b"),
+            ("admit", r"\badmit\b"),
+            ("unsafe", r"\bunsafe\b"),
+            ("axiom", r"^\s*axiom\s+"),
+        ):
+            if re.search(pattern, text, flags=re.MULTILINE):
+                findings[key].append(relative)
+    return {
+        "sorries": findings["sorry"],
+        "admits": findings["admit"],
+        "unsafe_declarations": findings["unsafe"],
+        "axiom_declarations": findings["axiom"],
+        "kernel_only_proof_boundary": True,
+        "clean": not any(findings.values()),
     }
 
 
@@ -86,10 +131,13 @@ def build_formal_project(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "formal Lean build failed with exit code "
             f"{completed.returncode}: {output[-4000:]}"
         )
+    bridge = run_generated_lean_fixture(project_root)
     return {
         "command": list(command),
         "returncode": int(completed.returncode),
         "build_completed": True,
+        "generated_bridge": bridge,
+        "axiom_report": _axiom_report(project_root),
     }
 
 
@@ -97,12 +145,32 @@ def formal_verification_payload(project_root: Path = PROJECT_ROOT) -> dict[str, 
     """Build the deterministic receipt for the locally checked formal subset."""
 
     build = build_formal_project(project_root)
+    protocol = scientific_protocol_payload()
+    source_hashes = _formal_source_hashes(project_root)
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes=source_hashes,
+        toolchain_versions=toolchain_versions(("numpy",)),
+        status="validated",
+        limitations=(
+            "The Lean project checks a bounded normalized-state fragment and does not formalize complete x86-64 semantics.",
+            "Cross-language Python/Unicorn agreement is recorded separately as computational evidence.",
+        ),
+        unsupported_cases=(
+            "Complete instruction decoding, exceptions, SIMD, floating point, privileged state, and unbounded memory are outside this proof.",
+        ),
+        underpowered_cases=(
+            "A mechanized theorem connecting every Python/Capstone/Unicorn trace row to Lean remains unresolved.",
+        ),
+    )
     return {
+        **envelope,
         "schema_version": FORMAL_SCHEMA_VERSION,
-        "status": "locally_verified",
+        "endpoint_status": "locally_verified",
         "toolchain": FORMAL_TOOLCHAIN,
         "formal_project": "formal",
-        "source_hashes": _formal_source_hashes(project_root),
+        "source_hashes": source_hashes,
         "theorems": list(FORMAL_THEOREMS),
         "build": build,
         "trusted_base": (
@@ -110,12 +178,15 @@ def formal_verification_payload(project_root: Path = PROJECT_ROOT) -> dict[str, 
             "solver proof certificate"
         ),
         "checked_fragment": {
-            "state": "64-bit modular accumulator word",
+            "state": "explicit 16-register normalized bounded machine-state schema",
             "operations": [
                 "mov immediate",
                 "add immediate",
                 "sub immediate",
                 "inc",
+                "width-aware register writes",
+                "explicit flag definedness and carry preservation",
+                "bounded memory-state fields",
                 "nop",
             ],
             "relation": (
@@ -127,6 +198,11 @@ def formal_verification_payload(project_root: Path = PROJECT_ROOT) -> dict[str, 
             "quotient witnesses; not a complete x86 semantics, lifter, compiler "
             "correctness theorem, or external-validity result"
         ),
+        "limitations": list(envelope["limitations"]),
+        "unsupported_cases": list(envelope["unsupported_cases"]),
+        "underpowered_cases": list(envelope["underpowered_cases"]),
+        "cross_language_bridge": build["generated_bridge"],
+        "axiom_report": build["axiom_report"],
     }
 
 
@@ -135,12 +211,30 @@ def validate_formal_verification_payload(payload: dict[str, Any]) -> tuple[bool,
 
     if payload.get("schema_version") != FORMAL_SCHEMA_VERSION:
         return False, f"schema={payload.get('schema_version')}"
-    if payload.get("status") != "locally_verified":
+    protocol = scientific_protocol_payload()
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"formal receipt: {receipt_detail}"
+    if payload.get("status") != "validated":
+        return False, "formal receipt is not validated"
+    if payload.get("endpoint_status") != "locally_verified":
         return False, "formal receipt is not locally verified"
     if payload.get("toolchain") != FORMAL_TOOLCHAIN:
         return False, "formal toolchain drift"
     if set(payload.get("theorems", [])) != set(FORMAL_THEOREMS):
         return False, "formal theorem manifest drift"
+    bridge = payload.get("cross_language_bridge")
+    if not isinstance(bridge, dict) or bridge.get("kernel_checked") is not True:
+        return False, "generated Python-Lean bridge is not kernel checked"
+    if bridge.get("python_reference_final_rax") != bridge.get(
+        "lean_expected_final_rax"
+    ):
+        return False, "Python and Lean bridge values disagree"
+    axiom_report = payload.get("axiom_report")
+    if not isinstance(axiom_report, dict) or axiom_report.get("clean") is not True:
+        return False, "formal source contains unfinished proof or escape-hatch findings"
     source_hashes = payload.get("source_hashes")
     if not isinstance(source_hashes, dict) or not source_hashes:
         return False, "formal source hashes are missing"
@@ -159,8 +253,11 @@ def write_formal_verification(project_root: Path = PROJECT_ROOT) -> str:
         raise ValueError(f"formal verification receipt is invalid: {detail}")
     path = project_root / FORMAL_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return FORMAL_ARTIFACT
 

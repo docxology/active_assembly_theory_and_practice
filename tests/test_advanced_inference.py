@@ -27,11 +27,16 @@ from src.disassembly import disassemble_bytes
 from src.emulation import emulate_x86_64
 from src.formal_verification import formal_verification_payload
 from src.information_policy import active_information_payload
+from src.intervention_analysis import (
+    intervention_power_payload,
+    validate_intervention_power_payload,
+)
 from src.multi_arch import cross_architecture_payload
 from src.figures import (
     plot_ambiguity_ablation,
     plot_action_sensing,
     plot_active_information_frontier,
+    plot_artifact_receipt_closure,
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_cross_architecture_benchmark,
@@ -42,6 +47,7 @@ from src.figures import (
     plot_generative_adequacy,
     plot_formal_verification_receipt,
     plot_assembly_cfg,
+    plot_intervention_power,
     plot_model_evidence,
     plot_memory_access_timeline,
     plot_observation_informativeness,
@@ -160,6 +166,21 @@ def test_active_information_frontier_figure_written_from_exact_dp(tmp_path) -> N
     assert path.stat().st_size > 0
 
 
+def test_intervention_power_receipt_and_figure_are_exact(tmp_path) -> None:
+    payload = intervention_power_payload()
+    valid, detail = validate_intervention_power_payload(payload)
+    assert valid, detail
+    assert payload["subset_count"] == 15
+    assert payload["minimal_separating_cardinality"] == 1
+    assert len(payload["minimal_separating_sets"]) == 3
+    negative = payload["negative_control"]
+    assert negative["near_miss_separation"] == 0.625
+    assert len(negative["unresolved_near_miss_families"]) == 3
+    path = plot_intervention_power(payload, tmp_path / "intervention_power.png")
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
 def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
     paths = write_advanced_figures()
     required = {
@@ -168,11 +189,32 @@ def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
         "formal_correspondence",
         "sensor_costs",
         "replication_manifest",
+        "intervention_power",
     }
     assert required.issubset(paths)
     for key in required:
         assert (PROJECT_ROOT / paths[key]).is_file()
         assert (PROJECT_ROOT / paths[key]).stat().st_size > 0
+
+
+def test_artifact_receipt_closure_figure_is_nonblank(tmp_path) -> None:
+    path = plot_artifact_receipt_closure(
+        {
+            "protocol_id": "test-protocol",
+            "protocol_sha256": "a" * 64,
+            "status_counts": {
+                "implemented_local": 2,
+                "active": 1,
+                "blocked_by_evidence": 1,
+                "planned": 1,
+            },
+        },
+        tmp_path / "artifact_receipt_closure.png",
+        artifact_count=12,
+        artifact_error_count=0,
+    )
+    assert path.is_file()
+    assert path.stat().st_size > 0
 
 
 def test_memory_evidence_joins_static_operands_to_dynamic_events() -> None:
@@ -232,7 +274,7 @@ def test_parameter_learning_payload_is_leakage_safe_and_figure_is_nonempty(
     tmp_path,
 ) -> None:
     payload = parameter_learning_payload_current()
-    assert payload["schema_version"] == "1.0.0"
+    assert payload["schema_version"] == "2.0.0"
     assert payload["phase_labels_used_for_fit"] is False
     assert payload["summary"]["leakage_free"] is True
     path = plot_parameter_learning(payload, tmp_path / "parameter_learning.png")
@@ -288,6 +330,7 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
             "active_information_frontier",
             "quotient_invariance_protocol",
             "representation_invariance_benchmark",
+            "intervention_power",
             "scientific_program",
         )
     }
@@ -321,6 +364,7 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
         "active_information_frontier",
         "quotient_invariance_protocol",
         "representation_invariance_benchmark",
+        "intervention_power",
         "scientific_program",
         "research_protocol",
         "quotient_classifier",

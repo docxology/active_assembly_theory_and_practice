@@ -27,9 +27,15 @@ from src.typed_observations import (
     TypedObservation,
     encode_typed_observations,
     mask_typed_field,
+    _direct_target,
     typed_field_value,
     validate_typed_observations,
 )
+
+
+def test_direct_target_returns_none_for_non_control_flow_instruction() -> None:
+    event = disassemble_bytes(bytes.fromhex("48 89 c1"))[0]
+    assert _direct_target(event) is None
 
 
 def test_typed_encoder_uses_real_capstone_and_unicorn_fields() -> None:

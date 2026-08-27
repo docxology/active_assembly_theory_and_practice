@@ -73,8 +73,11 @@ extension tranche:
   than trusting the JSON summary.
 - `output/data/active_information_frontier.json` is generated from the
   label-blind factorized model and exact finite-horizon dynamic program. Its
-  freshness check reruns the finite branch enumeration, including the proxy
-  cost weights and horizons.
+  freshness check reruns the finite branch enumeration, including the declared
+  sensor likelihoods and horizons. The separate
+  `output/data/sensor_cost_receipt.json` records the eight-component
+  deterministic action vectors and optional overhead-corrected local timing
+  calibration; neither artifact is a universal cost law.
 - `output/data/research_protocol.json` freezes the observational schema,
   quotient construction, splits, model portfolio, statistics, costs, and
   provenance contract consumed by the extension producers.
@@ -89,12 +92,33 @@ extension tranche:
 - `output/data/sensor_cost_receipt.json` binds deterministic sensing vectors,
   optional local calibration, and finite dynamic-programming certificates.
 - `output/data/replication_manifest.json` binds the public label-separated
-  input bundle, while `output/replication/gold_labels.json` is retained as a
-  separate local scoring input; `output/data/theorem_or_countertheorem.json`
+  input bundle at `output/replication/public/public_manifest.json`, while
+  `output/replication/private/gold_labels.json` is retained as a separate local
+  scoring input; `output/data/theorem_or_countertheorem.json`
   records the fail-closed theorem phase and generated counterexample.
 
 These receipts are bounded implementation and computational-evidence surfaces,
 not independent replication, external-validity, or broad-theorem certificates.
+
+The external-source receipt is intentionally separate from the transparent
+fixture receipts. It accepts only a pinned manifest with immutable revisions,
+license evidence, archive hashes, and an allowlisted static compile command.
+The current manifest has ten rows across five projects and two revisions per
+project. Static compilation/Capstone coverage, source-level label contracts,
+and separately operated replay remain separate gates; absent labels are
+recorded as `underpowered`, not as a zero-result benchmark. Replay and
+manuscript generation are no-network operations, and no arbitrary emitted
+object is executed. `probe-capabilities` counts a target only after a static
+object is actually produced; compiler target advertisements alone do not pass
+that gate.
+
+The public replay directory also contains a protocol manifest, toolchain
+receipt, and offline instructions. Its bundle digest excludes private gold
+labels. A receipt produced by `write-replay-receipt` remains
+`submitted_pending_verification`; protected ingestion requires a separately
+controlled-run attestation before it can emit
+`independent_replay_observed`. This is independent replay of the frozen
+interface, not independent reimplementation.
 
 The native Julia lockfile is itself a reproducibility input, not an incidental
 developer convenience. `src.rxinfer_bridge.validate_julia_manifest()` parses

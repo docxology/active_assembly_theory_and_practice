@@ -1,0 +1,419 @@
+{
+  "confidence_threshold": 0.7,
+  "per_fixture": {
+    "x86_accumulator": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9667136872169271,
+          1.1443349286446372,
+          0.5435512804709506
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.8264294378819805,
+          1.8130104275887209,
+          1.595385980926702
+        ],
+        "observation_id_order": [
+          0,
+          2,
+          1,
+          1
+        ],
+        "order": [
+          0,
+          2,
+          1,
+          3
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.8713634456374516,
+          0.5245175389933502,
+          0.5435512804709506
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.1060737126816393,
+          1.4449135625839535,
+          1.8107932107056555
+        ],
+        "observation_id_order": [
+          0,
+          1,
+          1,
+          2
+        ],
+        "order": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_bitwise": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9667136872169271,
+          0.566138667873488,
+          0.10197929189364646
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.8264294378819805,
+          1.6860597050355295,
+          1.4944700528719832
+        ],
+        "observation_id_order": [
+          0,
+          2,
+          2,
+          2
+        ],
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9667136872169271,
+          0.566138667873488,
+          0.10197929189364646
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.2014239542611147,
+          1.3911844498846158,
+          1.3276000932482135
+        ],
+        "observation_id_order": [
+          0,
+          2,
+          2,
+          2
+        ],
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_guard": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9478540998805407,
+          1.1624686011004481,
+          1.3609874575033083
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.812917400988094,
+          1.8127901090652039,
+          1.8065678825953657
+        ],
+        "observation_id_order": [
+          0,
+          4,
+          1,
+          3
+        ],
+        "order": [
+          0,
+          2,
+          3,
+          1
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.8713634456374516,
+          1.1417461098400459,
+          1.3609874575033085
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.1060737126816393,
+          2.0621421334306493,
+          2.0110008168913174
+        ],
+        "observation_id_order": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "order": [
+          0,
+          3,
+          1,
+          2
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_guard_taken": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9478540998805407,
+          1.1624686011004481,
+          0.8204461050857561,
+          1.1725003264776004
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.812917400988094,
+          1.8127901090652039,
+          1.7161799518063716,
+          1.8097341074404427
+        ],
+        "observation_id_order": [
+          0,
+          4,
+          1,
+          1,
+          3
+        ],
+        "order": [
+          0,
+          2,
+          3,
+          4,
+          1
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.8713634456374516,
+          0.5245175389933502,
+          0.7399558838016991,
+          1.1725003264776006
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.1060737126816393,
+          1.4449135625839535,
+          2.0071978140364037,
+          2.2243039119039567
+        ],
+        "observation_id_order": [
+          0,
+          1,
+          1,
+          3,
+          4
+        ],
+        "order": [
+          0,
+          3,
+          4,
+          1,
+          2
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_long_accumulator": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9667136872169271,
+          1.1443349286446372,
+          0.5435512804709506,
+          0.10873044689262217,
+          0.016566008765000927
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.8264294378819805,
+          1.8130104275887209,
+          1.595385980926702,
+          1.5138259817034694,
+          1.724717977904528
+        ],
+        "observation_id_order": [
+          0,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "order": [
+          0,
+          3,
+          1,
+          2,
+          4,
+          5
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.8713634456374516,
+          0.5245175389933502,
+          0.11491999094905109,
+          0.01811006030821593,
+          0.016566008765000927
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.1060737126816393,
+          1.4449135625839535,
+          1.382161921183756,
+          1.6949495385872198,
+          1.79021541768484
+        ],
+        "observation_id_order": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          2
+        ],
+        "order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          3
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_memory": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.6324175063712
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.7774886169761215,
+          1.831086221295705
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          1
+        ],
+        "order": [
+          0,
+          1,
+          2
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.6324175063712
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          1.4816868810046588,
+          2.177200361638784
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          1
+        ],
+        "order": [
+          0,
+          1,
+          2
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    }
+  },
+  "preference": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "summary": {
+    "active_never_worse": true,
+    "active_strictly_fewer_steps": 0,
+    "fixture_count": 6,
+    "ties": 6
+  }
+}

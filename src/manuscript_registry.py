@@ -18,6 +18,8 @@ import re
 import subprocess
 from typing import Any
 
+from .artifact_contract import write_json_artifact
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_SCHEMA_VERSION = "1.0"
 MANUSCRIPT_VARIABLE_REGISTRY = "output/data/manuscript_variable_registry.json"
@@ -83,6 +85,26 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "ACTION_SENSING_RANDOM_CONFIDENCE_RATE": "Fraction of held-out fixtures reaching the confidence threshold under the seeded-random query baseline.",
     "ACTION_SENSING_ACTIVE_MINUS_FIXED_ACTIONS": "Active minus fixed mean action count under the common bounded sensing budget.",
     "ACTION_SENSING_COST_WEIGHT": "Fixed normalized action-cost weight used in the action-conditioned expected-free-energy score.",
+    "EXTERNAL_SOURCE_ARTIFACT": "Offline source-bound receipt for the pinned licensed-source validation track.",
+    "EXTERNAL_SOURCE_STATUS": "Evidence status of the licensed-source validation track; blocked or unavailable is not a zero result.",
+    "EXTERNAL_SOURCE_PROJECT_COUNT": "Number of distinct source families recorded in the external-source manifest.",
+    "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": "Number of mechanically labelable external evaluation examples in the external-source receipt.",
+    "EXTERNAL_STATIC_ARTIFACT": "Static-only external compilation and Capstone-decoding receipt; it does not contain source-equivalence labels.",
+    "EXTERNAL_STATIC_STATUS": "Evidence status of the static-only external compilation receipt.",
+    "EXTERNAL_STATIC_ROW_COUNT": "Number of pinned external source rows retained in the static-only receipt, including failed and unavailable rows.",
+    "EXTERNAL_STATIC_VALIDATED_COUNT": "Number of pinned external source rows compiled and decoded successfully without executing emitted objects.",
+    "EXTERNAL_CAPABILITIES_ARTIFACT": "Locally measured compiler and target capability receipt; advertised targets are not counted unless a static object is produced.",
+    "EXTERNAL_CAPABILITIES_STATUS": "Evidence status of the local compiler capability receipt.",
+    "EXTERNAL_CAPABILITY_TARGET_COUNT": "Number of compiler-target probes that produced a static object successfully.",
+    "INDEPENDENT_REPLAY_STATUS": "Current independent-replay endpoint status; local reruns remain not_yet_observed.",
+    "REPLICATION_PUBLIC_BUNDLE_SHA256": "SHA-256 digest of the public replay files, excluding private labels and protected scoring outputs.",
+    "ARTIFACT_RECEIPT_SCHEMA_VERSION": "Common protocol-v2 receipt schema version layered above each domain-specific artifact schema.",
+    "ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT": "Number of required common receipt fields in the protocol-v2 artifact envelope.",
+    "ARTIFACT_RECEIPT_COUNT": "Number of project-owned JSON data artifacts present in the generated output surface.",
+    "ARTIFACT_RECEIPT_ERROR_COUNT": "Number of project-owned JSON data artifacts failing the common receipt-envelope validator.",
+    "ARTIFACT_RECEIPT_AUDIT_COMMAND": "Canonical offline command for validating the project-owned artifact receipt surface.",
+    "ARTIFACT_RECEIPT_CLOSURE_FIGURE": "Source-generated provenance visualization of the protocol, artifact, validation, and document-production boundary.",
+    "QUOTIENT_CLASSIFIER_INTERVENTION_COUNT": "Number of initial-state interventions used by the co-primary quotient classifier benchmark.",
     "PARAMETER_LEARNING_ARTIFACT": "Held-out observation-only ordered-HMM EM artifact with training complements, fitted tensors, diagnostics, and comparator scores.",
     "PARAMETER_LEARNING_FIGURE": "Figure comparing observation-only ordered EM, supervised MAP, and fixed-reference held-out scores with training evidence trajectories.",
     "PARAMETER_LEARNING_HOLDOUT_COUNT": "Number of complete-fixture holdouts used in the observation-only parameter-learning comparison.",
@@ -94,6 +116,10 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "PARAMETER_LEARNING_EM_MINUS_REFERENCE": "Paired mean accuracy difference between observation-only ordered EM and the fixed reference on complete-fixture holdouts.",
     "PARAMETER_LEARNING_CONVERGED_HOLDOUT_COUNT": "Number of held-out fits whose EM parameter delta reached the configured tolerance before the iteration cap.",
     "PARAMETER_LEARNING_LEAKAGE_FREE": "Whether phase labels are excluded from every parameter-learning fit and held-out fixtures are excluded from training observations.",
+    "PARAMETER_LEARNING_MULTI_START_COUNT": "Number of retained observation-only fits across all holdouts and declared initializations.",
+    "PARAMETER_LEARNING_MULTI_START_MEAN_ACCURACY": "Mean held-out temporal accuracy pooled across the declared multi-start fits.",
+    "PARAMETER_LEARNING_MULTI_START_MEAN_RANGE": "Mean within-holdout accuracy range across the declared multi-start initializations.",
+    "PARAMETER_LEARNING_MULTI_START_MEAN_AGREEMENT": "Mean pairwise agreement among multi-start predicted phase sequences within each held-out fixture.",
     "SCIENTIFIC_PROGRAM_ARTIFACT": "Machine-readable long-horizon scientific program with conjectures, falsifiers, dependencies, promotion gates, and stop conditions.",
     "SCIENTIFIC_PROGRAM_MILESTONE_COUNT": "Number of milestones in the machine-readable long-horizon scientific program.",
     "SCIENTIFIC_PROGRAM_IMPLEMENTED_COUNT": "Number of program milestones currently implemented only on the local source-bound surface.",
@@ -109,6 +135,14 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "REPRESENTATION_BENCHMARK_SURFACE_BLIND_NEAR_MISS_COUNT": "Number of declared near-miss pairs whose coarse observation-category surface does not change.",
     "REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_SEPARATION": "Observed final-RAX separation rate under the deliberately insufficient single-state intervention catalog; negative-control diagnostic only.",
     "REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_UNSEPARATED_COUNT": "Number of near-miss pairs that remain unresolved under the deliberately insufficient single-state intervention catalog.",
+    "INTERVENTION_POWER_ARTIFACT": "Exact finite intervention-subset enumeration and separating-set receipt derived from the representation-invariance outcome matrix.",
+    "INTERVENTION_POWER_FIGURE": "Figure showing exact separation power across all finite intervention subsets and singleton interventions.",
+    "INTERVENTION_POWER_SUBSET_COUNT": "Number of non-empty intervention subsets enumerated in the finite quotient catalog.",
+    "INTERVENTION_POWER_PAIR_COUNT": "Number of equivalent and near-miss pair outcomes in the intervention-power matrix.",
+    "INTERVENTION_POWER_MINIMAL_CARDINALITY": "Minimum number of declared interventions in any fully separating subset, or an explicit unavailable marker.",
+    "INTERVENTION_POWER_MINIMAL_SET_COUNT": "Number of tied minimum-cardinality fully separating intervention subsets.",
+    "INTERVENTION_POWER_SINGLE_STATE_SEPARATION": "Exact near-miss separation proportion for the deliberately insufficient one-state intervention control.",
+    "INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT": "Number of near-miss families unresolved by the one-state intervention control.",
     "SYMBOLIC_STEPWISE_RAX_AGREEMENT_COUNT": "Number of executed instruction steps whose symbolic post-step RAX equals the independent Unicorn snapshot.",
     "SYMBOLIC_STEPWISE_RAX_COMPARABLE_COUNT": "Number of executed instruction steps with an unambiguous Unicorn architectural snapshot available for symbolic comparison.",
     "SYMBOLIC_STEPWISE_FLAG_AGREEMENT_COUNT": "Number of explicitly modeled EFLAGS bit comparisons that agree with post-step Unicorn flags.",
@@ -376,6 +410,26 @@ def _input_hashes(
         paths.append(project_root / "output" / "data" / "corpus_coverage.json")
     elif token.startswith("PARAMETER_LEARNING_"):
         paths.append(project_root / "output" / "data" / "parameter_learning.json")
+    elif token.startswith("INTERVENTION_POWER_"):
+        paths.append(project_root / "output" / "data" / "intervention_power.json")
+    elif token.startswith("QUOTIENT_CLASSIFIER_"):
+        paths.append(project_root / "output" / "data" / "quotient_classifier.json")
+    elif token.startswith("EXTERNAL_SOURCE_"):
+        paths.append(
+            project_root / "output" / "data" / "external_source_validation.json"
+        )
+    elif token.startswith("EXTERNAL_STATIC_"):
+        paths.append(
+            project_root / "output" / "data" / "external_static_validation.json"
+        )
+    elif token.startswith("EXTERNAL_CAPABILITIES_") or token.startswith(
+        "EXTERNAL_CAPABILITY_"
+    ):
+        paths.append(project_root / "output" / "data" / "external_capabilities.json")
+    elif token == "INDEPENDENT_REPLAY_STATUS":
+        paths.append(project_root / "output" / "data" / "replication_manifest.json")
+    elif token == "REPLICATION_PUBLIC_BUNDLE_SHA256":
+        paths.append(project_root / "output" / "data" / "replication_manifest.json")
     elif token.startswith("RXINFER_CATEGORICAL"):
         paths.append(
             project_root
@@ -477,7 +531,10 @@ def write_variable_registry(
                 previous_generated_at, str
             ):
                 payload["generated_at"] = previous_generated_at
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

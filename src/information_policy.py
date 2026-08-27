@@ -11,12 +11,12 @@ not a deployment claim.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 from typing import Any, Sequence
 
 import numpy as np
 
+from .artifact_contract import write_json_artifact
 from .corpus import build_corpus
 from .factorized_model import (
     FactorizedObservationModel,
@@ -364,9 +364,8 @@ def write_active_information_payload(project_root: Path = PROJECT_ROOT) -> str:
     if not valid:
         raise ValueError(f"active-information payload is invalid: {detail}")
     path = project_root / INFORMATION_POLICY_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path, payload, project_root=project_root, producer_path=Path(__file__)
     )
     return INFORMATION_POLICY_ARTIFACT
 

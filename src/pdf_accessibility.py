@@ -19,6 +19,8 @@ from typing import Any, Iterable
 
 from pypdf import PdfReader
 
+from .artifact_contract import write_json_artifact
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PDF = (
     PROJECT_ROOT / "output/pdf/active_assembly_theory_and_practice_combined.pdf"
@@ -477,9 +479,11 @@ def write_pdf_accessibility_report(
 
     report = audit_pdf(pdf_path, project_root=project_root)
     report_path = Path(report_path)
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        report_path,
+        report,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return report_path
 

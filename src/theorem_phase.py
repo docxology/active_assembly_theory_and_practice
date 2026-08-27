@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, cast
 
+from .artifact_contract import write_json_artifact
 from .formal_verification import formal_verification_payload
-from .provenance import generator_revision, toolchain_versions
+from .provenance import generator_revision, sha256_path, toolchain_versions
+from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .representation_invariance import (
     _family_specs,
     _pair_for_role,
@@ -15,7 +16,7 @@ from .representation_invariance import (
 from .scientific_protocol import scientific_protocol_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-THEOREM_PHASE_SCHEMA_VERSION = "1.0.0"
+THEOREM_PHASE_SCHEMA_VERSION = "2.0.0"
 THEOREM_PHASE_ARTIFACT = "output/data/theorem_or_countertheorem.json"
 
 
@@ -59,20 +60,40 @@ def theorem_or_countertheorem_payload(
             break
     if counterexample is None:
         raise RuntimeError("the declared bounded counterexample was not found")
-    return {
-        "schema_version": THEOREM_PHASE_SCHEMA_VERSION,
-        "artifact": THEOREM_PHASE_ARTIFACT,
-        "protocol_id": protocol["protocol_id"],
-        "protocol_sha256": protocol["protocol_sha256"],
-        "generator_revision": generator_revision(Path(__file__)),
-        "input_hashes": {
-            "formal_sources": formal["source_hashes"],
+    limitations = [
+        "The counterexample is bounded to transparent fixtures and the declared intervention catalog.",
+        "A falsified candidate does not prove the strongest negation outside the stated assumptions.",
+    ]
+    unsupported_cases = [
+        "No theorem claim is made for complete x86-64, arbitrary compilers, or unbounded memory.",
+    ]
+    underpowered_cases = [
+        "General trace refinement and transfer guarantees remain unresolved.",
+    ]
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes={
+            **{
+                f"formal_source:{key}": str(value)
+                for key, value in cast(dict[str, str], formal["source_hashes"]).items()
+            },
             "protocol": protocol["protocol_sha256"],
+            "src/theorem_phase.py": sha256_path(Path(__file__)),
         },
-        "toolchain_versions": {
+        toolchain_versions={
             **toolchain_versions(("capstone", "numpy", "unicorn")),
             "lean_toolchain": str(formal["toolchain"]),
         },
+        status="falsified",
+        limitations=limitations,
+        unsupported_cases=unsupported_cases,
+        underpowered_cases=underpowered_cases,
+    )
+    return {
+        **envelope,
+        "schema_version": THEOREM_PHASE_SCHEMA_VERSION,
+        "artifact": THEOREM_PHASE_ARTIFACT,
         "assumptions": [
             "bounded transparent fixture bytes",
             "deterministic Unicorn execution",
@@ -88,8 +109,25 @@ def theorem_or_countertheorem_payload(
                 "theorems": list(cast(list[Any], formal["theorems"])),
             },
             {
+                "statement": "Stepwise trace refinement for the transparent fixture receipt",
+                "status": "computationally_validated",
+                "proof_receipt": "output/data/formal_trace_correspondence.json",
+                "scope": "all declared steps in repository-owned fixtures only",
+            },
+            {
+                "statement": "Observation projection preserves the declared typed fields",
+                "status": "unresolved",
+                "scope": "a general Lean theorem connecting the Python observation encoder remains open",
+            },
+            {
+                "statement": "The finite source-bound quotient relation is an equivalence relation",
+                "status": "computationally_validated",
+                "proof_receipt": "output/data/intervention_power.json",
+                "scope": "finite generated catalog and declared intervention set only",
+            },
+            {
                 "statement": "Exact optimality of the finite sensing policy",
-                "status": "computationally_validated_only",
+                "status": "computationally_validated",
                 "proof_receipt": "output/data/sensor_cost_receipt.json",
                 "scope": "finite declared sensor/action space",
             },
@@ -97,6 +135,11 @@ def theorem_or_countertheorem_payload(
                 "statement": candidate,
                 "status": "falsified_by_counterexample",
                 "counterexample_id": counterexample["family_id"],
+            },
+            {
+                "statement": "Compiler/source/architecture transfer guarantee",
+                "status": "unresolved",
+                "scope": "no translation-validation theorem is promoted from static capability rows",
             },
         ],
         "counterexample": counterexample,
@@ -106,6 +149,9 @@ def theorem_or_countertheorem_payload(
             "compiler/source/architecture transfer guarantee",
             "independent replay of the local harness",
         ],
+        "limitations": limitations,
+        "unsupported_cases": unsupported_cases,
+        "underpowered_cases": underpowered_cases,
     }
 
 
@@ -119,10 +165,27 @@ def validate_theorem_or_countertheorem_payload(
     if payload.get("schema_version") != THEOREM_PHASE_SCHEMA_VERSION:
         return False, "theorem phase schema mismatch"
     protocol = scientific_protocol_payload()
-    if payload.get("protocol_sha256") != protocol["protocol_sha256"]:
-        return False, "theorem phase protocol hash mismatch"
+    receipt_valid, receipt_detail = validate_receipt_envelope(
+        payload, expected_protocol=protocol
+    )
+    if not receipt_valid:
+        return False, f"theorem phase receipt: {receipt_detail}"
+    if payload.get("status") != "falsified":
+        return False, "theorem phase evidence status is not falsified"
     if payload.get("promotion_status") != "fail_closed_no_broad_theorem":
         return False, "theorem phase promotion is not fail closed"
+    candidates = payload.get("candidate_theorems")
+    if not isinstance(candidates, list) or not candidates:
+        return False, "candidate theorem ledger is missing"
+    statuses = {row.get("status") for row in candidates if isinstance(row, dict)}
+    required_statuses = {
+        "proved",
+        "computationally_validated",
+        "falsified_by_counterexample",
+        "unresolved",
+    }
+    if not required_statuses.issubset(statuses):
+        return False, "theorem status taxonomy is incomplete"
     counterexample = payload.get("counterexample")
     if not isinstance(counterexample, dict):
         return False, "bounded counterexample is missing"
@@ -154,8 +217,11 @@ def write_theorem_or_countertheorem(
         raise ValueError(detail)
     path = project_root / THEOREM_PHASE_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path
 

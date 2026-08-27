@@ -1,3 +1,6 @@
+import ActiveAssembly.NormalizedMachine
+import ActiveAssembly.IR
+
 /-!
 # A kernel-checked operational core for the assembly demonstrator
 

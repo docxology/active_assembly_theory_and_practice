@@ -18,7 +18,8 @@
   `{{TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE}}`, and
   `{{CORPUS_COVERAGE_FIGURE}}`, `{{ACTION_SENSING_FIGURE}}`, and
   `{{PARAMETER_LEARNING_FIGURE}}`, and
-  `{{REPRESENTATION_BENCHMARK_FIGURE}}` and `{{TRACE_REFINEMENT_FIGURE}}`; every generated manuscript figure token
+  `{{REPRESENTATION_BENCHMARK_FIGURE}}`, `{{INTERVENTION_POWER_FIGURE}}`, and
+  `{{TRACE_REFINEMENT_FIGURE}}`; every generated manuscript figure token
   must appear in source so the `manuscript_source_surface` check stays green.
 - The long-horizon program section uses the generated tokens
   `{{SCIENTIFIC_PROGRAM_ARTIFACT}}`, `{{SCIENTIFIC_PROGRAM_MILESTONE_COUNT}}`,

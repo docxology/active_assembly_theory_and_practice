@@ -14,10 +14,11 @@ central conjecture, formal-theory ladder, quotient-state identifiability target,
 cross-architecture benchmark, active-sensing bound, independent replication
 gate, and explicit stop conditions. Its status is also emitted as the
 source-bound artifact `output/data/scientific_program.json`. P0--P2 remain
-implemented instrumentation/mechanism milestones. P3--P8 now each have a
-source-bound implementation tranche and receipt, but their broad promotion
-claims remain gated: P3 has only four held-out families, P4 has no full-ISA
-theorem, P5 has no licensed external-source evaluation, P6 is finite-benchmark
+implemented instrumentation/mechanism milestones. P3--P17 now each have a
+source-bound implementation or explicit blocked/planned receipt, but their
+broad promotion claims remain gated: P3 has a 64-family classifier benchmark
+and a separate four-state representation pilot, P4 has no full-ISA theorem,
+P5 has no licensed external-source evaluation, P6 is finite-benchmark
 optimality, P7 has no independent replay, and P8 has no broad theorem. A
 bounded receipt is an implementation result, not automatic scientific
 promotion.
@@ -62,7 +63,9 @@ The current package contains the following executable layers:
     normalized budget.
 12. An observation-only ordered-HMM Baum--Welch/EM estimator evaluated with
     complete-fixture holdouts against supervised MAP and the fixed reference,
-    including fit-input leakage contracts and training evidence histories.
+    including a fixed-penalty Dirichlet-MAP comparator, label-free
+    posterior-predictive checks, fit-input leakage contracts, and training
+    evidence histories.
 13. A pinned Lean project and deterministic receipt for a closed Word64
     accumulator fragment with explicit equivalence and counterexample theorems;
     this is a formalization tranche, not complete ISA semantics.
@@ -72,6 +75,22 @@ The current package contains the following executable layers:
 15. An exact finite-horizon information-per-cost dynamic program over
     label-blind typed-field sensors, retaining finite policy counts and proxy
     cost assumptions rather than promoting a general active-sensing law.
+16. An exact intervention-power receipt that enumerates every non-empty subset
+    of the declared quotient interventions, reports minimum separating sets,
+    and retains a deliberately insufficient one-state negative control.
+17. A multi-start observation-only parameter-learning ledger that records
+    deterministic initialization sensitivity separately from sampling
+    uncertainty and never uses held-out labels for fitting or start selection.
+18. A normalized 64-bit machine-state correspondence layer with all sixteen
+    general-purpose registers, explicit width/flag semantics, bounded memory
+    and stack checks, a generated Python-to-Lean boundary fixture, and
+    structured unsupported outcomes.
+19. A raw surface-baseline portfolio spanning opcode, byte n-gram, mnemonic,
+    instruction-length, control-flow, and memory-event descriptors, with
+    source-family-paired bootstrap and Holm-adjusted comparisons.
+20. A deterministic sensor-cost vector, local timing calibration, and finite
+    policy ledger comparing exact, fixed, greedy, seeded-random, and abstaining
+    policies.
 
 ## Phase A result and next scientific phases
 
@@ -169,7 +188,7 @@ and near-miss counterexamples, with source-program and compiler-family splits.
 The source-family receipt now lives at
 `output/data/representation_invariance_benchmark.json`, while the co-primary
 classifier portfolio is emitted as `output/data/quotient_classifier.json`. The
-portfolio uses 16 synthetic families, 64 pair rows per family, and disjoint
+portfolio uses 64 synthetic families, 64 pair rows per family, and disjoint
 training/development/held-out family partitions. It reports a calibrated
 interpretable model, a temporal Markov model, a fixed NumPy recurrent model,
 and a surface baseline under identical balanced-accuracy, macro-F1, Brier,
@@ -177,7 +196,7 @@ calibration, confusion, and clustered-interval contracts. Four held-out
 families make the intervals visibly broad; the receipt therefore supports a
 reproducible endpoint, not semantic discovery or superiority.
 
-The coordinated P3--P8 tranche is now implemented in bounded form. The
+The coordinated P3--P17 tranche is now implemented in bounded form. The
 source-bound receipts are `research_protocol.json`,
 `formal_trace_correspondence.json`, `compiler_transfer.json`,
 `sensor_cost_receipt.json`, `replication_manifest.json`, and
@@ -186,9 +205,25 @@ adapter receipts. The compiler track retains unavailable targets explicitly
 and executes no emitted object; the sensing track certifies only finite
 dynamic-program policies; the replication track is local and no-network; and
 the theorem phase records both checked local results and a generated
-counterexample while keeping promotion fail closed. Licensed external sources,
-independent replay, full-ISA correspondence, and a broad identifiability or
-transfer theorem remain future gates.
+counterexample while keeping promotion fail closed. The intervention-power
+receipt enumerates the finite outcome matrix rather than learning its labels,
+and the multi-start parameter-learning receipt retains weak and unstable starts
+as robustness evidence. The licensed-source receipt is currently underpowered:
+the pinned manifest contains ten rows across five projects and two revisions,
+static compilation/decoding is recorded with one failed row retained, and the
+separate source-level label contract remains empty. Independent replay,
+full-ISA correspondence, and a broad identifiability or transfer theorem
+remain future gates. No unavailable, failed, or underpowered status is
+converted into a zero-valued result.
+
+The P17 integrity tranche adds one common receipt envelope above every
+project-owned JSON domain schema. Its protocol digest, producer revision,
+input hashes, toolchain versions, and explicit status are generated atomically;
+`scripts/run_scientific_program.py audit-artifacts` validates the surface
+without repairing it. The same receipt boundary feeds the closure figure,
+manuscript variables, and template-rendered document package. This is a
+reproducibility control, not evidence that any scientific promotion gate has
+passed.
 
 The promotion rule is conjunctive: quotient labels must be generated outside
 the inference model; primary endpoints and test identifiers must be frozen;

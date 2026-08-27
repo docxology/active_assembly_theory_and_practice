@@ -18,12 +18,40 @@ uv run python scripts/run_formal_verification.py
 uv run python scripts/run_replication.py generate
 uv run python scripts/run_replication.py verify
 
+uv run python scripts/run_scientific_program.py all
+uv run python scripts/run_scientific_program.py audit-artifacts
+
+uv run python scripts/run_scientific_program.py probe-capabilities
+uv run python scripts/run_scientific_program.py prepare-external
+uv run python scripts/run_scientific_program.py validate-external
+uv run python scripts/run_scientific_program.py generate-public
+uv run python scripts/run_scientific_program.py replay --offline
+uv run python scripts/run_scientific_program.py verify-public
+uv run python scripts/run_scientific_program.py promote-evidence
+
 uv run python scripts/run_rxinfer_backend.py
 
 uv run python scripts/validate_analysis_outputs.py
 
 uv run python scripts/z_generate_manuscript_variables.py
 ```
+
+The only network-enabled operation is explicit acquisition of the pinned
+manifest:
+
+```bash
+uv run python scripts/run_scientific_program.py acquire-external \
+  --manifest configs/external_sources.yaml \
+  --destination output/external_sources \
+  --allow-network
+```
+
+Acquisition validates archive and license digests, performs static compilation
+and disassembly only, and retains unavailable/failed rows. Replay, scoring,
+manuscript generation, and document rendering must remain offline. A local
+rerun cannot produce an independent-replay status; an external operator must
+submit a pending receipt with explicit separate-control attestation for the
+protected ingestion command.
 
 Run the Julia integration gate:
 
@@ -36,8 +64,18 @@ Render from `/Users/mini/Documents/GitHub/template`:
 ```bash
 uv run python -m infrastructure.orchestration link-projects --dry-run
 uv run python -m infrastructure.orchestration link-projects
-uv run python scripts/pipeline/stage_03_render.py --project working/active_assembly_theory_and_practice
+uv run python scripts/pipeline/stage_03_render.py \
+  --project working/active_assembly_theory_and_practice \
+  --skip-manuscript-hydration
 ```
+
+Hydration is intentionally a two-stage boundary. Run the project-side
+`z_generate_manuscript_variables.py` command first; it is the authoritative
+producer and validates the generated source tree. Then pass
+`--skip-manuscript-hydration` to the sibling template renderer so it consumes
+that validated tree without silently regenerating it under a different
+timeout. Any source, protocol, or generator change requires fresh project-side
+hydration before rendering.
 
 Post-render sanity checks:
 
@@ -108,14 +146,21 @@ and figure-registry closure, build provenance,
 dependency-closed validation of `scientific_program.json`, and the real-API
 equivalence/near-miss contract in `quotient_invariance_protocol.json`,
 the source-family split and endpoint contract in
-`representation_invariance_benchmark.json`,
+`representation_invariance_benchmark.json`, the exact finite
+intervention-subset enumeration in `intervention_power.json` (including its
+one-state negative control and fail-closed promotion status),
+the protocol-v2 receipt envelope on every project-owned JSON artifact, and
 and a **figure-set oracle** that requires the expected
 `output/figures/*.png` set to exist, be non-empty, and pass a pixel-variance check
 (so a blank or zero-byte PNG cannot satisfy the gate). The figure set includes the
 temporal-belief heatmap, the decoder-comparison bars, the active-EFE trajectory,
     the held-out action-conditioned sensing comparison, the observation-only
-    ordered-HMM parameter-learning comparison, and the source-family
-representation-invariance benchmark with its negative control.
+    ordered-HMM parameter-learning comparison, the source-family
+representation-invariance benchmark with its negative control, and the exact
+intervention-power figure. The parameter-learning receipt additionally checks
+all declared multi-start rows, observation-only fit contracts, seed ledger,
+held-out score summaries, and pairwise predicted-sequence agreement; weak or
+unstable starts remain visible.
 The current figure set also includes the real multi-architecture adapter
 benchmark, the kernel-checked formal theorem manifest, and the exact finite-
 horizon information frontier. Their data receipts are rebuilt and compared for

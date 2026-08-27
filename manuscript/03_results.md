@@ -165,7 +165,28 @@ coordinate system, while also limiting what can be called independent discovery.
 Training evidence histories and per-fixture predictions are retained in
 `{{PARAMETER_LEARNING_ARTIFACT}}`.
 
-![Observation-only ordered-HMM parameter learning under complete-fixture holdouts. The left panel shows per-fixture held-out temporal accuracy for ordered Baum--Welch EM, supervised MAP, and the fixed reference; lines are not pooled pseudo-replicates. The right panel shows training log evidence across EM iterations for each holdout, with the mean trajectory overlaid. Labels are reserved for scoring, and the evidence curves are optimization diagnostics rather than held-out performance or uncertainty intervals.]({{PARAMETER_LEARNING_FIGURE}}){#fig:parameter-learning width=100%}
+The multi-start extension makes the remaining optimization ambiguity measurable.
+It retains `{{PARAMETER_LEARNING_MULTI_START_COUNT}}` fits across the five
+declared starts for each holdout. Pooled across those fits, mean held-out
+accuracy is `{{PARAMETER_LEARNING_MULTI_START_MEAN_ACCURACY}}`, the mean
+within-holdout accuracy range is `{{PARAMETER_LEARNING_MULTI_START_MEAN_RANGE}}`,
+and mean pairwise predicted-sequence agreement is
+`{{PARAMETER_LEARNING_MULTI_START_MEAN_AGREEMENT}}`. These values are seed
+sensitivity summaries, not confidence intervals or a new sampling unit. Their
+spread is a limitation: the existence of a functioning observation-only EM
+implementation does not establish stable latent parameters, and no start is
+selected post hoc using the held-out labels.
+
+The fixed-penalty Dirichlet-MAP comparator and posterior-predictive checks add a
+second robustness axis without changing the primary endpoint. The comparator is
+fit from the same label-free training sequences, while the predictive check
+reports observation-level structure rather than phase-label recovery. The
+receipt's selection ledger records training-evidence decisions only; it does
+not turn a favorable predictive interval into evidence of semantic adequacy. If
+the ordered model remains initialization-sensitive, that instability is
+retained as a negative result.
+
+![Observation-only ordered-HMM parameter learning under complete-fixture holdouts. The left panel shows per-fixture held-out temporal accuracy for ordered Baum--Welch EM, supervised MAP, the fixed reference, and the fixed-penalty Dirichlet-MAP comparator; lines are not pooled pseudo-replicates. The middle panel shows training log evidence across EM iterations for each holdout, with the mean trajectory overlaid. The right panel shows held-out accuracy for the five frozen initialization families, with dots for holdouts and bars for within-start means. The receipt additionally contains label-free posterior-predictive checks and a training-only model-selection ledger. Labels are reserved for scoring, and the evidence, predictive checks, and initialization panels are optimization/robustness diagnostics rather than population uncertainty intervals.]({{PARAMETER_LEARNING_FIGURE}}){#fig:parameter-learning width=100%}
 
 ### Typed observation expansion {#sec:typed-results}
 
@@ -429,28 +450,57 @@ held-out split. The interpretable classifier reaches balanced accuracy
 classifier reaches `{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}}` and
 `{{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}}`; the fixed neural sequence model
 reaches `{{QUOTIENT_CLASSIFIER_NEURAL_BALANCED_ACCURACY}}` and
-`{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}}`; and the surface baseline reaches
+`{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}}`; and the typed-trace surface baseline reaches
 `{{QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY}}` and
 `{{QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1}}`. Clustered intervals, Brier/ECE,
 confusion counts, and false-equivalence/false-distinction rates are retained in
-the source receipt. With only four held-out families and development scores
+the source receipt. The receipt also fits
+`{{QUOTIENT_CLASSIFIER_RAW_BASELINE_COUNT}}` independent raw surface baselines
+and records `{{QUOTIENT_CLASSIFIER_RAW_COMPARISON_COUNT}}` paired model-by-baseline
+comparison rows under one Holm family. With
+`{{QUOTIENT_CLASSIFIER_HELD_OUT_FAMILY_COUNT}}` held-out families and development scores
 that need not track test scores, these results do not establish superiority or
 learned semantics. They establish a reproducible, label-source-controlled
 endpoint with visible negative evidence, including a neural model that does not
 recover the endpoint reliably.
+
+The intervention-power analysis is a separate identifiability diagnostic rather
+than another model score. Exact enumeration of
+`{{INTERVENTION_POWER_SUBSET_COUNT}}` non-empty subsets over
+`{{INTERVENTION_POWER_PAIR_COUNT}}` pair outcomes finds a minimum fully
+separating cardinality of `{{INTERVENTION_POWER_MINIMAL_CARDINALITY}}`, with
+`{{INTERVENTION_POWER_MINIMAL_SET_COUNT}}` tied minimum sets. The one-state
+negative control separates `{{INTERVENTION_POWER_SINGLE_STATE_SEPARATION}}` of
+near-misses and leaves `{{INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT}}`
+families unresolved. This is an exact result for the declared finite outcome
+matrix, not evidence that the intervention catalog is complete or that semantic
+identifiability holds outside the benchmark. The source-bound receipt is
+`{{INTERVENTION_POWER_ARTIFACT}}` and the subset curve is shown in
+[@fig:intervention-power].
 
 The real transfer and correspondence results are similarly bounded. The
 Python/Capstone/Unicorn receipt reports status
 `{{FORMAL_CORRESPONDENCE_STATUS}}` for
 `{{FORMAL_CORRESPONDENCE_FIXTURE_COUNT}}` transparent fixtures and
 `{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` compared reference steps. The compiler
-receipt validates `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` static objects and
-retains `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` unavailable rows; validated
+receipt validates `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` source-by-optimization
+static rows and retains `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` unavailable
+rows; validated
 architecture labels are limited to `{{COMPILER_TRANSFER_ARCHITECTURES}}`.
-Because emitted objects were not executed and the external-source manifest is
-`{{COMPILER_EXTERNAL_STATUS}}`, no cross-compiler, application, or compiler-
-correctness claim follows. The figures make those boundaries visible rather
-than collapsing unavailable capability into a zero.
+Because emitted objects were not executed and the separate licensed-source
+receipt is `{{EXTERNAL_SOURCE_STATUS}}`, no cross-compiler, application, or
+compiler-correctness claim follows. The figures make those boundaries visible
+rather than collapsing unavailable capability into a zero.
+
+The independent external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it
+records `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,
+`{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples, and a
+static-only receipt with `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` validated rows
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The source-bound label contract remains
+underpowered, and one static compiler failure remains visible; these are not
+failed accuracy results and do not support application-facing effectiveness.
+
+![Licensed-source provenance and application gate. The left panel shows the ten pinned source rows across five projects, explicit acquisition, static-only compilation, and disassembly path; the right panel reports each current gate as pass or open, including the absent source-bound labels and separately controlled replay. No unavailable project, failed build, or labelable example is rendered as a zero-performance cell, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
 
 The measured sensing receipt reports `{{SENSOR_COST_SENSOR_COUNT}}` deterministic
 sensor vectors and `{{SENSOR_CERTIFICATE_COUNT}}` exact finite certificates.
@@ -481,10 +531,8 @@ the intervention family has separating power only when it contains states that
 activate the relevant semantic difference. The single-state claim is
 falsified, not softened into a theorem-shaped narrative.
 
-The receipt also separates `{{THEOREM_PROVED_COUNT}}` kernel-checked theorem
-group(s) in the small Lean algebraic fragment from
-`{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` computationally validated finite-policy
-result(s). The broad trace-refinement, compiler-transfer, and independent-replay
-claims remain unresolved. Consequently, the manuscript promotes no theorem
-beyond its assumptions and never presents the local formal fragment as a proof
-of complete x86-64 semantics.
+The receipt separates `{{THEOREM_PROVED_COUNT}}` kernel-checked theorem group(s)
+from `{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` computationally validated
+finite-policy result(s); broad trace-refinement, compiler-transfer, and
+independent-replay claims remain unresolved. No broader theorem or complete
+x86-64 claim is promoted.

@@ -1,0 +1,112 @@
+{
+  "per_fixture": {
+    "x86_accumulator": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 0,
+          "label": "setup",
+          "mean_confidence": 0.8889358932708087,
+          "start_index": 0
+        },
+        {
+          "end_index": 3,
+          "label": "accumulator_update",
+          "mean_confidence": 0.7074977188389723,
+          "start_index": 1
+        }
+      ]
+    },
+    "x86_bitwise": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 0,
+          "label": "setup",
+          "mean_confidence": 0.36408970772153526,
+          "start_index": 0
+        },
+        {
+          "end_index": 3,
+          "label": "representation_transform",
+          "mean_confidence": 0.8136181682959523,
+          "start_index": 1
+        }
+      ]
+    },
+    "x86_guard": {
+      "segment_count": 3,
+      "segments": [
+        {
+          "end_index": 0,
+          "label": "setup",
+          "mean_confidence": 0.41659161352962415,
+          "start_index": 0
+        },
+        {
+          "end_index": 1,
+          "label": "guard_check",
+          "mean_confidence": 0.42166148078513527,
+          "start_index": 1
+        },
+        {
+          "end_index": 3,
+          "label": "exit",
+          "mean_confidence": 0.5245956921494066,
+          "start_index": 2
+        }
+      ]
+    },
+    "x86_guard_taken": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 1,
+          "label": "setup",
+          "mean_confidence": 0.7036901037352384,
+          "start_index": 0
+        },
+        {
+          "end_index": 4,
+          "label": "accumulator_update",
+          "mean_confidence": 0.6502038296709792,
+          "start_index": 2
+        }
+      ]
+    },
+    "x86_long_accumulator": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 0,
+          "label": "setup",
+          "mean_confidence": 0.8989247881828858,
+          "start_index": 0
+        },
+        {
+          "end_index": 5,
+          "label": "accumulator_update",
+          "mean_confidence": 0.9071769059675703,
+          "start_index": 1
+        }
+      ]
+    },
+    "x86_memory": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 1,
+          "label": "setup",
+          "mean_confidence": 0.801779100961189,
+          "start_index": 0
+        },
+        {
+          "end_index": 2,
+          "label": "accumulator_update",
+          "mean_confidence": 0.8438159145102542,
+          "start_index": 2
+        }
+      ]
+    }
+  }
+}

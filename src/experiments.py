@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 
 from .active_inference_bridge import InferenceResult, infer_hidden_states
+from .artifact_contract import write_json_artifact
 from .assembly_formalism import assembly_listing_payload
 from .assembly_packages import TraceBundle, build_trace_bundle, trace_bundle_to_json
 from .assembly_packages.capstone_adapter import disassemble_with_capstone
@@ -75,9 +75,8 @@ class ExperimentResult:
 
 
 def _write_json(path: Path, payload: object) -> str:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path, payload, project_root=PROJECT_ROOT, producer_path=Path(__file__)
     )
     return str(path.relative_to(PROJECT_ROOT))
 

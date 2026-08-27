@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .artifact_contract import write_json_artifact
 from .corpus import build_corpus
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -222,6 +223,16 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
+        path="output/data/intervention_power.json",
+        artifact_type="intervention_power",
+        generated_by="src.intervention_analysis.write_intervention_power_payload",
+        claim_ids=("CLM-034",),
+        validation_checks=(
+            "intervention_power_contract",
+            "intervention_power_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
         path="output/data/cross_architecture_fixtures.json",
         artifact_type="cross_architecture_benchmark",
         generated_by="src.advanced_inference.cross_architecture_payload_current",
@@ -283,6 +294,41 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("replication_contract", "replication_freshness"),
     ),
     ArtifactManifestTarget(
+        path="output/data/external_source_validation.json",
+        artifact_type="external_source_validation",
+        generated_by="src.external_sources.write_external_source_validation_payload",
+        claim_ids=("CLM-036",),
+        validation_checks=("external_source_contract", "external_source_freshness"),
+    ),
+    ArtifactManifestTarget(
+        path="output/data/external_static_validation.json",
+        artifact_type="external_static_validation",
+        generated_by="src.external_sources.write_external_static_validation",
+        claim_ids=("CLM-036", "CLM-038"),
+        validation_checks=("external_static_contract", "external_static_freshness"),
+    ),
+    ArtifactManifestTarget(
+        path="output/data/external_capabilities.json",
+        artifact_type="external_capabilities",
+        generated_by="src.external_sources.write_compiler_capabilities",
+        claim_ids=("CLM-036", "CLM-038"),
+        validation_checks=(
+            "external_capability_contract",
+            "external_capability_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/data/independent_replay_receipt.json",
+        artifact_type="independent_replay_receipt",
+        generated_by="src.replication.ingest_independent_replay",
+        claim_ids=("CLM-032", "CLM-039"),
+        validation_checks=(
+            "independent_replay_contract",
+            "independent_replay_freshness",
+        ),
+        required=False,
+    ),
+    ArtifactManifestTarget(
         path="output/data/theorem_or_countertheorem.json",
         artifact_type="theorem_phase",
         generated_by="src.theorem_phase.write_theorem_or_countertheorem",
@@ -293,14 +339,14 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
-        path="output/replication/public_manifest.json",
+        path="output/replication/public/public_manifest.json",
         artifact_type="replication_public_input",
         generated_by="src.replication.write_replication_bundle",
         claim_ids=("CLM-032",),
         validation_checks=("replication_contract",),
     ),
     ArtifactManifestTarget(
-        path="output/replication/gold_labels.json",
+        path="output/replication/private/gold_labels.json",
         artifact_type="replication_gold_labels",
         generated_by="src.replication.write_replication_bundle",
         claim_ids=("CLM-032",),
@@ -635,6 +681,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_representation_invariance_benchmark",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/intervention_power.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_intervention_power",
+        claim_ids=("CLM-034",),
+        validation_checks=("figure_intervention_power",),
+    ),
+    ArtifactManifestTarget(
         path="output/figures/cross_architecture_benchmark.png",
         artifact_type="figure",
         generated_by="src.figures.plot_cross_architecture_benchmark",
@@ -654,6 +707,20 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         generated_by="src.figures.plot_active_information_frontier",
         claim_ids=("CLM-031",),
         validation_checks=("figure_active_information_frontier",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/external_source_provenance.png",
+        artifact_type="figure",
+        generated_by="src.advanced_figures.write_advanced_figures",
+        claim_ids=("CLM-036",),
+        validation_checks=("figure_external_source_provenance",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/artifact_receipt_closure.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_artifact_receipt_closure",
+        claim_ids=("CLM-037",),
+        validation_checks=("figure_artifact_receipt_closure",),
     ),
     ArtifactManifestTarget(
         path="output/data/temporal_inference.json",
@@ -784,7 +851,8 @@ def verify_reproducibility_manifest(project_root: Path = PROJECT_ROOT) -> list[s
         relative_path = str(row.get("path"))
         path = project_root / relative_path
         if not path.exists():
-            errors.append(f"missing_artifact={relative_path}")
+            if bool(row.get("required", True)):
+                errors.append(f"missing_artifact={relative_path}")
             continue
         expected_hash = row.get("sha256")
         current_hash = sha256_file(path)
@@ -811,8 +879,11 @@ def write_reproducibility_manifest(output_dir: Path = OUTPUT_DIR) -> str:
     payload = reproducibility_payload(output_dir.parent)
 
     json_path = data_dir / "reproducibility_manifest.json"
-    json_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        json_path,
+        payload,
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
 
     markdown_rows = [

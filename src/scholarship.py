@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 from typing import Any
+
+from .artifact_contract import write_json_artifact
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
@@ -592,6 +593,62 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         claim_boundary="The interval is used descriptively for pooled labelled steps; it does not repair dependence, small-corpus scope, or external-validity limitations.",
     ),
     ScholarshipSource(
+        key="holm1979multiple",
+        title="A Simple Sequentially Rejective Multiple Test Procedure",
+        authors="Sture Holm",
+        year=1979,
+        venue="Scandinavian Journal of Statistics",
+        doi="10.2307/4615733",
+        url="https://www.jstor.org/stable/4615733",
+        source_type="peer_reviewed_statistics",
+        evidence_tier="statistical_method",
+        project_stage="implemented",
+        project_role="Provides the primary reference for the preregistered Holm familywise multiplicity adjustment.",
+        claim_boundary="The adjustment controls the declared comparison family; it does not turn a finite benchmark into population evidence or repair weak endpoint design.",
+    ),
+    ScholarshipSource(
+        key="cameron2008clusterbootstrap",
+        title="Bootstrap-Based Improvements for Inference with Clustered Errors",
+        authors="A. Colin Cameron, Jonah B. Gelbach, and Douglas L. Miller",
+        year=2008,
+        venue="The Review of Economics and Statistics",
+        doi="10.1162/rest.90.3.414",
+        url="https://doi.org/10.1162/rest.90.3.414",
+        source_type="peer_reviewed_statistics",
+        evidence_tier="statistical_method",
+        project_stage="implemented",
+        project_role="Grounds the use of source-family resampling and the caution required when the effective cluster count is small.",
+        claim_boundary="The project uses a transparent family-cluster bootstrap receipt; this citation does not validate the chosen fixture population or establish asymptotic validity for it.",
+    ),
+    ScholarshipSource(
+        key="lindley1956information",
+        title="On a Measure of the Information Provided by an Experiment",
+        authors="Dennis V. Lindley",
+        year=1956,
+        venue="The Annals of Mathematical Statistics",
+        doi="10.1214/aoms/1177728069",
+        url="https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-27/issue-4/On-a-Measure-of-the-Information-Provided-by-an-Experiment/10.1214/aoms/1177728069.full",
+        source_type="peer_reviewed_statistics",
+        evidence_tier="statistical_method",
+        project_stage="context",
+        project_role="Provides the classical expected-information framing for finite sensor-choice objectives.",
+        claim_boundary="The project applies information gain only to a bounded model-derived sensor tree; the source does not support a universal active-sensing law or a physical runtime cost model.",
+    ),
+    ScholarshipSource(
+        key="sangiorgi2011bisimulation",
+        title="Introduction to Bisimulation and Coinduction",
+        authors="Davide Sangiorgi",
+        year=2011,
+        venue="Cambridge University Press",
+        doi="10.1017/CBO9780511777110",
+        url="https://www.cambridge.org/core/books/introduction-to-bisimulation-and-coinduction/7C7D7791F1B4AE459177531C47932E42",
+        source_type="methodology_textbook",
+        evidence_tier="formal_verification",
+        project_stage="context",
+        project_role="Provides the formal behavioral-equivalence and bisimulation vocabulary used to delimit quotient-style claims.",
+        claim_boundary="The book supplies theory and terminology; the finite quotient receipt is not a bisimulation proof for x86-64 or arbitrary programs.",
+    ),
+    ScholarshipSource(
         key="wilkinson2016fair",
         title="The FAIR Guiding Principles for scientific data management and stewardship",
         authors=(
@@ -616,6 +673,89 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
         claim_boundary=(
             "FAIR principles motivate metadata and reuse design; a local manifest "
             "does not establish independent replication or scientific validity."
+        ),
+    ),
+    ScholarshipSource(
+        key="w3cprov2013",
+        title="The PROV Ontology",
+        authors="Timothy Lebo, Satya Sahoo, and Deborah McGuinness",
+        year=2013,
+        venue="W3C Recommendation",
+        doi=None,
+        url="https://www.w3.org/TR/2013/REC-prov-o-20130430/",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Provides the authoritative provenance vocabulary for distinguishing generated "
+            "entities, activities, and agents when describing artifact lineage."
+        ),
+        claim_boundary=(
+            "PROV-O motivates the lineage vocabulary; this repository emits a compatible "
+            "receipt contract but does not claim full PROV-O or RDF conformance."
+        ),
+    ),
+    ScholarshipSource(
+        key="rocrate2023",
+        title="RO-Crate Metadata Specification 1.1",
+        authors=(
+            "Peter Sefton, Eoghan Ó Carragáin, Stian Soiland-Reyes, Oscar Corcho, "
+            "Daniel Garijo, Raul Palma, Frederik Coppens, Carole Goble, and collaborators"
+        ),
+        year=2023,
+        venue="Research Object Crate Recommendation",
+        doi="10.5281/zenodo.7867028",
+        url="https://www.researchobject.org/ro-crate/specification/1.1/",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Informs the separation of machine-readable metadata, payload files, and "
+            "human-readable reproduction guidance in a research package."
+        ),
+        claim_boundary=(
+            "The project adopts selected packaging principles; its JSON receipts are not "
+            "presented as a complete RO-Crate implementation or certification."
+        ),
+    ),
+    ScholarshipSource(
+        key="sandve2013repro",
+        title="Ten Simple Rules for Reproducible Computational Research",
+        authors="Geir Kjetil Sandve, Anton Nekrutenko, James Taylor, and Eivind Hovig",
+        year=2013,
+        venue="PLoS Computational Biology",
+        doi="10.1371/journal.pcbi.1003285",
+        url="https://doi.org/10.1371/journal.pcbi.1003285",
+        source_type="peer_reviewed_reproducibility",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Supports recording exact software versions, intermediate outputs, seeds, "
+            "and source-to-result links as reproducibility design requirements."
+        ),
+        claim_boundary=(
+            "These rules motivate the engineering contract; passing local gates does not "
+            "establish independent replication or scientific validity."
+        ),
+    ),
+    ScholarshipSource(
+        key="acm2020artifact",
+        title="Artifact Review and Badging - Current",
+        authors="Association for Computing Machinery",
+        year=2020,
+        venue="ACM Publications Policy",
+        doi=None,
+        url="https://www.acm.org/publications/policies/artifact-review-and-badging-current",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Provides the publication-practice distinction between author-run reproducibility "
+            "and reproduction or replication by a separate person or team."
+        ),
+        claim_boundary=(
+            "The policy is used to name evidence states carefully; it is not an external "
+            "artifact-review result for this repository."
         ),
     ),
 )
@@ -664,9 +804,11 @@ def write_scholarship_sources(output_dir: Path = OUTPUT_DIR) -> str:
     data_dir = output_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     json_path = data_dir / "scholarship_sources.json"
-    json_path.write_text(
-        json.dumps(scholarship_payload(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        json_path,
+        scholarship_payload(),
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
     markdown_path = data_dir / "scholarship_matrix.md"
     rows = [

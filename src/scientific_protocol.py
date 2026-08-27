@@ -14,11 +14,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .provenance import generator_revision, toolchain_versions
+from .provenance import generator_revision, sha256_path, toolchain_versions
+from .receipt import EVIDENCE_STATUSES, RECEIPT_SCHEMA_VERSION
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROTOCOL_SCHEMA_VERSION = "1.0.0"
-PROTOCOL_ID = "active-assembly-open-roadmap-v1"
+PROTOCOL_SCHEMA_VERSION = "2.0.0"
+PROTOCOL_ID = "active-assembly-open-roadmap-v2"
 PROTOCOL_ARTIFACT = "output/data/research_protocol.json"
 
 MODEL_FAMILIES = (
@@ -35,6 +36,7 @@ SENSOR_CERTIFICATE_TOLERANCE = 0.05
 
 SUPPORTED_X86_USER_MODE = (
     "mov",
+    "movabs",
     "movzx",
     "movsx",
     "lea",
@@ -88,6 +90,7 @@ class ScientificProtocol:
     sensing_contract: dict[str, Any]
     formal_contract: dict[str, Any]
     evidence_contract: dict[str, Any]
+    receipt_contract: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe protocol object."""
@@ -101,7 +104,7 @@ def _canonical_hash(payload: dict[str, Any]) -> str:
 
 
 def build_scientific_protocol() -> ScientificProtocol:
-    """Build the frozen protocol used by P3--P7 producers."""
+    """Build the frozen protocol used by all v2 research producers."""
 
     return ScientificProtocol(
         protocol_id=PROTOCOL_ID,
@@ -111,7 +114,16 @@ def build_scientific_protocol() -> ScientificProtocol:
             "missing_token": "__MISSING__",
             "unseen_token": "__UNKNOWN__",
             "memory_model": "bounded_byte_addressable_fixture_memory",
-            "initial_register_interventions": [0, 1, 2**32 - 1, 2**64 - 1],
+            "initial_register_interventions": [
+                0,
+                1,
+                2,
+                2**31 - 1,
+                2**31,
+                2**32 - 1,
+                2**63,
+                2**64 - 1,
+            ],
             "sensor_fields": [
                 "instruction_family",
                 "operand_class",
@@ -146,8 +158,13 @@ def build_scientific_protocol() -> ScientificProtocol:
             "test_fraction": 0.25,
             "held_out_family_required": True,
             "three_way_partition": "training/development/held_out; no family overlap",
-            "minimum_independent_families": 8,
-            "minimum_examples": 64,
+            "minimum_independent_families": 64,
+            "minimum_examples_per_family": 64,
+            "minimum_held_out_families": 16,
+            "minimum_equivalent_rows_per_family": 32,
+            "minimum_near_miss_rows_per_family": 32,
+            "minimum_transformations_per_family": 4,
+            "minimum_near_miss_controls_per_family": 4,
             "real_program_minimum_projects": 5,
             "real_program_minimum_labelable_examples": 100,
         },
@@ -173,6 +190,14 @@ def build_scientific_protocol() -> ScientificProtocol:
                 "epochs": 8,
                 "stopping_rule": "fixed_8_epoch_budget_no_test_adaptation",
             },
+            "surface_baselines": [
+                "opcode_histogram",
+                "byte_ngrams_hashed_128_bins",
+                "mnemonic_counts",
+                "instruction_length",
+                "control_flow_summary",
+                "memory_event_counts",
+            ],
         },
         statistics_contract={
             "primary_metrics": list(PRIMARY_METRICS),
@@ -182,6 +207,7 @@ def build_scientific_protocol() -> ScientificProtocol:
             "calibration_bins": 10,
             "practical_comparison_margin": PRACTICAL_MARGIN,
             "multiplicity": "Holm across model-by-primary-metric comparisons",
+            "paired_comparison_sampling_unit": "source_family",
             "no_post_hoc_winner_promotion": True,
         },
         sensing_contract={
@@ -207,11 +233,18 @@ def build_scientific_protocol() -> ScientificProtocol:
             "unsupported_classes": list(UNSUPPORTED_X86_CLASSES),
             "state": [
                 "program_counter",
-                "general_purpose_registers",
-                "CF_ZF_SF_OF_flags_when_declared",
-                "bounded_memory",
+                "all_16_64_bit_general_purpose_registers",
+                "modeled_flags_with_definedness",
+                "bounded_byte_addressable_memory",
                 "bounded_stack",
+                "decoded_instruction_and_step_index",
+                "explicit_exceptional_or_unsupported_status",
             ],
+            "memory_window_bytes": 65536,
+            "stack_window_bytes": 4096,
+            "maximum_steps": 256,
+            "operand_widths": [8, 16, 32, 64],
+            "modeled_flags": ["CF", "PF", "AF", "ZF", "SF", "OF"],
             "correspondence": "Lean_reference_python_trace_bounded_Unicorn_fixture",
         },
         evidence_contract={
@@ -221,6 +254,24 @@ def build_scientific_protocol() -> ScientificProtocol:
             "network_required_for_replay": False,
             "application_claim_gate": "external_validity_receipt_and_independent_replay",
         },
+        receipt_contract={
+            "schema_version": RECEIPT_SCHEMA_VERSION,
+            "required_fields": [
+                "schema_version",
+                "protocol_id",
+                "protocol_sha256",
+                "generator_revision",
+                "input_hashes",
+                "toolchain_versions",
+                "status",
+                "limitations",
+                "unsupported_cases",
+                "underpowered_cases",
+            ],
+            "status_vocabulary": sorted(EVIDENCE_STATUSES),
+            "mixed_protocol_outputs_allowed": False,
+            "v1_migration": "read_only_diagnostic",
+        },
     )
 
 
@@ -228,9 +279,24 @@ def scientific_protocol_payload() -> dict[str, Any]:
     """Return the protocol with a stable content hash."""
 
     body = build_scientific_protocol().to_dict()
+    # ``schema_version`` belongs to the protocol itself.  The explicit receipt
+    # key keeps the same provenance contract available to domain artifacts that
+    # legitimately use a different local schema version.
+    body["receipt_schema_version"] = RECEIPT_SCHEMA_VERSION
     body["generator_revision"] = generator_revision(Path(__file__))
-    body["input_hashes"] = {}
+    body["input_hashes"] = {"src/scientific_protocol.py": sha256_path(Path(__file__))}
     body["toolchain_versions"] = toolchain_versions(("capstone", "numpy", "unicorn"))
+    body["status"] = "validated"
+    body["artifact_id"] = PROTOCOL_ARTIFACT
+    body["producer"] = "src/scientific_protocol.py"
+    body["limitations"] = [
+        "The protocol freezes a bounded research contract; it is not evidence of any scientific endpoint by itself.",
+        "Unavailable compiler targets and unsupported instruction effects remain explicit rather than imputed.",
+    ]
+    body["unsupported_cases"] = list(UNSUPPORTED_X86_CLASSES)
+    body["underpowered_cases"] = [
+        "Independent replication, external-validity, and broad-theorem gates remain unearned until their receipts pass.",
+    ]
     body["protocol_sha256"] = _canonical_hash(body)
     return body
 
@@ -250,6 +316,8 @@ def validate_scientific_protocol_payload(payload: object) -> tuple[bool, str]:
     body = {key: value for key, value in payload.items() if key != "protocol_sha256"}
     if recorded_hash != _canonical_hash(body):
         return False, "scientific protocol hash mismatch"
+    if payload.get("protocol_id") != PROTOCOL_ID:
+        return False, "scientific protocol id drift"
     if payload.get("model_contract", {}).get("families") != list(MODEL_FAMILIES):
         return False, "scientific protocol model family drift"
     if payload.get("statistics_contract", {}).get("primary_metrics") != list(
@@ -260,6 +328,25 @@ def validate_scientific_protocol_payload(payload: object) -> tuple[bool, str]:
         return False, "scientific protocol must remain label-blind"
     if payload.get("evidence_contract", {}).get("arbitrary_external_execution"):
         return False, "arbitrary external execution must remain disabled"
+    if payload.get("status") not in EVIDENCE_STATUSES:
+        return False, "scientific protocol evidence status is invalid"
+    if (
+        payload.get("receipt_contract", {}).get("schema_version")
+        != RECEIPT_SCHEMA_VERSION
+    ):
+        return False, "scientific protocol receipt contract drift"
+    if (
+        payload.get("receipt_contract", {}).get("mixed_protocol_outputs_allowed")
+        is not False
+    ):
+        return False, "mixed protocol outputs must remain disabled"
+    if payload.get("underpowered_cases") == []:
+        return False, "protocol must retain current unearned gates"
+    # The body must be exactly reproducible from the current source and
+    # capability receipt.  This catches stale output even when its self-hash is
+    # internally consistent.
+    if payload != expected:
+        return False, "scientific protocol is stale relative to the canonical producer"
     return True, "ok"
 
 
@@ -267,9 +354,9 @@ def write_scientific_protocol(project_root: Path = PROJECT_ROOT) -> Path:
     """Write the source-bound research protocol receipt."""
 
     path = project_root / PROTOCOL_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(scientific_protocol_payload(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    # Import lazily to avoid a module cycle: artifact_contract consumes the
+    # canonical protocol when sealing the broader project data surface.
+    from .artifact_contract import write_json_atomic
+
+    write_json_atomic(path, scientific_protocol_payload())
     return path

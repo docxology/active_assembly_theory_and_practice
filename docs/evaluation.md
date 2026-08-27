@@ -185,7 +185,7 @@ leave-one-out boundary as the typed model and records the training complement
 for every row.
 
 The generated `output/data/action_sensing.json` compares four policies under a
-common action budget and equal normalized proxy cost: predictive active
+common action budget and equal normalized action cost: predictive active
 selection, source-order fixed selection, a seeded-random permutation, and an
 explicitly inadmissible oracle that is allowed to inspect realized values
 before selecting. The oracle is an upper-bound reference, not a deployable
@@ -195,8 +195,11 @@ current result is a mechanism test: active choices change the acquired typed
 evidence and remain leakage-free, while their budget advantage is not assumed
 and is reported against the fixed and random baselines.
 
-Costs are deliberately normalized action units, not runtime or analyst-time
-measurements. The experiment therefore satisfies the roadmap's action-change
+Costs in this action-conditioned experiment are deliberately normalized action
+units, not runtime or analyst-time measurements. A separate
+`output/data/sensor_cost_receipt.json` records the deterministic eight-component
+cost vector and optional local wall-clock calibration, so the normalized action
+experiment and measured-cost receipt are not conflated. The experiment therefore satisfies the roadmap's action-change
 and no-peeking requirements for a transparent demonstrator, but it does not
 establish autonomous sensing over arbitrary binaries or real acquisition-cost
 optimality.
@@ -211,9 +214,12 @@ fixtures. The held-out phase labels are retained under an explicit
 The artifact records the ordered-state support, positive transition floor,
 Dirichlet concentrations, scaled log-evidence history, parameter deltas, and
 the fitted `A`, `B`, and `D` tensors. `output/figures/parameter_learning.png`
-shows both the per-fixture held-out accuracy comparison and the training
-evidence trajectories; the latter must not be read as held-out performance or
-uncertainty intervals.
+shows the per-fixture held-out accuracy comparison for ordered EM, supervised
+MAP, the fixed reference, and a fixed-penalty Dirichlet-MAP comparator, together
+with training evidence and five-start sensitivity. The receipt also contains
+label-free posterior-predictive checks and a training-only model-selection
+ledger; none of these diagnostics must be read as held-out performance or
+population uncertainty intervals.
 
 The current method is intentionally conservative. The reference initialization
 and ordered self/next-state scaffold address latent-state label switching, but
@@ -255,9 +261,11 @@ the pinned Lean toolchain and writes `output/data/formal_verification.json` with
 the source hashes, theorem names, build command, and trusted base. The
 validation gate rebuilds the project and compares the deterministic receipt;
 the formal status therefore cannot be cleared by editing a JSON file. The
-receipt does not establish correspondence between the Lean operations and
-Capstone/Unicorn instructions, and it does not cover flags, memory,
-exceptions, ABI behavior, compiler correctness, or the x86 ISA as a whole.
+generated `formal/ActiveAssembly/GeneratedCorrespondence.lean` bridge checks
+one shared Python/Lean Word64 boundary fixture. The receipt still does not
+establish a general correspondence theorem between Lean and Capstone/Unicorn,
+and it does not cover flags, memory, exceptions, ABI behavior, compiler
+correctness, or the x86 ISA as a whole.
 
 ## Cross-architecture adapter benchmark
 
@@ -282,7 +290,9 @@ finite horizons, cost weights, policy counts, expected entropy, information
 gain, and objective. The plot `output/figures/active_information_frontier.png`
 is consequently stronger than a single greedy-policy trace within the stated
 finite mechanism. Its sensor likelihoods come from the label-blind factorized
-model and its costs are unit proxies; it is not a measured runtime cost law,
+model and its costs are unit model-channel costs. The separate measured-cost
+receipt records deterministic vectors and local calibration; neither artifact
+is a measured cross-machine runtime law,
 an infinite-horizon optimum, an autonomous binary-analysis result, or a
 theorem about all active sensing systems.
 

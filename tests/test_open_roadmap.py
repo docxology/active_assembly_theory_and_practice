@@ -5,9 +5,11 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import pytest
+import src.formal_correspondence as formal_module
+import src.theorem_phase as theorem_module
 
 from src.compiler_transfer import (
     _compile_one,
@@ -37,6 +39,7 @@ from src.quotient_classifier import (
     write_quotient_classifier_report,
 )
 from src.replication import (
+    run_label_blind_model,
     score_replication_predictions,
     validate_replication_bundle,
     write_replication_bundle,
@@ -71,7 +74,7 @@ def test_quotient_classifier_has_disjoint_families_and_three_models() -> None:
     payload = quotient_classifier_payload()
     valid, detail = validate_quotient_classifier_payload(payload)
     assert valid, detail
-    assert payload["family_count"] == 16
+    assert payload["family_count"] == 64
     assert payload["examples_per_family"] == 64
     assert payload["split_overlap"] is False
     assert set(payload["models"]) == {
@@ -97,7 +100,7 @@ def test_quotient_classifier_rejects_label_leakage_and_writes(tmp_path) -> None:
     assert not validate_quotient_classifier_payload(payload)[0]
     path = write_quotient_classifier_report(tmp_path)
     assert (
-        json.loads((tmp_path / path).read_text(encoding="utf-8"))["row_count"] == 1024
+        json.loads((tmp_path / path).read_text(encoding="utf-8"))["row_count"] == 4096
     )
 
 
@@ -105,9 +108,84 @@ def test_formal_correspondence_matches_every_transparent_step() -> None:
     payload = formal_correspondence_payload()
     valid, detail = validate_formal_correspondence_payload(payload)
     assert valid, detail
-    assert payload["status"] == "verified_bounded_trace_correspondence"
+    assert payload["status"] == "validated_bounded"
     assert payload["fixture_count"] >= 3
     assert all(row["checks"]["matched_at_every_step"] for row in payload["step_rows"])
+
+
+def test_formal_correspondence_writer_fails_closed_on_invalid_payload(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        formal_module,
+        "formal_correspondence_payload",
+        lambda project_root: {"status": "invalid"},
+    )
+
+    with pytest.raises(ValueError, match="schema mismatch"):
+        formal_module.write_formal_correspondence(tmp_path)
+
+
+def test_formal_correspondence_validator_covers_structural_failures() -> None:
+    payload = formal_correspondence_payload()
+    mutations = []
+
+    def mutate_status(candidate: dict[str, Any]) -> None:
+        candidate["status"] = "failed"
+
+    def mutate_bridge(candidate: dict[str, Any]) -> None:
+        cast(dict[str, Any], candidate["cross_language_bridge"])[
+            "trace_matches_lean_expected"
+        ] = False
+
+    def mutate_subset(candidate: dict[str, Any]) -> None:
+        candidate["supported_instruction_subset"] = []
+
+    def mutate_state(candidate: dict[str, Any]) -> None:
+        cast(list[str], candidate["state"]).remove("rax")
+
+    def mutate_rows(candidate: dict[str, Any]) -> None:
+        candidate["step_rows"] = []
+
+    def mutate_row_match(candidate: dict[str, Any]) -> None:
+        cast(
+            dict[str, Any],
+            cast(list[dict[str, Any]], candidate["step_rows"])[0]["checks"],
+        )["matched_at_every_step"] = False
+
+    def mutate_unsupported(candidate: dict[str, Any]) -> None:
+        cast(
+            dict[str, Any],
+            cast(list[dict[str, Any]], candidate["step_rows"])[0]["checks"],
+        )["unsupported"] = "unsupported"
+
+    def mutate_missing(candidate: dict[str, Any]) -> None:
+        cast(list[dict[str, Any]], candidate["step_rows"])[0].pop("reference_steps")
+
+    def mutate_fixture_count(candidate: dict[str, Any]) -> None:
+        candidate["fixture_count"] = 0
+
+    def mutate_intervention_count(candidate: dict[str, Any]) -> None:
+        candidate["intervention_count"] = 0
+
+    mutations.extend(
+        (
+            mutate_status,
+            mutate_bridge,
+            mutate_subset,
+            mutate_state,
+            mutate_rows,
+            mutate_row_match,
+            mutate_unsupported,
+            mutate_missing,
+            mutate_fixture_count,
+            mutate_intervention_count,
+        )
+    )
+    for mutation in mutations:
+        candidate = deepcopy(payload)
+        mutation(candidate)
+        assert not validate_formal_correspondence_payload(candidate)[0]
 
 
 def test_compiler_transfer_records_unavailable_targets_without_fallback() -> None:
@@ -117,6 +195,11 @@ def test_compiler_transfer_records_unavailable_targets_without_fallback() -> Non
     assert payload["execution_performed"] is False
     assert any(row["status"] == "unavailable" for row in payload["rows"])
     assert any(row["status"] == "validated_static_object" for row in payload["rows"])
+    assert payload["capability_summary"]["source_family_count"] >= 6
+    assert set(payload["capability_summary"]["optimization_levels_validated"]) == {
+        "-O0",
+        "-O2",
+    }
 
 
 def test_sensor_costs_have_vectors_and_finite_oracle_certificates() -> None:
@@ -134,7 +217,7 @@ def test_replication_bundle_keeps_public_labels_separate(tmp_path) -> None:
     valid, detail = validate_replication_bundle(tmp_path)
     assert valid, detail
     public = json.loads(
-        (tmp_path / "output/replication/public_manifest.json").read_text(
+        (tmp_path / "output/replication/public/public_manifest.json").read_text(
             encoding="utf-8"
         )
     )
@@ -155,11 +238,12 @@ def test_theorem_phase_promotes_counterexamples_fail_closed() -> None:
     assert payload["promotion_status"] == "fail_closed_no_broad_theorem"
     assert payload["counterexample"]["family_id"] == "zeroing_idiom"
     statuses = {row["status"] for row in payload["candidate_theorems"]}
-    assert statuses == {
+    assert {
         "proved",
-        "computationally_validated_only",
+        "computationally_validated",
         "falsified_by_counterexample",
-    }
+        "unresolved",
+    }.issubset(statuses)
 
 
 def _event(
@@ -241,7 +325,9 @@ def test_replication_scoring_accepts_exact_label_separated_predictions(
 ) -> None:
     write_replication_bundle(tmp_path)
     gold = json.loads(
-        (tmp_path / "output/replication/gold_labels.json").read_text(encoding="utf-8")
+        (tmp_path / "output/replication/private/gold_labels.json").read_text(
+            encoding="utf-8"
+        )
     )
     predictions = [
         {"record_id": row["record_id"], "probability": float(row["label"])}
@@ -256,6 +342,27 @@ def test_replication_scoring_accepts_exact_label_separated_predictions(
     with pytest.raises(ValueError, match="identifiers"):
         prediction_path.write_text(json.dumps(predictions[:-1]), encoding="utf-8")
         score_replication_predictions(prediction_path, tmp_path)
+
+
+def test_replication_label_blind_model_runs_without_gold_labels(tmp_path: Path) -> None:
+    public_path = tmp_path / "public.json"
+    public_path.write_text(
+        json.dumps(
+            [
+                {"record_id": "a", "sequence": ["x"], "features": [0.0, 1.0]},
+                {"record_id": "b", "sequence": ["y", "z"], "features": [1.0, 2.0]},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    prediction_path = run_label_blind_model(
+        public_path,
+        tmp_path / "predictions.json",
+        model="neural_sequence",
+    )
+    payload = json.loads(prediction_path.read_text(encoding="utf-8"))
+    assert payload["label_blind"] is True
+    assert [row["record_id"] for row in payload["predictions"]] == ["a", "b"]
 
 
 def test_open_roadmap_validators_fail_closed_on_receipt_drift() -> None:
@@ -442,8 +549,8 @@ def test_replication_validator_rejects_manifest_and_label_separation_drift(
 ) -> None:
     write_replication_bundle(tmp_path)
     manifest_path = tmp_path / "output/data/replication_manifest.json"
-    public_path = tmp_path / "output/replication/public_manifest.json"
-    gold_path = tmp_path / "output/replication/gold_labels.json"
+    public_path = tmp_path / "output/replication/public/public_manifest.json"
+    gold_path = tmp_path / "output/replication/private/gold_labels.json"
     originals = {
         path: path.read_text(encoding="utf-8")
         for path in (manifest_path, public_path, gold_path)
@@ -499,11 +606,17 @@ def test_theorem_validator_rejects_missing_or_nonseparating_counterexamples() ->
     for key, value in (
         ("schema_version", "0.0.0"),
         ("protocol_sha256", "0" * 64),
+        ("status", "validated"),
         ("promotion_status", "promoted"),
         ("counterexample", None),
     ):
         mutated = deepcopy(payload)
         mutated[key] = value
+        assert not validate_theorem_or_countertheorem_payload(mutated)[0]
+
+    for candidates in (None, [], [{"status": "unresolved"}]):
+        mutated = deepcopy(payload)
+        mutated["candidate_theorems"] = candidates
         assert not validate_theorem_or_countertheorem_payload(mutated)[0]
 
     for interventions in (None, [], [{}]):
@@ -517,3 +630,23 @@ def test_theorem_validator_rejects_missing_or_nonseparating_counterexamples() ->
     for item in all_equal["counterexample"]["interventions"]:
         item["final_rax_equal"] = True
     assert not validate_theorem_or_countertheorem_payload(all_equal)[0]
+
+
+def test_theorem_producer_fails_closed_when_counterexample_search_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(theorem_module, "_family_specs", lambda: ())
+    with pytest.raises(RuntimeError, match="counterexample was not found"):
+        theorem_module.theorem_or_countertheorem_payload()
+
+
+def test_theorem_writer_rejects_an_invalid_producer_payload(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        theorem_module,
+        "theorem_or_countertheorem_payload",
+        lambda project_root: {"schema_version": "invalid"},
+    )
+    with pytest.raises(ValueError, match="schema mismatch"):
+        theorem_module.write_theorem_or_countertheorem(tmp_path)

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 from pathlib import Path
 import re
@@ -55,7 +54,7 @@ def _load_template_injection():
     template_root = _resolve_template_root()
     if str(template_root) not in sys.path:
         sys.path.insert(0, str(template_root))
-    from infrastructure.rendering.manuscript_injection import (
+    from infrastructure.rendering.manuscript_injection import (  # type: ignore[import-untyped]
         write_resolved_manuscript_tree,
     )
 
@@ -170,8 +169,13 @@ def main() -> int:
                 break
             variables.update(validation_values)
             variables_path = PROJECT_ROOT / "output/data/manuscript_variables.json"
-            variables_path.write_text(
-                json.dumps(variables, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            from src.artifact_contract import write_json_artifact
+
+            write_json_artifact(
+                variables_path,
+                variables,
+                project_root=PROJECT_ROOT,
+                producer_path=PROJECT_ROOT / "src/manuscript_variables.py",
             )
             write_variable_registry(variables, PROJECT_ROOT)
             out_dir = write_resolved_manuscript_tree(PROJECT_ROOT, variables)
