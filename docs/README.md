@@ -36,12 +36,15 @@ folder and the `manuscript/` sources are authored interfaces.
   `output/data/parameter_learning.json` and `output/figures/parameter_learning.png`;
   five deterministic starts per complete-fixture holdout are retained, including
   weak or unstable fits.
-- The P11--P16 promotion tranche is emitted through
+- The P11--P17 promotion tranche is emitted through
   `scripts/run_scientific_program.py`: the normalized machine-state and
   generated Lean bridge receipts, 64-family quotient portfolio, compiler and
   static-only external-source manifests, measured sensing-cost certificates,
   label-separated offline replication bundle, theorem/countertheorem ledger,
-  and source-bound manuscript registries are all separate evidence surfaces.
+  source-bound manuscript registries, and protocol-v2 artifact-envelope audit
+  are all separate evidence surfaces. Use `all` for the canonical local
+  orchestration summary, `seal-artifacts` only for an explicit legacy migration,
+  and `audit-artifacts` as a read-only fail-closed check.
   `blocked_external`, `underpowered`, `unavailable`, `falsified`, and
   `unresolved` statuses remain visible and are not promoted to positive claims.
 - `reproducibility.md` defines the generated artifact hash manifest, build receipt, and figure/variable registries.

@@ -29,6 +29,7 @@ from typing import Any, Sequence
 
 import numpy as np
 
+from .artifact_contract import write_json_artifact
 from .disassembly import disassemble_bytes
 from .emulation import emulate_x86_64
 from .provenance import generator_revision, sha256_path, toolchain_versions
@@ -1739,7 +1740,10 @@ def write_quotient_classifier_report(project_root: Path = PROJECT_ROOT) -> Path:
         raise ValueError(detail)
     path = project_root / QUOTIENT_CLASSIFIER_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

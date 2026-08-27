@@ -18,12 +18,40 @@ uv run python scripts/run_formal_verification.py
 uv run python scripts/run_replication.py generate
 uv run python scripts/run_replication.py verify
 
+uv run python scripts/run_scientific_program.py all
+uv run python scripts/run_scientific_program.py audit-artifacts
+
+uv run python scripts/run_scientific_program.py probe-capabilities
+uv run python scripts/run_scientific_program.py prepare-external
+uv run python scripts/run_scientific_program.py validate-external
+uv run python scripts/run_scientific_program.py generate-public
+uv run python scripts/run_scientific_program.py replay --offline
+uv run python scripts/run_scientific_program.py verify-public
+uv run python scripts/run_scientific_program.py promote-evidence
+
 uv run python scripts/run_rxinfer_backend.py
 
 uv run python scripts/validate_analysis_outputs.py
 
 uv run python scripts/z_generate_manuscript_variables.py
 ```
+
+The only network-enabled operation is explicit acquisition of the pinned
+manifest:
+
+```bash
+uv run python scripts/run_scientific_program.py acquire-external \
+  --manifest configs/external_sources.yaml \
+  --destination output/external_sources \
+  --allow-network
+```
+
+Acquisition validates archive and license digests, performs static compilation
+and disassembly only, and retains unavailable/failed rows. Replay, scoring,
+manuscript generation, and document rendering must remain offline. A local
+rerun cannot produce an independent-replay status; an external operator must
+submit a pending receipt with explicit separate-control attestation for the
+protected ingestion command.
 
 Run the Julia integration gate:
 
@@ -121,6 +149,7 @@ the source-family split and endpoint contract in
 `representation_invariance_benchmark.json`, the exact finite
 intervention-subset enumeration in `intervention_power.json` (including its
 one-state negative control and fail-closed promotion status),
+the protocol-v2 receipt envelope on every project-owned JSON artifact, and
 and a **figure-set oracle** that requires the expected
 `output/figures/*.png` set to exist, be non-empty, and pass a pixel-variance check
 (so a blank or zero-byte PNG cannot satisfy the gate). The figure set includes the

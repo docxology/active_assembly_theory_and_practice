@@ -1,0 +1,445 @@
+{
+  "fixture_count": 6,
+  "inside_interval_count": 46,
+  "inside_interval_fraction": 0.9583333333333334,
+  "interpretation": "Simulation intervals describe the fixed A/B/D model at fixture length; they are not posterior or population uncertainty intervals.",
+  "interval": "central_95_percent_simulation_interval",
+  "method": "fixed_parameter_generative_adequacy",
+  "per_fixture": [
+    {
+      "fixture": "x86_accumulator",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 4,
+      "observed": {
+        "phase_occupancy": [
+          0.25,
+          0.25,
+          0.25,
+          0.0,
+          0.25
+        ],
+        "run_count": 4,
+        "temporal_recovery_accuracy": 0.75,
+        "transition_rate": 1.0
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 4.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.25,
+          "median": 0.75,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.3333333333333333,
+          "upper": 1.0
+        }
+      }
+    },
+    {
+      "fixture": "x86_bitwise",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 4,
+      "observed": {
+        "phase_occupancy": [
+          0.25,
+          0.0,
+          0.5,
+          0.0,
+          0.25
+        ],
+        "run_count": 3,
+        "temporal_recovery_accuracy": 0.5,
+        "transition_rate": 0.6666666666666666
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.75
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 4.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.25,
+          "median": 0.75,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.3333333333333333,
+          "upper": 1.0
+        }
+      }
+    },
+    {
+      "fixture": "x86_guard",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 4,
+      "observed": {
+        "phase_occupancy": [
+          0.25,
+          0.0,
+          0.0,
+          0.5,
+          0.25
+        ],
+        "run_count": 3,
+        "temporal_recovery_accuracy": 0.5,
+        "transition_rate": 0.6666666666666666
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.25,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.90625
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 4.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.25,
+          "median": 0.75,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.3333333333333333,
+          "upper": 1.0
+        }
+      }
+    },
+    {
+      "fixture": "x86_long_accumulator",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": false,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": false
+      },
+      "length": 6,
+      "observed": {
+        "phase_occupancy": [
+          0.16666666666666666,
+          0.5,
+          0.16666666666666666,
+          0.0,
+          0.16666666666666666
+        ],
+        "run_count": 5,
+        "temporal_recovery_accuracy": 0.8333333333333334,
+        "transition_rate": 0.8
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.9375
+          },
+          {
+            "lower": 0.0,
+            "median": 0.16666666666666666,
+            "upper": 0.8333333333333334
+          },
+          {
+            "lower": 0.0,
+            "median": 0.16666666666666666,
+            "upper": 0.6666666666666666
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 4.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.3333333333333333,
+          "median": 0.8333333333333334,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.2,
+          "upper": 0.6
+        }
+      }
+    },
+    {
+      "fixture": "x86_memory",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 3,
+      "observed": {
+        "phase_occupancy": [
+          0.3333333333333333,
+          0.3333333333333333,
+          0.0,
+          0.0,
+          0.3333333333333333
+        ],
+        "run_count": 3,
+        "temporal_recovery_accuracy": 0.3333333333333333,
+        "transition_rate": 1.0
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 1.0,
+          "upper": 3.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.0,
+          "median": 1.0,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.0,
+          "upper": 1.0
+        }
+      }
+    },
+    {
+      "fixture": "x86_guard_taken",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 5,
+      "observed": {
+        "phase_occupancy": [
+          0.2,
+          0.2,
+          0.0,
+          0.4,
+          0.2
+        ],
+        "run_count": 4,
+        "temporal_recovery_accuracy": 0.2,
+        "transition_rate": 0.75
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.2,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.2,
+            "upper": 0.8
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.725
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 4.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.2,
+          "median": 0.8,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.25,
+          "upper": 0.75
+        }
+      }
+    }
+  ],
+  "replicates": 256,
+  "seed": 20260815,
+  "tested_metric_count": 48
+}

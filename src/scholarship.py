@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 from typing import Any
+
+from .artifact_contract import write_json_artifact
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
@@ -674,6 +675,89 @@ SCHOLARSHIP_SOURCES: tuple[ScholarshipSource, ...] = (
             "does not establish independent replication or scientific validity."
         ),
     ),
+    ScholarshipSource(
+        key="w3cprov2013",
+        title="The PROV Ontology",
+        authors="Timothy Lebo, Satya Sahoo, and Deborah McGuinness",
+        year=2013,
+        venue="W3C Recommendation",
+        doi=None,
+        url="https://www.w3.org/TR/2013/REC-prov-o-20130430/",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Provides the authoritative provenance vocabulary for distinguishing generated "
+            "entities, activities, and agents when describing artifact lineage."
+        ),
+        claim_boundary=(
+            "PROV-O motivates the lineage vocabulary; this repository emits a compatible "
+            "receipt contract but does not claim full PROV-O or RDF conformance."
+        ),
+    ),
+    ScholarshipSource(
+        key="rocrate2023",
+        title="RO-Crate Metadata Specification 1.1",
+        authors=(
+            "Peter Sefton, Eoghan Ó Carragáin, Stian Soiland-Reyes, Oscar Corcho, "
+            "Daniel Garijo, Raul Palma, Frederik Coppens, Carole Goble, and collaborators"
+        ),
+        year=2023,
+        venue="Research Object Crate Recommendation",
+        doi="10.5281/zenodo.7867028",
+        url="https://www.researchobject.org/ro-crate/specification/1.1/",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Informs the separation of machine-readable metadata, payload files, and "
+            "human-readable reproduction guidance in a research package."
+        ),
+        claim_boundary=(
+            "The project adopts selected packaging principles; its JSON receipts are not "
+            "presented as a complete RO-Crate implementation or certification."
+        ),
+    ),
+    ScholarshipSource(
+        key="sandve2013repro",
+        title="Ten Simple Rules for Reproducible Computational Research",
+        authors="Geir Kjetil Sandve, Anton Nekrutenko, James Taylor, and Eivind Hovig",
+        year=2013,
+        venue="PLoS Computational Biology",
+        doi="10.1371/journal.pcbi.1003285",
+        url="https://doi.org/10.1371/journal.pcbi.1003285",
+        source_type="peer_reviewed_reproducibility",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Supports recording exact software versions, intermediate outputs, seeds, "
+            "and source-to-result links as reproducibility design requirements."
+        ),
+        claim_boundary=(
+            "These rules motivate the engineering contract; passing local gates does not "
+            "establish independent replication or scientific validity."
+        ),
+    ),
+    ScholarshipSource(
+        key="acm2020artifact",
+        title="Artifact Review and Badging - Current",
+        authors="Association for Computing Machinery",
+        year=2020,
+        venue="ACM Publications Policy",
+        doi=None,
+        url="https://www.acm.org/publications/policies/artifact-review-and-badging-current",
+        source_type="formal_methods_documentation",
+        evidence_tier="provenance_method",
+        project_stage="context",
+        project_role=(
+            "Provides the publication-practice distinction between author-run reproducibility "
+            "and reproduction or replication by a separate person or team."
+        ),
+        claim_boundary=(
+            "The policy is used to name evidence states carefully; it is not an external "
+            "artifact-review result for this repository."
+        ),
+    ),
 )
 
 
@@ -720,9 +804,11 @@ def write_scholarship_sources(output_dir: Path = OUTPUT_DIR) -> str:
     data_dir = output_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     json_path = data_dir / "scholarship_sources.json"
-    json_path.write_text(
-        json.dumps(scholarship_payload(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        json_path,
+        scholarship_payload(),
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
     markdown_path = data_dir / "scholarship_matrix.md"
     rows = [

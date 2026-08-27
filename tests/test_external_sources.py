@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 import io
+import json
 from pathlib import Path
 import shutil
 import tarfile
@@ -15,15 +16,21 @@ import src.external_sources as external_module
 from src.external_sources import (
     ExternalSourceSpec,
     _safe_extract,
+    _spec_from_row,
     _validate_build_command,
     _validate_relative_path,
     acquire_external_manifest,
     acquire_external_source,
+    compiler_capabilities_payload,
     external_source_validation_payload,
     load_external_manifest,
     static_compile_external_source,
+    write_external_source_validation_payload,
+    validate_compiler_capabilities_payload,
     validate_external_manifest,
+    validate_external_static_validation_payload,
     validate_external_source_validation_payload,
+    write_compiler_capabilities,
 )
 
 
@@ -47,11 +54,11 @@ def _valid_row() -> dict[str, object]:
     }
 
 
-def test_empty_repository_manifest_is_explicitly_blocked_and_valid() -> None:
+def test_pinned_repository_manifest_is_underpowered_without_labels() -> None:
     payload = external_source_validation_payload()
     valid, detail = validate_external_source_validation_payload(payload)
     assert valid, detail
-    assert payload["status"] == "blocked_external"
+    assert payload["status"] == "underpowered"
     assert payload["network_used"] is False
     assert payload["execution_performed"] is False
 
@@ -112,6 +119,10 @@ def test_static_compile_records_object_without_executing_it(tmp_path: Path) -> N
     assert result["status"] == "validated"
     assert result["execution_performed"] is False
     assert result["static_only"] is True
+    assert len(result["object_sha256"]) == 64
+    assert len(result["disassembly_sha256"]) == 64
+    assert int(result["decoded_instruction_count"]) > 0
+    assert result["target_triple"] == "x86_64-apple-darwin"
     assert (output / "fixture.o").is_file()
 
 
@@ -177,10 +188,62 @@ def test_manifest_and_command_validation_rejects_structural_drift() -> None:
         **duplicate_id,
         "sources": [
             _valid_row(),
-            {**_valid_row(), "source_id": "project_b"},
+            {
+                **_valid_row(),
+                "source_id": "project_b",
+                "project_id": "project_a",
+                "revision_label": "0123456789ab",
+            },
         ],
     }
     assert validate_external_manifest(duplicate_family)[0] is False
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda row: row.pop("source_id"), "missing"),
+        (lambda row: row.update(source_id="bad id"), "invalid source_id"),
+        (lambda row: row.update(license=""), "license must be non-empty"),
+        (lambda row: row.update(license_file_sha256="bad"), "license_file_sha256"),
+        (lambda row: row.update(compiler="gcc"), "does not match compiler"),
+        (lambda row: row.update(target_triple=""), "target_triple must be non-empty"),
+    ],
+)
+def test_source_spec_rejects_required_field_and_provenance_drift(
+    mutation, message: str
+) -> None:
+    row = _valid_row()
+    mutation(row)
+    with pytest.raises(ValueError, match=message):
+        _spec_from_row(row, 0)
+
+
+def test_safe_extract_rejects_tar_traversal_and_symbolic_links(tmp_path: Path) -> None:
+    traversal = tmp_path / "traversal.tar"
+    with tarfile.open(traversal, "w") as archive:
+        member = tarfile.TarInfo("../escape.txt")
+        member.size = 6
+        archive.addfile(member, io.BytesIO(b"unsafe"))
+    with pytest.raises(ValueError, match="escapes"):
+        _safe_extract(traversal, tmp_path / "tar-traversal")
+
+    linked = tmp_path / "linked.tar"
+    with tarfile.open(linked, "w") as archive:
+        member = tarfile.TarInfo("link")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "target"
+        archive.addfile(member)
+    with pytest.raises(ValueError, match="links"):
+        _safe_extract(linked, tmp_path / "tar-link")
+
+    zip_link = tmp_path / "linked.zip"
+    with zipfile.ZipFile(zip_link, "w") as archive:
+        info = zipfile.ZipInfo("link")
+        info.external_attr = (0o120777 << 16) | 0xA000
+        archive.writestr(info, "target")
+    with pytest.raises(ValueError, match="links"):
+        _safe_extract(zip_link, tmp_path / "zip-link")
 
 
 def test_safe_archive_extraction_accepts_local_files_and_rejects_links_and_traversal(
@@ -458,4 +521,134 @@ def test_static_compile_rejects_output_escape_and_records_compile_failure(
         failure_spec, source_root, output
     )
     assert result["status"] == "failed"
+    assert result["execution_performed"] is False
+
+
+def test_capability_receipt_and_static_receipt_validators_are_fail_closed(
+    tmp_path: Path,
+) -> None:
+    missing = external_module._compiler_probe("compiler-that-does-not-exist")
+    assert missing["status"] == "unavailable"
+    assert missing["targets"] == {}
+
+    payload = compiler_capabilities_payload()
+    valid, detail = validate_compiler_capabilities_payload(payload)
+    assert valid, detail
+    capability_path = write_compiler_capabilities(tmp_path)
+    stored = json.loads(capability_path.read_text(encoding="utf-8"))
+    assert stored["artifact"] == "output/data/external_capabilities.json"
+
+    for candidate in (
+        None,
+        {"schema_version": "0.0.0", "rows": []},
+        {"schema_version": "2.0.0", "rows": []},
+        {
+            "schema_version": "2.0.0",
+            "rows": [{"targets": {"x86_64-apple-darwin": "yes"}}],
+        },
+    ):
+        assert not validate_compiler_capabilities_payload(candidate)[0]
+
+    static_base = {
+        "schema_version": "2.0.0",
+        "static_only": True,
+        "execution_performed": False,
+        "rows": [],
+    }
+    assert validate_external_static_validation_payload(static_base)[0]
+    for candidate in (
+        None,
+        {**static_base, "schema_version": "0.0.0"},
+        {**static_base, "static_only": False},
+        {**static_base, "execution_performed": True},
+        {**static_base, "rows": [{}]},
+        {
+            **static_base,
+            "rows": [{"status": "unknown", "execution_performed": False}],
+        },
+        {
+            **static_base,
+            "rows": [{"status": "validated", "execution_performed": True}],
+        },
+    ):
+        assert not validate_external_static_validation_payload(candidate)[0]
+
+    external = external_source_validation_payload()
+    valid, detail = validate_external_source_validation_payload(external)
+    assert valid, detail
+    for candidate in (
+        None,
+        {**external, "schema_version": "0.0.0"},
+        {**external, "execution_performed": True},
+        {**external, "static_only": False},
+        {**external, "manifest": {}},
+    ):
+        assert not validate_external_source_validation_payload(candidate)[0]
+
+    envelope_drift = dict(external)
+    envelope_drift["receipt_schema_version"] = "0.0.0"
+    valid, detail = validate_external_source_validation_payload(envelope_drift)
+    assert not valid
+    assert "external source receipt" in detail
+
+    manifest_drift = dict(external)
+    manifest_drift["manifest"] = {}
+    assert not validate_external_source_validation_payload(manifest_drift)[0]
+
+
+def test_external_receipt_writer_and_static_row_loader_keep_missing_evidence_visible(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "configs").mkdir()
+    shutil.copy(
+        external_module.PROJECT_ROOT / "configs/external_sources.yaml",
+        tmp_path / "configs/external_sources.yaml",
+    )
+    shutil.copy(
+        external_module.PROJECT_ROOT / "configs/external_label_contracts.yaml",
+        tmp_path / "configs/external_label_contracts.yaml",
+    )
+    assert external_module._load_static_rows(tmp_path) == []
+    malformed = tmp_path / "output/data/external_static_validation.json"
+    malformed.parent.mkdir(parents=True)
+    malformed.write_text("{", encoding="utf-8")
+    assert external_module._load_static_rows(tmp_path) == []
+
+    receipt_path = write_external_source_validation_payload(tmp_path)
+    payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert payload["status"] == "blocked_external"
+    assert payload["execution_performed"] is False
+
+
+def test_static_compile_records_disassembler_unavailability_without_execution(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    compiler = shutil.which("clang")
+    if compiler is None:
+        pytest.skip("clang unavailable")
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    (source_root / "fixture.c").write_text(
+        "unsigned long f(unsigned long x) { return x + 1; }\n", encoding="utf-8"
+    )
+    spec = ExternalSourceSpec(
+        source_id="fixture-no-disassembler",
+        repository_url="https://example.invalid/fixture.tar.gz",
+        revision="0123456789abcdef0123456789abcdef01234567",
+        license="BSD-3-Clause",
+        license_file="LICENSE",
+        license_file_sha256="a" * 64,
+        source_archive_sha256="b" * 64,
+        source_family="fixture_family",
+        build_command=(compiler, "-c", "fixture.c"),
+        compiler=compiler,
+        target_triple="x86_64-apple-darwin",
+        label_contract="fixture-only",
+        provenance_reviewer="test",
+        acquisition_timestamp="2026-08-23T00:00:00Z",
+    )
+    monkeypatch.setattr(external_module.shutil, "which", lambda _: None)
+    result = static_compile_external_source(spec, source_root, tmp_path / "objects")
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "static_disassembler_unavailable"
     assert result["execution_performed"] is False

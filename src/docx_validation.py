@@ -22,6 +22,8 @@ from xml.etree import ElementTree
 
 import yaml
 
+from .artifact_contract import write_json_artifact
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DOCX_SCHEMA_VERSION = "1.0.0"
 DOCX_ARTIFACT = "output/docx/active_assembly_theory_and_practice_combined.docx"
@@ -515,8 +517,10 @@ def write_docx_render_receipt(project_root: Path = PROJECT_ROOT) -> Path:
         "errors": payload.get("errors", []),
     }
     path = project_root / DOCX_RECEIPT_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        receipt,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

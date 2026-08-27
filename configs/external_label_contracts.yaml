@@ -1,0 +1,11 @@
+schema_version: "1.0.0"
+status: "not_yet_observed"
+minimum_labelable_examples: 100
+# This file intentionally starts empty. Static source coverage is not a
+# semantic-equivalence label. A row may enter only with a source-level pair,
+# preconditions, an explicit equivalence/near-miss argument, source/object/
+# disassembly digests, and a project-held-out split assignment.
+contracts: []
+limitations:
+  - "No external source-level equivalence pairs have been independently reviewed yet."
+  - "Static compilation coverage must not be reported as labelable examples."

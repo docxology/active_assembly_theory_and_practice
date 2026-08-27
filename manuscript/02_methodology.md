@@ -819,6 +819,33 @@ is encoded as `__UNKNOWN__`. Neither is replaced by zero, an empty string, or a
 silently dropped row. Unsupported instructions, unavailable compilers, build
 failures, and underpowered strata remain represented as structured statuses.
 
+### Protocol-v2 artifact envelope and manuscript closure {#sec:artifact-receipt-contract}
+
+The protocol contract is layered rather than destructive. Every project-owned
+JSON artifact currently carries the common receipt schema
+`{{ARTIFACT_RECEIPT_SCHEMA_VERSION}}` above its domain-specific `schema_version`.
+The common envelope requires `{{ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT}}` fields:
+the protocol identifier and digest, producer revision, input hashes, toolchain
+versions, evidence status, limitations, unsupported cases, and underpowered
+cases. This separation keeps a trace-schema migration distinguishable from a
+provenance-contract migration and allows domain validators to retain their
+existing interpretation.
+
+The current generated surface contains `{{ARTIFACT_RECEIPT_COUNT}}` JSON
+artifacts, of which `{{ARTIFACT_RECEIPT_ERROR_COUNT}}` fail the receipt audit.
+Producers write through an atomic temporary-file replacement, so a failed
+serialization cannot expose a partially written receipt. Legacy payloads may
+be migrated only by an explicit producer-stage command; validation is
+read-only and fails closed when a payload bypasses that stage. The canonical
+audit command is
+`{{ARTIFACT_RECEIPT_AUDIT_COMMAND}}`. This is a provenance and publication-
+integrity mechanism informed by PROV-O, RO-Crate, and reproducible-computing
+practice [@w3cprov2013;@rocrate2023;@sandve2013repro]. Its receipt count is not
+a scientific sample size, and its passing state cannot promote semantic
+identifiability, external validity, or independent replication. The local
+versus independently reproduced distinction follows the terminology used by
+the ACM artifact-review policy [@acm2020artifact].
+
 ## Assembly state, normalized intermediate representation, and flags {#sec:assembly-formalism}
 
 The machine-facing formalism is a normalized instruction intermediate
@@ -980,7 +1007,7 @@ for treating each produced translation as an individually checkable artifact
 `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` validated static objects across the
 architectures `{{COMPILER_TRANSFER_ARCHITECTURES}}` and
 `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` explicit unavailable rows. The
-external-source manifest remains `{{COMPILER_EXTERNAL_STATUS}}`; it therefore
+separate licensed-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`; it therefore
 cannot support an application-facing effectiveness claim. A target absent from
 the local compiler is a missing capability, not evidence about that
 architecture. This is the correct interpretation of the compiler matrix in
@@ -988,21 +1015,30 @@ architecture. This is the correct interpretation of the compiler matrix in
 
 The separate licensed-source receipt is `{{EXTERNAL_SOURCE_ARTIFACT}}` with
 status `{{EXTERNAL_SOURCE_STATUS}}`, `{{EXTERNAL_SOURCE_PROJECT_COUNT}}`
-manifested source families, and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}`
-labelable examples. The canonical manifest is intentionally empty in this
-checkout, so the external track is blocked rather than represented by an
-accuracy of zero. If populated in a future controlled acquisition, each row
-must bind an immutable revision, license-file digest, archive digest, compiler
-argument vector, target triple, label contract, and static-only safety receipt;
-the resulting object may be disassembled but not executed by the canonical
-pipeline.
+manifested projects, and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}`
+labelable examples. The pinned manifest now records ten source rows spanning
+five projects and two revisions per project, but static coverage and
+source-level labels remain separate evidence surfaces. The static receipt
+`{{EXTERNAL_STATIC_ARTIFACT}}` is `{{EXTERNAL_STATIC_STATUS}}`: it retains
+`{{EXTERNAL_STATIC_VALIDATED_COUNT}}` successfully compiled-and-decoded rows
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`, including the older libpng compile failure
+as an explicit row. No static object is treated as an equivalence label. Each
+row binds an immutable revision, license-file digest, archive digest, compiler
+argument vector, target triple, derived configuration-file hash where needed,
+object hash, disassembly hash, and Capstone coverage; emitted objects are not
+executed by the canonical pipeline.
 
 The external-source gate is therefore a safety and provenance interface, not a
 permission to execute downloaded software. Acquisition requires the explicit
 network opt-in command and a pinned manifest; replay, scoring, and manuscript
 generation remain offline. The current receipt records
-`{{EXTERNAL_SOURCE_GATE_COUNT}}` gate fields and keeps absent projects and
-examples as `blocked_external` evidence rather than inventing a denominator.
+`{{EXTERNAL_SOURCE_GATE_COUNT}}` gate fields and keeps failed static rows,
+absent labels, and the missing separate replay as `underpowered` or
+`not_yet_observed` evidence rather than inventing a denominator. The local
+compiler capability receipt is `{{EXTERNAL_CAPABILITIES_ARTIFACT}}` with
+status `{{EXTERNAL_CAPABILITIES_STATUS}}` and `{{EXTERNAL_CAPABILITY_TARGET_COUNT}}`
+target probes that produced a static object. A compiler-advertised target is
+not counted unless this empirical probe succeeds.
 
 ![Compiler/source/architecture transfer capability receipt. Check marks indicate exact local compilation followed by Capstone decoding of a static object; dashes are unavailable or failed target rows and are not zero-valued results. The line panel reports the count of validated source-family-by-optimization rows for each target, not decoded instruction totals. No compiled object is executed, so the figure supports capability and provenance claims rather than compiler correctness or semantic equivalence.]({{COMPILER_TRANSFER_FIGURE}}){#fig:compiler-transfer width=100%}
 
@@ -1180,9 +1216,11 @@ digest order; the gold file
 contains labels and family/split metadata and is held outside the public input
 directory. The bundle currently contains `{{REPLICATION_PUBLIC_COUNT}}` public
 rows and `{{REPLICATION_GOLD_COUNT}}` gold rows, with label separation reported
-as `{{REPLICATION_LABEL_SEPARATED}}`. Replay is local and no-network; the
+as `{{REPLICATION_LABEL_SEPARATED}}`. The public protocol, toolchain receipt,
+and offline instructions are part of the hashed public bundle
+(`{{REPLICATION_PUBLIC_BUNDLE_SHA256}}`). Replay is local and no-network; the
 receipt status deliberately distinguishes this from independent external
-replay.
+replay, currently `{{INDEPENDENT_REPLAY_STATUS}}`.
 
 The separation contract is stronger than omitting a visible `label` key. Public
 record identifiers are derived only from public sequence/features, and the
@@ -1191,8 +1229,11 @@ the public rows. Exact public/gold row counts, protocol hash, input hashes, and
 prediction identifiers must match. A changed source or protocol hash therefore
 invalidates the receipt rather than silently producing a new benchmark under an
 old claim. The stable commands are `generate-public`, `verify-public`,
-`run-model`, `score --gold-path`, `verify-separation`, `replay --offline`, and
-`write-receipts`; the label-blind model path never opens the private gold
-directory. The data flow is summarized in [@fig:replication-manifest].
+`run-model`, `score --gold-path`, `verify-separation`, `replay --offline`,
+`write-replay-receipt`, `ingest-replay`, and `write-receipts`; the label-blind
+model path never opens the private gold directory. Receipt ingestion requires
+an explicit separately controlled-run attestation and a protected scoring
+boundary, so a local rerun cannot promote itself. The data flow is summarized
+in [@fig:replication-manifest].
 
 ![Frozen local replication harness and provenance boundary. Public feature rows and separately held-out gold-label rows each contain the same number of records; predictions are scored only after exact identifier matching, and receipts bind the process to hashes and the frozen protocol. Public filenames, ordering, and metadata are label-free. The bundle is a no-network local replay package, not evidence of independent public replication.]({{REPLICATION_FIGURE}}){#fig:replication-manifest width=100%}

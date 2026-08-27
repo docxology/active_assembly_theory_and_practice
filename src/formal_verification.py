@@ -10,13 +10,13 @@ it does not certify the Python lifter, Capstone, Unicorn, or the whole x86 ISA.
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 import re
 import shutil
 import subprocess
 from typing import Any
 
+from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
@@ -37,6 +37,8 @@ FORMAL_THEOREMS = (
     "ActiveAssembly.inc_preserves_cf",
     "ActiveAssembly.adc_zero_carry",
     "ActiveAssembly.unsupported_is_explicit",
+    "ActiveAssembly.explicit_unsupported_is_not_supported",
+    "ActiveAssembly.declared_opcode_has_decidable_status",
     "ActiveAssembly.generated_trace_matches",
 )
 
@@ -251,8 +253,11 @@ def write_formal_verification(project_root: Path = PROJECT_ROOT) -> str:
         raise ValueError(f"formal verification receipt is invalid: {detail}")
     path = project_root / FORMAL_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return FORMAL_ARTIFACT
 

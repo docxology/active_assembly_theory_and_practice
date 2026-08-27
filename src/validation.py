@@ -14,6 +14,11 @@ from typing import Any
 import matplotlib.image as mpimg
 import numpy as np
 
+from .artifact_contract import (
+    artifact_domain_view,
+    validate_data_artifact_surface,
+    write_json_artifact,
+)
 from .assembly_packages.schema import TRACE_SCHEMA_VERSION, binary_hash
 from .action_sensing import (
     ACTION_SENSING_SCHEMA_VERSION,
@@ -35,8 +40,14 @@ from .docx_validation import (
     validate_docx_render_receipt,
 )
 from .external_sources import (
+    EXTERNAL_CAPABILITY_ARTIFACT,
     EXTERNAL_MANIFEST_SCHEMA_VERSION,
+    EXTERNAL_STATIC_RECEIPT_ARTIFACT,
+    compiler_capabilities_payload,
     external_source_validation_payload,
+    validate_compiler_capabilities_payload,
+    validate_external_static_sources,
+    validate_external_static_validation_payload,
     validate_external_source_validation_payload,
 )
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
@@ -94,8 +105,10 @@ from .quotient_classifier import (
     validate_quotient_classifier_payload,
 )
 from .replication import (
+    INDEPENDENT_REPLAY_ARTIFACT,
     REPLICATION_SCHEMA_VERSION,
     replication_bundle_payload,
+    validate_independent_replay_artifact,
     validate_replication_bundle,
 )
 from .reproducibility import MANIFEST_TARGETS, verify_reproducibility_manifest
@@ -174,6 +187,12 @@ class ValidationReport:
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _domain_payload_equal(left: object, right: object) -> bool:
+    """Compare regenerated domain data while ignoring receipt-only fields."""
+
+    return artifact_domain_view(left) == artifact_domain_view(right)
 
 
 def _check(name: str, condition: bool, detail: str) -> ValidationCheck:
@@ -494,9 +513,7 @@ def _held_out_model_checks(project_root: Path) -> list[ValidationCheck]:
         from .advanced_inference import held_out_model_payload
 
         fresh = held_out_model_payload()
-        fresh_ok = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_ok = _domain_payload_equal(payload, fresh)
     except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
         return [
             _check("held_out_model_contract", False, str(exc)),
@@ -605,12 +622,8 @@ def _typed_observation_checks(project_root: Path) -> list[ValidationCheck]:
 
         fresh_typed = typed_observation_payload()
         fresh_factorized = factorized_observation_payload()
-        typed_fresh = json.dumps(typed_payload, sort_keys=True) == json.dumps(
-            fresh_typed, sort_keys=True
-        )
-        factorized_fresh = json.dumps(factorized_payload, sort_keys=True) == json.dumps(
-            fresh_factorized, sort_keys=True
-        )
+        typed_fresh = _domain_payload_equal(typed_payload, fresh_typed)
+        factorized_fresh = _domain_payload_equal(factorized_payload, fresh_factorized)
     except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError) as exc:
         detail = str(exc)
         return [
@@ -662,9 +675,7 @@ def _corpus_coverage_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_corpus_coverage_payload(payload)
         fresh = corpus_coverage_payload()
-        fresh_ok = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_ok = _domain_payload_equal(payload, fresh)
         contract = (
             valid and payload.get("schema_version") == CORPUS_COVERAGE_SCHEMA_VERSION
         )
@@ -702,9 +713,7 @@ def _action_sensing_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         contract, detail = validate_action_conditioned_sensing_payload(payload)
         fresh_payload = action_conditioned_sensing_payload(tuple(build_corpus()))
-        fresh = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh_payload, sort_keys=True
-        )
+        fresh = _domain_payload_equal(payload, fresh_payload)
         summary = payload.get("summary", {})
         rows = payload.get("per_fixture", [])
         leakage_free = bool(summary.get("leakage_free")) and all(
@@ -763,9 +772,7 @@ def _parameter_learning_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         contract, detail = validate_parameter_learning_payload(payload)
         fresh_payload = parameter_learning_payload(tuple(build_corpus()))
-        fresh = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh_payload, sort_keys=True
-        )
+        fresh = _domain_payload_equal(payload, fresh_payload)
         rows = payload.get("per_fixture", [])
         leakage_free = payload.get("phase_labels_used_for_fit") is False and all(
             isinstance(row, dict)
@@ -841,9 +848,7 @@ def _cfg_evidence_checks(project_root: Path) -> list[ValidationCheck]:
         from .advanced_inference import cfg_evidence_payload
 
         fresh = cfg_evidence_payload()
-        fresh_ok = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_ok = _domain_payload_equal(payload, fresh)
     except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError) as exc:
         return [
             _check("cfg_evidence_contract", False, str(exc)),
@@ -913,9 +918,7 @@ def _memory_evidence_checks(project_root: Path) -> list[ValidationCheck]:
         from .advanced_inference import memory_evidence_payload
 
         fresh = memory_evidence_payload()
-        fresh_ok = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_ok = _domain_payload_equal(payload, fresh)
     except (
         OSError,
         json.JSONDecodeError,
@@ -1485,7 +1488,10 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
             )
         ]
     try:
-        variables = _load_json(variables_path)
+        raw_variables = _load_json(variables_path)
+        variables = artifact_domain_view(raw_variables)
+        if not isinstance(variables, dict):
+            raise TypeError("manuscript variables receipt payload must be an object")
     except (OSError, json.JSONDecodeError) as exc:
         return [_check("manuscript_variable_coverage", False, str(exc))]
     missing = sorted(required - set(variables))
@@ -1619,9 +1625,12 @@ def _reproducibility_checks(project_root: Path) -> list[ValidationCheck]:
     errors = verify_reproducibility_manifest(project_root)
     rows = payload.get("artifacts", [])
     hashes_present = all(
-        isinstance(row.get("sha256"), str)
-        and len(str(row.get("sha256"))) == 64
-        and int(row.get("bytes", 0)) > 0
+        (not bool(row.get("required", True)) and row.get("status") == "missing")
+        or (
+            isinstance(row.get("sha256"), str)
+            and len(str(row.get("sha256"))) == 64
+            and int(row.get("bytes", 0)) > 0
+        )
         for row in rows
     )
     return [
@@ -1743,9 +1752,7 @@ def _scientific_program_checks(project_root: Path) -> list[ValidationCheck]:
         ]
     valid, detail = validate_scientific_program_payload(payload)
     fresh = scientific_program_payload()
-    fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-        fresh, sort_keys=True
-    )
+    fresh_match = _domain_payload_equal(payload, fresh)
     return [
         _check(
             "scientific_program_contract",
@@ -1783,9 +1790,7 @@ def _quotient_invariance_checks(project_root: Path) -> list[ValidationCheck]:
         ]
     valid, detail = validate_quotient_invariance_payload(payload)
     fresh = quotient_invariance_payload()
-    fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-        fresh, sort_keys=True
-    )
+    fresh_match = _domain_payload_equal(payload, fresh)
     return [
         _check(
             "quotient_invariance_contract",
@@ -1828,9 +1833,7 @@ def _representation_invariance_checks(
         ]
     valid, detail = validate_representation_invariance_payload(payload)
     fresh = representation_invariance_payload()
-    fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-        fresh, sort_keys=True
-    )
+    fresh_match = _domain_payload_equal(payload, fresh)
     return [
         _check(
             "representation_invariance_contract",
@@ -1860,9 +1863,7 @@ def _intervention_power_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_intervention_power_payload(payload)
         fresh = intervention_power_payload()
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("intervention_power_contract", False, str(exc)),
@@ -1896,9 +1897,7 @@ def _cross_architecture_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_cross_architecture_payload(payload)
         fresh = cross_architecture_payload()
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("cross_architecture_contract", False, str(exc)),
@@ -1932,9 +1931,7 @@ def _formal_verification_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_formal_verification_payload(payload)
         fresh = formal_verification_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("formal_verification_contract", False, str(exc)),
@@ -1969,9 +1966,7 @@ def _active_information_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_active_information_payload(payload)
         fresh = active_information_payload()
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError, TypeError) as exc:
         return [
             _check("active_information_contract", False, str(exc)),
@@ -2048,9 +2043,7 @@ def _quotient_classifier_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_quotient_classifier_payload(payload)
         fresh = quotient_classifier_payload()
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("quotient_classifier_contract", False, str(exc)),
@@ -2082,9 +2075,7 @@ def _formal_correspondence_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_formal_correspondence_payload(payload)
         fresh = formal_correspondence_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("formal_correspondence_contract", False, str(exc)),
@@ -2116,9 +2107,7 @@ def _compiler_transfer_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_compiler_transfer_payload(payload)
         fresh = compiler_transfer_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("compiler_transfer_contract", False, str(exc)),
@@ -2187,9 +2176,7 @@ def _external_source_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_external_source_validation_payload(payload)
         fresh = external_source_validation_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("external_source_contract", False, str(exc)),
@@ -2209,6 +2196,103 @@ def _external_source_checks(project_root: Path) -> list[ValidationCheck]:
     ]
 
 
+def _external_static_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate static-only compilation rows and their reproducible receipt."""
+
+    path = project_root / EXTERNAL_STATIC_RECEIPT_ARTIFACT
+    if not path.exists():
+        return [
+            _check("external_static_contract", False, "artifact missing"),
+            _check("external_static_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_external_static_validation_payload(payload)
+        fresh = validate_external_static_sources(project_root)
+        fresh_match = _domain_payload_equal(payload, fresh)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        return [
+            _check("external_static_contract", False, str(exc)),
+            _check("external_static_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check(
+            "external_static_contract",
+            valid and payload.get("schema_version") == EXTERNAL_MANIFEST_SCHEMA_VERSION,
+            detail,
+        ),
+        _check(
+            "external_static_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
+def _external_capability_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate capability receipts without treating advertised targets as built."""
+
+    path = project_root / EXTERNAL_CAPABILITY_ARTIFACT
+    if not path.exists():
+        return [
+            _check("external_capability_contract", False, "artifact missing"),
+            _check("external_capability_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_compiler_capabilities_payload(payload)
+        fresh = compiler_capabilities_payload()
+        fresh_match = _domain_payload_equal(payload, fresh)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        return [
+            _check("external_capability_contract", False, str(exc)),
+            _check("external_capability_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check("external_capability_contract", valid, detail),
+        _check(
+            "external_capability_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
+def _independent_replay_checks(project_root: Path) -> list[ValidationCheck]:
+    """Keep the separate-replay gate visible without fabricating evidence."""
+
+    path = project_root / INDEPENDENT_REPLAY_ARTIFACT
+    if not path.exists():
+        return [
+            _check(
+                "independent_replay_contract",
+                True,
+                "not_yet_observed: no separately operated receipt has been ingested",
+            ),
+            _check(
+                "independent_replay_freshness",
+                True,
+                "not_yet_observed: optional promotion artifact is absent",
+            ),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_independent_replay_artifact(payload, project_root)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        return [
+            _check("independent_replay_contract", False, str(exc)),
+            _check("independent_replay_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check("independent_replay_contract", valid, detail),
+        _check(
+            "independent_replay_freshness",
+            valid,
+            "protected scoring receipt is internally consistent",
+        ),
+    ]
+
+
 def _replication_checks(project_root: Path) -> list[ValidationCheck]:
     path = project_root / "output" / "data" / "replication_manifest.json"
     if not path.exists():
@@ -2220,9 +2304,7 @@ def _replication_checks(project_root: Path) -> list[ValidationCheck]:
         valid, detail = validate_replication_bundle(project_root)
         payload = _load_json(path)
         fresh = replication_bundle_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("replication_contract", False, str(exc)),
@@ -2255,9 +2337,7 @@ def _theorem_countertheorem_checks(project_root: Path) -> list[ValidationCheck]:
         payload = _load_json(path)
         valid, detail = validate_theorem_or_countertheorem_payload(payload)
         fresh = theorem_or_countertheorem_payload(project_root)
-        fresh_match = json.dumps(payload, sort_keys=True) == json.dumps(
-            fresh, sort_keys=True
-        )
+        fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         return [
             _check("theorem_countertheorem_contract", False, str(exc)),
@@ -2387,9 +2467,7 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
     from .advanced_inference import evaluation_report_payload
 
     fresh_payload = evaluation_report_payload()
-    freshness_ok = json.dumps(fresh_payload, sort_keys=True) == json.dumps(
-        evaluation, sort_keys=True
-    )
+    freshness_ok = _domain_payload_equal(fresh_payload, evaluation)
     fresh_adequacy = fresh_payload["generative_adequacy"]
     adequacy_contract_ok = (
         adequacy.get("method") == "fixed_parameter_generative_adequacy"
@@ -2407,9 +2485,7 @@ def _advanced_inference_checks(project_root: Path) -> list[ValidationCheck]:
             if isinstance(row, dict)
         )
     )
-    adequacy_freshness_ok = json.dumps(fresh_adequacy, sort_keys=True) == json.dumps(
-        adequacy, sort_keys=True
-    )
+    adequacy_freshness_ok = _domain_payload_equal(fresh_adequacy, adequacy)
 
     # Honest-comparison invariant: the artifact records the strongest non-temporal
     # baseline (the memoryless per-step decoder) and the temporal advantage over it,
@@ -2698,6 +2774,18 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     trace_path = output_dir / "data" / "trace_bundle.json"
     rxinfer_dir = output_dir / "rxinfer"
     checks: list[ValidationCheck] = []
+    receipt_errors = validate_data_artifact_surface(project_root)
+    checks.append(
+        _check(
+            "artifact_receipt_surface",
+            not receipt_errors,
+            "all project data JSON artifacts carry the protocol-v2 receipt contract"
+            if not receipt_errors
+            else "; ".join(
+                f"{row['path']}: {row['detail']}" for row in receipt_errors[:8]
+            ),
+        )
+    )
     checks.extend(_trace_checks(trace_path))
     checks.extend(_assembly_listing_checks(output_dir))
     checks.extend(_symbolic_execution_checks(output_dir))
@@ -2736,7 +2824,10 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_compiler_transfer_checks(project_root))
     checks.extend(_sensor_cost_checks(project_root))
     checks.extend(_external_source_checks(project_root))
+    checks.extend(_external_static_checks(project_root))
+    checks.extend(_external_capability_checks(project_root))
     checks.extend(_replication_checks(project_root))
+    checks.extend(_independent_replay_checks(project_root))
     checks.extend(_theorem_countertheorem_checks(project_root))
     checks.extend(
         _claim_register_checks(project_root, {check.name for check in checks})
@@ -2779,9 +2870,11 @@ def write_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     )
     write_figure_captions(output_dir)
     report = build_validation_report(project_root)
-    report_path.write_text(
-        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        report_path,
+        report.to_dict(),
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     plot_validation_summary([check.to_dict() for check in report.checks], figure_path)
     # The validation figure itself is part of the caption ledger. Refresh after

@@ -18,6 +18,7 @@ from typing import Any
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_MODE_64, Cs
 
+from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
@@ -229,7 +230,7 @@ def compiler_transfer_payload(project_root: Path = PROJECT_ROOT) -> dict[str, An
     ]
     underpowered_cases = [
         "The local matrix is a capability receipt, not a 64-family transfer study.",
-        "The licensed-source external manifest is not yet populated.",
+        "The licensed-source external track is separately receipted and remains underpowered until source-bound labels and held-out evaluation pass.",
     ]
     source_hashes = {
         f"source:{source_id}": _sha256_bytes(source.encode("utf-8"))
@@ -280,8 +281,8 @@ def compiler_transfer_payload(project_root: Path = PROJECT_ROOT) -> dict[str, An
             "compiler": "clang",
         },
         "external_source_manifest": {
-            "status": "not_populated",
-            "reason": "licensed external sources require an explicit acquisition recipe and review",
+            "status": "underpowered",
+            "reason": "licensed external evidence is tracked by the separate pinned-source receipt and lacks source-bound labels",
             "network_required_for_replay": False,
             "arbitrary_external_execution": False,
         },
@@ -348,7 +349,10 @@ def write_compiler_transfer(project_root: Path = PROJECT_ROOT) -> Path:
         raise ValueError(detail)
     path = project_root / COMPILER_TRANSFER_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

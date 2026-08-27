@@ -335,7 +335,7 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert variables["CROSS_ARCHITECTURE_ALL_PASSED"] == "yes"
     assert variables["CROSS_ARCHITECTURE_RESULT"] == "8"
     assert variables["FORMAL_VERIFICATION_STATUS"] == "locally_verified"
-    assert variables["FORMAL_THEOREM_COUNT"] == "10"
+    assert variables["FORMAL_THEOREM_COUNT"] == "12"
     assert variables["ACTIVE_INFORMATION_SENSOR_COUNT"] == "4"
     assert variables["ACTIVE_INFORMATION_FRONTIER_ROW_COUNT"] == "16"
     assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"
@@ -534,8 +534,13 @@ def test_reproducibility_manifest_records_current_artifact_hashes() -> None:
     assert verify_reproducibility_manifest(PROJECT_ROOT) == []
     rows = payload["artifacts"]
     assert {row["path"] for row in rows} == {target.path for target in MANIFEST_TARGETS}
-    assert all(len(row["sha256"]) == 64 for row in rows)
-    assert all(row["bytes"] > 0 for row in rows)
+    assert all(
+        (row["status"] == "present") == (isinstance(row["sha256"], str)) for row in rows
+    )
+    assert all(
+        row["status"] == "missing" or (len(row["sha256"]) == 64 and row["bytes"] > 0)
+        for row in rows
+    )
     assert reproducibility_payload()["artifact_count"] == len(MANIFEST_TARGETS)
     assert (PROJECT_ROOT / "output/data/reproducibility_manifest.md").exists()
     assert (PROJECT_ROOT / "output/figures/artifact_hash_manifest.png").exists()

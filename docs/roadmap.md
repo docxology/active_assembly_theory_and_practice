@@ -14,7 +14,7 @@ central conjecture, formal-theory ladder, quotient-state identifiability target,
 cross-architecture benchmark, active-sensing bound, independent replication
 gate, and explicit stop conditions. Its status is also emitted as the
 source-bound artifact `output/data/scientific_program.json`. P0--P2 remain
-implemented instrumentation/mechanism milestones. P3--P16 now each have a
+implemented instrumentation/mechanism milestones. P3--P17 now each have a
 source-bound implementation or explicit blocked/planned receipt, but their
 broad promotion claims remain gated: P3 has a 64-family classifier benchmark
 and a separate four-state representation pilot, P4 has no full-ISA theorem,
@@ -196,7 +196,7 @@ calibration, confusion, and clustered-interval contracts. Four held-out
 families make the intervals visibly broad; the receipt therefore supports a
 reproducible endpoint, not semantic discovery or superiority.
 
-The coordinated P3--P16 tranche is now implemented in bounded form. The
+The coordinated P3--P17 tranche is now implemented in bounded form. The
 source-bound receipts are `research_protocol.json`,
 `formal_trace_correspondence.json`, `compiler_transfer.json`,
 `sensor_cost_receipt.json`, `replication_manifest.json`, and
@@ -208,10 +208,22 @@ the theorem phase records both checked local results and a generated
 counterexample while keeping promotion fail closed. The intervention-power
 receipt enumerates the finite outcome matrix rather than learning its labels,
 and the multi-start parameter-learning receipt retains weak and unstable starts
-as robustness evidence. The licensed-source receipt is currently blocked by an
-intentionally empty manifest; independent replay, full-ISA correspondence, and
-a broad identifiability or transfer theorem remain future gates. No blocked
-status is converted into a zero-valued result.
+as robustness evidence. The licensed-source receipt is currently underpowered:
+the pinned manifest contains ten rows across five projects and two revisions,
+static compilation/decoding is recorded with one failed row retained, and the
+separate source-level label contract remains empty. Independent replay,
+full-ISA correspondence, and a broad identifiability or transfer theorem
+remain future gates. No unavailable, failed, or underpowered status is
+converted into a zero-valued result.
+
+The P17 integrity tranche adds one common receipt envelope above every
+project-owned JSON domain schema. Its protocol digest, producer revision,
+input hashes, toolchain versions, and explicit status are generated atomically;
+`scripts/run_scientific_program.py audit-artifacts` validates the surface
+without repairing it. The same receipt boundary feeds the closure figure,
+manuscript variables, and template-rendered document package. This is a
+reproducibility control, not evidence that any scientific promotion gate has
+passed.
 
 The promotion rule is conjunctive: quotient labels must be generated outside
 the inference model; primary endpoints and test identifiers must be frozen;

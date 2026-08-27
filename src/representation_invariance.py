@@ -18,6 +18,7 @@ from pathlib import Path
 from statistics import NormalDist, fmean
 from typing import Iterable, cast
 
+from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .quotient_invariance import (
     INTERVENTION_INITIAL_RAX,
@@ -965,8 +966,11 @@ def write_representation_invariance_benchmark(
     valid, detail = validate_representation_invariance_payload(payload)
     if not valid:
         raise ValueError(f"canonical representation benchmark is invalid: {detail}")
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return REPRESENTATION_INVARIANCE_ARTIFACT
 

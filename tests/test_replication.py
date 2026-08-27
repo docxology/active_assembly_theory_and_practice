@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 from src.replication import (
+    INDEPENDENT_REPLAY_ARTIFACT,
+    _public_bundle_digest,
+    ingest_independent_replay,
+    replay_receipt_payload,
     run_label_blind_model,
     score_replication_predictions,
+    validate_independent_replay_artifact,
+    validate_replay_receipt,
+    write_replay_receipt,
     write_replication_bundle,
 )
 
@@ -111,3 +120,275 @@ def test_replication_scoring_rejects_prediction_contract_drift(tmp_path: Path) -
     complete.write_text(json.dumps(valid_rows), encoding="utf-8")
     with pytest.raises(ValueError, match="sealed manifest hash"):
         score_replication_predictions(complete, tmp_path, gold_path=wrong_gold)
+
+
+def test_replay_receipt_is_pending_and_binds_public_hashes(tmp_path: Path) -> None:
+    write_replication_bundle(tmp_path)
+    public = tmp_path / "output/replication/public/public_manifest.json"
+    predictions = tmp_path / "predictions.json"
+    run_label_blind_model(public, predictions)
+    receipt = replay_receipt_payload(
+        public,
+        predictions,
+        operator_id="operator-test",
+        machine_id="machine-test",
+        replay_bundle_sha256=_public_bundle_digest(tmp_path),
+        model="calibrated_interpretable",
+        seed=17,
+        command=["replay", "--offline"],
+        network_disabled=True,
+        project_root=tmp_path,
+    )
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=predictions
+    )
+    assert valid, detail
+    assert receipt["endpoint_status"] == "submitted_pending_verification"
+    assert receipt["independent_replay"] == "not_yet_observed"
+    assert receipt["attestation"]["separate_controlled_run"] is False
+
+    receipt["public_bundle_sha256"] = "0" * 64
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=predictions
+    )
+    assert not valid
+    assert "bundle hash" in detail
+
+
+def test_local_receipt_cannot_promote_independent_replay(tmp_path: Path) -> None:
+    write_replication_bundle(tmp_path)
+    public = tmp_path / "output/replication/public/public_manifest.json"
+    predictions = tmp_path / "predictions.json"
+    run_label_blind_model(public, predictions)
+    receipt_path = tmp_path / "external-receipt.json"
+    receipt = replay_receipt_payload(
+        public,
+        predictions,
+        operator_id="local-process",
+        machine_id="local-machine",
+        replay_bundle_sha256=_public_bundle_digest(tmp_path),
+        model="calibrated_interpretable",
+        seed=1,
+        command=["replay", "--offline"],
+        network_disabled=True,
+        project_root=tmp_path,
+    )
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    with pytest.raises(ValueError, match="separately controlled"):
+        ingest_independent_replay(receipt_path, predictions, tmp_path)
+    assert not (tmp_path / INDEPENDENT_REPLAY_ARTIFACT).exists()
+
+
+def _pending_receipt_fixture(tmp_path: Path) -> tuple[dict[str, object], Path, Path]:
+    write_replication_bundle(tmp_path)
+    public = tmp_path / "output/replication/public/public_manifest.json"
+    predictions = tmp_path / "predictions.json"
+    run_label_blind_model(public, predictions)
+    receipt = replay_receipt_payload(
+        public,
+        predictions,
+        operator_id="operator-test",
+        machine_id="machine-test",
+        replay_bundle_sha256=_public_bundle_digest(tmp_path),
+        model="calibrated_interpretable",
+        seed=11,
+        command=["replay", "--offline"],
+        network_disabled=True,
+        project_root=tmp_path,
+    )
+    return receipt, predictions, public
+
+
+def test_pending_replay_validator_rejects_core_contract_drift(tmp_path: Path) -> None:
+    receipt, predictions, _ = _pending_receipt_fixture(tmp_path)
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=predictions
+    )
+    assert valid, detail
+
+    mutations = []
+
+    def remove_required(candidate: dict[str, object]) -> None:
+        candidate.pop("operator_id")
+
+    def change_kind(candidate: dict[str, object]) -> None:
+        candidate["receipt_kind"] = "local_rerun"
+
+    def change_status(candidate: dict[str, object]) -> None:
+        candidate["status"] = "validated"
+
+    def empty_operator(candidate: dict[str, object]) -> None:
+        candidate["operator_id"] = ""
+
+    def disable_network(candidate: dict[str, object]) -> None:
+        candidate["network_disabled"] = False
+
+    def promote_endpoint(candidate: dict[str, object]) -> None:
+        candidate["endpoint_status"] = "independent_replay_observed"
+
+    def claim_independent(candidate: dict[str, object]) -> None:
+        candidate["independent_replay"] = "observed_external_replay"
+
+    def bad_outcome(candidate: dict[str, object]) -> None:
+        candidate["outcome"] = "validated"
+
+    def bad_attestation(candidate: dict[str, object]) -> None:
+        candidate["attestation"] = None
+
+    def unsafe_flag(candidate: dict[str, object]) -> None:
+        cast(dict[str, object], candidate["attestation"])["gold_labels_accessed"] = True
+
+    def bad_separate_flag(candidate: dict[str, object]) -> None:
+        cast(dict[str, object], candidate["attestation"])["separate_controlled_run"] = (
+            "yes"
+        )
+
+    def bad_confirmation(candidate: dict[str, object]) -> None:
+        cast(dict[str, object], candidate["attestation"])[
+            "external_operator_confirmation"
+        ] = None
+
+    def empty_command(candidate: dict[str, object]) -> None:
+        candidate["command"] = []
+
+    def bool_seed(candidate: dict[str, object]) -> None:
+        candidate["seed"] = True
+
+    def negative_count(candidate: dict[str, object]) -> None:
+        candidate["prediction_row_count"] = -1
+
+    def bad_tolerance(candidate: dict[str, object]) -> None:
+        candidate["numerical_tolerance"] = "not-a-number"
+
+    def bad_digest(candidate: dict[str, object]) -> None:
+        candidate["prediction_file_sha256"] = "not-a-digest"
+
+    mutations.extend(
+        (
+            remove_required,
+            change_kind,
+            change_status,
+            empty_operator,
+            disable_network,
+            promote_endpoint,
+            claim_independent,
+            bad_outcome,
+            bad_attestation,
+            unsafe_flag,
+            bad_separate_flag,
+            bad_confirmation,
+            empty_command,
+            bool_seed,
+            negative_count,
+            bad_tolerance,
+            bad_digest,
+        )
+    )
+    for mutation in mutations:
+        candidate = deepcopy(receipt)
+        mutation(candidate)
+        assert not validate_replay_receipt(
+            candidate, project_root=tmp_path, predictions_path=predictions
+        )[0]
+
+
+def test_attested_replay_ingestion_is_protected_and_not_reimplementation(
+    tmp_path: Path,
+) -> None:
+    receipt, predictions, public = _pending_receipt_fixture(tmp_path)
+    attestation = cast(dict[str, object], receipt["attestation"])
+    attestation["separate_controlled_run"] = True
+    attestation["external_operator_confirmation"] = "operator-confirmed-run-1"
+    receipt_path = tmp_path / "external-receipt.json"
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+    output = ingest_independent_replay(receipt_path, predictions, tmp_path)
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    valid, detail = validate_independent_replay_artifact(payload, tmp_path)
+    assert valid, detail
+    assert payload["endpoint_status"] == "independent_replay_observed"
+    assert payload["independent_reimplementation"] is False
+    assert payload["gold_labels_exposed_to_operator"] is False
+    assert payload["protected_score"]["balanced_accuracy"] >= 0.0
+
+    written = tmp_path / "pending-receipt.json"
+    result = write_replay_receipt(
+        public,
+        predictions,
+        written,
+        operator_id="operator-test",
+        machine_id="machine-test",
+        replay_bundle_sha256=_public_bundle_digest(tmp_path),
+        model="calibrated_interpretable",
+        seed=11,
+        command=["replay", "--offline"],
+        project_root=tmp_path,
+    )
+    assert result == written
+    assert json.loads(written.read_text(encoding="utf-8"))["independent_replay"] == (
+        "not_yet_observed"
+    )
+
+
+def test_independent_replay_artifact_validator_rejects_promotion_drift(
+    tmp_path: Path,
+) -> None:
+    receipt, predictions, _ = _pending_receipt_fixture(tmp_path)
+    attestation = cast(dict[str, object], receipt["attestation"])
+    attestation["separate_controlled_run"] = True
+    attestation["external_operator_confirmation"] = "operator-confirmed-run-2"
+    receipt_path = tmp_path / "external-receipt.json"
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    output = ingest_independent_replay(receipt_path, predictions, tmp_path)
+    payload = json.loads(output.read_text(encoding="utf-8"))
+
+    candidates = [
+        None,
+        {**payload, "receipt_schema_version": "0.0.0"},
+        {**payload, "schema_version": "0.0.0"},
+        {**payload, "endpoint_status": "pending"},
+        {**payload, "independent_replay": "not_yet_observed"},
+        {**payload, "external_receipt": None},
+        {**payload, "gold_labels_exposed_to_operator": True},
+        {**payload, "independent_reimplementation": True},
+    ]
+    for candidate in candidates:
+        valid, _ = validate_independent_replay_artifact(candidate, tmp_path)
+        assert not valid
+
+
+def test_replication_private_boundary_and_prediction_parser_fail_closed(
+    tmp_path: Path,
+) -> None:
+    receipt, predictions, _ = _pending_receipt_fixture(tmp_path)
+    missing = tmp_path / "missing.json"
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=missing
+    )
+    assert not valid
+    assert "unreadable" in detail
+
+    bad_predictions = tmp_path / "bad-predictions.json"
+    bad_cases = [
+        {"predictions": [], "label_blind": False},
+        {"predictions": "not-a-list", "label_blind": True},
+        [{"record_id": "x", "probability": "not-a-number"}],
+        [{"record_id": "x", "probability": float("nan")}],
+        [
+            {"record_id": "x", "probability": 0.5},
+            {"record_id": "x", "probability": 0.5},
+        ],
+    ]
+    for candidate in bad_cases:
+        bad_predictions.write_text(json.dumps(candidate), encoding="utf-8")
+        valid, _ = validate_replay_receipt(
+            receipt, project_root=tmp_path, predictions_path=bad_predictions
+        )
+        assert not valid
+
+    missing_bundle_file = tmp_path / "output/replication/public/toolchain_receipt.json"
+    original = missing_bundle_file.read_text(encoding="utf-8")
+    missing_bundle_file.unlink()
+    with pytest.raises(ValueError, match="bundle file is missing"):
+        _public_bundle_digest(tmp_path)
+    missing_bundle_file.write_text(original, encoding="utf-8")

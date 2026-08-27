@@ -279,10 +279,16 @@ def scientific_protocol_payload() -> dict[str, Any]:
     """Return the protocol with a stable content hash."""
 
     body = build_scientific_protocol().to_dict()
+    # ``schema_version`` belongs to the protocol itself.  The explicit receipt
+    # key keeps the same provenance contract available to domain artifacts that
+    # legitimately use a different local schema version.
+    body["receipt_schema_version"] = RECEIPT_SCHEMA_VERSION
     body["generator_revision"] = generator_revision(Path(__file__))
     body["input_hashes"] = {"src/scientific_protocol.py": sha256_path(Path(__file__))}
     body["toolchain_versions"] = toolchain_versions(("capstone", "numpy", "unicorn"))
     body["status"] = "validated"
+    body["artifact_id"] = PROTOCOL_ARTIFACT
+    body["producer"] = "src/scientific_protocol.py"
     body["limitations"] = [
         "The protocol freezes a bounded research contract; it is not evidence of any scientific endpoint by itself.",
         "Unavailable compiler targets and unsupported instruction effects remain explicit rather than imputed.",
@@ -348,9 +354,9 @@ def write_scientific_protocol(project_root: Path = PROJECT_ROOT) -> Path:
     """Write the source-bound research protocol receipt."""
 
     path = project_root / PROTOCOL_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(scientific_protocol_payload(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    # Import lazily to avoid a module cycle: artifact_contract consumes the
+    # canonical protocol when sealing the broader project data surface.
+    from .artifact_contract import write_json_atomic
+
+    write_json_atomic(path, scientific_protocol_payload())
     return path

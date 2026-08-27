@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
-import json
 from pathlib import Path
 from typing import Any, cast
 
@@ -38,6 +37,8 @@ from unicorn import (
 from unicorn.arm64_const import UC_ARM64_REG_PC, UC_ARM64_REG_X0
 from unicorn.riscv_const import UC_RISCV_REG_A0, UC_RISCV_REG_PC
 from unicorn.x86_const import UC_X86_REG_RAX, UC_X86_REG_RIP
+
+from .artifact_contract import write_json_artifact
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CROSS_ARCHITECTURE_ARTIFACT = "output/data/cross_architecture_fixtures.json"
@@ -270,9 +271,8 @@ def write_cross_architecture_payload(project_root: Path = PROJECT_ROOT) -> str:
     if not valid:
         raise ValueError(f"cross-architecture payload is invalid: {detail}")
     path = project_root / CROSS_ARCHITECTURE_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path, payload, project_root=project_root, producer_path=Path(__file__)
     )
     return CROSS_ARCHITECTURE_ARTIFACT
 

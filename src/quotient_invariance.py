@@ -20,6 +20,7 @@ import json
 from pathlib import Path
 from typing import Iterable, cast
 
+from .artifact_contract import write_json_artifact
 from .disassembly import disassemble_bytes
 from .emulation import emulate_x86_64
 from .features import encode_observations
@@ -385,13 +386,12 @@ def write_quotient_invariance_protocol(project_root: Path = PROJECT_ROOT) -> str
     """Write the executable quotient protocol artifact."""
 
     path = project_root / QUOTIENT_PROTOCOL_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = quotient_invariance_payload()
     valid, detail = validate_quotient_invariance_payload(payload)
     if not valid:
         raise ValueError(f"canonical quotient protocol is invalid: {detail}")
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path, payload, project_root=project_root, producer_path=Path(__file__)
     )
     return QUOTIENT_PROTOCOL_ARTIFACT
 

@@ -14,9 +14,9 @@ artifact surface is too easy to rewrite after seeing results.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 
+from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
@@ -975,6 +975,62 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
                 "counterexample; this synthesis milestone is not yet started."
             ),
         ),
+        ScientificMilestone(
+            milestone_id="P17",
+            phase="reproducibility-infrastructure",
+            title="Protocol-v2 artifact and manuscript closure",
+            status="implemented_local",
+            horizon="current",
+            scientific_question=(
+                "Can every project-owned generated data surface be bound to one versioned "
+                "protocol and then carried, without hand edits, through figures, manuscript "
+                "variables, template hydration, and accessible document outputs?"
+            ),
+            conjecture=(
+                "Separating domain schema versions from a common receipt schema makes stale, "
+                "mixed-protocol, or bypassed artifacts detectable before they can become claims "
+                "or rendered evidence."
+            ),
+            primary_endpoint=(
+                "A protocol-v2 envelope on every project-owned JSON data artifact, atomic writes, "
+                "fail-closed surface validation, source-generated variable/figure closure, and "
+                "post-render provenance checks."
+            ),
+            falsifier=(
+                "A generated JSON artifact bypasses the envelope, changes protocol without "
+                "invalidating dependent receipts, leaves unresolved manuscript variables, or "
+                "renders a figure without registered inputs, alternatives, and checks."
+            ),
+            sampling_unit="project-owned generated artifact and downstream manuscript consumer",
+            dependencies=("P0", "P7", "P11"),
+            required_evidence=(
+                "protocol-v2 artifact receipt contract",
+                "atomic producer writes and legacy migration diagnostics",
+                "artifact-surface and mixed-protocol negative controls",
+                "source-bound figure, variable, DOCX, and tagged-PDF closure",
+            ),
+            integrity_gates=(
+                "domain schema and receipt schema remain distinct",
+                "migration is explicit and never hidden in validation",
+                "blocked and underpowered states remain visible",
+                "manuscript values and captions are generated from receipts",
+            ),
+            promotion_rule=(
+                "Treat this as a reproducibility and publication-integrity result; it cannot "
+                "promote an empirical, formal, external-validity, or replication claim by itself."
+            ),
+            stop_conditions=(
+                "a data artifact lacks required receipt fields",
+                "a stale protocol hash is accepted by a dependent receipt",
+                "a rendered artifact is not traceable to the final source and registry surface",
+            ),
+            current_result=(
+                "Implemented locally: the shared receipt layer, atomic writers, explicit legacy "
+                "migration command, artifact audit command, source-generated closure figure, and "
+                "template-bound manuscript variables are now exercised by the producer pipeline. "
+                "Independent review and public artifact evaluation remain outside this milestone."
+            ),
+        ),
     )
 
 
@@ -1000,7 +1056,7 @@ def scientific_program_payload() -> dict[str, object]:
             "The roadmap does not substitute for a complete x86-64 theorem, universal identifiability, or external validity.",
         ),
         underpowered_cases=(
-            "P13, P15, and P16 remain blocked or planned until their evidence gates pass.",
+            "P13, P15, and P16 remain blocked or planned until their evidence gates pass; P17 is a local publication-integrity contract, not scientific promotion.",
         ),
     )
     return {
@@ -1035,7 +1091,7 @@ def scientific_program_payload() -> dict[str, object]:
             "The repository demonstrates a source-bound x86-64 observation bridge, controlled "
             "temporal mechanisms, typed/action-conditioned diagnostics, leakage-safe ordered-HMM "
             "parameter learning on six transparent fixtures, and bounded P3-P10 implementation "
-            "receipts with active P11-P16 promotion contracts. The extensions remain local or finite: they do not establish semantic "
+            "receipts with active P11-P17 promotion contracts. The extensions remain local or finite: they do not establish semantic "
             "identifiability, broad cross-architecture/compiler invariance, external validity, a "
             "general theorem, or independent replication."
         ),
@@ -1200,8 +1256,11 @@ def write_scientific_program(project_root: Path = PROJECT_ROOT) -> str:
     valid, detail = validate_scientific_program_payload(payload)
     if not valid:
         raise ValueError(f"canonical scientific program is invalid: {detail}")
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return SCIENTIFIC_PROGRAM_ARTIFACT
 

@@ -10,6 +10,7 @@ import platform
 import sys
 from typing import Any
 
+from .artifact_contract import write_json_artifact
 from .manuscript_registry import _git_diff_sha256, _git_value, _template_root
 from .reproducibility import MANIFEST_TARGETS
 
@@ -176,11 +177,11 @@ def write_build_provenance(project_root: Path = PROJECT_ROOT) -> Path:
     """Write the current build-lineage receipt and return its path."""
 
     path = project_root / BUILD_PROVENANCE_PATH
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(build_provenance_payload(project_root), indent=2, sort_keys=True)
-        + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        path,
+        build_provenance_payload(project_root),
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path
 

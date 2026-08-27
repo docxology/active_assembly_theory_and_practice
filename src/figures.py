@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import textwrap
 from pathlib import Path
 from typing import Any, Sequence, cast
 
@@ -19,6 +20,7 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 import numpy as np
 
 from .active_inference_bridge import InferenceResult
+from .artifact_contract import write_json_artifact
 from .features import AssemblyObservation
 from .generative_model import GenerativeModelSpec
 
@@ -4662,6 +4664,9 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
     axes[1].set_title(
         "Trace workload by transparent fixture", fontsize=10, pad=AXIS_TITLE_PAD
     )
+    # Reserve explicit headroom so the two-series legend cannot obscure the
+    # tallest workload bars when the figure is rendered at page scale.
+    axes[1].set_ylim(0, max(steps) * 1.28)
     axes[1].legend(frameon=False, fontsize=8, loc="upper left")
     axes[1].text(
         0.5,
@@ -4943,15 +4948,18 @@ def plot_external_source_provenance(
     status = str(payload.get("status", "unknown"))
     source_count = len(manifest.get("sources", []))
     gate_rows = (
-        ("immutable revision", "required"),
-        ("license + archive hash", "required"),
-        ("static compile only", "enforced"),
-        ("project/revision/example gate", "not observed"),
-        ("independent replay", "not observed"),
+        ("five independent projects", "project_count_pass"),
+        ("two revisions per project", "revision_count_pass"),
+        ("≥100 labelable examples", "labelable_example_count_pass"),
+        ("project-held-out test", "project_held_out_pass"),
+        ("license + provenance", "license_provenance_pass"),
+        ("static build + decode", "reproducible_static_build_pass"),
+        ("static-only safety", "static_only_pass"),
+        ("separate replay", "independent_replay_pass"),
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(9.0, 4.35), gridspec_kw={"width_ratios": (1.0, 1.3)}
+        1, 2, figsize=(9.0, 4.55), gridspec_kw={"width_ratios": (1.0, 1.3)}
     )
     ax = axes[0]
     ax.set_axis_off()
@@ -5033,9 +5041,10 @@ def plot_external_source_provenance(
         color=INK,
     )
     ax.text(0.76, len(gate_rows) + 1.15, "state", fontsize=10, weight="bold", color=INK)
-    for index, (label, state) in enumerate(gate_rows):
+    for index, (label, gate_key) in enumerate(gate_rows):
+        state = "pass" if bool(gate.get(gate_key)) else "open"
         y = len(gate_rows) - index - 0.05
-        color = PALETTE[2] if state in {"required", "enforced"} else PALETTE[4]
+        color = PALETTE[2] if state == "pass" else PALETTE[4]
         ax.add_patch(
             FancyBboxPatch(
                 (0.02, y - 0.32),
@@ -5051,14 +5060,6 @@ def plot_external_source_provenance(
         ax.text(
             0.78, y - 0.08, state, fontsize=8.2, va="center", color=color, weight="bold"
         )
-    ax.text(
-        0.03,
-        0.20,
-        "Blocked or unavailable is retained as a status,\nnever rendered as a zero-valued performance result.",
-        fontsize=8,
-        va="bottom",
-        color=MUTED,
-    )
     ax.set_title("External-validity boundary", fontsize=10, pad=AXIS_TITLE_PAD)
     fig.suptitle(
         "Licensed-source provenance and application gate",
@@ -5067,16 +5068,210 @@ def plot_external_source_provenance(
         fontsize=12,
         color=INK,
     )
+    static_validated_value = payload.get("static_validated_row_count", 0)
+    static_validated_count = (
+        int(static_validated_value)
+        if isinstance(static_validated_value, (int, float))
+        and not isinstance(static_validated_value, bool)
+        else 0
+    )
     fig.text(
         0.08,
+        0.018,
+        "\n".join(
+            [
+                f"Pinned rows: {source_count}; validated static rows: {static_validated_count}. No arbitrary external binary is executed.",
+                "Open or unavailable gates remain status values; they are never rendered as zero-valued performance results.",
+            ]
+        ),
+        ha="left",
+        va="bottom",
+        fontsize=7.4,
+        color=MUTED,
+        linespacing=1.15,
+    )
+    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.16, top=0.80, wspace=0.20)
+    return _save_figure(fig, output_path)
+
+
+def plot_artifact_receipt_closure(
+    program_payload: dict[str, object],
+    output_path: Path,
+    *,
+    artifact_count: int,
+    artifact_error_count: int,
+) -> Path:
+    """Plot the protocol-to-document provenance boundary.
+
+    This is an audit visualization, not a performance plot.  The pipeline
+    stages are intentionally labelled in text so that status colors are never
+    the only carrier of meaning.  ``artifact_count`` and
+    ``artifact_error_count`` are computed from the project-owned JSON surface
+    by the producer; they are passed in rather than inferred from the image.
+    """
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    status_counts = program_payload.get("status_counts", {})
+    if not isinstance(status_counts, dict):
+        status_counts = {}
+    protocol_id = str(program_payload.get("protocol_id", "unavailable"))
+    protocol_hash = str(program_payload.get("protocol_sha256", "unavailable"))
+    protocol_label = (
+        "\n".join(
+            [
+                *textwrap.wrap(protocol_id, width=17),
+                f"sha256 {protocol_hash[:12]}…",
+            ]
+        )
+        if protocol_hash not in {"", "unavailable"}
+        else "\n".join(textwrap.wrap(protocol_id, width=17))
+    )
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(12.4, 5.2),
+        gridspec_kw={"width_ratios": [2.2, 1.0]},
+    )
+    ax = axes[0]
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    stages = (
+        ("Protocol v2", protocol_label, PALETTE[0]),
+        ("Producers", "source modules\n+ atomic writes", PALETTE[1]),
+        ("JSON receipts", f"N = {artifact_count}\nsealed artifacts", PALETTE[2]),
+        ("Audit", f"errors = {artifact_error_count}\nfail closed", PALETTE[3]),
+        ("Publication", "variables → template\nDOCX / tagged PDF", PALETTE[4]),
+    )
+    x_positions = np.linspace(0.02, 0.80, len(stages))
+    box_width = 0.155
+    for index, ((title, subtitle, color), x) in enumerate(zip(stages, x_positions)):
+        ax.add_patch(
+            FancyBboxPatch(
+                (float(x), 0.47),
+                box_width,
+                0.22,
+                boxstyle="round,pad=0.012,rounding_size=0.02",
+                facecolor=color,
+                edgecolor=INK,
+                linewidth=0.8,
+                alpha=0.95,
+            )
+        )
+        ax.text(
+            float(x) + box_width / 2,
+            0.61,
+            title,
+            ha="center",
+            va="center",
+            fontsize=9,
+            color="white",
+            weight="bold",
+        )
+        ax.text(
+            float(x) + box_width / 2,
+            0.535,
+            subtitle,
+            ha="center",
+            va="center",
+            fontsize=6.2 if index == 0 else 7.2,
+            color="white",
+        )
+        if index < len(stages) - 1:
+            ax.add_patch(
+                FancyArrowPatch(
+                    (float(x) + box_width + 0.008, 0.58),
+                    (float(x_positions[index + 1]) - 0.008, 0.58),
+                    arrowstyle="-|>",
+                    mutation_scale=11,
+                    linewidth=1.0,
+                    color=INK,
+                )
+            )
+    ax.text(
         0.02,
-        "The canonical manifest is intentionally empty; no arbitrary external binary is executed.",
+        0.31,
+        "The receipt layer preserves each domain schema while binding protocol, producer,\n"
+        "input hashes, toolchain versions, limitations, and unsupported/underpowered states.",
+        ha="left",
+        va="top",
+        fontsize=9,
+        color=INK,
+    )
+    ax.text(
+        0.02,
+        0.12,
+        "Audit result: "
+        + (
+            "all project-owned JSON artifacts satisfy the common envelope."
+            if artifact_error_count == 0
+            else f"{artifact_error_count} artifact(s) fail the common envelope."
+        ),
+        ha="left",
+        va="top",
+        fontsize=9,
+        color=PALETTE[2] if artifact_error_count == 0 else "#B42318",
+        weight="bold",
+    )
+    ax.set_title(
+        "Source-bound producer and rendering path", fontsize=10, pad=AXIS_TITLE_PAD
+    )
+
+    ax = axes[1]
+    status_order = (
+        "implemented_local",
+        "active",
+        "blocked_by_evidence",
+        "planned",
+    )
+    labels = {
+        "implemented_local": "implemented locally",
+        "active": "active",
+        "blocked_by_evidence": "blocked by evidence",
+        "planned": "planned",
+    }
+    colors = (PALETTE[2], PALETTE[0], PALETTE[3], PALETTE[4])
+    values = [int(status_counts.get(status, 0)) for status in status_order]
+    y = np.arange(len(status_order))
+    ax.barh(y, values, color=colors, edgecolor=INK, linewidth=0.5)
+    ax.set_yticks(y, [labels[status] for status in status_order])
+    ax.invert_yaxis()
+    ax.set_xlabel("roadmap milestones (count)")
+    ax.set_xlim(0, max(values + [1]) + 1)
+    for index, value in enumerate(values):
+        ax.text(value + 0.08, index, str(value), va="center", fontsize=9, color=INK)
+    _style_axes(ax, grid_axis="x")
+    ax.set_title(
+        "Evidence status retained in the same receipt", fontsize=10, pad=AXIS_TITLE_PAD
+    )
+    ax.text(
+        0.0,
+        -0.23,
+        "Counts describe the roadmap contract; they are not scientific effect sizes.\n"
+        "Blocked, unavailable, and underpowered evidence is never recoded as zero performance.",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=8,
+        color=MUTED,
+    )
+    fig.suptitle(
+        "Protocol-v2 artifact receipt closure",
+        x=0.06,
+        ha="left",
+        fontsize=12,
+        color=INK,
+    )
+    fig.text(
+        0.06,
+        0.02,
+        "Deterministic provenance and status audit; no inferential uncertainty is applicable.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.12, top=0.80, wspace=0.20)
+    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.16, top=0.82, wspace=0.28)
     return _save_figure(fig, output_path)
 
 
@@ -5452,9 +5647,20 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "Licensed-source provenance and application gate for the separate external-validation track. The left panel shows "
         "the pinned-manifest, explicitly opt-in acquisition, and static-only object-analysis path; the right panel lists "
         "the immutable revision, license/hash, safety, project/revision/example, and independent-replay requirements. "
-        "The canonical receipt is blocked_external with an empty source manifest, so no application-performance value is "
-        "plotted and unavailable evidence is not treated as zero. This is a source-bound safety and promotion diagnostic, "
-        "not evidence of external validity."
+        "The current receipt is {external_source_status}: {external_project_count} projects are pinned, "
+        "{external_static_validated_count} of {external_static_row_count} static rows decode successfully, and "
+        "{external_labelable_count} source-bound labels are present. No application-performance value is plotted and "
+        "unavailable evidence is not treated as zero. This is a source-bound safety and promotion diagnostic, not "
+        "evidence of external validity."
+    ),
+    "artifact_receipt_closure": (
+        "Protocol-v2 artifact receipt closure for {artifact_receipt_count} project-owned JSON artifacts. "
+        "The flow binds the canonical protocol to producer modules, atomically written domain payloads, "
+        "surface validation, and the hydrated manuscript/DOCX/tagged-PDF boundary; the companion bars retain "
+        "the {scientific_program_milestone_count}-milestone evidence-status contract. The audit found "
+        "{artifact_receipt_error_count} receipt error(s). Counts are deterministic provenance checks with no "
+        "inferential uncertainty; blocked, unavailable, and underpowered evidence remains labelled rather than "
+        "rendered as zero performance, and this figure does not establish scientific promotion [@w3cprov2013;@rocrate2023;@sandve2013repro;@acm2020artifact]."
     ),
 }
 
@@ -5586,6 +5792,12 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "sensor_costs": ("friston2017activeinference", "parr2022activeinference"),
     "replication_manifest": ("wilkinson2016fair",),
     "external_source_provenance": ("wilkinson2016fair",),
+    "artifact_receipt_closure": (
+        "w3cprov2013",
+        "rocrate2023",
+        "sandve2013repro",
+        "acm2020artifact",
+    ),
 }
 
 
@@ -5632,6 +5844,14 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
         "formal_correspondence_intervention_count": "configured",
         "sensor_certificate_count": "configured",
         "replication_row_count": "configured",
+        "external_source_status": "not_yet_observed",
+        "external_project_count": "0",
+        "external_labelable_count": "0",
+        "external_static_validated_count": "0",
+        "external_static_row_count": "0",
+        "artifact_receipt_count": "configured",
+        "artifact_receipt_error_count": "configured",
+        "scientific_program_milestone_count": "configured",
     }
     data_dir = output_dir / "data"
     try:
@@ -5869,6 +6089,49 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
         )
     except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
         pass
+    try:
+        external = json.loads(
+            (data_dir / "external_source_validation.json").read_text(encoding="utf-8")
+        )
+        context["external_source_status"] = str(
+            external.get("status", context.get("external_source_status", "unknown"))
+        )
+        context["external_project_count"] = str(
+            external.get("project_count", context.get("external_project_count", "0"))
+        )
+        context["external_labelable_count"] = str(
+            external.get(
+                "labelable_example_count", context.get("external_labelable_count", "0")
+            )
+        )
+        context["external_static_validated_count"] = str(
+            external.get(
+                "static_validated_row_count",
+                context.get("external_static_validated_count", "0"),
+            )
+        )
+        context["external_static_row_count"] = str(len(external.get("static_rows", [])))
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
+        pass
+    try:
+        from .artifact_contract import validate_data_artifact_surface
+
+        data_json = tuple(sorted(data_dir.glob("*.json")))
+        context["artifact_receipt_count"] = str(len(data_json))
+        context["artifact_receipt_error_count"] = str(
+            len(validate_data_artifact_surface(output_dir.parent))
+        )
+    except (OSError, TypeError, AttributeError):
+        pass
+    try:
+        program = json.loads(
+            (data_dir / "scientific_program.json").read_text(encoding="utf-8")
+        )
+        context["scientific_program_milestone_count"] = str(
+            len(program.get("milestones", []))
+        )
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
+        pass
     return context
 
 
@@ -5915,6 +6178,7 @@ def _figure_registry_rows(
         "sensor_costs": "finite typed-field sensor actions with deterministic vectors and local timing calibration",
         "replication_manifest": "frozen local public/gold/prediction/receipt bundle",
         "external_source_provenance": "pinned licensed-source manifest and static-only external-validation gate",
+        "artifact_receipt_closure": "project-owned protocol-v2 receipt surface and manuscript/document boundary",
         "artifact_hash_manifest": "reproducibility manifest rows",
         "validation_summary": "generated validation checks",
     }
@@ -5950,6 +6214,7 @@ def _figure_registry_rows(
         "sensor_costs": "Deterministic vector counts are primary; local timing medians span five repetition values with IQR, p95, overhead correction, and regression residuals; policy certificates compare exact dynamic-program, fixed, greedy, seeded-random, and abstaining objectives.",
         "replication_manifest": "Public and gold counts plus protocol/hash separation are deterministic provenance checks; independent replay is not claimed.",
         "external_source_provenance": "Status, manifest cardinality, and five promotion gates are deterministic provenance checks; blocked or unavailable cells are retained as status values rather than plotted as performance zeros.",
+        "artifact_receipt_closure": "Deterministic count of project-owned JSON receipts, envelope errors, and roadmap status rows; no inferential uncertainty is applicable.",
     }
     rows: list[dict[str, Any]] = []
     for stem, raw_caption in FIGURE_CAPTIONS.items():
@@ -6051,6 +6316,11 @@ def _figure_registry_rows(
                 "output/data/external_source_validation.json",
                 "configs/external_sources.yaml",
             ]
+        elif stem == "artifact_receipt_closure":
+            input_artifacts = [
+                "output/data/research_protocol.json",
+                "output/data/scientific_program.json",
+            ]
         elif stem == "trace_refinement":
             input_artifacts = ["output/data/symbolic_execution.json"]
         elif stem == "artifact_hash_manifest":
@@ -6142,10 +6412,11 @@ def write_figure_captions(output_dir: Path) -> Path:
         "figures": registry_rows,
     }
     registry_path = output_dir / "data" / "figure_registry.json"
-    registry_path.parent.mkdir(parents=True, exist_ok=True)
-    registry_path.write_text(
-        json.dumps(registry_payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        registry_path,
+        registry_payload,
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
 
     # The sibling template consumes the format-neutral registry from the
@@ -6164,8 +6435,10 @@ def write_figure_captions(output_dir: Path) -> Path:
             for entry in registry_rows
         ],
     }
-    (figure_dir / "figure_registry.json").write_text(
-        json.dumps(template_registry, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_json_artifact(
+        figure_dir / "figure_registry.json",
+        template_registry,
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
     return caption_path

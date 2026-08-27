@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, cast
 
+from .artifact_contract import write_json_artifact
 from .formal_verification import formal_verification_payload
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
@@ -217,8 +217,11 @@ def write_theorem_or_countertheorem(
         raise ValueError(detail)
     path = project_root / THEOREM_PHASE_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path
 

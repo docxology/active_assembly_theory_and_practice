@@ -95,10 +95,14 @@ The project follows the template code-project pattern:
     overhead-corrected local timing calibration; cross-machine timing and
     universal cost laws remain out of scope.
 31. `src.external_sources.py` accepts only a pinned, license-cleared manifest,
-    compiles locally in static-only mode, hashes source/object/disassembly
-    products, and never executes emitted external binaries. `src.replication`
-    separates label-blind public inputs from private gold labels and exposes
-    offline replay and hash-validation commands.
+    acquires archives through the explicit network-enabled command, compiles
+    locally in static-only mode, hashes source/object/disassembly products, and
+    never executes emitted external binaries. `src.external_corpus.py` keeps
+    mechanically reviewed source-level label contracts separate from static
+    coverage. `src.replication` separates label-blind public inputs from
+    private gold labels, hashes the public protocol/toolchain/instructions,
+    exposes offline replay, and requires an explicit separate-control
+    attestation before protected ingestion can promote a replay receipt.
 32. `src.intervention_analysis.py` computes the exact finite intervention-power
     matrix from the source-bound quotient outcomes, enumerating every non-empty
     subset and retaining the minimum separating sets and one-state negative

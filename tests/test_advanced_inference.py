@@ -36,6 +36,7 @@ from src.figures import (
     plot_ambiguity_ablation,
     plot_action_sensing,
     plot_active_information_frontier,
+    plot_artifact_receipt_closure,
     plot_calibration_curve,
     plot_confusion_matrix,
     plot_cross_architecture_benchmark,
@@ -194,6 +195,26 @@ def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
     for key in required:
         assert (PROJECT_ROOT / paths[key]).is_file()
         assert (PROJECT_ROOT / paths[key]).stat().st_size > 0
+
+
+def test_artifact_receipt_closure_figure_is_nonblank(tmp_path) -> None:
+    path = plot_artifact_receipt_closure(
+        {
+            "protocol_id": "test-protocol",
+            "protocol_sha256": "a" * 64,
+            "status_counts": {
+                "implemented_local": 2,
+                "active": 1,
+                "blocked_by_evidence": 1,
+                "planned": 1,
+            },
+        },
+        tmp_path / "artifact_receipt_closure.png",
+        artifact_count=12,
+        artifact_error_count=0,
+    )
+    assert path.is_file()
+    assert path.stat().st_size > 0
 
 
 def test_memory_evidence_joins_static_operands_to_dynamic_events() -> None:

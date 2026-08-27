@@ -165,7 +165,7 @@ sensitivity check rather than a competing fitted model.
 
 ![Primary final-`RAX` equivalence consistency and near-miss separation for the source-family benchmark, alongside the deliberately insufficient single-state negative control. Bars are family-level endpoint proportions and whiskers are descriptive 95% Wilson intervals; unresolved negative-control near misses remain visible as a protocol-sensitivity result rather than being silently excluded.]({{REPRESENTATION_BENCHMARK_FIGURE}}){#fig:representation-invariance-benchmark width=88%}
 
-## Current promotion ledger for P3--P16 {#sec:promotion-ledger}
+## Current promotion ledger for P3--P17 {#sec:promotion-ledger}
 
 The open roadmap is now executable in bounded local tranches, but its
 promotion state remains deliberately asymmetric:
@@ -182,10 +182,11 @@ promotion state remains deliberately asymmetric:
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
 | P12 scaled transfer/quotient | 64-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
-| P13 licensed external validation | pinned manifest, static-only acquisition/compiler path, and explicit blocked receipt | application-facing effectiveness until project/revision/example/replay gates pass |
+| P13 licensed external validation | ten pinned rows across five projects and two revisions, static-only acquisition/compiler path, Capstone decoding, and explicit underpowered receipt | application-facing effectiveness until source-bound label, project-held-out, build, and replay gates pass |
 | P14 measured policy robustness | deterministic/calibrated cost receipts and finite oracle certificate | universal cost law or non-oracle near-optimality claim |
-| P15 blind replication | public/private label separation and offline replay interface | independent replication until a separately controlled replay receipt exists |
+| P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, pending receipt schema, and protected ingestion boundary | `{{INDEPENDENT_REPLAY_STATUS}}`; independent replay only after a separately controlled receipt, and still not independent reimplementation |
 | P16 promotion hardening | theorem/countertheorem status map, source-bound claim/figure/scholarship closure, and accessible regeneration path | publication or award-level claim absent independent scientific review |
+| P17 protocol/artifact closure | protocol-v2 envelope on the project-owned JSON surface, atomic producer writes, receipt audit, and source-bound manuscript/document closure | semantic identifiability, external validity, independent replication, or theorem promotion |
 
 The theorem/countertheorem receipt is
 `{{THEOREM_COUNTERTHEOREM_ARTIFACT}}`. Its fail-closed status is
@@ -197,8 +198,7 @@ true.” The local formal proof count is `{{THEOREM_PROVED_COUNT}}`, while
 `{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` result(s) remain computationally
 validated rather than kernel proved.
 
-Application-facing promotion remains closed: the compiler track's external
-manifest is `{{COMPILER_EXTERNAL_STATUS}}`, the licensed-source receipt is
+Application-facing promotion remains closed: the licensed-source receipt is
 `{{EXTERNAL_SOURCE_STATUS}}` with `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` project
 families and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples,
 the correspondence is `{{FORMAL_CORRESPONDENCE_STATUS}}`, and the replication

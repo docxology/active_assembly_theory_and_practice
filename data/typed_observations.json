@@ -1,0 +1,507 @@
+{
+  "dynamic_field": "dynamic_status",
+  "field_groups": {
+    "control_flow": [
+      "branch_target_class"
+    ],
+    "dynamic_context": [
+      "dynamic_status"
+    ],
+    "instruction_semantics": [
+      "instruction_family",
+      "operand_class",
+      "flag_effect",
+      "memory_addressing_mode"
+    ],
+    "register_context": [
+      "register_read_set",
+      "register_write_set"
+    ]
+  },
+  "fields": [
+    "instruction_family",
+    "operand_class",
+    "register_read_set",
+    "register_write_set",
+    "flag_effect",
+    "memory_addressing_mode",
+    "branch_target_class",
+    "dynamic_status"
+  ],
+  "per_fixture": {
+    "x86_accumulator": {
+      "instruction_count": 4,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4101,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 1,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 2,
+          "instruction_family": "bitwise",
+          "memory_addressing_mode": "none",
+          "mnemonic": "shl",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4106,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 3,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "sub",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    },
+    "x86_bitwise": {
+      "instruction_count": 4,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4101,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 1,
+          "instruction_family": "bitwise",
+          "memory_addressing_mode": "none",
+          "mnemonic": "and",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 2,
+          "instruction_family": "bitwise",
+          "memory_addressing_mode": "none",
+          "mnemonic": "shr",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4107,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 3,
+          "instruction_family": "bitwise",
+          "memory_addressing_mode": "none",
+          "mnemonic": "or",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    },
+    "x86_guard": {
+      "instruction_count": 4,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4101,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 1,
+          "instruction_family": "comparison",
+          "memory_addressing_mode": "none",
+          "mnemonic": "cmp",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "rflags"
+          ]
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "external",
+          "dynamic_status": "executed",
+          "flag_effect": "read",
+          "index": 2,
+          "instruction_family": "control_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "jl",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "rflags"
+          ],
+          "register_write_set": []
+        },
+        {
+          "address": 4106,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 3,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    },
+    "x86_guard_taken": {
+      "instruction_count": 5,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4101,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 1,
+          "instruction_family": "comparison",
+          "memory_addressing_mode": "none",
+          "mnemonic": "cmp",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "rflags"
+          ]
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "internal",
+          "dynamic_status": "executed",
+          "flag_effect": "read",
+          "index": 2,
+          "instruction_family": "control_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "jl",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "rflags"
+          ],
+          "register_write_set": []
+        },
+        {
+          "address": 4106,
+          "branch_target_class": "none",
+          "dynamic_status": "not_executed",
+          "flag_effect": "write",
+          "index": 3,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4109,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 4,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "sub",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    },
+    "x86_long_accumulator": {
+      "instruction_count": 6,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "none",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4101,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 1,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 2,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4107,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 3,
+          "instruction_family": "bitwise",
+          "memory_addressing_mode": "none",
+          "mnemonic": "shl",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4109,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 4,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "sub",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        },
+        {
+          "address": 4112,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 5,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    },
+    "x86_memory": {
+      "instruction_count": 3,
+      "observations": [
+        {
+          "address": 4096,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 0,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "stack_relative",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "rsp"
+          ],
+          "register_write_set": []
+        },
+        {
+          "address": 4104,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "none",
+          "index": 1,
+          "instruction_family": "data_transfer",
+          "memory_addressing_mode": "stack_relative",
+          "mnemonic": "mov",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "rsp"
+          ],
+          "register_write_set": [
+            "eax"
+          ]
+        },
+        {
+          "address": 4108,
+          "branch_target_class": "none",
+          "dynamic_status": "executed",
+          "flag_effect": "write",
+          "index": 2,
+          "instruction_family": "arithmetic",
+          "memory_addressing_mode": "none",
+          "mnemonic": "add",
+          "operand_class": "mixed",
+          "register_read_set": [
+            "eax"
+          ],
+          "register_write_set": [
+            "eax",
+            "rflags"
+          ]
+        }
+      ]
+    }
+  },
+  "phase_label_keys": [],
+  "schema_version": "1.0.0",
+  "scope": "label-blind typed records derived from Capstone detail and bounded Unicorn execution over transparent fixtures"
+}

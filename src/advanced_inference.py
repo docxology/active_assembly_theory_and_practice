@@ -37,13 +37,13 @@ hand-stamped. The orchestrator owns no domain logic.
 
 from __future__ import annotations
 
-import json
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
 
+from .artifact_contract import write_json_artifact
 from .active_selection import (
     CONFIDENCE_THRESHOLD,
     active_observation_order,
@@ -66,7 +66,11 @@ from .generative_model import build_generative_model
 from .model_fitting import leave_one_fixture_out_evaluation
 from .multi_arch import cross_architecture_payload, validate_cross_architecture_payload
 from .compiler_transfer import write_compiler_transfer
-from .external_sources import write_external_source_validation_payload
+from .external_sources import (
+    write_compiler_capabilities,
+    write_external_source_validation_payload,
+    write_external_static_validation,
+)
 from .information_policy import (
     active_information_payload,
     validate_active_information_payload,
@@ -99,9 +103,11 @@ OUTPUT_DIR = PROJECT_ROOT / "output"
 
 
 def _write_json(path: Path, payload: object) -> str:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=PROJECT_ROOT,
+        producer_path=Path(__file__),
     )
     try:
         return str(path.relative_to(PROJECT_ROOT))
@@ -416,6 +422,10 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     """Write the current inference artifacts and return their relative paths."""
 
     data_dir = output_dir / "data"
+    # Seal the protocol before any dependent artifact is written.  This avoids
+    # a subtle stale-hash window when a producer is called after a protocol
+    # source edit but before the full manuscript pipeline is regenerated.
+    write_scientific_protocol(output_dir.parent)
 
     def local_path(value: Path) -> str:
         """Return a project-relative path, including temporary test roots."""
@@ -509,6 +519,12 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     # must not turn a local fixture test into an implicit network operation.
     external_manifest = output_dir.parent / "configs" / "external_sources.yaml"
     if external_manifest.is_file():
+        paths["external_capabilities"] = str(
+            local_path(write_compiler_capabilities(output_dir.parent))
+        )
+        paths["external_static_validation"] = str(
+            local_path(write_external_static_validation(output_dir.parent))
+        )
         paths["external_source_validation"] = str(
             local_path(write_external_source_validation_payload(output_dir.parent))
         )

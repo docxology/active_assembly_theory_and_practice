@@ -53,6 +53,7 @@ class ReceiptEnvelope:
 
         return {
             "schema_version": self.schema_version,
+            "receipt_schema_version": self.schema_version,
             "protocol_id": self.protocol_id,
             "protocol_sha256": self.protocol_sha256,
             "generator_revision": self.generator_revision,
@@ -122,7 +123,13 @@ def validate_receipt_envelope(
     missing = sorted(required - set(payload))
     if missing:
         return False, f"receipt fields missing: {missing}"
-    if payload.get("schema_version") != RECEIPT_SCHEMA_VERSION:
+    receipt_schema = payload.get(
+        "receipt_schema_version", payload.get("schema_version")
+    )
+    if receipt_schema != RECEIPT_SCHEMA_VERSION or (
+        "receipt_schema_version" in payload
+        and payload.get("schema_version") != RECEIPT_SCHEMA_VERSION
+    ):
         return False, f"receipt schema={payload.get('schema_version')}"
     status = payload.get("status")
     if status not in EVIDENCE_STATUSES:

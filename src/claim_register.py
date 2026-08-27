@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
+
+from .artifact_contract import write_json_artifact
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
@@ -716,8 +717,8 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         statement=(
             "The external-validation track uses an immutable manifest with license, "
             "revision, archive-hash, compiler, and static-only safety fields; the "
-            "empty canonical manifest remains visibly blocked rather than becoming "
-            "a zero-valued application result."
+            "pinned source rows and their underpowered label/build gates remain "
+            "visible rather than becoming a zero-valued application result."
         ),
         support_keys=("wilkinson2016fair",),
         artifact_paths=(
@@ -734,6 +735,94 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
             "interface. It is not external validity or application effectiveness "
             "until the project, revision, label-count, build, and independent-replay "
             "gates pass."
+        ),
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-038",
+        claim_type="licensed_static_source_coverage",
+        statement=(
+            "Pinned permissively licensed source rows are acquired only through "
+            "explicit network opt-in, checked against archive and license digests, "
+            "compiled with an allowlisted static argument vector, and decoded with "
+            "object/disassembly hashes while emitted objects remain unexecuted."
+        ),
+        support_keys=("wilkinson2016fair",),
+        artifact_paths=(
+            "configs/external_sources.yaml",
+            "output/data/external_capabilities.json",
+            "output/data/external_static_validation.json",
+        ),
+        validation_checks=(
+            "external_static_contract",
+            "external_static_freshness",
+            "external_capability_contract",
+            "external_capability_freshness",
+        ),
+        boundary=(
+            "Static compilation and decoding establish coverage and provenance only. "
+            "They do not establish source equivalence, project-held-out accuracy, "
+            "compiler correctness, or application effectiveness."
+        ),
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-039",
+        claim_type="separately_controlled_replay_boundary",
+        statement=(
+            "The frozen public replay bundle carries protocol, toolchain, instruction, "
+            "and prediction hashes, while the protected ingestion path requires an "
+            "explicit separately controlled-run attestation before recording observed "
+            "independent replay."
+        ),
+        support_keys=("wilkinson2016fair", "acm2020artifact"),
+        artifact_paths=(
+            "output/data/replication_manifest.json",
+            "output/replication/public/protocol_manifest.json",
+            "output/replication/public/toolchain_receipt.json",
+            "output/replication/public/REPLAY_INSTRUCTIONS.md",
+        ),
+        validation_checks=(
+            "replication_contract",
+            "replication_freshness",
+            "independent_replay_contract",
+            "independent_replay_freshness",
+        ),
+        boundary=(
+            "The repository can prepare and ingest a receipt but cannot fabricate "
+            "the separate run. Independent replay, when observed, is not independent "
+            "reimplementation and does not establish new external validity."
+        ),
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-037",
+        claim_type="protocol_artifact_closure",
+        statement=(
+            "Project-owned generated JSON artifacts carry a shared protocol-v2 receipt "
+            "layer distinct from their domain schema, and the producer pipeline binds "
+            "that surface to manuscript and document-generation checks."
+        ),
+        support_keys=(
+            "w3cprov2013",
+            "rocrate2023",
+            "sandve2013repro",
+            "acm2020artifact",
+        ),
+        artifact_paths=(
+            "output/data/research_protocol.json",
+            "output/data/validation_report.json",
+            "output/figures/artifact_receipt_closure.png",
+        ),
+        validation_checks=(
+            "artifact_receipt_surface",
+            "scientific_protocol_contract",
+            "figure_artifact_receipt_closure",
+        ),
+        boundary=(
+            "The receipt contract detects stale, mixed, or bypassed generated artifacts; "
+            "it does not establish semantic identifiability, external validity, independent "
+            "replication, or a formal theorem."
         ),
         status="validated",
     ),
@@ -763,8 +852,11 @@ def write_claim_register(output_dir: Path = OUTPUT_DIR) -> str:
     data_dir.mkdir(parents=True, exist_ok=True)
     json_path = data_dir / "claim_register.json"
     payload = claim_register_payload()
-    json_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        json_path,
+        payload,
+        project_root=output_dir.parent,
+        producer_path=Path(__file__),
     )
 
     markdown_path = data_dir / "claim_register.md"

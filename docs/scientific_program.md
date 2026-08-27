@@ -9,13 +9,38 @@ feature roadmap. The program is generated as a machine-readable receipt at
 The current repository is not a prize-level result. It is a carefully bounded
 measurement and inference demonstrator whose core temporal corpus contains six
 transparent x86-64 fixtures, augmented by a 64-family co-primary quotient
-benchmark, a separate four-state representation pilot, and bounded P3--P16
+benchmark, a separate four-state representation pilot, and bounded P3--P17
 research receipts.
 Its value is that it supplies a trustworthy starting instrument: the trace
 lineage is visible, the observation channel is explicit, negative results are
 retained, the manuscript is hydrated from producer artifacts, and the PDF is
 tagged and checked. The next program must earn a much deeper scientific claim
 on top of that instrument.
+
+## Protocol-v2 artifact closure
+
+The research protocol is now accompanied by a separate receipt schema. Domain
+payloads retain their own `schema_version`; the common envelope adds
+`receipt_schema_version`, protocol and producer digests, input hashes, toolchain
+versions, status, limitations, unsupported cases, and underpowered cases. This
+is intentionally a provenance contract rather than a semantic result. Producers
+write atomically, legacy migration is explicit, and the validator never repairs
+an unsealed artifact while claiming that validation passed.
+
+The canonical local commands are:
+
+```bash
+uv run python scripts/run_scientific_program.py all
+uv run python scripts/run_scientific_program.py audit-artifacts
+```
+
+`all` runs the source-bound orchestration summary and writes a machine-readable
+result; `audit-artifacts` is read-only and reports every unsealed or
+mixed-protocol JSON artifact. The closure figure and manuscript variables are
+generated from this same surface. This design follows provenance and research-
+object packaging practice [@w3cprov2013;@rocrate2023;@sandve2013repro] and
+keeps local reproducibility distinct from independent reproduction
+[@acm2020artifact].
 
 ## The scientific center of gravity
 
@@ -93,10 +118,11 @@ the generated program receipt. The abbreviated sequence is:
 | P10 | Initialization robustness of observation-only learning | Implemented finite robustness diagnostic; stability promotion blocked | Five-start holdout ledger with accuracy spread and sequence agreement; no stable latent-parameter claim |
 | P11 | Complete normalized machine-state correspondence | Active bounded implementation; cross-language bridge unresolved | 64-bit all-GPR state, width/flag/memory boundary tests, Lean normalized-state definitions, and explicit unsupported outcomes |
 | P12 | Scaled transfer and quotient evaluation | Active promotion candidate; external evidence absent | 64-family classifier receipt, compiler/source/architecture capability matrix, and source-bound split/leakage receipts |
-| P13 | Licensed-source external validation | Blocked by evidence | Pinned license/revision/archive/build manifest, static-only acquisition, five-project/two-revision/100-example gates, and independent replay |
+| P13 | Licensed-source external validation | Underpowered after pinned acquisition | Ten pinned rows across five projects and two revisions, 9/10 static rows currently decoded, zero source-bound label contracts, and explicit project/revision/example/replay gates |
 | P14 | Measured active-sensing robustness | Active bounded implementation | Deterministic vectors, calibrated local timing, finite oracle regret, non-oracle baselines, and matching calibration receipts |
-| P15 | Blind replication and adversarial audit | Blocked by evidence | Public/private separation, offline replay, adversarial internal replay, and independently controlled external replay receipt |
+| P15 | Blind replication and adversarial audit | Local harness implemented; separate replay not yet observed | Public/private separation, hashed protocol/toolchain/instructions, offline replay, pending receipt schema, protected scoring, and independently controlled external replay receipt |
 | P16 | Theorem/countertheorem synthesis and publication promotion | Planned; fail closed | Kernel-checked theorem or preserved counterexample, claim-evidence closure, regenerated accessible package, and owner/reviewer promotion gates |
+| P17 | Protocol-v2 artifact and manuscript closure | Implemented locally; integrity-only | Shared receipt envelope, atomic producer writes, fail-closed artifact audit, source-bound figure/variable closure, and post-render document lineage |
 
 The order is deliberate. The project does not jump from six toy fixtures to a
 large opaque corpus. It first defines what a semantic object is, then builds
@@ -365,9 +391,10 @@ prize narrative.
 
 The generated program receipt is the operational source of truth for this
 document. Current status is intentionally conservative: P0–P2 are implemented
-locally, and P3–P10 have implemented bounded tranches with explicit receipts.
+locally, and P3–P17 have implemented bounded tranches with explicit receipts.
 The remaining promotion gates are not implied: P3 has a small held-out family
 count, P4 lacks a full-ISA theorem, P5 lacks licensed external validity, P6 is
-finite-benchmark optimality, P7 lacks independent replay, and P8 lacks a broad
-theorem. The source-bound status is therefore “implemented, bounded, and
-fail-closed,” not “scientifically complete.”
+finite-benchmark optimality, P7 lacks independent replay, P13 has no
+source-bound label examples, and P16 lacks a broad theorem. The source-bound
+status is therefore “implemented, bounded, and fail-closed,” not
+“scientifically complete.”

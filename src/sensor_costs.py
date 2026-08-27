@@ -18,6 +18,7 @@ from typing import Any, cast
 
 import numpy as np
 
+from .artifact_contract import write_json_artifact
 from .information_policy import (
     FiniteSensor,
     active_information_payload,
@@ -674,7 +675,10 @@ def write_sensor_cost_payload(
         raise ValueError(detail)
     path = project_root / SENSOR_COST_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

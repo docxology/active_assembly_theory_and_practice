@@ -1,0 +1,259 @@
+{
+  "interpretation": "Coverage variation is a fixture-design diagnostic. It supports a more informative Phase A stress test but is not independent binary sampling, external validity, or evidence that typed fields encode intrinsic program semantics.",
+  "method": "transparent_fixture_coverage_inventory",
+  "per_fixture": [
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 4,
+      "fixture": "x86_accumulator",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "bitwise",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "accumulator_update": 1,
+        "exit": 1,
+        "representation_transform": 1,
+        "setup": 1
+      },
+      "phase_run_count": 4,
+      "repeated_phase_count": 0,
+      "static_instruction_count": 4,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 3,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 2,
+        "register_write_set": 2
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 4,
+      "fixture": "x86_bitwise",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "bitwise",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "exit": 1,
+        "representation_transform": 2,
+        "setup": 1
+      },
+      "phase_run_count": 3,
+      "repeated_phase_count": 1,
+      "static_instruction_count": 4,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 2,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 2,
+        "register_write_set": 2
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [
+        "external"
+      ],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 4,
+      "fixture": "x86_guard",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "comparison",
+        "control_transfer",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "exit": 1,
+        "guard_check": 2,
+        "setup": 1
+      },
+      "phase_run_count": 3,
+      "repeated_phase_count": 1,
+      "static_instruction_count": 4,
+      "typed_field_cardinality": {
+        "branch_target_class": 2,
+        "dynamic_status": 1,
+        "flag_effect": 3,
+        "instruction_family": 4,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 3,
+        "register_write_set": 4
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 6,
+      "fixture": "x86_long_accumulator",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "bitwise",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "accumulator_update": 3,
+        "exit": 1,
+        "representation_transform": 1,
+        "setup": 1
+      },
+      "phase_run_count": 5,
+      "repeated_phase_count": 1,
+      "static_instruction_count": 6,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 3,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 2,
+        "register_write_set": 2
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 3,
+      "fixture": "x86_memory",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": true,
+      "instruction_families": [
+        "arithmetic",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [
+        "stack_relative"
+      ],
+      "memory_operand_count": 2,
+      "phase_counts": {
+        "accumulator_update": 1,
+        "exit": 1,
+        "setup": 1
+      },
+      "phase_run_count": 3,
+      "repeated_phase_count": 0,
+      "static_instruction_count": 3,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 2,
+        "memory_addressing_mode": 2,
+        "operand_class": 1,
+        "register_read_set": 2,
+        "register_write_set": 3
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [
+        "internal"
+      ],
+      "dynamic_path_fraction": 0.8,
+      "executed_instruction_count": 4,
+      "fixture": "x86_guard_taken",
+      "has_alternate_dynamic_path": true,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "comparison",
+        "control_transfer",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "accumulator_update": 1,
+        "exit": 1,
+        "guard_check": 2,
+        "setup": 1
+      },
+      "phase_run_count": 4,
+      "repeated_phase_count": 1,
+      "static_instruction_count": 5,
+      "typed_field_cardinality": {
+        "branch_target_class": 2,
+        "dynamic_status": 2,
+        "flag_effect": 3,
+        "instruction_family": 4,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 3,
+        "register_write_set": 4
+      },
+      "unexecuted_instruction_count": 1
+    }
+  ],
+  "schema_version": "1.0.0",
+  "scope": "real Capstone static decoding and bounded Unicorn execution over hand-authored transparent x86-64 fixtures",
+  "summary": {
+    "alternate_path_fixture_count": 1,
+    "fixture_count": 6,
+    "memory_fixture_count": 1,
+    "repeated_phase_fixture_count": 4,
+    "total_executed_instruction_count": 25,
+    "total_phase_run_count": 22,
+    "total_static_instruction_count": 26,
+    "unique_branch_target_class_count": 2,
+    "unique_instruction_family_count": 5,
+    "unique_memory_mode_count": 1
+  },
+  "typed_fields": [
+    "instruction_family",
+    "operand_class",
+    "register_read_set",
+    "register_write_set",
+    "flag_effect",
+    "memory_addressing_mode",
+    "branch_target_class",
+    "dynamic_status"
+  ],
+  "unique_values": {
+    "branch_target_classes": [
+      "external",
+      "internal"
+    ],
+    "instruction_families": [
+      "arithmetic",
+      "bitwise",
+      "comparison",
+      "control_transfer",
+      "data_transfer"
+    ],
+    "memory_addressing_modes": [
+      "stack_relative"
+    ]
+  }
+}

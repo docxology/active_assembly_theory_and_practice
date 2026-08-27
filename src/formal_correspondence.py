@@ -25,7 +25,6 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 import hashlib
-import json
 from pathlib import Path
 import re
 from typing import Any, cast
@@ -37,6 +36,7 @@ from .disassembly import (
     disassemble_bytes,
 )
 from .emulation import STACK_OFFSET, emulate_x86_64
+from .artifact_contract import write_json_artifact
 from .formal_verification import formal_verification_payload
 from .lean_bridge import BRIDGE_CODE, BRIDGE_EXPECTED_RAX, BRIDGE_INITIAL_RAX
 from .provenance import generator_revision, sha256_path, toolchain_versions
@@ -1427,8 +1427,11 @@ def write_formal_correspondence(project_root: Path = PROJECT_ROOT) -> Path:
         raise ValueError(detail)
     path = project_root / FORMAL_CORRESPONDENCE_ARTIFACT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path
 

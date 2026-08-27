@@ -15,6 +15,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .artifact_contract import (
+    seal_data_artifact_surface,
+    validate_data_artifact_surface,
+)
 from .figures import (
     plot_active_efe_trajectory,
     plot_action_sensing,
@@ -35,6 +39,7 @@ from .figures import (
     plot_external_source_provenance,
     plot_intervention_power,
     plot_active_information_frontier,
+    plot_artifact_receipt_closure,
     plot_model_comparison_bars,
     plot_model_evidence,
     plot_memory_access_timeline,
@@ -88,6 +93,10 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
 
     figure_dir = output_dir / "figures"
     figure_dir.mkdir(parents=True, exist_ok=True)
+    # Keep the cross-cutting receipt figure on the same explicit producer
+    # boundary as the JSON surface.  Validation remains read-only: this stage
+    # is the only place where legacy envelopes may be migrated.
+    seal_data_artifact_surface(output_dir.parent)
     # Keep the external-source figure on the same producer boundary as its
     # receipt.  This makes direct figure regeneration deterministic and avoids
     # accidentally plotting a stale or missing safety-status artifact.
@@ -245,6 +254,18 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     )
     plot_external_source_provenance(external_payload, external_path)
 
+    receipt_path = figure_dir / "artifact_receipt_closure.png"
+    program_payload = json.loads(
+        (output_dir / "data" / "scientific_program.json").read_text(encoding="utf-8")
+    )
+    artifact_errors = validate_data_artifact_surface(output_dir.parent)
+    plot_artifact_receipt_closure(
+        program_payload,
+        receipt_path,
+        artifact_count=len(tuple(sorted((output_dir / "data").glob("*.json")))),
+        artifact_error_count=len(artifact_errors),
+    )
+
     information_path = figure_dir / "active_information_frontier.png"
     information_payload = json.loads(
         (output_dir / "data" / "active_information_frontier.json").read_text(
@@ -289,6 +310,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "sensor_costs": str(sensor_path.relative_to(PROJECT_ROOT)),
         "replication_manifest": str(replication_path.relative_to(PROJECT_ROOT)),
         "external_source_provenance": str(external_path.relative_to(PROJECT_ROOT)),
+        "artifact_receipt_closure": str(receipt_path.relative_to(PROJECT_ROOT)),
         "active_information_frontier": str(information_path.relative_to(PROJECT_ROOT)),
     }
 
@@ -375,6 +397,7 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "sensor_costs": stats_paths["sensor_costs"],
         "replication_manifest": stats_paths["replication_manifest"],
         "external_source_provenance": stats_paths["external_source_provenance"],
+        "artifact_receipt_closure": stats_paths["artifact_receipt_closure"],
         "active_information_frontier": stats_paths["active_information_frontier"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
     }

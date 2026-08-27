@@ -19,6 +19,7 @@ import json
 from pathlib import Path
 from typing import Iterable, cast
 
+from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .representation_invariance import representation_invariance_payload
@@ -418,9 +419,8 @@ def write_intervention_power_payload(project_root: Path = PROJECT_ROOT) -> Path:
     if not valid:
         raise ValueError(detail)
     path = project_root / INTERVENTION_ANALYSIS_ARTIFACT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path, payload, project_root=project_root, producer_path=Path(__file__)
     )
     return path
 

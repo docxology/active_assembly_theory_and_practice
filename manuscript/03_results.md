@@ -487,18 +487,20 @@ receipt validates `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` source-by-optimization
 static rows and retains `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` unavailable
 rows; validated
 architecture labels are limited to `{{COMPILER_TRANSFER_ARCHITECTURES}}`.
-Because emitted objects were not executed and the external-source manifest is
-`{{COMPILER_EXTERNAL_STATUS}}`, no cross-compiler, application, or compiler-
-correctness claim follows. The figures make those boundaries visible rather
-than collapsing unavailable capability into a zero.
+Because emitted objects were not executed and the separate licensed-source
+receipt is `{{EXTERNAL_SOURCE_STATUS}}`, no cross-compiler, application, or
+compiler-correctness claim follows. The figures make those boundaries visible
+rather than collapsing unavailable capability into a zero.
 
 The independent external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it
-records `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested project families and
-`{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples. The empty
-manifest keeps this track blocked; it is not a failed accuracy result and does
-not support application-facing effectiveness.
+records `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,
+`{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples, and a
+static-only receipt with `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` validated rows
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The source-bound label contract remains
+underpowered, and one static compiler failure remains visible; these are not
+failed accuracy results and do not support application-facing effectiveness.
 
-![Licensed-source provenance and application gate. The left panel shows the pinned manifest, explicit acquisition, static-only compilation, and disassembly path; the right panel lists the five promotion requirements and preserves the current `blocked_external` status. No unavailable project or labelable example is rendered as a zero-performance cell, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
+![Licensed-source provenance and application gate. The left panel shows the ten pinned source rows across five projects, explicit acquisition, static-only compilation, and disassembly path; the right panel reports each current gate as pass or open, including the absent source-bound labels and separately controlled replay. No unavailable project, failed build, or labelable example is rendered as a zero-performance cell, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
 
 The measured sensing receipt reports `{{SENSOR_COST_SENSOR_COUNT}}` deterministic
 sensor vectors and `{{SENSOR_CERTIFICATE_COUNT}}` exact finite certificates.

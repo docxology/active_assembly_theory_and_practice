@@ -1,0 +1,1408 @@
+{
+  "all_required_present": false,
+  "artifact_count": 87,
+  "artifact_type_counts": {
+    "action_sensing": 1,
+    "cfg_evidence": 1,
+    "claim_register": 1,
+    "compiler_transfer": 1,
+    "corpus_design": 1,
+    "cover_image": 1,
+    "cross_architecture_benchmark": 1,
+    "evaluation": 4,
+    "figure": 42,
+    "formal_correspondence": 1,
+    "formal_verification": 1,
+    "inference": 4,
+    "information_policy": 1,
+    "memory_evidence": 1,
+    "observation_schema": 1,
+    "parameter_learning": 1,
+    "quotient_classifier": 1,
+    "replication_gold_labels": 1,
+    "replication_manifest": 1,
+    "replication_public_input": 1,
+    "research_benchmark": 1,
+    "research_program": 1,
+    "research_protocol": 2,
+    "rxinfer": 4,
+    "rxinfer_categorical": 4,
+    "scholarship": 1,
+    "semantics": 1,
+    "sensor_cost": 1,
+    "theorem_phase": 1,
+    "trace": 3,
+    "trace_projection": 1
+  },
+  "artifacts": [
+    {
+      "artifact_type": "trace",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001"
+      ],
+      "generated_by": "src.experiments.run_experiment",
+      "path": "output/data/disassembly_trace.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "trace_instruction_observation_alignment"
+      ]
+    },
+    {
+      "artifact_type": "trace",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-002"
+      ],
+      "generated_by": "src.experiments.run_experiment",
+      "path": "output/data/emulation_trace.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "trace_dynamic_register_contract"
+      ]
+    },
+    {
+      "artifact_type": "inference",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-003",
+        "CLM-005"
+      ],
+      "generated_by": "src.experiments.run_experiment",
+      "path": "output/data/inference_result.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "trace_observation_semantics"
+      ]
+    },
+    {
+      "artifact_type": "trace",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-002",
+        "CLM-003",
+        "CLM-006"
+      ],
+      "generated_by": "src.experiments.run_experiment",
+      "path": "output/data/trace_bundle.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "trace_schema_version",
+        "trace_binary_hash"
+      ]
+    },
+    {
+      "artifact_type": "semantics",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-019"
+      ],
+      "generated_by": "src.symbolic_semantics.symbolic_execute",
+      "path": "output/data/symbolic_execution.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "symbolic_semantics_contract",
+        "trace_symbolic_facts_contract",
+        "symbolic_stepwise_trace_refinement"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-019"
+      ],
+      "generated_by": "src.figures.plot_trace_refinement",
+      "path": "output/figures/trace_refinement.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_trace_refinement"
+      ]
+    },
+    {
+      "artifact_type": "evaluation",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-018"
+      ],
+      "generated_by": "src.model_fitting.leave_one_fixture_out_evaluation",
+      "path": "output/data/held_out_model.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "held_out_model_contract",
+        "held_out_model_freshness"
+      ]
+    },
+    {
+      "artifact_type": "observation_schema",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-021"
+      ],
+      "generated_by": "src.advanced_inference.typed_observation_payload",
+      "path": "output/data/typed_observations.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "typed_observation_schema_contract",
+        "typed_observation_schema_freshness"
+      ]
+    },
+    {
+      "artifact_type": "evaluation",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-021"
+      ],
+      "generated_by": "src.factorized_model.leave_one_fixture_out_factorized_evaluation",
+      "path": "output/data/factorized_observation_model.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "factorized_observation_contract",
+        "factorized_observation_freshness",
+        "factorized_observation_leakage_guard"
+      ]
+    },
+    {
+      "artifact_type": "corpus_design",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-022"
+      ],
+      "generated_by": "src.corpus_coverage.corpus_coverage_payload",
+      "path": "output/data/corpus_coverage.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "corpus_coverage_contract",
+        "corpus_coverage_freshness"
+      ]
+    },
+    {
+      "artifact_type": "action_sensing",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-023"
+      ],
+      "generated_by": "src.action_sensing.action_conditioned_sensing_payload",
+      "path": "output/data/action_sensing.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "action_sensing_contract",
+        "action_sensing_freshness",
+        "action_sensing_leakage_guard"
+      ]
+    },
+    {
+      "artifact_type": "parameter_learning",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-024"
+      ],
+      "generated_by": "src.parameter_learning.parameter_learning_payload",
+      "path": "output/data/parameter_learning.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "parameter_learning_contract",
+        "parameter_learning_freshness",
+        "parameter_learning_leakage_guard"
+      ]
+    },
+    {
+      "artifact_type": "research_program",
+      "bytes": 21737,
+      "claim_ids": [
+        "CLM-025"
+      ],
+      "generated_by": "src.scientific_program.write_scientific_program",
+      "path": "output/data/scientific_program.json",
+      "required": true,
+      "sha256": "5432fe436fc1b7c45b5f6008c9ddea96ebee48fcf0286c4dc8500872bf8a75d6",
+      "status": "present",
+      "validation_checks": [
+        "scientific_program_contract",
+        "scientific_program_freshness"
+      ]
+    },
+    {
+      "artifact_type": "research_protocol",
+      "bytes": 5037,
+      "claim_ids": [
+        "CLM-025"
+      ],
+      "generated_by": "src.scientific_protocol.write_scientific_protocol",
+      "path": "output/data/research_protocol.json",
+      "required": true,
+      "sha256": "29e337c98da2f1bf2ded016b654963693c5326dc74f9bc25e887c0f1835b1230",
+      "status": "present",
+      "validation_checks": [
+        "scientific_protocol_contract",
+        "scientific_protocol_freshness"
+      ]
+    },
+    {
+      "artifact_type": "quotient_classifier",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-027"
+      ],
+      "generated_by": "src.quotient_classifier.write_quotient_classifier_report",
+      "path": "output/data/quotient_classifier.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "quotient_classifier_contract",
+        "quotient_classifier_freshness"
+      ]
+    },
+    {
+      "artifact_type": "research_protocol",
+      "bytes": 46533,
+      "claim_ids": [
+        "CLM-026"
+      ],
+      "generated_by": "src.quotient_invariance.write_quotient_invariance_protocol",
+      "path": "output/data/quotient_invariance_protocol.json",
+      "required": true,
+      "sha256": "2527f0c001da09a41d860ce80e3a51634184c37c133c7f95aa8ec4e6eb2ce7aa",
+      "status": "present",
+      "validation_checks": [
+        "quotient_invariance_contract",
+        "quotient_invariance_freshness"
+      ]
+    },
+    {
+      "artifact_type": "research_benchmark",
+      "bytes": 225180,
+      "claim_ids": [
+        "CLM-027"
+      ],
+      "generated_by": "src.representation_invariance.write_representation_invariance_benchmark",
+      "path": "output/data/representation_invariance_benchmark.json",
+      "required": true,
+      "sha256": "85f85d645804bc41fec0d52adb628186aa79bffc22f1c5ace80a3cbd314aa323",
+      "status": "present",
+      "validation_checks": [
+        "representation_invariance_contract",
+        "representation_invariance_freshness"
+      ]
+    },
+    {
+      "artifact_type": "cross_architecture_benchmark",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-029"
+      ],
+      "generated_by": "src.advanced_inference.cross_architecture_payload_current",
+      "path": "output/data/cross_architecture_fixtures.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "cross_architecture_contract",
+        "cross_architecture_freshness"
+      ]
+    },
+    {
+      "artifact_type": "formal_verification",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-030"
+      ],
+      "generated_by": "src.formal_verification.write_formal_verification",
+      "path": "output/data/formal_verification.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "formal_verification_contract",
+        "formal_verification_freshness"
+      ]
+    },
+    {
+      "artifact_type": "formal_correspondence",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-030"
+      ],
+      "generated_by": "src.formal_correspondence.write_formal_correspondence",
+      "path": "output/data/formal_trace_correspondence.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "formal_correspondence_contract",
+        "formal_correspondence_freshness"
+      ]
+    },
+    {
+      "artifact_type": "compiler_transfer",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-029"
+      ],
+      "generated_by": "src.compiler_transfer.write_compiler_transfer",
+      "path": "output/data/compiler_transfer.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "compiler_transfer_contract",
+        "compiler_transfer_freshness"
+      ]
+    },
+    {
+      "artifact_type": "information_policy",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-031"
+      ],
+      "generated_by": "src.advanced_inference.active_information_payload_current",
+      "path": "output/data/active_information_frontier.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "active_information_contract",
+        "active_information_freshness"
+      ]
+    },
+    {
+      "artifact_type": "sensor_cost",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-031"
+      ],
+      "generated_by": "src.sensor_costs.write_sensor_cost_payload",
+      "path": "output/data/sensor_cost_receipt.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "sensor_cost_contract",
+        "sensor_cost_freshness"
+      ]
+    },
+    {
+      "artifact_type": "replication_manifest",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-032"
+      ],
+      "generated_by": "src.replication.write_replication_bundle",
+      "path": "output/data/replication_manifest.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "replication_contract",
+        "replication_freshness"
+      ]
+    },
+    {
+      "artifact_type": "theorem_phase",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-033"
+      ],
+      "generated_by": "src.theorem_phase.write_theorem_or_countertheorem",
+      "path": "output/data/theorem_or_countertheorem.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "theorem_countertheorem_contract",
+        "theorem_countertheorem_freshness"
+      ]
+    },
+    {
+      "artifact_type": "replication_public_input",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-032"
+      ],
+      "generated_by": "src.replication.write_replication_bundle",
+      "path": "output/replication/public_manifest.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "replication_contract"
+      ]
+    },
+    {
+      "artifact_type": "replication_gold_labels",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-032"
+      ],
+      "generated_by": "src.replication.write_replication_bundle",
+      "path": "output/replication/gold_labels.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "replication_contract"
+      ]
+    },
+    {
+      "artifact_type": "cfg_evidence",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-019"
+      ],
+      "generated_by": "src.advanced_inference.cfg_evidence_payload",
+      "path": "output/data/cfg_evidence.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "cfg_evidence_contract",
+        "cfg_evidence_freshness"
+      ]
+    },
+    {
+      "artifact_type": "memory_evidence",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-002",
+        "CLM-019"
+      ],
+      "generated_by": "src.advanced_inference.memory_evidence_payload",
+      "path": "output/data/memory_evidence.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "memory_evidence_contract",
+        "memory_evidence_freshness"
+      ]
+    },
+    {
+      "artifact_type": "cover_image",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-009"
+      ],
+      "generated_by": "imagegen: academic assembly-to-belief cover asset",
+      "path": "manuscript/assets/active_assembly_cover.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "cover_image_contract"
+      ]
+    },
+    {
+      "artifact_type": "trace_projection",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-003"
+      ],
+      "generated_by": "src.assembly_formalism.assembly_listing_payload",
+      "path": "output/data/assembly_listing.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "assembly_listing_contract"
+      ]
+    },
+    {
+      "artifact_type": "scholarship",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-006",
+        "CLM-008"
+      ],
+      "generated_by": "src.scholarship.write_scholarship_sources",
+      "path": "output/data/scholarship_sources.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "scholarship_source_quality",
+        "scholarship_evidence_partition"
+      ]
+    },
+    {
+      "artifact_type": "claim_register",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-009"
+      ],
+      "generated_by": "src.claim_register.write_claim_register",
+      "path": "output/data/claim_register.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "claim_register_contract"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
+      "path": "output/rxinfer/free_energy_trace.jsonl",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_free_energy_records"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
+      "path": "output/rxinfer/posteriors.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_companion_artifacts"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
+      "path": "output/rxinfer/diagnostics.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_diagnostics_consistent"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
+      "path": "output/rxinfer/model_config.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_companion_artifacts"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer_categorical",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
+      "path": "output/rxinfer_categorical/categorical_free_energy_trace.jsonl",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_categorical_free_energy_records"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer_categorical",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
+      "path": "output/rxinfer_categorical/categorical_posteriors.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_categorical_companion_artifacts"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer_categorical",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
+      "path": "output/rxinfer_categorical/categorical_diagnostics.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_categorical_diagnostics_consistent"
+      ]
+    },
+    {
+      "artifact_type": "rxinfer_categorical",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
+      "path": "output/rxinfer_categorical/categorical_model_config.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "rxinfer_categorical_companion_artifacts"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-003"
+      ],
+      "generated_by": "src.figures.plot_observation_pipeline",
+      "path": "output/figures/observation_pipeline.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_observation_pipeline"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-003"
+      ],
+      "generated_by": "src.figures.plot_posterior_beliefs",
+      "path": "output/figures/posterior_beliefs.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_posterior_beliefs"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-006"
+      ],
+      "generated_by": "src.figures.plot_package_provenance",
+      "path": "output/figures/package_provenance.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_package_provenance"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-003"
+      ],
+      "generated_by": "src.figures.plot_trace_feature_matrix",
+      "path": "output/figures/trace_feature_matrix.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_trace_feature_matrix"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.figures.plot_rxinfer_free_energy",
+      "path": "output/figures/rxinfer_free_energy.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_rxinfer_free_energy"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-005"
+      ],
+      "generated_by": "src.figures.plot_inference_diagnostics",
+      "path": "output/figures/inference_diagnostics.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_inference_diagnostics"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-008"
+      ],
+      "generated_by": "src.figures.plot_scholarship_source_roles",
+      "path": "output/figures/scholarship_source_roles.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_scholarship_source_roles"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-008"
+      ],
+      "generated_by": "src.figures.plot_scholarship_evidence_matrix",
+      "path": "output/figures/scholarship_evidence_matrix.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_scholarship_evidence_matrix"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-009"
+      ],
+      "generated_by": "src.figures.plot_claim_evidence_map",
+      "path": "output/figures/claim_evidence_map.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_claim_evidence_map"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-011"
+      ],
+      "generated_by": "src.advanced_figures.write_advanced_figures",
+      "path": "output/figures/model_comparison.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_model_comparison"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-013"
+      ],
+      "generated_by": "src.advanced_figures.write_advanced_figures",
+      "path": "output/figures/active_efe.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_active_efe"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-019"
+      ],
+      "generated_by": "src.figures.plot_assembly_cfg",
+      "path": "output/figures/assembly_cfg.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_assembly_cfg"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-001",
+        "CLM-002",
+        "CLM-019"
+      ],
+      "generated_by": "src.figures.plot_memory_access_timeline",
+      "path": "output/figures/assembly_memory_timeline.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_assembly_memory_timeline"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "generated_by": "src.figures.plot_rxinfer_categorical_free_energy",
+      "path": "output/figures/rxinfer_categorical_free_energy.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_rxinfer_categorical_free_energy"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-011"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/calibration_curve.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_calibration_curve"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-011"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/confusion_matrix.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_confusion_matrix"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-014"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/ambiguity_ablation.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_ambiguity_ablation"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-015"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/segmentation_ribbons.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_segmentation_ribbons"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/corpus_stability.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_corpus_stability"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/phase_recovery.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_phase_recovery"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-016"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/decoder_calibration.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_decoder_calibration"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-002"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/generative_model.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_generative_model"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-002"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/observation_informativeness.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_observation_informativeness"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-017"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/model_evidence.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_model_evidence"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-014"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/transition_ablation.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_transition_ablation"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-020"
+      ],
+      "generated_by": "src.advanced_figures.write_stats_figures",
+      "path": "output/figures/generative_adequacy.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_generative_adequacy"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-021"
+      ],
+      "generated_by": "src.figures.plot_typed_observation_matrix",
+      "path": "output/figures/typed_observation_matrix.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_typed_observation_matrix"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-021"
+      ],
+      "generated_by": "src.figures.plot_factorized_observation_comparison",
+      "path": "output/figures/factorized_observation_comparison.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_factorized_observation_comparison"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-022"
+      ],
+      "generated_by": "src.figures.plot_corpus_coverage",
+      "path": "output/figures/corpus_coverage.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_corpus_coverage"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-023"
+      ],
+      "generated_by": "src.figures.plot_action_sensing",
+      "path": "output/figures/action_sensing.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_action_sensing"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-024"
+      ],
+      "generated_by": "src.figures.plot_parameter_learning",
+      "path": "output/figures/parameter_learning.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_parameter_learning"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-027",
+        "CLM-028"
+      ],
+      "generated_by": "src.figures.plot_representation_invariance_benchmark",
+      "path": "output/figures/representation_invariance_benchmark.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_representation_invariance_benchmark"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-029"
+      ],
+      "generated_by": "src.figures.plot_cross_architecture_benchmark",
+      "path": "output/figures/cross_architecture_benchmark.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_cross_architecture_benchmark"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-030"
+      ],
+      "generated_by": "src.figures.plot_formal_verification_receipt",
+      "path": "output/figures/formal_verification_receipt.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_formal_verification_receipt"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-031"
+      ],
+      "generated_by": "src.figures.plot_active_information_frontier",
+      "path": "output/figures/active_information_frontier.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_active_information_frontier"
+      ]
+    },
+    {
+      "artifact_type": "inference",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010"
+      ],
+      "generated_by": "src.advanced_inference.run_advanced_inference",
+      "path": "output/data/temporal_inference.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "advanced_temporal_artifacts_present"
+      ]
+    },
+    {
+      "artifact_type": "evaluation",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-011"
+      ],
+      "generated_by": "src.advanced_inference.run_advanced_inference",
+      "path": "output/data/evaluation_report.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "advanced_temporal_beats_identity_transition"
+      ]
+    },
+    {
+      "artifact_type": "inference",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_inference.run_advanced_inference",
+      "path": "output/data/phase_segments.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "advanced_phase_segmentation_partition"
+      ]
+    },
+    {
+      "artifact_type": "inference",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-013"
+      ],
+      "generated_by": "src.advanced_inference.run_advanced_inference",
+      "path": "output/data/active_selection.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "advanced_active_never_worse"
+      ]
+    },
+    {
+      "artifact_type": "evaluation",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-020"
+      ],
+      "generated_by": "src.advanced_inference.generative_adequacy_payload",
+      "path": "output/data/generative_adequacy.json",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "generative_adequacy_contract",
+        "generative_adequacy_freshness"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_accumulator.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_accumulator"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_bitwise.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_bitwise"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_guard.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_guard"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_long_accumulator.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_long_accumulator"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_memory.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_memory"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 0,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_guard_taken.png",
+      "required": true,
+      "sha256": null,
+      "status": "missing",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_guard_taken"
+      ]
+    }
+  ],
+  "excluded_self_referential_artifacts": [
+    "output/data/reproducibility_manifest.json",
+    "output/data/reproducibility_manifest.md",
+    "output/figures/artifact_hash_manifest.png",
+    "output/data/validation_report.json",
+    "output/figures/validation_summary.png",
+    "output/data/manuscript_variables.json",
+    "output/data/manuscript_variable_registry.json",
+    "output/data/figure_registry.json",
+    "output/data/build_provenance.json"
+  ],
+  "generated_at": "2026-08-21T20:55:06.033703+00:00",
+  "missing_required_count": 83
+}

@@ -18,6 +18,8 @@ import re
 import subprocess
 from typing import Any
 
+from .artifact_contract import write_json_artifact
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_SCHEMA_VERSION = "1.0"
 MANUSCRIPT_VARIABLE_REGISTRY = "output/data/manuscript_variable_registry.json"
@@ -87,6 +89,21 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "EXTERNAL_SOURCE_STATUS": "Evidence status of the licensed-source validation track; blocked or unavailable is not a zero result.",
     "EXTERNAL_SOURCE_PROJECT_COUNT": "Number of distinct source families recorded in the external-source manifest.",
     "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": "Number of mechanically labelable external evaluation examples in the external-source receipt.",
+    "EXTERNAL_STATIC_ARTIFACT": "Static-only external compilation and Capstone-decoding receipt; it does not contain source-equivalence labels.",
+    "EXTERNAL_STATIC_STATUS": "Evidence status of the static-only external compilation receipt.",
+    "EXTERNAL_STATIC_ROW_COUNT": "Number of pinned external source rows retained in the static-only receipt, including failed and unavailable rows.",
+    "EXTERNAL_STATIC_VALIDATED_COUNT": "Number of pinned external source rows compiled and decoded successfully without executing emitted objects.",
+    "EXTERNAL_CAPABILITIES_ARTIFACT": "Locally measured compiler and target capability receipt; advertised targets are not counted unless a static object is produced.",
+    "EXTERNAL_CAPABILITIES_STATUS": "Evidence status of the local compiler capability receipt.",
+    "EXTERNAL_CAPABILITY_TARGET_COUNT": "Number of compiler-target probes that produced a static object successfully.",
+    "INDEPENDENT_REPLAY_STATUS": "Current independent-replay endpoint status; local reruns remain not_yet_observed.",
+    "REPLICATION_PUBLIC_BUNDLE_SHA256": "SHA-256 digest of the public replay files, excluding private labels and protected scoring outputs.",
+    "ARTIFACT_RECEIPT_SCHEMA_VERSION": "Common protocol-v2 receipt schema version layered above each domain-specific artifact schema.",
+    "ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT": "Number of required common receipt fields in the protocol-v2 artifact envelope.",
+    "ARTIFACT_RECEIPT_COUNT": "Number of project-owned JSON data artifacts present in the generated output surface.",
+    "ARTIFACT_RECEIPT_ERROR_COUNT": "Number of project-owned JSON data artifacts failing the common receipt-envelope validator.",
+    "ARTIFACT_RECEIPT_AUDIT_COMMAND": "Canonical offline command for validating the project-owned artifact receipt surface.",
+    "ARTIFACT_RECEIPT_CLOSURE_FIGURE": "Source-generated provenance visualization of the protocol, artifact, validation, and document-production boundary.",
     "QUOTIENT_CLASSIFIER_INTERVENTION_COUNT": "Number of initial-state interventions used by the co-primary quotient classifier benchmark.",
     "PARAMETER_LEARNING_ARTIFACT": "Held-out observation-only ordered-HMM EM artifact with training complements, fitted tensors, diagnostics, and comparator scores.",
     "PARAMETER_LEARNING_FIGURE": "Figure comparing observation-only ordered EM, supervised MAP, and fixed-reference held-out scores with training evidence trajectories.",
@@ -401,6 +418,18 @@ def _input_hashes(
         paths.append(
             project_root / "output" / "data" / "external_source_validation.json"
         )
+    elif token.startswith("EXTERNAL_STATIC_"):
+        paths.append(
+            project_root / "output" / "data" / "external_static_validation.json"
+        )
+    elif token.startswith("EXTERNAL_CAPABILITIES_") or token.startswith(
+        "EXTERNAL_CAPABILITY_"
+    ):
+        paths.append(project_root / "output" / "data" / "external_capabilities.json")
+    elif token == "INDEPENDENT_REPLAY_STATUS":
+        paths.append(project_root / "output" / "data" / "replication_manifest.json")
+    elif token == "REPLICATION_PUBLIC_BUNDLE_SHA256":
+        paths.append(project_root / "output" / "data" / "replication_manifest.json")
     elif token.startswith("RXINFER_CATEGORICAL"):
         paths.append(
             project_root
@@ -502,7 +531,10 @@ def write_variable_registry(
                 previous_generated_at, str
             ):
                 payload["generated_at"] = previous_generated_at
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
     )
     return path

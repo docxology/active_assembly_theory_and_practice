@@ -23,12 +23,22 @@ def test_scientific_program_is_falsifiable_and_dependency_closed() -> None:
     milestone_ids = {row["milestone_id"] for row in milestones}
     assert len(milestone_ids) == len(milestones)
     assert payload["status_counts"] == {
-        "implemented_local": 11,
+        "implemented_local": 12,
         "active": 3,
         "blocked_by_evidence": 2,
         "planned": 1,
     }
-    assert milestone_ids >= {"P9", "P10", "P11", "P12", "P13", "P14", "P15", "P16"}
+    assert milestone_ids >= {
+        "P9",
+        "P10",
+        "P11",
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P16",
+        "P17",
+    }
     for row in milestones:
         assert row["falsifier"]
         assert row["primary_endpoint"]
