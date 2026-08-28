@@ -20,7 +20,7 @@ The checked-in [`configs/replay_vm.yaml`](../configs/replay_vm.yaml) pins:
   containerd services.
 
 All Lima state, image cache, source-transfer archives, logs, and receipts are
-stored below `/Volumes/blue/active-assembly-theory-and-practice/replay-vm`.
+stored below `/Volumes/blue/aapta-replay-vm`.
 The command refuses to use a path outside `/Volumes/blue` or the volume root.
 The volume should have enough free space for the guest disk and image cache;
 the manifest records the observed capacity before provisioning.

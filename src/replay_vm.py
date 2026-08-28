@@ -44,7 +44,7 @@ REPLAY_VM_CONFIG = "configs/replay_vm.yaml"
 VM_SCHEMA_VERSION = "1.0.0"
 VM_NAME = "aapta-replay"
 VM_ROOT_ENV = "AAPTA_VM_ROOT"
-DEFAULT_VM_ROOT = Path("/Volumes/blue/active-assembly-theory-and-practice/replay-vm")
+DEFAULT_VM_ROOT = Path("/Volumes/blue/aapta-replay-vm")
 LIMA_VERSION = "2.2.0"
 UBUNTU_IMAGE_URL = (
     "https://cloud-images.ubuntu.com/releases/noble/release-20260705/"
