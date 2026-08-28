@@ -307,6 +307,18 @@ def test_lima_instance_listing_handles_absence_and_json(
         "status": "Running",
     }
 
+    singleton = subprocess.CompletedProcess(
+        ["limactl"],
+        0,
+        stdout=json.dumps({"name": replay_vm.VM_NAME, "status": "Running"}),
+        stderr="",
+    )
+    monkeypatch.setattr(replay_vm, "_run_lima", lambda *_args, **_kwargs: singleton)
+    assert replay_vm.vm_status(paths) == {
+        "name": replay_vm.VM_NAME,
+        "status": "Running",
+    }
+
 
 @pytest.mark.parametrize(
     "result",
@@ -333,7 +345,7 @@ def test_lima_instance_listing_rejects_invalid_responses(
         with pytest.raises(RuntimeError, match="not JSON"):
             replay_vm._instance_rows(paths)
     else:
-        with pytest.raises(RuntimeError, match="JSON list"):
+        with pytest.raises(RuntimeError, match="named JSON object"):
             replay_vm._instance_rows(paths)
 
 

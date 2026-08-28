@@ -261,9 +261,19 @@ def _instance_rows(paths: dict[str, Path]) -> list[dict[str, Any]]:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
         raise RuntimeError("Lima instance listing was not JSON") from exc
+    # Lima 2.2.0 emits one JSON object when the configured LIMA_HOME contains
+    # one instance, while some versions/commands emit a JSON list.  Accept
+    # both representations but keep the shape check strict so a malformed
+    # response cannot be interpreted as an absent or healthy VM.
+    if isinstance(payload, dict):
+        if not payload.get("name"):
+            raise RuntimeError("Lima instance listing was not a named JSON object")
+        return [payload]
     if not isinstance(payload, list):
-        raise RuntimeError("Lima instance listing was not a JSON list")
-    return [row for row in payload if isinstance(row, dict)]
+        raise RuntimeError("Lima instance listing was not a JSON list or object")
+    if not all(isinstance(row, dict) for row in payload):
+        raise RuntimeError("Lima instance listing contained a non-object row")
+    return payload
 
 
 def vm_status(paths: dict[str, Path]) -> dict[str, Any] | None:
