@@ -11,6 +11,8 @@ import pytest
 
 from src.replication import (
     INDEPENDENT_REPLAY_ARTIFACT,
+    GOLD_LABELS,
+    REPLICATION_ARTIFACT,
     _public_bundle_digest,
     ingest_independent_replay,
     _replay_timestamp,
@@ -18,6 +20,7 @@ from src.replication import (
     replay_receipt_payload,
     run_label_blind_model,
     score_replication_predictions,
+    validate_public_replay_bundle,
     validate_independent_replay_artifact,
     validate_replay_receipt,
     write_replay_receipt,
@@ -155,6 +158,36 @@ def test_replay_receipt_is_pending_and_binds_public_hashes(tmp_path: Path) -> No
     )
     assert not valid
     assert "bundle hash" in detail
+
+
+def test_public_replay_requires_no_private_gold_or_owner_manifest(
+    tmp_path: Path,
+) -> None:
+    write_replication_bundle(tmp_path)
+    public = tmp_path / "output/replication/public/public_manifest.json"
+    predictions = tmp_path / "predictions.json"
+    (tmp_path / GOLD_LABELS).unlink()
+    (tmp_path / REPLICATION_ARTIFACT).unlink()
+
+    valid, detail = validate_public_replay_bundle(tmp_path)
+    assert valid, detail
+    run_label_blind_model(public, predictions)
+    receipt = replay_receipt_payload(
+        public,
+        predictions,
+        operator_id="vm-operator",
+        machine_id="vm-machine",
+        replay_bundle_sha256=_public_bundle_digest(tmp_path),
+        model="calibrated_interpretable",
+        seed=0,
+        command=["replay", "--offline"],
+        network_disabled=True,
+        project_root=tmp_path,
+    )
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=predictions
+    )
+    assert valid, detail
 
 
 def test_local_receipt_cannot_promote_independent_replay(tmp_path: Path) -> None:

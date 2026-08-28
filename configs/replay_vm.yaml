@@ -1,0 +1,48 @@
+# Pinned Lima template for the separately controlled replay environment.
+#
+# This is an ARM64 Linux guest on Apple Silicon.  The guest image is pinned by
+# a release URL and SHA-256 digest; changing either the image or the Lima
+# version requires a fresh VM manifest and a new replay receipt.  Provisioning
+# needs the default Lima network only long enough to install the locked Python
+# environment.  Replay itself runs inside an isolated network namespace and
+# receives only the public bundle.
+minimumLimaVersion: "2.2.0"
+vmType: "vz"
+arch: "aarch64"
+os: "Linux"
+
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+    digest: "sha256:7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc"
+    variant: "server"
+
+cpus: 4
+memory: "8GiB"
+disk: "64GiB"
+
+# Do not expose the host checkout or the host home directory to the guest.
+mounts: []
+containerd:
+  system: false
+  user: false
+
+ssh:
+  localPort: 0
+  loadDotSSHPubKeys: false
+  forwardAgent: false
+  forwardX11: false
+  forwardX11Trusted: false
+
+# No additional routable networks are required.  Lima's default provisioning
+# network is retained at boot; the replay command applies a guest network
+# namespace boundary and verifies that no interfaces are available there.
+networks: []
+propagateProxyEnv: false
+hostResolver:
+  enabled: true
+
+message: |
+  Active Assembly Theory and Practice frozen replay VM.
+  Provisioning is network-enabled only for dependency installation.
+  Public replay must run with --offline and an isolated network namespace.

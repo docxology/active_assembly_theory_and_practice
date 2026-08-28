@@ -145,6 +145,24 @@ controlled-run attestation before it can emit
 `independent_replay_observed`. This is independent replay of the frozen
 interface, not independent reimplementation.
 
+The public operator surface is intentionally usable without the owner-side
+gold directory: `verify-public`, `replay --offline`, and `run-model` read only
+the four files under `output/replication/public/`. `verify-separation` performs
+the stronger public/private check when protected gold is present and falls back
+to the public-only contract when it is absent. This prevents an operator VM
+from regenerating or receiving the protected labels merely to validate the
+replay interface.
+
+For a same-host controlled replay, `configs/replay_vm.yaml` and
+`docs/replay_vm.md` define the pinned Lima/Ubuntu ARM64 environment and blue-
+backed storage contract. `vm-provision --allow-network` is the only VM command
+that may acquire the pinned image, Linux `uv` archive, or guest packages.
+`vm-replay` runs the public-only commands inside a guest network namespace and
+requires a loopback-only interface proof. `vm-attest-replay` adds the explicit
+same-host control scope before protected scoring. This can establish a
+separately controlled replay receipt, but it cannot be promoted as an
+independent physical-machine run or independent reimplementation.
+
 The native Julia lockfile is itself a reproducibility input, not an incidental
 developer convenience. `src.rxinfer_bridge.validate_julia_manifest()` parses
 the committed `julia/ActiveAssemblyRxInfer/Manifest.toml` before either native

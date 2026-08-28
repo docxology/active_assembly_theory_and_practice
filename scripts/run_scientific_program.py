@@ -41,13 +41,25 @@ from src.external_labeling import (  # noqa: E402
 from src.formal_correspondence import write_formal_correspondence  # noqa: E402
 from src.intervention_analysis import write_intervention_power_payload  # noqa: E402
 from src.quotient_classifier import write_quotient_classifier_report  # noqa: E402
+from src.replay_vm import (  # noqa: E402
+    attest_and_ingest_vm_replay,
+    create_replay_vm,
+    provision_replay_vm,
+    replay_in_vm,
+    stop_replay_vm,
+    vm_status,
+    vm_paths,
+    write_vm_manifest,
+)
 from src.replication import (  # noqa: E402
     INDEPENDENT_REPLAY_ARTIFACT,
+    GOLD_LABELS,
     PUBLIC_MANIFEST,
     _public_bundle_digest,
     ingest_independent_replay,
     run_label_blind_model,
     score_replication_predictions,
+    validate_public_replay_bundle,
     validate_replication_bundle,
     write_replay_receipt,
     write_replication_bundle,
@@ -95,6 +107,44 @@ def main() -> int:
         "promote-evidence", help="summarize current evidence statuses without mutation"
     )
     subparsers.add_parser(
+        "vm-probe", help="write the blue-backed Lima VM capability/config receipt"
+    )
+    vm_create = subparsers.add_parser(
+        "vm-create", help="create or start the pinned blue-backed replay VM"
+    )
+    vm_create.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="allow Lima to acquire the pinned guest image during first creation",
+    )
+    vm_provision = subparsers.add_parser(
+        "vm-provision", help="provision the pinned guest environment"
+    )
+    vm_provision.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="allow pinned image/package acquisition during provisioning",
+    )
+    vm_replay = subparsers.add_parser(
+        "vm-replay", help="run the public-only replay in the isolated VM namespace"
+    )
+    vm_replay.add_argument(
+        "--model",
+        choices=(
+            "calibrated_interpretable",
+            "temporal_probabilistic",
+            "neural_sequence",
+        ),
+        default="calibrated_interpretable",
+    )
+    vm_replay.add_argument("--seed", type=int, default=0)
+    subparsers.add_parser(
+        "vm-attest-replay",
+        help="attest the same-host VM boundary and protected-score its receipt",
+    )
+    subparsers.add_parser("vm-stop", help="stop the VM without deleting its disk")
+    subparsers.add_parser("vm-status", help="show the current blue-backed VM status")
+    subparsers.add_parser(
         "seal-artifacts", help="migrate legacy project data JSON into receipt envelopes"
     )
     subparsers.add_parser(
@@ -119,7 +169,7 @@ def main() -> int:
         "generate-public", help="generate label-blind public replication inputs"
     )
     subparsers.add_parser(
-        "verify-public", help="verify public/private replication separation"
+        "verify-public", help="verify the public replay bundle without gold labels"
     )
     replay = subparsers.add_parser(
         "replay", help="offline deterministic replication replay"
@@ -256,6 +306,25 @@ def main() -> int:
             }
         _write_json({"status": "read_only_summary", "surfaces": rows})
         return 0
+    elif command == "vm-probe":
+        print(write_vm_manifest(root))
+    elif command == "vm-create":
+        print(create_replay_vm(root, allow_network=args.allow_network))
+    elif command == "vm-provision":
+        print(provision_replay_vm(root, allow_network=args.allow_network))
+    elif command == "vm-replay":
+        print(replay_in_vm(root, model=args.model, seed=args.seed))
+    elif command == "vm-attest-replay":
+        print(attest_and_ingest_vm_replay(root))
+    elif command == "vm-stop":
+        print(stop_replay_vm(root))
+    elif command == "vm-status":
+        _write_json(
+            {
+                "vm_root": str(vm_paths()["root"]),
+                "status": vm_status(vm_paths()),
+            }
+        )
     elif command == "seal-artifacts":
         _write_json({"changed": seal_data_artifact_surface(root)})
         return 0 if not validate_data_artifact_surface(root) else 1
@@ -293,12 +362,18 @@ def main() -> int:
         if not args.offline:
             print("replay requires explicit --offline", file=sys.stderr)
             return 2
-        print(write_replication_bundle(root))
-        valid, detail = validate_replication_bundle(root)
+        valid, detail = validate_public_replay_bundle(root)
         print(detail)
         return 0 if valid else 1
-    elif command in {"verify-public", "verify-separation"}:
-        valid, detail = validate_replication_bundle(root)
+    elif command == "verify-public":
+        valid, detail = validate_public_replay_bundle(root)
+        print(detail)
+        return 0 if valid else 1
+    elif command == "verify-separation":
+        if (root / GOLD_LABELS).is_file():
+            valid, detail = validate_replication_bundle(root)
+        else:
+            valid, detail = validate_public_replay_bundle(root)
         print(detail)
         return 0 if valid else 1
     elif command == "run-model":

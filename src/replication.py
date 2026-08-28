@@ -369,6 +369,97 @@ def validate_replication_bundle(project_root: Path = PROJECT_ROOT) -> tuple[bool
     return True, "ok"
 
 
+def validate_public_replay_bundle(
+    project_root: Path = PROJECT_ROOT,
+) -> tuple[bool, str]:
+    """Validate the public replay surface without requiring private gold labels.
+
+    A separately controlled operator must be able to run the frozen replay with
+    only the public bundle. This validator intentionally reads no source
+    generator, private gold file, family manifest, or split metadata. The
+    owner-side :func:`validate_replication_bundle` remains the stronger check
+    used before protected scoring.
+    """
+
+    public_path = project_root / PUBLIC_MANIFEST
+    protocol_path = project_root / PUBLIC_PROTOCOL
+    toolchain_path = project_root / PUBLIC_TOOLCHAIN
+    instructions_path = project_root / PUBLIC_INSTRUCTIONS
+    required_paths = (
+        public_path,
+        protocol_path,
+        toolchain_path,
+        instructions_path,
+    )
+    if not all(path.is_file() for path in required_paths):
+        missing = [
+            str(path.relative_to(project_root))
+            for path in required_paths
+            if not path.is_file()
+        ]
+        return False, f"public replay bundle files are missing: {missing}"
+    try:
+        public = json.loads(public_path.read_text(encoding="utf-8"))
+        public_protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+        toolchain = json.loads(toolchain_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"public replay bundle unreadable: {exc}"
+    if not isinstance(public, list) or not public:
+        return False, "public replay manifest must be a non-empty row list"
+    if not isinstance(public_protocol, dict) or not isinstance(toolchain, dict):
+        return False, "public replay metadata must be objects"
+    protocol = scientific_protocol_payload()
+    if public_protocol.get("schema_version") != REPLAY_RECEIPT_SCHEMA_VERSION:
+        return False, "public replay protocol schema mismatch"
+    if public_protocol.get("protocol_id") != protocol.get(
+        "protocol_id"
+    ) or public_protocol.get("protocol_sha256") != protocol.get("protocol_sha256"):
+        return False, "public replay protocol does not match the current protocol"
+    if public_protocol.get("public_manifest") != PUBLIC_MANIFEST:
+        return False, "public replay manifest path drifted"
+    if public_protocol.get("public_manifest_sha256") != _digest(public):
+        return False, "public replay manifest hash mismatch"
+    if public_protocol.get("network_required") is not False:
+        return False, "public replay protocol requires network access"
+    if public_protocol.get("arbitrary_external_execution") is not False:
+        return False, "public replay protocol permits arbitrary execution"
+    forbidden = {
+        "label",
+        "family_id",
+        "split",
+        "variant_role",
+        "quotient_class",
+        "transformation_name",
+        "source_family",
+        "project_id",
+    }
+    expected_fields = {"record_id", "sequence", "features"}
+    identifiers: list[str] = []
+    for row in public:
+        if not isinstance(row, dict) or set(row) != expected_fields:
+            return False, "public replay row is not label blind"
+        if forbidden & set(row):
+            return False, "public replay row contains a forbidden field"
+        record_id = row.get("record_id")
+        if not isinstance(record_id, str) or not record_id:
+            return False, "public replay record identifier is invalid"
+        if not isinstance(row.get("sequence"), list) or not isinstance(
+            row.get("features"), list
+        ):
+            return False, "public replay row fields are invalid"
+        identifiers.append(record_id)
+    if len(identifiers) != len(set(identifiers)):
+        return False, "public replay record identifiers are duplicated"
+    if toolchain.get("network_required") is not False:
+        return False, "public replay toolchain receipt requires network access"
+    if instructions_path.stat().st_size == 0:
+        return False, "public replay instructions are empty"
+    return (
+        True,
+        f"public_rows={len(public)} label_blind=true private_labels_absent_required",
+    )
+
+
 def write_replication_bundle(project_root: Path = PROJECT_ROOT) -> Path:
     """Write public inputs, separated gold labels, and the manifest receipt."""
 
@@ -511,6 +602,29 @@ def run_label_blind_model(
         },
     )
     return predictions_path
+
+
+def _expected_public_manifest_digest(project_root: Path) -> str:
+    """Read the sealed public-manifest digest from owner or public metadata."""
+
+    owner_manifest_path = project_root / REPLICATION_ARTIFACT
+    if owner_manifest_path.is_file():
+        try:
+            owner_manifest = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"replication manifest is unreadable: {exc}") from exc
+        digest = owner_manifest.get("public_manifest_sha256")
+        if isinstance(digest, str) and digest:
+            return digest
+    protocol_path = project_root / PUBLIC_PROTOCOL
+    try:
+        public_protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"public replay protocol is unreadable: {exc}") from exc
+    digest = public_protocol.get("public_manifest_sha256")
+    if not isinstance(digest, str) or not digest:
+        raise ValueError("public replay manifest digest is missing")
+    return digest
 
 
 def score_replication_predictions(
@@ -822,9 +936,6 @@ def validate_replay_receipt(
     public_path = project_root / PUBLIC_MANIFEST
     try:
         public = json.loads(public_path.read_text(encoding="utf-8"))
-        manifest = json.loads(
-            (project_root / REPLICATION_ARTIFACT).read_text(encoding="utf-8")
-        )
         bundle_hash = _public_bundle_digest(project_root)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         return False, f"replay public bundle is unreadable: {exc}"
@@ -832,7 +943,11 @@ def validate_replay_receipt(
         return False, "replay public manifest is not a row list"
     if payload.get("public_manifest_sha256") != _digest(public):
         return False, "replay receipt public manifest hash mismatch"
-    if payload.get("public_manifest_sha256") != manifest.get("public_manifest_sha256"):
+    try:
+        expected_public_manifest = _expected_public_manifest_digest(project_root)
+    except ValueError as exc:
+        return False, str(exc)
+    if payload.get("public_manifest_sha256") != expected_public_manifest:
         return False, "replay receipt does not match sealed public manifest"
     if payload.get("public_bundle_sha256") != bundle_hash:
         return False, "replay receipt public bundle hash mismatch"

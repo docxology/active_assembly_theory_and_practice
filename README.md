@@ -103,6 +103,23 @@ uv run python scripts/run_scientific_program.py acquire-external \
   --manifest configs/external_sources.yaml \
   --allow-network
 
+# Operator-side replay consumes only output/replication/public/.
+uv run python scripts/run_scientific_program.py verify-public
+uv run python scripts/run_scientific_program.py replay --offline
+uv run python scripts/run_scientific_program.py run-model \
+  --model calibrated_interpretable
+
+# Optional same-host, separately controlled replay in the pinned Lima VM.
+# All VM state and receipts are stored on /Volumes/blue.
+limactl validate configs/replay_vm.yaml
+uv run python scripts/run_scientific_program.py vm-probe
+uv run python scripts/run_scientific_program.py vm-create --allow-network
+uv run python scripts/run_scientific_program.py vm-provision --allow-network
+uv run python scripts/run_scientific_program.py vm-replay \
+  --model calibrated_interpretable --seed 0
+uv run python scripts/run_scientific_program.py vm-attest-replay
+uv run python scripts/run_scientific_program.py vm-stop
+
 uv run python scripts/run_scientific_program.py audit-artifacts
 
 uv run pytest tests \

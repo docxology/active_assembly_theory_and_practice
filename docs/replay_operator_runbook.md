@@ -55,6 +55,14 @@ rehearsal's receipt-generation times. The prediction file must contain exactly
 one `record_id` and one finite probability per public row, in public order,
 with no gold-label fields.
 
+`verify-public`, `replay --offline`, and `run-model` are deliberately
+public-only operations. They must succeed when the operator has no
+`output/replication/private/` directory and no owner-side replication manifest.
+`verify-separation` has the same public-only behavior in that situation; on the
+owner machine, where protected gold labels exist, it additionally validates the
+full public/private separation contract. The public replay path never calls the
+source generator to recreate labels.
+
 The operator then transfers only these two files back to the protected scoring
 boundary:
 
@@ -94,3 +102,25 @@ not an independent reimplementation, a new scientific sample, or evidence of
 application effectiveness. If the run fails, preserve the receipt and
 diagnostics as a first-class failure; do not rerun until a favorable result is
 obtained or alter the protocol to clear the gate.
+
+## Same-host VM procedure
+
+When a second physical machine or separately controlled CI worker is not yet
+available, the public-only operator procedure can be exercised in the pinned
+Lima guest described in [`replay_vm.md`](replay_vm.md). The guest disk and all
+transfer/receipt logs live on `/Volumes/blue`; the checkout is archived from a
+clean Git `HEAD` and is never mounted into the guest. Provision with explicit
+network permission, then replay without it:
+
+```text
+limactl validate configs/replay_vm.yaml
+uv run python scripts/run_scientific_program.py vm-create --allow-network
+uv run python scripts/run_scientific_program.py vm-provision --allow-network
+uv run python scripts/run_scientific_program.py vm-replay --seed 0
+uv run python scripts/run_scientific_program.py vm-attest-replay
+```
+
+The replay namespace must contain only `lo` and no routes. The resulting
+receipt records `same_host_separately_controlled_guest`, so it remains visibly
+distinct from an independent physical-machine or independent-reimplementation
+result.
