@@ -50,6 +50,11 @@ from .external_sources import (
     validate_external_static_validation_payload,
     validate_external_source_validation_payload,
 )
+from .external_labeling import (
+    LABEL_CONTRACT_ARTIFACT,
+    external_label_contract_freshness,
+    validate_external_label_contract_payload,
+)
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .factorized_model import FACTOR_MODEL_SCHEMA_VERSION
 from .information_policy import (
@@ -1447,6 +1452,7 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
         "TYPED_OBSERVATION_MATRIX_FIGURE",
         "FACTORIZED_OBSERVATION_COMPARISON_FIGURE",
         "REPRESENTATION_BENCHMARK_FIGURE",
+        "EXTERNAL_LABEL_COVERAGE_FIGURE",
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
@@ -2196,6 +2202,30 @@ def _external_source_checks(project_root: Path) -> list[ValidationCheck]:
     ]
 
 
+def _external_label_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate source-bound labels and every referenced static artifact."""
+
+    path = project_root / LABEL_CONTRACT_ARTIFACT
+    if not path.exists():
+        return [
+            _check("external_label_contract", False, "artifact missing"),
+            _check("external_label_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_external_label_contract_payload(payload)
+        fresh, fresh_detail = external_label_contract_freshness(payload, project_root)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        return [
+            _check("external_label_contract", False, str(exc)),
+            _check("external_label_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check("external_label_contract", valid, detail),
+        _check("external_label_freshness", fresh, fresh_detail),
+    ]
+
+
 def _external_static_checks(project_root: Path) -> list[ValidationCheck]:
     """Validate static-only compilation rows and their reproducible receipt."""
 
@@ -2824,6 +2854,7 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_compiler_transfer_checks(project_root))
     checks.extend(_sensor_cost_checks(project_root))
     checks.extend(_external_source_checks(project_root))
+    checks.extend(_external_label_checks(project_root))
     checks.extend(_external_static_checks(project_root))
     checks.extend(_external_capability_checks(project_root))
     checks.extend(_replication_checks(project_root))

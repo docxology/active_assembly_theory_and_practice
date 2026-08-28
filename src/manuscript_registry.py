@@ -89,6 +89,17 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "EXTERNAL_SOURCE_STATUS": "Evidence status of the licensed-source validation track; blocked or unavailable is not a zero result.",
     "EXTERNAL_SOURCE_PROJECT_COUNT": "Number of distinct source families recorded in the external-source manifest.",
     "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": "Number of mechanically labelable external evaluation examples in the external-source receipt.",
+    "EXTERNAL_LABEL_ARTIFACT": "Source-bound external label-contract receipt containing mechanically generated pairs and explicit exclusions.",
+    "EXTERNAL_LABEL_STATUS": "Evidence status of the source-bound label-contract producer; lexical witnesses and near-miss controls are not universal semantic proofs.",
+    "EXTERNAL_LABEL_ROW_COUNT": "Number of accepted source-bound external pair rows after static compilation and Capstone decoding.",
+    "EXTERNAL_LABEL_EQUIVALENT_COUNT": "Number of accepted lexical-equivalence witness rows in the source-bound external contract.",
+    "EXTERNAL_LABEL_NEAR_MISS_COUNT": "Number of accepted contract-directed one-change near-miss rows in the source-bound external contract.",
+    "EXTERNAL_LABEL_NEGATIVE_COUNT": "Number of accepted non-separating identity-control rows in the source-bound external contract.",
+    "EXTERNAL_LABEL_EXCLUSION_COUNT": "Number of source-bound external candidate rows retained as explicit exclusions rather than silently filtered.",
+    "EXTERNAL_LABEL_PROJECT_COUNT": "Number of source projects represented by accepted source-bound external label rows.",
+    "EXTERNAL_LABEL_REVISION_COUNT": "Number of project revisions represented by accepted source-bound external label rows.",
+    "EXTERNAL_LABEL_TEST_PROJECTS": "Project identifiers reserved for held-out source-bound external evaluation.",
+    "EXTERNAL_LABEL_COVERAGE_FIGURE": "Source-bound census of accepted external label roles and project/revision split allocation; it is not a model-performance figure.",
     "EXTERNAL_STATIC_ARTIFACT": "Static-only external compilation and Capstone-decoding receipt; it does not contain source-equivalence labels.",
     "EXTERNAL_STATIC_STATUS": "Evidence status of the static-only external compilation receipt.",
     "EXTERNAL_STATIC_ROW_COUNT": "Number of pinned external source rows retained in the static-only receipt, including failed and unavailable rows.",
@@ -418,6 +429,8 @@ def _input_hashes(
         paths.append(
             project_root / "output" / "data" / "external_source_validation.json"
         )
+    elif token.startswith("EXTERNAL_LABEL_"):
+        paths.append(project_root / "output" / "data" / "external_label_contract.json")
     elif token.startswith("EXTERNAL_STATIC_"):
         paths.append(
             project_root / "output" / "data" / "external_static_validation.json"
@@ -428,6 +441,12 @@ def _input_hashes(
         paths.append(project_root / "output" / "data" / "external_capabilities.json")
     elif token == "INDEPENDENT_REPLAY_STATUS":
         paths.append(project_root / "output" / "data" / "replication_manifest.json")
+        # If an external operator supplies a receipt, its bytes become part of
+        # the status lineage. Absence remains the explicit not_yet_observed
+        # state and does not block local variable generation.
+        paths.append(
+            project_root / "output" / "data" / "independent_replay_receipt.json"
+        )
     elif token == "REPLICATION_PUBLIC_BUNDLE_SHA256":
         paths.append(project_root / "output" / "data" / "replication_manifest.json")
     elif token.startswith("RXINFER_CATEGORICAL"):

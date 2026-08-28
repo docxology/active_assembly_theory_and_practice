@@ -158,6 +158,21 @@ def generate_variables() -> dict[str, str]:
             encoding="utf-8"
         )
     )
+    external_label_path = ADVANCED_OUTPUT_DIR / "data" / "external_label_contract.json"
+    external_label_report = (
+        json.loads(external_label_path.read_text(encoding="utf-8"))
+        if external_label_path.is_file()
+        else {
+            "status": "not_yet_observed",
+            "summary": {"labelable_example_count": 0, "test_projects": []},
+            "exclusions": [],
+        }
+    )
+    external_label_rows = [
+        row
+        for row in external_label_report.get("contracts", [])
+        if isinstance(row, dict)
+    ]
     external_static_report = json.loads(
         (ADVANCED_OUTPUT_DIR / "data" / "external_static_validation.json").read_text(
             encoding="utf-8"
@@ -608,6 +623,51 @@ def generate_variables() -> dict[str, str]:
         "EXTERNAL_SOURCE_GATE_COUNT": str(
             len(external_source_report["promotion_gate"])
         ),
+        "EXTERNAL_LABEL_ARTIFACT": f"../{advanced_paths.get('external_label_contract', 'output/data/external_label_contract.json')}",
+        "EXTERNAL_LABEL_STATUS": str(
+            external_label_report.get("status", "not_yet_observed")
+        ),
+        "EXTERNAL_LABEL_ROW_COUNT": str(len(external_label_rows)),
+        "EXTERNAL_LABEL_EQUIVALENT_COUNT": str(
+            sum(
+                row.get("role", row.get("variant_role")) == "equivalent"
+                for row in external_label_rows
+            )
+        ),
+        "EXTERNAL_LABEL_NEAR_MISS_COUNT": str(
+            sum(
+                row.get("role", row.get("variant_role")) == "near_miss"
+                for row in external_label_rows
+            )
+        ),
+        "EXTERNAL_LABEL_NEGATIVE_COUNT": str(
+            sum(
+                row.get("role", row.get("variant_role")) == "negative_control"
+                for row in external_label_rows
+            )
+        ),
+        "EXTERNAL_LABEL_EXCLUSION_COUNT": str(
+            len(external_label_report.get("exclusions", []))
+        ),
+        "EXTERNAL_LABEL_PROJECT_COUNT": str(
+            external_label_report.get("summary", {}).get("project_count", 0)
+        ),
+        "EXTERNAL_LABEL_REVISION_COUNT": str(
+            sum(
+                len(value)
+                for value in external_label_report.get("summary", {})
+                .get("revisions_by_project", {})
+                .values()
+                if isinstance(value, list)
+            )
+        ),
+        "EXTERNAL_LABEL_TEST_PROJECTS": ", ".join(
+            str(item)
+            for item in external_label_report.get("summary", {}).get(
+                "test_projects", []
+            )
+        )
+        or "none",
         "EXTERNAL_STATIC_ARTIFACT": "../output/data/external_static_validation.json",
         "EXTERNAL_STATIC_STATUS": str(external_static_report["status"]),
         "EXTERNAL_STATIC_ROW_COUNT": str(len(external_static_report["rows"])),
@@ -804,6 +864,9 @@ def generate_variables() -> dict[str, str]:
         "REPLICATION_FIGURE": f"../{advanced_figure_paths['replication_manifest']}",
         "EXTERNAL_SOURCE_PROVENANCE_FIGURE": (
             f"../{advanced_figure_paths['external_source_provenance']}"
+        ),
+        "EXTERNAL_LABEL_COVERAGE_FIGURE": (
+            f"../{advanced_figure_paths['external_label_coverage']}"
         ),
         "ARTIFACT_RECEIPT_CLOSURE_FIGURE": (
             f"../{advanced_figure_paths['artifact_receipt_closure']}"

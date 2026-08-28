@@ -115,6 +115,50 @@ def test_valid_label_contract_loads_and_reports_source_bound_summary(
     }
 
 
+def test_v2_summary_requires_a_nonempty_fitting_project_set(tmp_path: Path) -> None:
+    row = _valid_contract_row()
+    row.update(
+        {
+            "source_id": "source-a",
+            "contract_basis": "source-bound fixture contract",
+            "base_object_sha256": "e" * 64,
+            "pair_object_sha256": "f" * 64,
+            "base_disassembly_sha256": "1" * 64,
+            "pair_disassembly_sha256": "2" * 64,
+            "base_source_artifact": "base.c",
+            "pair_source_artifact": "pair.c",
+            "base_object_artifact": "base.o",
+            "pair_object_artifact": "pair.o",
+            "base_disassembly_artifact": "base.json",
+            "pair_disassembly_artifact": "pair.json",
+            "compiler": "clang",
+            "target_triple": "x86_64-apple-darwin",
+            "optimization": "O0",
+            "static_only": True,
+            "execution_performed": False,
+            "labelability_status": "labelable",
+        }
+    )
+    (tmp_path / "configs").mkdir()
+    (tmp_path / "configs" / "external_label_contracts.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": "2.0.0",
+                "status": "underpowered",
+                "minimum_labelable_examples": 1,
+                "contracts": [row],
+                "limitations": ["test-only contract"],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    summary = label_contract_summary(tmp_path)
+    assert summary["fit_projects"] == []
+    assert summary["project_held_out_test"] is False
+    assert summary["status"] == "underpowered"
+
+
 @pytest.mark.parametrize(
     ("contents", "message"),
     [

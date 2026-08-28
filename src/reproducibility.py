@@ -301,6 +301,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("external_source_contract", "external_source_freshness"),
     ),
     ArtifactManifestTarget(
+        path="output/data/external_label_contract.json",
+        artifact_type="external_label_contract",
+        generated_by="src.external_labeling.write_external_label_contract",
+        claim_ids=("CLM-036",),
+        validation_checks=("external_label_contract", "external_label_freshness"),
+    ),
+    ArtifactManifestTarget(
         path="output/data/external_static_validation.json",
         artifact_type="external_static_validation",
         generated_by="src.external_sources.write_external_static_validation",
@@ -714,6 +721,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         generated_by="src.advanced_figures.write_advanced_figures",
         claim_ids=("CLM-036",),
         validation_checks=("figure_external_source_provenance",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/external_label_coverage.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_external_label_coverage",
+        claim_ids=("CLM-036",),
+        validation_checks=("figure_external_label_coverage",),
     ),
     ArtifactManifestTarget(
         path="output/figures/artifact_receipt_closure.png",

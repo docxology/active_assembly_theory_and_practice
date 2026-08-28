@@ -11,20 +11,22 @@ equivalence [@intel_sdm]. The project consequently treats Capstone and Unicorn
 as evidence-producing mechanisms for a bounded fixture, not as an oracle for
 program understanding.
 
-The limitation is equally explicit. The fixture is small, the phase vocabulary
-is hand-authored, the headline model comparison uses fixed likelihood and
-transition parameters, and steps within a fixture are dependent. A separate
-supervised leave-one-fixture-out fit now estimates those tensors without using
-the held-out fixture, but its tiny training complements are a generalization
-diagnostic rather than evidence of population performance. The observation map also intentionally
-collapses details that matter in serious binary analysis: flags, memory
-aliasing, calling conventions, indirect control flow, privilege state, and
-architecture-specific side effects. Binary-analysis platforms such as BAP and
-GTIRB show why intermediate representations and tool interchange become
+The limitation is equally explicit. The canonical phase fixture is small, its
+vocabulary is hand-authored, the headline Active Inference comparison uses fixed
+likelihood and transition parameters, and steps within a trace are dependent. The
+source-family-disjoint quotient benchmark increases the number of synthetic
+families and tests a co-primary model portfolio, but its held-out scores remain
+bounded benchmark endpoints rather than evidence of population-level semantic
+identifiability. The supervised leave-one-fixture-out fit estimates tensors
+without using the held-out fixture, yet its small training complements remain a
+generalization diagnostic. The normalized state now makes flags, widths, memory
+bounds, stack effects, and unsupported instructions explicit; it does not resolve
+calling conventions, unbounded aliasing, indirect targets, privilege state,
+exceptions, or architecture-specific side effects. Binary-analysis platforms such
+as BAP and GTIRB show why intermediate representations and tool interchange become
 important as analyses scale [@brumley2011bap; @schulte2019gtirb]. Future modules
 can add those features through new checked adapters, but each extension should
-enter with its own semantics, tests, provenance, and claim boundary rather than
-as a broader assertion about understanding binaries.
+enter with its own semantics, tests, provenance, and claim boundary.
 
 The quantitative results are honest and explanatory rather than inflated. On this
 corpus the temporal HMM beats the identity-transition filter but not
@@ -45,11 +47,15 @@ This is the intended relationship to the Free Energy Principle
 [@parr2022activeinference]: assembly traces become sensory evidence for a
 generative model whose beliefs are updated under an explicit variational
 objective. RxInfer is the source of Bethe Free Energy values in this version;
-pymdp remains useful for the discrete comparison baseline. The model is not
-claimed to be a universal cognitive account of reverse engineering. It is a
-reproducible computational substrate for asking which temporal and active
-inference mechanisms are visible once the assembly evidence has been made
-explicit.
+pymdp remains useful for the discrete comparison baseline. The source-bound
+external track adds a complementary validity surface: pinned permissively licensed
+revisions are compiled and decoded locally, source-contract edits are recorded,
+and emitted objects remain outside execution. Its accepted rows establish a
+documented provenance denominator and a project-held-out allocation; they do not
+turn lexical witnesses into universal equivalence proofs or static coverage into
+application effectiveness. The model is a reproducible computational substrate for
+asking which temporal and active-inference mechanisms are visible once assembly
+evidence, formal scope, and external provenance have all been made explicit.
 
 The additional formal and cross-architecture tranches clarify what a stronger
 scientific contribution would require. The Lean receipt gives the quotient
@@ -77,3 +83,12 @@ for the proposed bound [@friston2017activeinference;@parr2022activeinference].
 Thus the current advance is methodological: it makes
 the next conjecture executable and falsifiable without reporting the local
 frontier as a general law.
+
+The replication boundary follows the same logic. The public bundle is label-blind,
+hash-bound, and replayable without network access; its protected scorer can compare
+predictions without distributing the gold labels. A local rerun demonstrates
+determinism and pipeline closure, while a separately operated receipt is required
+before independent replay is observed. Independent replay would still be evidence
+about reproducibility, not an independent reimplementation or an independent
+scientific review. Keeping those evidence states separate prevents a successful
+engineering rerun from being mistaken for external confirmation.

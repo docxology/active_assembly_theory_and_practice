@@ -114,7 +114,7 @@ sources:
     license_file_sha256: "7317e078e2d3b5d7ba5a6159e650945153262b44b76f6700f8e9edb261c5143e"
     source_archive_sha256: "074cb6d36a298ca445859fcbcefa9403850200af6215f642d6e88c54a44a98b1"
     source_family: "libpng-core"
-    build_command: ["clang", "-c", "libpng-8e6e5eed16748387094c4919711c7c287e0aec89/png.c", "-I", "libpng-8e6e5eed16748387094c4919711c7c287e0aec89"]
+    build_command: ["clang", "-c", "-include", "math.h", "libpng-8e6e5eed16748387094c4919711c7c287e0aec89/png.c", "-I", "libpng-8e6e5eed16748387094c4919711c7c287e0aec89"]
     compiler: "clang"
     target_triple: "x86_64-apple-darwin"
     label_contract: "source_bound_static_translation_unit; no executable artifact"
@@ -130,7 +130,7 @@ sources:
     license_file_sha256: "dfe5a536b0e5a531f844fb9c101a3089aca60772a503893b8e15f9457e369960"
     source_archive_sha256: "923cbcfd696290f53ed00854ea5154797b96035e2bb33386f4d77aa2ab2bc09d"
     source_family: "libpng-core"
-    build_command: ["clang", "-c", "libpng-07b8803110da160b158ebfef872627da6c85cbdf/png.c", "-I", "libpng-07b8803110da160b158ebfef872627da6c85cbdf"]
+    build_command: ["clang", "-c", "-include", "math.h", "libpng-07b8803110da160b158ebfef872627da6c85cbdf/png.c", "-I", "libpng-07b8803110da160b158ebfef872627da6c85cbdf"]
     compiler: "clang"
     target_triple: "x86_64-apple-darwin"
     label_contract: "source_bound_static_translation_unit; no executable artifact"

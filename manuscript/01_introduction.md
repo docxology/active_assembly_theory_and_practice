@@ -24,15 +24,31 @@ that supports reproducible variational and temporal inference diagnostics?
 
 The contribution is therefore methodological rather than a new disassembler
 or reverse-engineering algorithm. The package provides (i) a source-bound
-static/dynamic trace contract, (ii) a formal observation map and discrete
-generative model, (iii) a bounded transfer-function and CFG explanation layer
-cross-checked against independent Unicorn execution, (iv) a leakage-safe
-supervised HMM fit with fixture-level holdouts, and (v) real Python and Julia
-execution paths with negative controls, manuscript variables, figures,
-captions, and validation receipts regenerated from the same artifacts. The
-experiment is intentionally small so that the limitations of hand-authored
-states, fixed likelihoods, supervised toy estimation, and dependent
-within-fixture observations are visible rather than averaged away.
+static/dynamic trace contract and typed observation schema that preserve missing,
+unseen, static, and dynamic states; (ii) a width-aware normalized x86-64 machine
+state with explicit register, flag, memory, stack, control-flow, and unsupported
+states; (iii) a Python/Capstone/Unicorn/Lean correspondence surface for a declared
+user-mode integer subset, with theorem-backed and computational checks separated;
+(iv) a source-family-disjoint quotient benchmark with a co-primary classifier
+portfolio, calibration, clustered uncertainty, and leakage controls; (v) a pinned,
+permissively licensed, static-only source-contract track that records source,
+compiler, object, and disassembly provenance without executing external binaries;
+(vi) measured deterministic costs and exact finite active-sensing certificates; and
+(vii) a label-separated local replication harness whose independent-replay state
+cannot be fabricated by a local rerun. Real Python, Julia, and Lean execution
+paths, negative controls, manuscript variables, figures, captions, and validation
+receipts are regenerated from the same source-bound artifacts. This architecture
+allows stronger evidence to be added without silently changing the endpoint or
+claim boundary.
+
+The experiment remains intentionally bounded. The canonical Active Inference
+fixture uses hand-authored phase states and fixed likelihoods; the larger quotient
+benchmark is still synthetic and its observations are dependent within traces; the
+external track provides source contracts and static coverage rather than behavioral
+labels; and the formal layer covers a declared subset rather than the complete
+architecture. These constraints are part of the result: the package makes the
+assumptions, failure states, and missing evidence inspectable instead of averaging
+them away.
 
 The broader package roadmap is intentionally larger than the implemented
 fixture. Binary-analysis platform work such as BAP and GTIRB motivates

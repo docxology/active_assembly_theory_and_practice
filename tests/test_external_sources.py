@@ -126,6 +126,35 @@ def test_static_compile_records_object_without_executing_it(tmp_path: Path) -> N
     assert (output / "fixture.o").is_file()
 
 
+def test_static_compile_marks_missing_compiler_as_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    spec = ExternalSourceSpec(
+        source_id="missing-compiler",
+        repository_url="https://example.invalid/fixture.tar.gz",
+        revision="0123456789abcdef0123456789abcdef01234567",
+        license="BSD-3-Clause",
+        license_file="LICENSE",
+        license_file_sha256="a" * 64,
+        source_archive_sha256="b" * 64,
+        source_family="fixture_family",
+        build_command=("clang", "-c", "fixture.c"),
+        compiler="clang",
+        target_triple="x86_64-apple-darwin",
+        label_contract="fixture-only",
+        provenance_reviewer="test",
+        acquisition_timestamp="2026-08-23T00:00:00Z",
+    )
+    monkeypatch.setattr(external_module.shutil, "which", lambda _: None)
+    result = static_compile_external_source(spec, source_root, tmp_path / "objects")
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "compiler_unavailable"
+    assert result["execution_performed"] is False
+    assert result["static_only"] is True
+
+
 def test_manifest_loader_rejects_missing_file(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="unreadable"):
         load_external_manifest(tmp_path / "missing.yaml")

@@ -43,10 +43,12 @@ and preserves the licensed-source, blind-replay, and theorem gates as explicit
 underpowered, blocked, or unresolved statuses. The pinned external manifest now
 contains ten archive/license-verified rows across five projects and two
 revisions; static-only compilation and Capstone decoding are recorded in a
-separate receipt, while source-level labels remain empty. These are finite identifiability, formal,
-transfer, sensing, replication, and robustness diagnostics: weak starts,
-unresolved controls, unavailable capabilities, and the fail-closed promotion
-boundary remain part of the evidence.
+separate receipt, while a source-bound contract now records 100 accepted rows
+(40 lexical-equivalence witnesses, 40 contract-directed near misses, and 20
+non-separating identity controls) with a project-held-out test split. These are
+finite identifiability, formal, transfer, sensing, replication, and robustness
+diagnostics: weak starts, unresolved controls, unavailable capabilities, and
+the fail-closed promotion boundary remain part of the evidence.
 It also seals every project-owned JSON artifact with a receipt layer distinct
 from the domain schema and carries that boundary through the template-backed
 manuscript and accessible document pipeline.
@@ -230,6 +232,7 @@ changes, rerun project-side hydration before rendering again.
 - `output/figures/artifact_receipt_closure.png`
 - `output/figures/sensor_costs.png`
 - `output/figures/replication_manifest.png`
+- `output/figures/external_label_coverage.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 - `output/data/figure_registry.json` (generator, inputs, statistics, claims,
   alt text, long descriptions, and machine visual-QA receipt)

@@ -428,6 +428,37 @@ def static_compile_external_source(
     command = list(spec.build_command)
     if Path(command[0]).name not in _ALLOWED_COMPILERS or "-c" not in command:
         raise ValueError("external build command is not an allow-listed static compile")
+    # Resolve the exact executable before invoking it. A missing compiler is
+    # an unavailable capability, not a failed compilation and never a reason
+    # to silently fall back to another compiler on PATH. Absolute paths are
+    # checked directly so a pinned path cannot drift through PATH lookup.
+    compiler_candidate = Path(command[0])
+    compiler_path = (
+        str(compiler_candidate)
+        if compiler_candidate.is_absolute() and compiler_candidate.is_file()
+        else shutil.which(command[0])
+        if not compiler_candidate.is_absolute()
+        else None
+    )
+    if compiler_path is None:
+        return {
+            "source_id": spec.source_id,
+            "project_id": spec.project_id or spec.source_id,
+            "revision_label": spec.revision_label or spec.revision[:12],
+            "source_family": spec.source_family,
+            "target_triple": spec.target_triple,
+            "status": "unavailable",
+            "reason": "compiler_unavailable",
+            "command": command,
+            "returncode": None,
+            "stdout": "",
+            "stderr": "",
+            "execution_performed": False,
+            "static_only": True,
+            "compiler": spec.compiler,
+            "generated_files": {},
+        }
+    command[0] = compiler_path
     if "-target" not in command and "--target" not in command:
         command[1:1] = ["-target", spec.target_triple]
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -852,7 +883,11 @@ def external_source_validation_payload(
         "revision_count_pass": bool(revision_counts)
         and all(count >= 2 for count in revision_counts.values()),
         "labelable_example_count_pass": labelable_count >= 100,
-        "project_held_out_pass": bool(label_summary["project_disjoint_test"]),
+        # This is the scientifically meaningful gate: every test project must
+        # be absent from both fitting partitions.  The legacy
+        # ``project_disjoint_test`` field is retained only for compatibility
+        # with older receipts and is intentionally not used here.
+        "project_held_out_pass": bool(label_summary.get("project_held_out_test")),
         "license_provenance_pass": bool(rows)
         and all(
             row.get("license_file_sha256") and row.get("source_archive_sha256")

@@ -492,15 +492,34 @@ receipt is `{{EXTERNAL_SOURCE_STATUS}}`, no cross-compiler, application, or
 compiler-correctness claim follows. The figures make those boundaries visible
 rather than collapsing unavailable capability into a zero.
 
-The independent external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it
-records `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,
+The external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it records
+`{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,
 `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples, and a
 static-only receipt with `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` validated rows
-of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The source-bound label contract remains
-underpowered, and one static compiler failure remains visible; these are not
-failed accuracy results and do not support application-facing effectiveness.
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The separate source-bound label receipt is
+`{{EXTERNAL_LABEL_STATUS}}` with `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows
+(`{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical-equivalence witnesses,
+`{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` contract-directed near misses, and
+`{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls) and
+`{{EXTERNAL_LABEL_EXCLUSION_COUNT}}` explicit exclusions; the held-out project
+is `{{EXTERNAL_LABEL_TEST_PROJECTS}}`. The remaining open gate is the
+separately controlled replay, so these source-contract and static results are
+not failed accuracy results and do not support application-facing
+effectiveness.
 
-![Licensed-source provenance and application gate. The left panel shows the ten pinned source rows across five projects, explicit acquisition, static-only compilation, and disassembly path; the right panel reports each current gate as pass or open, including the absent source-bound labels and separately controlled replay. No unavailable project, failed build, or labelable example is rendered as a zero-performance cell, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
+![Licensed-source provenance and application gate. The left panel shows ten pinned source rows across five projects and two revisions, explicit acquisition, static-only compilation, and canonical disassembly. The right panel reports the eight promotion gates; source-bound labels are `{{EXTERNAL_LABEL_ROW_COUNT}}` contract-audited rows divided into `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` one-change near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls, while separately controlled replay remains open. All counts are provenance diagnostics, not accuracy estimates; no unavailable or unsupported evidence is rendered as zero, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
+
+The accepted-row census makes the denominator and split topology explicit in
+[@fig:external-label-coverage]. It shows the role composition by project and
+the project/revision allocation used by the source-bound contract, including
+the held-out project marker. This is useful precisely because it does not
+pretend that a static object hash is a behavioral label: the figure reports
+what has a documented source-level contract, while excluded candidates remain
+visible in the caption and the receipt. The accepted rows therefore support a
+provenance and coverage statement, not a claim of application effectiveness or
+universal program equivalence.
+
+![Source-bound external label coverage. The left panel counts accepted equivalence witnesses, contract-directed near misses, and identity controls for each of the `{{EXTERNAL_LABEL_PROJECT_COUNT}}` source projects. The right panel allocates the `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows across `{{EXTERNAL_LABEL_REVISION_COUNT}}` project revisions and the frozen train, development, and held-out test splits; held-out project(s) are marked directly. Counts are deterministic provenance diagnostics with no inferential uncertainty, an em dash means no accepted row in that cell, explicit exclusions remain outside the accepted denominator, and static-only rows do not execute emitted objects or establish universal semantic equivalence.]({{EXTERNAL_LABEL_COVERAGE_FIGURE}}){#fig:external-label-coverage width=100%}
 
 The measured sensing receipt reports `{{SENSOR_COST_SENSOR_COUNT}}` deterministic
 sensor vectors and `{{SENSOR_CERTIFICATE_COUNT}}` exact finite certificates.

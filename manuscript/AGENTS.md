@@ -19,7 +19,7 @@
   `{{CORPUS_COVERAGE_FIGURE}}`, `{{ACTION_SENSING_FIGURE}}`, and
   `{{PARAMETER_LEARNING_FIGURE}}`, and
   `{{REPRESENTATION_BENCHMARK_FIGURE}}`, `{{INTERVENTION_POWER_FIGURE}}`, and
-  `{{TRACE_REFINEMENT_FIGURE}}`; every generated manuscript figure token
+  `{{TRACE_REFINEMENT_FIGURE}}`, and `{{EXTERNAL_LABEL_COVERAGE_FIGURE}}`; every generated manuscript figure token
   must appear in source so the `manuscript_source_surface` check stays green.
 - The long-horizon program section uses the generated tokens
   `{{SCIENTIFIC_PROGRAM_ARTIFACT}}`, `{{SCIENTIFIC_PROGRAM_MILESTONE_COUNT}}`,

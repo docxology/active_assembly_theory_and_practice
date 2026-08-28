@@ -1016,25 +1016,35 @@ architecture. This is the correct interpretation of the compiler matrix in
 The separate licensed-source receipt is `{{EXTERNAL_SOURCE_ARTIFACT}}` with
 status `{{EXTERNAL_SOURCE_STATUS}}`, `{{EXTERNAL_SOURCE_PROJECT_COUNT}}`
 manifested projects, and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}`
-labelable examples. The pinned manifest now records ten source rows spanning
-five projects and two revisions per project, but static coverage and
-source-level labels remain separate evidence surfaces. The static receipt
+labelable examples. The pinned manifest records ten source rows spanning five
+projects and two revisions per project. Static coverage and source-bound
+labels are separate evidence surfaces. The static receipt
 `{{EXTERNAL_STATIC_ARTIFACT}}` is `{{EXTERNAL_STATIC_STATUS}}`: it retains
 `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` successfully compiled-and-decoded rows
-of `{{EXTERNAL_STATIC_ROW_COUNT}}`, including the older libpng compile failure
-as an explicit row. No static object is treated as an equivalence label. Each
-row binds an immutable revision, license-file digest, archive digest, compiler
-argument vector, target triple, derived configuration-file hash where needed,
-object hash, disassembly hash, and Capstone coverage; emitted objects are not
-executed by the canonical pipeline.
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`; no static object is treated as an
+equivalence label. The dedicated label receipt `{{EXTERNAL_LABEL_ARTIFACT}}`
+is `{{EXTERNAL_LABEL_STATUS}}` and contains `{{EXTERNAL_LABEL_ROW_COUNT}}`
+accepted rows: `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}`
+lexical-equivalence witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}`
+contract-directed one-change near misses, and
+`{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity negative controls, with
+`{{EXTERNAL_LABEL_EXCLUSION_COUNT}}` explicit exclusions. The `{{EXTERNAL_LABEL_TEST_PROJECTS}}`
+project is reserved for the held-out split. A trailing comment is a
+preprocessing-token witness, not a universal semantic-equivalence theorem;
+near-miss rows are source-contract controls and are not executed behavioral
+labels. Every accepted row binds an immutable revision, license-file digest,
+archive digest, compiler argument vector, target triple, source edit and
+argument, base/pair source bytes, object hashes, canonical disassembly hashes,
+and Capstone coverage; emitted objects are not executed by the canonical
+pipeline.
 
 The external-source gate is therefore a safety and provenance interface, not a
 permission to execute downloaded software. Acquisition requires the explicit
 network opt-in command and a pinned manifest; replay, scoring, and manuscript
 generation remain offline. The current receipt records
 `{{EXTERNAL_SOURCE_GATE_COUNT}}` gate fields and keeps failed static rows,
-absent labels, and the missing separate replay as `underpowered` or
-`not_yet_observed` evidence rather than inventing a denominator. The local
+source-contract exclusions, and the missing separate replay as `underpowered`
+or `not_yet_observed` evidence rather than inventing a denominator. The local
 compiler capability receipt is `{{EXTERNAL_CAPABILITIES_ARTIFACT}}` with
 status `{{EXTERNAL_CAPABILITIES_STATUS}}` and `{{EXTERNAL_CAPABILITY_TARGET_COUNT}}`
 target probes that produced a static object. A compiler-advertised target is

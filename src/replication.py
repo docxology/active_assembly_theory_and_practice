@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from datetime import UTC, datetime
 from pathlib import Path
 import platform
 from typing import Any
@@ -99,6 +100,40 @@ def _prediction_identifier_digest(rows: list[dict[str, object]]) -> str:
     """Hash the exact prediction identifier ordering."""
 
     return _digest([str(row["record_id"]) for row in rows])
+
+
+def _replay_timestamp(value: str | None) -> str:
+    """Return an ISO-8601 timestamp with an explicit UTC offset.
+
+    A receipt that says only ``operator_supplied`` is not auditable: it cannot
+    establish when the public bundle was run or support comparison with the
+    operator's retained logs.  The CLI accepts recorded timestamps for an
+    external run, while the local rehearsal receives a precise producer-side
+    timestamp automatically.
+    """
+
+    if value is None:
+        return datetime.now(UTC).isoformat(timespec="seconds")
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("replay timestamps must be non-empty ISO-8601 strings")
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("replay timestamps must be valid ISO-8601 values") from exc
+    if parsed.tzinfo is None:
+        raise ValueError("replay timestamps must include a timezone offset")
+    return value.strip()
+
+
+def _timestamps_ordered(started_at: str, completed_at: str) -> bool:
+    """Return whether a replay completion timestamp follows its start."""
+
+    try:
+        started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        completed = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return completed >= started
 
 
 def _public_bundle_digest(project_root: Path) -> str:
@@ -536,6 +571,8 @@ def replay_receipt_payload(
     network_disabled: bool,
     numerical_tolerance: float = 1e-12,
     project_root: Path = PROJECT_ROOT,
+    started_at: str | None = None,
+    completed_at: str | None = None,
 ) -> dict[str, Any]:
     """Create a submission receipt without reading protected gold labels.
 
@@ -561,6 +598,10 @@ def replay_receipt_payload(
         raise ValueError("replay_bundle_sha256 must be a lowercase SHA-256 digest")
     if not np.isfinite(float(numerical_tolerance)) or numerical_tolerance < 0:
         raise ValueError("numerical_tolerance must be a finite non-negative number")
+    started_timestamp = _replay_timestamp(started_at)
+    completed_timestamp = _replay_timestamp(completed_at)
+    if not _timestamps_ordered(started_timestamp, completed_timestamp):
+        raise ValueError("replay completed_at must not precede started_at")
     try:
         public = json.loads(public_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -639,8 +680,8 @@ def replay_receipt_payload(
         "prediction_row_count": len(predictions),
         "prediction_identifier_sha256": _prediction_identifier_digest(predictions),
         "numerical_tolerance": float(numerical_tolerance),
-        "started_at": "operator_supplied",
-        "completed_at": "operator_supplied",
+        "started_at": started_timestamp,
+        "completed_at": completed_timestamp,
         "outcome": "submitted_for_protected_scoring",
         "endpoint_status": "submitted_pending_verification",
         "independent_replay": "not_yet_observed",
@@ -701,6 +742,18 @@ def validate_replay_receipt(
     for key in ("operator_id", "machine_id", "model", "started_at", "completed_at"):
         if not isinstance(payload.get(key), str) or not payload[key].strip():
             return False, f"replay receipt {key} is empty"
+    for key in ("started_at", "completed_at"):
+        timestamp = str(payload[key]).strip()
+        try:
+            parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError:
+            return False, f"replay receipt {key} is not ISO-8601"
+        if parsed.tzinfo is None:
+            return False, f"replay receipt {key} has no timezone offset"
+    if not _timestamps_ordered(
+        str(payload["started_at"]), str(payload["completed_at"])
+    ):
+        return False, "replay receipt completed_at precedes started_at"
     if payload.get("network_disabled") is not True:
         return False, "replay receipt does not confirm network-disabled execution"
     if payload.get("endpoint_status") != "submitted_pending_verification":
@@ -819,6 +872,8 @@ def write_replay_receipt(
     seed: int,
     command: list[str],
     project_root: Path = PROJECT_ROOT,
+    started_at: str | None = None,
+    completed_at: str | None = None,
 ) -> Path:
     """Write a pending replay receipt for an external operator to submit."""
 
@@ -833,6 +888,8 @@ def write_replay_receipt(
         command=command,
         network_disabled=True,
         project_root=project_root,
+        started_at=started_at,
+        completed_at=completed_at,
     )
     valid, detail = validate_replay_receipt(
         payload, project_root=project_root, predictions_path=predictions_path

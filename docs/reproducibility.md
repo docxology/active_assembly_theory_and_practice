@@ -104,13 +104,38 @@ The external-source receipt is intentionally separate from the transparent
 fixture receipts. It accepts only a pinned manifest with immutable revisions,
 license evidence, archive hashes, and an allowlisted static compile command.
 The current manifest has ten rows across five projects and two revisions per
-project. Static compilation/Capstone coverage, source-level label contracts,
-and separately operated replay remain separate gates; absent labels are
-recorded as `underpowered`, not as a zero-result benchmark. Replay and
-manuscript generation are no-network operations, and no arbitrary emitted
+project. Static compilation/Capstone coverage and source-level label contracts
+remain separate gates: the generated contract currently contains 100 accepted
+rows (40 lexical-equivalence witnesses, 40 contract-directed near misses, and
+20 identity negative controls), with the `libyaml` project held out for test
+scoring. These labels are source-contract evidence and static lineage checks;
+they are not a universal semantic-equivalence proof and are not derived from
+model predictions. Separately operated replay remains a separate gate. Replay
+and manuscript generation are no-network operations, and no arbitrary emitted
 object is executed. `probe-capabilities` counts a target only after a static
 object is actually produced; compiler target advertisements alone do not pass
 that gate.
+
+The source-bound label producer is `src/external_labeling.py`, configured by
+`configs/external_label_design.yaml`, and writes
+`output/data/external_label_contract.json` plus the generated
+`configs/external_label_contracts.yaml`. Every accepted row binds the pinned
+source and revision, the exact source edit and its contract argument, base and
+pair source/object/disassembly digests, the explicit static compiler command,
+and `execution_performed=false`. Rows that cannot satisfy the source, build,
+decode, or labelability contract remain explicit exclusions rather than being
+dropped from the denominator. Regenerate it with:
+
+```bash
+uv run python scripts/run_scientific_program.py label-external
+uv run python scripts/run_scientific_program.py validate-external
+```
+
+The generated `external_label_coverage.png` is a provenance census of those
+accepted contracts: its role bars and project/revision split matrix are derived
+from the receipt, use direct counts and hatching, and mark the held-out project
+without converting excluded or unavailable rows into performance zeros. It is
+an audit surface, not an external-accuracy result.
 
 The public replay directory also contains a protocol manifest, toolchain
 receipt, and offline instructions. Its bundle digest excludes private gold

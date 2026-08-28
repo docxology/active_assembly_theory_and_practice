@@ -13,6 +13,8 @@ from src.replication import (
     INDEPENDENT_REPLAY_ARTIFACT,
     _public_bundle_digest,
     ingest_independent_replay,
+    _replay_timestamp,
+    _timestamps_ordered,
     replay_receipt_payload,
     run_label_blind_model,
     score_replication_predictions,
@@ -263,6 +265,16 @@ def test_pending_replay_validator_rejects_core_contract_drift(tmp_path: Path) ->
     def bad_digest(candidate: dict[str, object]) -> None:
         candidate["prediction_file_sha256"] = "not-a-digest"
 
+    def bad_timestamp(candidate: dict[str, object]) -> None:
+        candidate["started_at"] = "operator_supplied"
+
+    def naive_timestamp(candidate: dict[str, object]) -> None:
+        candidate["completed_at"] = "2026-08-27T12:00:00"
+
+    def reversed_timestamps(candidate: dict[str, object]) -> None:
+        candidate["started_at"] = "2026-08-27T12:00:01+00:00"
+        candidate["completed_at"] = "2026-08-27T12:00:00+00:00"
+
     mutations.extend(
         (
             remove_required,
@@ -282,6 +294,9 @@ def test_pending_replay_validator_rejects_core_contract_drift(tmp_path: Path) ->
             negative_count,
             bad_tolerance,
             bad_digest,
+            bad_timestamp,
+            naive_timestamp,
+            reversed_timestamps,
         )
     )
     for mutation in mutations:
@@ -290,6 +305,18 @@ def test_pending_replay_validator_rejects_core_contract_drift(tmp_path: Path) ->
         assert not validate_replay_receipt(
             candidate, project_root=tmp_path, predictions_path=predictions
         )[0]
+
+
+def test_replay_timestamp_contract_requires_timezone_and_order() -> None:
+    assert _replay_timestamp("2026-08-27T12:00:00Z") == "2026-08-27T12:00:00Z"
+    assert _timestamps_ordered("2026-08-27T12:00:00+00:00", "2026-08-27T12:00:01+00:00")
+    assert not _timestamps_ordered(
+        "2026-08-27T12:00:01+00:00", "2026-08-27T12:00:00+00:00"
+    )
+    with pytest.raises(ValueError, match="valid ISO-8601"):
+        _replay_timestamp("operator_supplied")
+    with pytest.raises(ValueError, match="timezone"):
+        _replay_timestamp("2026-08-27T12:00:00")
 
 
 def test_attested_replay_ingestion_is_protected_and_not_reimplementation(

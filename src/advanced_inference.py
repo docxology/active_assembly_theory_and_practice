@@ -71,6 +71,7 @@ from .external_sources import (
     write_external_source_validation_payload,
     write_external_static_validation,
 )
+from .external_labeling import write_external_label_contract
 from .information_policy import (
     active_information_payload,
     validate_active_information_payload,
@@ -519,6 +520,11 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     # must not turn a local fixture test into an implicit network operation.
     external_manifest = output_dir.parent / "configs" / "external_sources.yaml"
     if external_manifest.is_file():
+        external_design = output_dir.parent / "configs" / "external_label_design.yaml"
+        if external_design.is_file():
+            paths["external_label_contract"] = str(
+                local_path(write_external_label_contract(output_dir.parent))
+            )
         paths["external_capabilities"] = str(
             local_path(write_compiler_capabilities(output_dir.parent))
         )

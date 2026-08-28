@@ -1,0 +1,313 @@
+schema_version: "1.0.0"
+design_id: "active-assembly-source-bound-label-design-v1"
+status: "source_bound_mechanical_contracts"
+minimum_labelable_examples: 100
+equivalent_variants_per_source: 4
+negative_controls_per_source: 2
+near_miss_variants_per_source: 4
+
+# This file describes how the label-contract producer constructs rows from
+# pinned source files.  It is not a list of learned labels.  Equivalent rows
+# use comments appended after the source and therefore preserve preprocessing
+# tokens; near-miss rows use explicit source-text edits with stated contract
+# preconditions; negative controls are byte-identical pairs and are retained as
+# non-separating controls.  The producer refuses a missing or multiply matched
+# edit, a missing source, a failed static compilation, or a failed Capstone
+# decode.
+source_designs:
+  - source_id: "zlib-v1-3-1"
+    source_path: "adler32.c"
+    function_id: "adler32_z"
+    include_dirs: ["."]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "empty_return_constant"
+        needle: "return 1L;"
+        replacement: "return 2L;"
+        preconditions: "The empty or null-buffer contract path is evaluated; the returned Adler seed must remain 1L."
+        argument: "Changing the documented empty-input seed is a source-level contract-breaking near miss."
+      - id: "byte_accumulation"
+        needle: "adler += *buf++;"
+        replacement: "adler += (unsigned char)(*buf++ + 1);"
+        occurrence: 1
+        preconditions: "The input buffer is non-empty and contains a byte whose checksum contribution is observed."
+        argument: "Changing the byte contribution changes the checksum for a valid non-empty input."
+      - id: "sum_accumulation"
+        needle: "sum2 += adler;"
+        replacement: "sum2 += adler + 1;"
+        occurrence: 1
+        preconditions: "At least one checksum iteration reaches the second-order accumulator."
+        argument: "Changing the second-order accumulation changes the returned checksum."
+      - id: "modulus_constant"
+        needle: "#define BASE 65521U"
+        replacement: "#define BASE 65519U"
+        preconditions: "An input whose accumulated sums cross the modulus boundary is admitted."
+        argument: "The checksum modulus is part of the Adler-32 contract; replacing the prime changes the arithmetic."
+
+  - source_id: "zlib-v1-2-13"
+    source_path: "adler32.c"
+    function_id: "adler32_z"
+    include_dirs: ["."]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "empty_return_constant"
+        needle: "return 1L;"
+        replacement: "return 2L;"
+        preconditions: "The empty or null-buffer contract path is evaluated; the returned Adler seed must remain 1L."
+        argument: "Changing the documented empty-input seed is a source-level contract-breaking near miss."
+      - id: "byte_accumulation"
+        needle: "adler += *buf++;"
+        replacement: "adler += (unsigned char)(*buf++ + 1);"
+        occurrence: 1
+        preconditions: "The input buffer is non-empty and contains a byte whose checksum contribution is observed."
+        argument: "Changing the byte contribution changes the checksum for a valid non-empty input."
+      - id: "sum_accumulation"
+        needle: "sum2 += adler;"
+        replacement: "sum2 += adler + 1;"
+        occurrence: 1
+        preconditions: "At least one checksum iteration reaches the second-order accumulator."
+        argument: "Changing the second-order accumulation changes the returned checksum."
+      - id: "modulus_constant"
+        needle: "#define BASE 65521U"
+        replacement: "#define BASE 65519U"
+        preconditions: "An input whose accumulated sums cross the modulus boundary is admitted."
+        argument: "The checksum modulus is part of the Adler-32 contract; replacing the prime changes the arithmetic."
+
+  - source_id: "xxhash-v0-8-2"
+    source_path: "cli/xxhsum.c"
+    function_id: "XSUM_algoBitmask_Accepts"
+    include_dirs: [".", "cli"]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "algorithm_mask_predicate"
+        needle: "return (algoBitmask & mask) != 0;"
+        replacement: "return (algoBitmask & mask) == 0;"
+        preconditions: "A checksum line with an algorithm bit selected by algoBitmask is parsed."
+        argument: "Negating the acceptance predicate reverses the source-level algorithm-selection contract."
+      - id: "escape_predicate"
+        needle: "return *line == '\\\\';"
+        replacement: "return *line != '\\\\';"
+        preconditions: "A checksum line beginning with a backslash is passed to the unescape detector."
+        argument: "Reversing the escape detector changes which filenames are unescaped."
+      - id: "line_overflow_guard"
+        needle: "if (lineNumber == 0) {"
+        replacement: "if (lineNumber != 0) {"
+        preconditions: "The checksum-line counter reaches the guard after increment."
+        argument: "The predicate change reverses the documented overflow guard."
+      - id: "decimal_overflow_guard"
+        needle: "if (result > max) return 1;"
+        replacement: "if (result >= max) return 1;"
+        preconditions: "A decimal value reaches the maximum representable pre-multiplication threshold."
+        argument: "Changing strict to non-strict comparison changes the accepted numeric range."
+
+  - source_id: "xxhash-v0-8-1"
+    source_path: "cli/xxhsum.c"
+    function_id: "charToHex"
+    include_dirs: [".", "cli"]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "line_overflow_guard"
+        needle: "if (lineNumber == 0) {"
+        replacement: "if (lineNumber != 0) {"
+        preconditions: "The checksum-line counter reaches the guard after increment."
+        argument: "The predicate change reverses the documented overflow guard."
+      - id: "decimal_overflow_guard"
+        needle: "if (result > max) return 1;"
+        replacement: "if (result >= max) return 1;"
+        preconditions: "A decimal value reaches the maximum representable pre-multiplication threshold."
+        argument: "Changing strict to non-strict comparison changes the accepted numeric range."
+      - id: "scaled_overflow_guard"
+        needle: "if (result > maxK) return 1;"
+        replacement: "if (result >= maxK) return 1;"
+        occurrence: 1
+        preconditions: "A K/M-suffixed value reaches the maximum representable scaled threshold."
+        argument: "Changing the scaled overflow boundary changes which valid-size inputs are accepted."
+      - id: "hex_digit_lower_bound"
+        needle: "if (c >= '0' && c <= '9')"
+        replacement: "if (c > '0' && c <= '9')"
+        preconditions: "The character '0' is converted by the hexadecimal parser."
+        argument: "Excluding the lower endpoint misclassifies a valid hexadecimal digit."
+
+  - source_id: "sqlite-v3-45-1"
+    source_path: "tool/mkkeywordhash.c"
+    function_id: "keywordCompare1/keywordCompare2/keywordCompare3"
+    include_dirs: ["."]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "keyword_length_order"
+        needle: "int n = pA->len - pB->len;"
+        replacement: "int n = pA->len + pB->len;"
+        preconditions: "Two keyword records with differing lengths are compared."
+        argument: "Replacing subtraction with addition destroys the length ordering contract."
+      - id: "suffix_order"
+        needle: "int n = pB->longestSuffix - pA->longestSuffix;"
+        replacement: "int n = pB->longestSuffix + pA->longestSuffix;"
+        preconditions: "Two keyword records with differing suffix lengths are compared."
+        argument: "Replacing subtraction with addition changes the suffix-priority ordering."
+      - id: "offset_order"
+        needle: "int n = pA->offset - pB->offset;"
+        replacement: "int n = pA->offset + pB->offset;"
+        preconditions: "Two keyword records with differing offsets are compared."
+        argument: "Replacing subtraction with addition changes the offset ordering."
+      - id: "generator_exit_status"
+        needle: "  return 0;"
+        replacement: "  return 1;"
+        preconditions: "The generated keyword-table program reaches its normal termination path."
+        argument: "Changing the normal process status is a source-level control-flow contract near miss."
+
+  - source_id: "sqlite-v3-43-2"
+    source_path: "tool/mkkeywordhash.c"
+    function_id: "keywordCompare1/keywordCompare2/keywordCompare3"
+    include_dirs: ["."]
+    compile_flags: []
+    split: "train"
+    near_miss:
+      - id: "keyword_length_order"
+        needle: "int n = pA->len - pB->len;"
+        replacement: "int n = pA->len + pB->len;"
+        preconditions: "Two keyword records with differing lengths are compared."
+        argument: "Replacing subtraction with addition destroys the length ordering contract."
+      - id: "suffix_order"
+        needle: "int n = pB->longestSuffix - pA->longestSuffix;"
+        replacement: "int n = pB->longestSuffix + pA->longestSuffix;"
+        preconditions: "Two keyword records with differing suffix lengths are compared."
+        argument: "Replacing subtraction with addition changes the suffix-priority ordering."
+      - id: "offset_order"
+        needle: "int n = pA->offset - pB->offset;"
+        replacement: "int n = pA->offset + pB->offset;"
+        preconditions: "Two keyword records with differing offsets are compared."
+        argument: "Replacing subtraction with addition changes the offset ordering."
+      - id: "generator_exit_status"
+        needle: "  return 0;"
+        replacement: "  return 1;"
+        preconditions: "The generated keyword-table program reaches its normal termination path."
+        argument: "Changing the normal process status is a source-level control-flow contract near miss."
+
+  - source_id: "libpng-v1-6-43"
+    source_path: "png.c"
+    function_id: "png_check_cHRM_fixed"
+    include_dirs: ["."]
+    compile_flags: ["-include", "math.h"]
+    split: "development"
+    near_miss:
+      - id: "red_x_bounds"
+        needle: "if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 1;"
+        replacement: "if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 0;"
+        preconditions: "A chromaticity record has a red-x coordinate outside the declared fixed-point interval."
+        argument: "Accepting an out-of-range red-x value violates the color-space validation contract."
+      - id: "red_y_bounds"
+        needle: "if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 1;"
+        replacement: "if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 0;"
+        preconditions: "A chromaticity record has a red-y coordinate outside its dependent interval."
+        argument: "Accepting an out-of-range red-y value violates the dependent-coordinate contract."
+      - id: "green_x_bounds"
+        needle: "if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 1;"
+        replacement: "if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 0;"
+        preconditions: "A chromaticity record has a green-x coordinate outside the declared interval."
+        argument: "Accepting an out-of-range green-x value violates the color-space validation contract."
+      - id: "normal_success_status"
+        needle: "return 0; /*success*/"
+        replacement: "return 1; /*success*/"
+        preconditions: "A valid chromaticity record reaches the normal success return."
+        argument: "Changing the success return reverses the function's boolean contract."
+
+  - source_id: "libpng-v1-6-39"
+    source_path: "png.c"
+    function_id: "png_check_cHRM_fixed"
+    include_dirs: ["."]
+    compile_flags: ["-include", "math.h"]
+    split: "development"
+    near_miss:
+      - id: "red_x_bounds"
+        needle: "if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 1;"
+        replacement: "if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 0;"
+        preconditions: "A chromaticity record has a red-x coordinate outside the declared fixed-point interval."
+        argument: "Accepting an out-of-range red-x value violates the color-space validation contract."
+      - id: "red_y_bounds"
+        needle: "if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 1;"
+        replacement: "if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 0;"
+        preconditions: "A chromaticity record has a red-y coordinate outside its dependent interval."
+        argument: "Accepting an out-of-range red-y value violates the dependent-coordinate contract."
+      - id: "green_x_bounds"
+        needle: "if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 1;"
+        replacement: "if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 0;"
+        preconditions: "A chromaticity record has a green-x coordinate outside the declared interval."
+        argument: "Accepting an out-of-range green-x value violates the color-space validation contract."
+      - id: "normal_success_status"
+        needle: "return 0; /*success*/"
+        replacement: "return 1; /*success*/"
+        preconditions: "A valid chromaticity record reaches the normal success return."
+        argument: "Changing the success return reverses the function's boolean contract."
+
+  - source_id: "libyaml-v0-2-5"
+    source_path: "src/api.c"
+    function_id: "yaml_string_extend/yaml_free/yaml_document_get_node"
+    include_dirs: ["include", "src", "."]
+    compile_flags:
+      - "-DYAML_VERSION_STRING=\"0.2.5\""
+      - "-DYAML_VERSION_MAJOR=0"
+      - "-DYAML_VERSION_MINOR=2"
+      - "-DYAML_VERSION_PATCH=5"
+    split: "test"
+    near_miss:
+      - id: "zero_allocation_guard"
+        needle: "return malloc(size ? size : 1);"
+        replacement: "return malloc(size ? size : 2);"
+        preconditions: "A zero-byte allocation request is made through the public allocator wrapper."
+        argument: "Changing the zero-size allocation policy changes the allocator contract."
+      - id: "string_extend_failure"
+        needle: "if (!new_start) return 0;"
+        replacement: "if (!new_start) return 1;"
+        occurrence: 1
+        preconditions: "The first string-buffer extension allocation fails."
+        argument: "Changing the failure return changes the documented allocation-failure contract."
+      - id: "file_error_polarity"
+        needle: "return !ferror(parser->input.file);"
+        replacement: "return ferror(parser->input.file);"
+        preconditions: "The parser's file input status is queried after a read."
+        argument: "Reversing the ferror polarity misreports successful and failed file reads."
+      - id: "document_node_count"
+        needle: "return document->nodes.top - document->nodes.start;"
+        replacement: "return document->nodes.top - document->nodes.start + 1;"
+        occurrence: 1
+        preconditions: "A document node-count query is made for a populated document."
+        argument: "Adding one changes the public node-count contract and can create an off-by-one result."
+
+  - source_id: "libyaml-v0-2-2"
+    source_path: "src/api.c"
+    function_id: "yaml_string_extend/yaml_free/yaml_document_get_node"
+    include_dirs: ["include", "src", "."]
+    compile_flags:
+      - "-DYAML_VERSION_STRING=\"0.2.2\""
+      - "-DYAML_VERSION_MAJOR=0"
+      - "-DYAML_VERSION_MINOR=2"
+      - "-DYAML_VERSION_PATCH=2"
+    split: "test"
+    near_miss:
+      - id: "zero_allocation_guard"
+        needle: "return malloc(size ? size : 1);"
+        replacement: "return malloc(size ? size : 2);"
+        preconditions: "A zero-byte allocation request is made through the public allocator wrapper."
+        argument: "Changing the zero-size allocation policy changes the allocator contract."
+      - id: "string_extend_failure"
+        needle: "if (!new_start) return 0;"
+        replacement: "if (!new_start) return 1;"
+        occurrence: 1
+        preconditions: "The first string-buffer extension allocation fails."
+        argument: "Changing the failure return changes the documented allocation-failure contract."
+      - id: "file_error_polarity"
+        needle: "return !ferror(parser->input.file);"
+        replacement: "return ferror(parser->input.file);"
+        preconditions: "The parser's file input status is queried after a read."
+        argument: "Reversing the ferror polarity misreports successful and failed file reads."
+      - id: "document_node_count"
+        needle: "return document->nodes.top - document->nodes.start;"
+        replacement: "return document->nodes.top - document->nodes.start + 1;"
+        occurrence: 1
+        preconditions: "A document node-count query is made for a populated document."
+        argument: "Adding one changes the public node-count contract and can create an off-by-one result."

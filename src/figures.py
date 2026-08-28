@@ -5094,6 +5094,226 @@ def plot_external_source_provenance(
     return _save_figure(fig, output_path)
 
 
+def plot_external_label_coverage(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot the source-defined label census and frozen split allocation.
+
+    This figure is intentionally a provenance census rather than a performance
+    chart. Accepted rows are grouped by the source-contract role and by
+    project/revision split; explicit dashes in the matrix mean that no
+    accepted row occupies that cell, while excluded candidates remain outside
+    the accepted-row denominator and are stated in the footer.
+    """
+
+    raw_contracts = payload.get("contracts")
+    if not isinstance(raw_contracts, list):
+        raise ValueError("external label coverage receipt contracts must be a list")
+    contracts: list[dict[str, str]] = []
+    for index, raw_row in enumerate(raw_contracts):
+        if not isinstance(raw_row, dict):
+            raise ValueError(f"external label coverage row {index} is not an object")
+        project = raw_row.get("project_id")
+        revision = raw_row.get("revision_label")
+        role = raw_row.get("role", raw_row.get("variant_role"))
+        split = raw_row.get("split")
+        if any(
+            not isinstance(value, str) or not value.strip()
+            for value in (project, revision, role, split)
+        ):
+            raise ValueError(f"external label coverage row {index} is incomplete")
+        project = cast(str, project)
+        revision = cast(str, revision)
+        role = cast(str, role)
+        split = cast(str, split)
+        if role not in {"equivalent", "near_miss", "negative_control"}:
+            raise ValueError(f"external label coverage row {index} has unknown role")
+        if split not in {"train", "development", "test"}:
+            raise ValueError(f"external label coverage row {index} has unknown split")
+        contracts.append(
+            {
+                "project": project,
+                "revision": revision,
+                "role": role,
+                "split": split,
+            }
+        )
+
+    role_order = ("equivalent", "near_miss", "negative_control")
+    role_labels = {
+        "equivalent": "equivalence witness",
+        "near_miss": "near miss",
+        "negative_control": "identity control",
+    }
+    role_colors = {
+        "equivalent": PALETTE[0],
+        "near_miss": PALETTE[1],
+        "negative_control": PALETTE[2],
+    }
+    role_hatches = {
+        "equivalent": "///",
+        "near_miss": "...",
+        "negative_control": "xx",
+    }
+    split_order = ("train", "development", "test")
+    split_colors = {split: PALETTE[index] for index, split in enumerate(split_order)}
+    split_hatches = {"train": "///", "development": "...", "test": "xx"}
+
+    projects = sorted({row["project"] for row in contracts})
+    revisions = sorted({(row["project"], row["revision"]) for row in contracts})
+    summary = payload.get("summary", {})
+    summary_test_projects = (
+        summary.get("test_projects", []) if isinstance(summary, dict) else []
+    )
+    test_projects = {
+        str(project) for project in summary_test_projects if isinstance(project, str)
+    }
+    if not test_projects:
+        test_projects = {row["project"] for row in contracts if row["split"] == "test"}
+    exclusions_value = payload.get("exclusions", [])
+    exclusion_count = len(exclusions_value) if isinstance(exclusions_value, list) else 0
+    status = str(payload.get("status", "not_yet_observed"))
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(10.4, max(4.8, 2.9 + 0.34 * len(revisions))),
+        gridspec_kw={"width_ratios": (1.05, 1.15)},
+    )
+
+    ax = axes[0]
+    _style_axes(ax, grid_axis="x")
+    y_positions = np.arange(len(projects), dtype=float)
+    left = np.zeros(len(projects), dtype=float)
+    for role in role_order:
+        counts = np.asarray(
+            [
+                sum(
+                    row["project"] == project and row["role"] == role
+                    for row in contracts
+                )
+                for project in projects
+            ],
+            dtype=float,
+        )
+        bars = ax.barh(
+            y_positions,
+            counts,
+            left=left,
+            color=role_colors[role],
+            edgecolor="white",
+            linewidth=0.7,
+            hatch=role_hatches[role],
+            alpha=0.9,
+            label=role_labels[role],
+        )
+        for bar, count, start in zip(bars, counts, left, strict=True):
+            if count > 0:
+                ax.text(
+                    float(start + count / 2),
+                    float(bar.get_y() + bar.get_height() / 2),
+                    str(int(count)),
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                    color="white",
+                    weight="bold",
+                )
+        left += counts
+    for y, total in zip(y_positions, left, strict=True):
+        ax.text(
+            float(total + 0.2),
+            float(y),
+            f"n={int(total)}",
+            va="center",
+            fontsize=8,
+            color=MUTED,
+        )
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(projects, fontsize=8)
+    ax.set_xlabel("accepted source-contract rows (count)")
+    ax.set_xlim(0, max(1.0, float(max(left, default=0.0)) * 1.32))
+    ax.set_title("Roles by project", pad=AXIS_TITLE_PAD)
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.18),
+        ncol=1,
+        frameon=False,
+        fontsize=7.5,
+    )
+    ax.invert_yaxis()
+
+    ax = axes[1]
+    _style_axes(ax, grid_axis="x")
+    ax.set_xlim(-0.5, len(split_order) - 0.5)
+    ax.set_ylim(-0.5, max(0.5, len(revisions) - 0.5))
+    for y, (project, revision) in enumerate(revisions):
+        for x, split in enumerate(split_order):
+            count = sum(
+                row["project"] == project
+                and row["revision"] == revision
+                and row["split"] == split
+                for row in contracts
+            )
+            present = count > 0
+            ax.add_patch(
+                Rectangle(
+                    (x - 0.43, y - 0.31),
+                    0.86,
+                    0.62,
+                    facecolor=split_colors[split] if present else LIGHT,
+                    edgecolor=INK if present else GRID,
+                    linewidth=0.7,
+                    hatch=split_hatches[split] if present else "",
+                    alpha=0.9 if present else 1.0,
+                )
+            )
+            ax.text(
+                x,
+                y,
+                str(count) if present else "—",
+                ha="center",
+                va="center",
+                fontsize=8,
+                color="white" if present else MUTED,
+                weight="bold" if present else "normal",
+            )
+    y_labels = [
+        f"{project} · {revision}{' · held-out' if project in test_projects else ''}"
+        for project, revision in revisions
+    ]
+    ax.set_xticks(np.arange(len(split_order), dtype=float))
+    ax.set_xticklabels(split_order, fontsize=8)
+    ax.set_yticks(np.arange(len(revisions), dtype=float))
+    ax.set_yticklabels(y_labels, fontsize=7)
+    ax.set_xlabel("accepted rows per frozen split; — = none")
+    ax.set_title("Revision allocation", pad=AXIS_TITLE_PAD)
+    ax.invert_yaxis()
+
+    fig.suptitle(
+        "Source-bound external label coverage",
+        x=0.06,
+        ha="left",
+        fontsize=12,
+        color=INK,
+    )
+    fig.text(
+        0.06,
+        0.018,
+        (
+            f"Receipt status: {status}; accepted rows: {len(contracts)}; explicit exclusions: {exclusion_count}. "
+            "Roles are source-defined controls; rows are static-only and no emitted object is executed. "
+            "This census is not an accuracy estimate or a universal semantic-equivalence result."
+        ),
+        ha="left",
+        va="bottom",
+        fontsize=7.4,
+        color=MUTED,
+        wrap=True,
+    )
+    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.22, top=0.84, wspace=0.32)
+    return _save_figure(fig, output_path)
+
+
 def plot_artifact_receipt_closure(
     program_payload: dict[str, object],
     output_path: Path,
@@ -5649,9 +5869,23 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "the immutable revision, license/hash, safety, project/revision/example, and independent-replay requirements. "
         "The current receipt is {external_source_status}: {external_project_count} projects are pinned, "
         "{external_static_validated_count} of {external_static_row_count} static rows decode successfully, and "
-        "{external_labelable_count} source-bound labels are present. No application-performance value is plotted and "
-        "unavailable evidence is not treated as zero. This is a source-bound safety and promotion diagnostic, not "
-        "evidence of external validity."
+        "the source-bound contract is {external_label_status} with {external_labelable_count} accepted rows "
+        "({external_label_equivalent_count} lexical-equivalence witnesses, {external_label_near_miss_count} "
+        "contract-directed near misses, and {external_label_negative_count} identity controls; "
+        "{external_label_exclusion_count} explicit exclusions; held-out project(s): {external_label_test_projects}). "
+        "Lexical witnesses and near misses are source-contract controls, not universal semantic proofs or executed "
+        "behavioral labels. No application-performance value is plotted and unavailable evidence is not treated as zero. "
+        "This is a source-bound safety and promotion diagnostic, not evidence of external validity."
+    ),
+    "external_label_coverage": (
+        "Source-bound external label-contract census for {external_labelable_count} accepted rows across "
+        "{external_label_project_count} projects and {external_label_revision_count} project revisions. "
+        "The left panel counts the source-defined equivalence witnesses, contract-directed near misses, and "
+        "identity controls by project; the right panel locates accepted rows in the frozen train, development, "
+        "and held-out test allocation, marking held-out project(s) explicitly. Counts are deterministic provenance "
+        "diagnostics with no inferential uncertainty; an em dash means no accepted row in that cell, while explicit "
+        "exclusions remain outside the accepted-row denominator. Rows are static-only and no emitted object is executed. "
+        "This figure does not estimate model accuracy or prove universal semantic equivalence."
     ),
     "artifact_receipt_closure": (
         "Protocol-v2 artifact receipt closure for {artifact_receipt_count} project-owned JSON artifacts. "
@@ -5792,6 +6026,7 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "sensor_costs": ("friston2017activeinference", "parr2022activeinference"),
     "replication_manifest": ("wilkinson2016fair",),
     "external_source_provenance": ("wilkinson2016fair",),
+    "external_label_coverage": ("wilkinson2016fair",),
     "artifact_receipt_closure": (
         "w3cprov2013",
         "rocrate2023",
@@ -5847,6 +6082,14 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
         "external_source_status": "not_yet_observed",
         "external_project_count": "0",
         "external_labelable_count": "0",
+        "external_label_status": "not_yet_observed",
+        "external_label_equivalent_count": "0",
+        "external_label_near_miss_count": "0",
+        "external_label_negative_count": "0",
+        "external_label_exclusion_count": "0",
+        "external_label_test_projects": "none",
+        "external_label_project_count": "0",
+        "external_label_revision_count": "0",
         "external_static_validated_count": "0",
         "external_static_row_count": "0",
         "artifact_receipt_count": "configured",
@@ -6090,6 +6333,64 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
     except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
         pass
     try:
+        labels = json.loads(
+            (data_dir / "external_label_contract.json").read_text(encoding="utf-8")
+        )
+        label_rows = labels.get("contracts", [])
+        if not isinstance(label_rows, list):
+            label_rows = []
+        context["external_label_status"] = str(
+            labels.get("status", context["external_label_status"])
+        )
+        context["external_label_equivalent_count"] = str(
+            sum(
+                isinstance(row, dict)
+                and row.get("role", row.get("variant_role")) == "equivalent"
+                for row in label_rows
+            )
+        )
+        context["external_label_near_miss_count"] = str(
+            sum(
+                isinstance(row, dict)
+                and row.get("role", row.get("variant_role")) == "near_miss"
+                for row in label_rows
+            )
+        )
+        context["external_label_negative_count"] = str(
+            sum(
+                isinstance(row, dict)
+                and row.get("role", row.get("variant_role")) == "negative_control"
+                for row in label_rows
+            )
+        )
+        context["external_label_exclusion_count"] = str(
+            len(labels.get("exclusions", []))
+        )
+        label_summary = labels.get("summary", {})
+        if isinstance(label_summary, dict):
+            context["external_labelable_count"] = str(
+                label_summary.get("labelable_example_count", len(label_rows))
+            )
+            project_count = label_summary.get("project_count")
+            if isinstance(project_count, int) and not isinstance(project_count, bool):
+                context["external_label_project_count"] = str(project_count)
+            revisions = label_summary.get("revisions_by_project", {})
+            if isinstance(revisions, dict):
+                context["external_label_revision_count"] = str(
+                    sum(
+                        len(value)
+                        for value in revisions.values()
+                        if isinstance(value, list)
+                    )
+                )
+            test_projects = label_summary.get("test_projects", [])
+            if isinstance(test_projects, list) and test_projects:
+                context["external_label_test_projects"] = ", ".join(
+                    str(project) for project in test_projects
+                )
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, AttributeError):
+        pass
+    try:
         external = json.loads(
             (data_dir / "external_source_validation.json").read_text(encoding="utf-8")
         )
@@ -6178,6 +6479,7 @@ def _figure_registry_rows(
         "sensor_costs": "finite typed-field sensor actions with deterministic vectors and local timing calibration",
         "replication_manifest": "frozen local public/gold/prediction/receipt bundle",
         "external_source_provenance": "pinned licensed-source manifest and static-only external-validation gate",
+        "external_label_coverage": "source-bound external label-contract rows and frozen project/revision split allocation",
         "artifact_receipt_closure": "project-owned protocol-v2 receipt surface and manuscript/document boundary",
         "artifact_hash_manifest": "reproducibility manifest rows",
         "validation_summary": "generated validation checks",
@@ -6214,6 +6516,7 @@ def _figure_registry_rows(
         "sensor_costs": "Deterministic vector counts are primary; local timing medians span five repetition values with IQR, p95, overhead correction, and regression residuals; policy certificates compare exact dynamic-program, fixed, greedy, seeded-random, and abstaining objectives.",
         "replication_manifest": "Public and gold counts plus protocol/hash separation are deterministic provenance checks; independent replay is not claimed.",
         "external_source_provenance": "Status, manifest cardinality, and five promotion gates are deterministic provenance checks; blocked or unavailable cells are retained as status values rather than plotted as performance zeros.",
+        "external_label_coverage": "Accepted-row counts by source-defined role and frozen project/revision split; explicit exclusions are retained outside the accepted denominator and no inferential uncertainty is claimed.",
         "artifact_receipt_closure": "Deterministic count of project-owned JSON receipts, envelope errors, and roadmap status rows; no inferential uncertainty is applicable.",
     }
     rows: list[dict[str, Any]] = []
@@ -6315,6 +6618,11 @@ def _figure_registry_rows(
             input_artifacts = [
                 "output/data/external_source_validation.json",
                 "configs/external_sources.yaml",
+            ]
+        elif stem == "external_label_coverage":
+            input_artifacts = [
+                "output/data/external_label_contract.json",
+                "configs/external_label_contracts.yaml",
             ]
         elif stem == "artifact_receipt_closure":
             input_artifacts = [

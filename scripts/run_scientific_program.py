@@ -34,6 +34,10 @@ from src.external_corpus import (  # noqa: E402
     load_label_contracts,
     validate_label_contracts,
 )
+from src.external_labeling import (  # noqa: E402
+    LABEL_CONTRACT_ARTIFACT,
+    write_external_label_contract,
+)
 from src.formal_correspondence import write_formal_correspondence  # noqa: E402
 from src.intervention_analysis import write_intervention_power_payload  # noqa: E402
 from src.quotient_classifier import write_quotient_classifier_report  # noqa: E402
@@ -73,6 +77,10 @@ def main() -> int:
     subparsers.add_parser("sensing", help="write measured sensing-cost receipt")
     subparsers.add_parser("theorem", help="write theorem/countertheorem receipt")
     subparsers.add_parser("external", help="write offline external-source receipt")
+    subparsers.add_parser(
+        "label-external",
+        help="generate source-bound external pair labels and static receipts",
+    )
     subparsers.add_parser(
         "probe-capabilities", help="probe locally compilable static targets"
     )
@@ -149,7 +157,20 @@ def main() -> int:
     receipt.add_argument("--model", required=True)
     receipt.add_argument("--seed", type=int, required=True)
     receipt.add_argument("--public-path", type=Path)
-    receipt.add_argument("--command", nargs="+", required=True)
+    receipt.add_argument(
+        "--started-at",
+        help="recorded ISO-8601 start timestamp with timezone; defaults to now",
+    )
+    receipt.add_argument(
+        "--completed-at",
+        help="recorded ISO-8601 completion timestamp with timezone; defaults to now",
+    )
+    # REMAINDER preserves command flags such as ``replay --offline`` in the
+    # receipt rather than asking the outer parser to understand the operator's
+    # replay command.  The receipt producer still validates every token.
+    receipt.add_argument(
+        "--command", dest="replay_command", nargs=argparse.REMAINDER, required=True
+    )
     ingest = subparsers.add_parser(
         "ingest-replay", help="ingest and protected-score a separate replay receipt"
     )
@@ -174,7 +195,10 @@ def main() -> int:
     elif command == "theorem":
         print(write_theorem_or_countertheorem(root))
     elif command == "external":
+        print(write_external_label_contract(root))
         print(write_external_source_validation_payload(root))
+    elif command == "label-external":
+        print(write_external_label_contract(root))
     elif command == "probe-capabilities":
         print(write_compiler_capabilities(root))
     elif command == "prepare-external":
@@ -197,9 +221,11 @@ def main() -> int:
         return 0 if manifest_valid and contracts_valid else 1
     elif command == "validate-external":
         capability_path = write_compiler_capabilities(root)
+        label_path = write_external_label_contract(root)
         static_path = write_external_static_validation(root)
         external_path = write_external_source_validation_payload(root)
         print(capability_path)
+        print(label_path)
         print(static_path)
         print(external_path)
         return 0
@@ -207,6 +233,7 @@ def main() -> int:
         status_paths = {
             "P13_external_validation": root
             / "output/data/external_source_validation.json",
+            "P13_source_bound_labels": root / LABEL_CONTRACT_ARTIFACT,
             "P13_static_only": root / EXTERNAL_STATIC_RECEIPT_ARTIFACT,
             "P13_capabilities": root / EXTERNAL_CAPABILITY_ARTIFACT,
             "P15_local_replay_harness": root / "output/data/replication_manifest.json",
@@ -295,8 +322,10 @@ def main() -> int:
                 replay_bundle_sha256=bundle_hash,
                 model=args.model,
                 seed=args.seed,
-                command=args.command,
+                command=args.replay_command,
                 project_root=root,
+                started_at=args.started_at,
+                completed_at=args.completed_at,
             )
         )
     elif command == "ingest-replay":
@@ -317,6 +346,7 @@ def main() -> int:
             write_sensor_cost_payload(root),
             write_theorem_or_countertheorem(root),
             write_compiler_capabilities(root),
+            write_external_label_contract(root),
             write_external_static_validation(root),
             write_external_source_validation_payload(root),
             write_replication_bundle(root),

@@ -36,6 +36,7 @@ from .figures import (
     plot_factorized_observation_comparison,
     plot_formal_verification_receipt,
     plot_formal_correspondence,
+    plot_external_label_coverage,
     plot_external_source_provenance,
     plot_intervention_power,
     plot_active_information_frontier,
@@ -254,6 +255,14 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     )
     plot_external_source_provenance(external_payload, external_path)
 
+    external_label_path = figure_dir / "external_label_coverage.png"
+    external_label_payload = json.loads(
+        (output_dir / "data" / "external_label_contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    plot_external_label_coverage(external_label_payload, external_label_path)
+
     receipt_path = figure_dir / "artifact_receipt_closure.png"
     program_payload = json.loads(
         (output_dir / "data" / "scientific_program.json").read_text(encoding="utf-8")
@@ -310,6 +319,7 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "sensor_costs": str(sensor_path.relative_to(PROJECT_ROOT)),
         "replication_manifest": str(replication_path.relative_to(PROJECT_ROOT)),
         "external_source_provenance": str(external_path.relative_to(PROJECT_ROOT)),
+        "external_label_coverage": str(external_label_path.relative_to(PROJECT_ROOT)),
         "artifact_receipt_closure": str(receipt_path.relative_to(PROJECT_ROOT)),
         "active_information_frontier": str(information_path.relative_to(PROJECT_ROOT)),
     }
@@ -397,6 +407,7 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "sensor_costs": stats_paths["sensor_costs"],
         "replication_manifest": stats_paths["replication_manifest"],
         "external_source_provenance": stats_paths["external_source_provenance"],
+        "external_label_coverage": stats_paths["external_label_coverage"],
         "artifact_receipt_closure": stats_paths["artifact_receipt_closure"],
         "active_information_frontier": stats_paths["active_information_frontier"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),

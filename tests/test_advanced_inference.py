@@ -46,6 +46,7 @@ from src.figures import (
     plot_generative_model,
     plot_generative_adequacy,
     plot_formal_verification_receipt,
+    plot_external_label_coverage,
     plot_assembly_cfg,
     plot_intervention_power,
     plot_model_evidence,
@@ -190,6 +191,7 @@ def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
         "sensor_costs",
         "replication_manifest",
         "intervention_power",
+        "external_label_coverage",
     }
     assert required.issubset(paths)
     for key in required:
@@ -212,6 +214,19 @@ def test_artifact_receipt_closure_figure_is_nonblank(tmp_path) -> None:
         tmp_path / "artifact_receipt_closure.png",
         artifact_count=12,
         artifact_error_count=0,
+    )
+    assert path.is_file()
+    assert path.stat().st_size > 0
+
+
+def test_external_label_coverage_figure_is_nonblank(tmp_path) -> None:
+    payload = json.loads(
+        (PROJECT_ROOT / "output/data/external_label_contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    path = plot_external_label_coverage(
+        payload, tmp_path / "external_label_coverage.png"
     )
     assert path.is_file()
     assert path.stat().st_size > 0

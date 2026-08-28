@@ -210,8 +210,9 @@ receipt enumerates the finite outcome matrix rather than learning its labels,
 and the multi-start parameter-learning receipt retains weak and unstable starts
 as robustness evidence. The licensed-source receipt is currently underpowered:
 the pinned manifest contains ten rows across five projects and two revisions,
-static compilation/decoding is recorded with one failed row retained, and the
-separate source-level label contract remains empty. Independent replay,
+static compilation/decoding is recorded for all ten rows, and the separate
+source-bound label contract contains 100 accepted source-contract rows with a
+project-held-out test split. Independent replay,
 full-ISA correspondence, and a broad identifiability or transfer theorem
 remain future gates. No unavailable, failed, or underpowered status is
 converted into a zero-valued result.
