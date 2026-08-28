@@ -21,7 +21,7 @@ from src.artifact_contract import write_json_atomic
 
 def test_checked_in_vm_config_is_pinned() -> None:
     payload = replay_vm.load_replay_vm_config()
-    assert payload["vmType"] == "vz"
+    assert payload["vmType"] == "qemu"
     assert payload["arch"] == "aarch64"
     assert payload["mounts"] == []
     assert payload["networks"] == []
@@ -30,7 +30,7 @@ def test_checked_in_vm_config_is_pinned() -> None:
 
 def test_vm_config_drift_is_rejected(tmp_path: Path) -> None:
     payload = replay_vm.load_replay_vm_config()
-    payload["vmType"] = "qemu"
+    payload["vmType"] = "vz"
     config_path = tmp_path / "replay_vm.yaml"
     config_path.write_text(yaml.safe_dump(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="vmType"):
@@ -210,6 +210,51 @@ def test_lima_path_missing_is_fail_closed(monkeypatch: pytest.MonkeyPatch) -> No
         replay_vm._limactl_path()
 
 
+def test_qemu_version_is_pinned_and_drift_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        replay_vm.shutil, "which", lambda _name: "/usr/local/bin/qemu-system-aarch64"
+    )
+    monkeypatch.setattr(
+        replay_vm.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            [], 0, "QEMU emulator version 11.1.1\n", ""
+        ),
+    )
+    assert replay_vm._qemu_version() == "QEMU emulator version 11.1.1"
+
+    monkeypatch.setattr(
+        replay_vm.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            [], 0, "QEMU emulator version 10.0.0\n", ""
+        ),
+    )
+    with pytest.raises(RuntimeError, match="version drifted"):
+        replay_vm._qemu_version()
+
+
+def test_qemu_version_missing_or_unreadable_is_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(replay_vm.shutil, "which", lambda _name: None)
+    with pytest.raises(RuntimeError, match="unavailable"):
+        replay_vm._qemu_version()
+
+    monkeypatch.setattr(
+        replay_vm.shutil, "which", lambda _name: "/usr/local/bin/qemu-system-aarch64"
+    )
+    monkeypatch.setattr(
+        replay_vm.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 1, "", "qemu error"),
+    )
+    with pytest.raises(RuntimeError, match="could not inspect"):
+        replay_vm._qemu_version()
+
+
 def test_run_lima_constructs_command_and_reports_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -322,6 +367,9 @@ def test_write_vm_manifest_records_storage_and_replay_contract(
         )
 
     monkeypatch.setattr(replay_vm, "_run_lima", fake_lima)
+    monkeypatch.setattr(
+        replay_vm, "_qemu_version", lambda: "QEMU emulator version 11.1.1"
+    )
     manifest = replay_vm.write_vm_manifest(
         status="implemented_local", extra={"test_marker": True}
     )

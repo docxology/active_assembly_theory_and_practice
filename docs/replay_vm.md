@@ -12,7 +12,10 @@ physical-machine replication, or a new scientific sample.
 The checked-in [`configs/replay_vm.yaml`](../configs/replay_vm.yaml) pins:
 
 - Lima `2.2.0`;
-- native Apple-Silicon `aarch64` virtualization through `vz`;
+- Lima `qemu` with the pinned ARM64 `qemu-system-aarch64` binary;
+- native Apple-Silicon execution of the ARM64 guest (QEMU is selected because
+  the blue volume is Journaled HFS+ over USB and native `vz` disk finalization
+  did not complete reliably there);
 - Ubuntu 24.04 ARM64 server cloud image from the 2026-07-05 release;
 - the image SHA-256 digest;
 - 4 virtual CPUs, 8 GiB memory, and a 64 GiB guest disk;

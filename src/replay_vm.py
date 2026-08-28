@@ -44,8 +44,10 @@ REPLAY_VM_CONFIG = "configs/replay_vm.yaml"
 VM_SCHEMA_VERSION = "1.0.0"
 VM_NAME = "aapta-replay"
 VM_ROOT_ENV = "AAPTA_VM_ROOT"
-DEFAULT_VM_ROOT = Path("/Volumes/blue/aapta-replay-vm")
+DEFAULT_VM_ROOT = Path("/Volumes/blue/aapta-replay-qemu")
 LIMA_VERSION = "2.2.0"
+QEMU_BINARY = "qemu-system-aarch64"
+QEMU_VERSION = "11.1.1"
 UBUNTU_IMAGE_URL = (
     "https://cloud-images.ubuntu.com/releases/noble/release-20260705/"
     "ubuntu-24.04-server-cloudimg-arm64.img"
@@ -142,7 +144,7 @@ def load_replay_vm_config(
         raise ValueError("replay VM config must be an object")
     expected = {
         "minimumLimaVersion": LIMA_VERSION,
-        "vmType": "vz",
+        "vmType": "qemu",
         "arch": "aarch64",
         "os": "Linux",
         "cpus": 4,
@@ -187,6 +189,30 @@ def _limactl_path() -> str:
             "limactl is unavailable; install the pinned Lima formula before VM setup"
         )
     return path
+
+
+def _qemu_version() -> str:
+    """Return the exact pinned ARM64 QEMU version used by Lima."""
+
+    path = shutil.which(QEMU_BINARY)
+    if path is None:
+        raise RuntimeError(
+            f"{QEMU_BINARY} is unavailable; install the pinned QEMU formula before VM setup"
+        )
+    result = subprocess.run(
+        [path, "--version"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"could not inspect {QEMU_BINARY}: {result.stderr.strip()}")
+    version_line = result.stdout.splitlines()[0] if result.stdout else ""
+    if f"QEMU emulator version {QEMU_VERSION}" not in version_line:
+        raise RuntimeError(
+            f"{QEMU_BINARY} version drifted: expected {QEMU_VERSION}, got {version_line!r}"
+        )
+    return version_line.strip()
 
 
 def _lima_environment(paths: dict[str, Path]) -> dict[str, str]:
@@ -283,6 +309,7 @@ def write_vm_manifest(
         "config_path": REPLAY_VM_CONFIG,
         "config_sha256": _sha256(config_path),
         "lima_version": lima_version,
+        "qemu_version": _qemu_version(),
         "host": {
             "operating_system": platform.platform(),
             "architecture": platform.machine(),
@@ -294,6 +321,11 @@ def write_vm_manifest(
             "location": UBUNTU_IMAGE_URL,
             "sha256": UBUNTU_IMAGE_SHA256,
             "architecture": "aarch64",
+        },
+        "virtualization": {
+            "backend": "qemu",
+            "binary": QEMU_BINARY,
+            "version": QEMU_VERSION,
         },
         "storage_contract": {
             "lima_home_on_blue": True,
@@ -787,6 +819,8 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
 __all__ = [
     "DEFAULT_VM_ROOT",
     "LIMA_VERSION",
+    "QEMU_BINARY",
+    "QEMU_VERSION",
     "REPLAY_VM_CONFIG",
     "UBUNTU_IMAGE_SHA256",
     "UBUNTU_IMAGE_URL",

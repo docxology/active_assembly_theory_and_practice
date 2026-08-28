@@ -7,7 +7,7 @@
 # environment.  Replay itself runs inside an isolated network namespace and
 # receives only the public bundle.
 minimumLimaVersion: "2.2.0"
-vmType: "vz"
+vmType: "qemu"
 arch: "aarch64"
 os: "Linux"
 
