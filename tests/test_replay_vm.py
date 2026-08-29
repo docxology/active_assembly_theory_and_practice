@@ -321,31 +321,43 @@ def test_lima_instance_listing_handles_absence_and_json(
 
 
 @pytest.mark.parametrize(
-    "result",
+    ("result", "message"),
     [
-        subprocess.CompletedProcess(["limactl"], 0, "", ""),
-        subprocess.CompletedProcess(["limactl"], 0, "not-json", ""),
-        subprocess.CompletedProcess(["limactl"], 0, "{}", ""),
-        subprocess.CompletedProcess(["limactl"], 1, "", "unexpected failure"),
+        (subprocess.CompletedProcess(["limactl"], 0, "", ""), ""),
+        (subprocess.CompletedProcess(["limactl"], 0, "not-json", ""), "not JSON"),
+        (
+            subprocess.CompletedProcess(["limactl"], 0, "{}", ""),
+            "named JSON object",
+        ),
+        (
+            subprocess.CompletedProcess(["limactl"], 0, "5", ""),
+            "JSON list or object",
+        ),
+        (
+            subprocess.CompletedProcess(["limactl"], 0, "[1]", ""),
+            "non-object row",
+        ),
+        (
+            subprocess.CompletedProcess(["limactl"], 1, "", "unexpected failure"),
+            "could not inspect",
+        ),
     ],
 )
 def test_lima_instance_listing_rejects_invalid_responses(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     result: subprocess.CompletedProcess[str],
+    message: str,
 ) -> None:
     paths = replay_vm.vm_paths(tmp_path / "vm")
     monkeypatch.setattr(replay_vm, "_run_lima", lambda *_args, **_kwargs: result)
     if result.returncode != 0:
-        with pytest.raises(RuntimeError, match="could not inspect"):
+        with pytest.raises(RuntimeError, match=message):
             replay_vm._instance_rows(paths)
     elif not result.stdout:
         assert replay_vm._instance_rows(paths) == []
-    elif result.stdout == "not-json":
-        with pytest.raises(RuntimeError, match="not JSON"):
-            replay_vm._instance_rows(paths)
     else:
-        with pytest.raises(RuntimeError, match="named JSON object"):
+        with pytest.raises(RuntimeError, match=message):
             replay_vm._instance_rows(paths)
 
 
@@ -393,6 +405,57 @@ def test_write_vm_manifest_records_storage_and_replay_contract(
         == "same_host_separately_controlled_guest"
     )
     assert payload["test_marker"] is True
+    replay_vm.write_vm_manifest(status="implemented_local")
+
+
+def test_runtime_source_archive_rejects_missing_required_files(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def fake_run(
+        _command: object, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        handle = kwargs["stdout"]
+        with replay_vm.tarfile.open(fileobj=handle, mode="w") as archive:
+            info = replay_vm.tarfile.TarInfo("repository/README.md")
+            info.size = 7
+            archive.addfile(info, replay_vm.io.BytesIO(b"readme\n"))
+        return subprocess.CompletedProcess([], 0, b"", b"")
+
+    monkeypatch.setattr(replay_vm.subprocess, "run", fake_run)
+    with pytest.raises(ValueError, match="missing required files"):
+        replay_vm._runtime_source_archive(
+            tmp_path / "repo", tmp_path / "source.tar", "revision"
+        )
+
+
+@pytest.mark.parametrize(
+    ("member_name", "message"),
+    [
+        ("outside/file", "escapes prefix"),
+        ("repository/../escape", "unsafe"),
+    ],
+)
+def test_runtime_source_archive_rejects_unsafe_members(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    member_name: str,
+    message: str,
+) -> None:
+    def fake_run(
+        _command: object, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        handle = kwargs["stdout"]
+        with replay_vm.tarfile.open(fileobj=handle, mode="w") as archive:
+            info = replay_vm.tarfile.TarInfo(member_name)
+            info.size = 1
+            archive.addfile(info, replay_vm.io.BytesIO(b"x"))
+        return subprocess.CompletedProcess([], 0, b"", b"")
+
+    monkeypatch.setattr(replay_vm.subprocess, "run", fake_run)
+    with pytest.raises(ValueError, match=message):
+        replay_vm._runtime_source_archive(
+            tmp_path / "repo", tmp_path / "source.tar", "revision"
+        )
 
 
 def test_create_vm_requires_network_for_first_creation(

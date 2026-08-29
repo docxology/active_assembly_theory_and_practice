@@ -302,6 +302,11 @@ def test_optional_replay_sections_fail_closed_to_empty_mappings() -> None:
     assert _mapping_or_empty(["malformed"]) == {}
 
 
+def test_infer_hidden_states_rejects_empty_observation_stream() -> None:
+    with pytest.raises(ValueError, match="observations must not be empty"):
+        infer_hidden_states([], build_generative_model())
+
+
 def test_manuscript_variables_are_generated_from_live_result() -> None:
     variables = generate_variables()
 
