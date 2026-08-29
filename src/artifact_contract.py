@@ -33,7 +33,10 @@ from .receipt import (
     RECEIPT_SCHEMA_VERSION,
     validate_receipt_envelope,
 )
-from .scientific_protocol import scientific_protocol_payload
+from .scientific_protocol import (
+    scientific_protocol_payload,
+    validate_scientific_protocol_payload,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RECEIPT_SCHEMA_KEY = "receipt_schema_version"
@@ -192,7 +195,9 @@ def _protocol_for(project_root: Path) -> dict[str, Any]:
         try:
             candidate = json.loads(protocol_path.read_text(encoding="utf-8"))
             if isinstance(candidate, dict) and candidate.get("protocol_sha256"):
-                return candidate
+                valid, _detail = validate_scientific_protocol_payload(candidate)
+                if valid:
+                    return candidate
         except (OSError, json.JSONDecodeError):
             pass
     return scientific_protocol_payload()

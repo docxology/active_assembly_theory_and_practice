@@ -100,6 +100,23 @@ def test_artifact_protocol_mismatch_fails_closed(tmp_path: Path) -> None:
     assert "protocol hash mismatch" in detail
 
 
+def test_artifact_writer_does_not_reuse_stale_protocol_file(tmp_path: Path) -> None:
+    protocol_path = tmp_path / "output/data/research_protocol.json"
+    protocol_path.parent.mkdir(parents=True)
+    stale = scientific_protocol_payload()
+    stale["protocol_sha256"] = "0" * 64
+    protocol_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    sealed = build_artifact_envelope(
+        {"schema_version": "domain-v1"},
+        artifact_path=tmp_path / "output/data/artifact.json",
+        project_root=tmp_path,
+        producer_path=Path("src/artifact_contract.py"),
+    )
+
+    assert sealed["protocol_sha256"] == scientific_protocol_payload()["protocol_sha256"]
+
+
 def test_artifact_envelope_preserves_existing_receipts_and_fallbacks(
     tmp_path: Path,
 ) -> None:
