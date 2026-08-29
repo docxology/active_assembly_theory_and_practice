@@ -276,9 +276,19 @@ def build_scientific_protocol() -> ScientificProtocol:
 
 
 def scientific_protocol_payload() -> dict[str, Any]:
-    """Return the protocol with a stable content hash."""
+    """Return the protocol with a machine-independent content hash.
 
-    body = build_scientific_protocol().to_dict()
+    The protocol hash covers the frozen scientific contract only.  Runtime
+    provenance such as Python/platform and package versions remains in the
+    payload but is deliberately not hashed into the protocol identity; those
+    values are receipts of the executing environment, not changes to the
+    experiment definition.  This lets a Linux replay validate the same
+    protocol as the macOS producer while still recording both toolchains.
+    """
+
+    protocol_body = build_scientific_protocol().to_dict()
+    protocol_hash = _canonical_hash(protocol_body)
+    body = dict(protocol_body)
     # ``schema_version`` belongs to the protocol itself.  The explicit receipt
     # key keeps the same provenance contract available to domain artifacts that
     # legitimately use a different local schema version.
@@ -297,7 +307,7 @@ def scientific_protocol_payload() -> dict[str, Any]:
     body["underpowered_cases"] = [
         "Independent replication, external-validity, and broad-theorem gates remain unearned until their receipts pass.",
     ]
-    body["protocol_sha256"] = _canonical_hash(body)
+    body["protocol_sha256"] = protocol_hash
     return body
 
 
@@ -307,15 +317,18 @@ def validate_scientific_protocol_payload(payload: object) -> tuple[bool, str]:
     if not isinstance(payload, dict):
         return False, "scientific protocol must be an object"
     expected = scientific_protocol_payload()
-    for key in expected:
+    canonical_protocol = build_scientific_protocol().to_dict()
+    for key in canonical_protocol:
         if key not in payload:
             return False, f"scientific protocol missing {key}"
     if payload.get("schema_version") != PROTOCOL_SCHEMA_VERSION:
         return False, "scientific protocol schema mismatch"
     recorded_hash = payload.get("protocol_sha256")
-    body = {key: value for key, value in payload.items() if key != "protocol_sha256"}
-    if recorded_hash != _canonical_hash(body):
+    if recorded_hash != _canonical_hash(canonical_protocol):
         return False, "scientific protocol hash mismatch"
+    for key, expected_value in canonical_protocol.items():
+        if payload.get(key) != expected_value:
+            return False, f"scientific protocol {key} drift"
     if payload.get("protocol_id") != PROTOCOL_ID:
         return False, "scientific protocol id drift"
     if payload.get("model_contract", {}).get("families") != list(MODEL_FAMILIES):
@@ -342,11 +355,26 @@ def validate_scientific_protocol_payload(payload: object) -> tuple[bool, str]:
         return False, "mixed protocol outputs must remain disabled"
     if payload.get("underpowered_cases") == []:
         return False, "protocol must retain current unearned gates"
-    # The body must be exactly reproducible from the current source and
-    # capability receipt.  This catches stale output even when its self-hash is
-    # internally consistent.
-    if payload != expected:
-        return False, "scientific protocol is stale relative to the canonical producer"
+    # Source identity and fixed metadata must remain reproducible.  Toolchain
+    # metadata is intentionally allowed to differ across a host and a replay
+    # guest; it is a capability receipt, not part of the protocol identity.
+    for key in (
+        "generator_revision",
+        "input_hashes",
+        "receipt_schema_version",
+        "artifact_id",
+        "producer",
+        "limitations",
+        "unsupported_cases",
+        "underpowered_cases",
+    ):
+        if payload.get(key) != expected.get(key):
+            return (
+                False,
+                f"scientific protocol {key} is stale relative to the canonical producer",
+            )
+    if not isinstance(payload.get("toolchain_versions"), dict):
+        return False, "scientific protocol toolchain receipt is invalid"
     return True, "ok"
 
 

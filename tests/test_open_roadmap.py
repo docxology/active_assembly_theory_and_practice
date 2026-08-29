@@ -9,6 +9,7 @@ from typing import Any, Callable, cast
 
 import pytest
 import src.formal_correspondence as formal_module
+import src.scientific_protocol as scientific_protocol_module
 import src.theorem_phase as theorem_module
 
 from src.compiler_transfer import (
@@ -46,6 +47,7 @@ from src.replication import (
 )
 from src.scientific_protocol import (
     _canonical_hash,
+    build_scientific_protocol,
     scientific_protocol_payload,
     validate_scientific_protocol_payload,
     write_scientific_protocol,
@@ -68,6 +70,30 @@ def test_scientific_protocol_is_hashed_and_label_blind() -> None:
     mutated = deepcopy(payload)
     mutated["model_contract"]["co_primary"] = False
     assert not validate_scientific_protocol_payload(mutated)[0]
+
+
+def test_scientific_protocol_hash_is_independent_of_runtime_toolchain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = scientific_protocol_payload()
+    monkeypatch.setattr(
+        scientific_protocol_module,
+        "toolchain_versions",
+        lambda _packages: {
+            "python": "0.0-test",
+            "platform": "test-platform",
+            "capstone": "test-capstone",
+            "numpy": "test-numpy",
+            "unicorn": "test-unicorn",
+        },
+    )
+    second = scientific_protocol_payload()
+    assert first["protocol_sha256"] == second["protocol_sha256"]
+    assert first["toolchain_versions"] != second["toolchain_versions"]
+    assert validate_scientific_protocol_payload(second) == (True, "ok")
+    assert first["protocol_sha256"] == _canonical_hash(
+        build_scientific_protocol().to_dict()
+    )
 
 
 def test_quotient_classifier_has_disjoint_families_and_three_models() -> None:
@@ -449,11 +475,6 @@ def test_protocol_validator_rejects_each_core_contract_drift() -> None:
         mutated = deepcopy(payload)
         mutated[contract][key] = value
         mutated["protocol_sha256"] = payload["protocol_sha256"]
-        # Contract drift is checked after the self-digest check, so rebuild the
-        # digest while retaining the changed body.
-        mutated["protocol_sha256"] = _canonical_hash(
-            {key: value for key, value in mutated.items() if key != "protocol_sha256"}
-        )
         assert not validate_scientific_protocol_payload(mutated)[0]
 
 
