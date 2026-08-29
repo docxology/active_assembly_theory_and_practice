@@ -35,7 +35,7 @@ from src.features import (
 )
 from src.figures import FIGURE_CAPTIONS, plot_observation_pipeline
 from src.generative_model import build_generative_model
-from src.manuscript_variables import generate_variables
+from src.manuscript_variables import _mapping_or_empty, generate_variables
 from src.reproducibility import (
     MANIFEST_TARGETS,
     reproducibility_payload,
@@ -293,6 +293,13 @@ def test_trace_bundle_schema_records_package_provenance_and_hashes() -> None:
     ):
         assert provenance[optional_name]["optional"] is True
     assert (PROJECT_ROOT / result.figure_paths["package_provenance"]).exists()
+
+
+def test_optional_replay_sections_fail_closed_to_empty_mappings() -> None:
+    section = {"control_scope": "same_host_separately_controlled_guest"}
+
+    assert _mapping_or_empty(section) == section
+    assert _mapping_or_empty(["malformed"]) == {}
 
 
 def test_manuscript_variables_are_generated_from_live_result() -> None:

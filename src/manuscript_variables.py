@@ -39,6 +39,12 @@ from .validation import write_validation_report
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
+def _mapping_or_empty(value: object) -> dict[str, object]:
+    """Treat an optional receipt section as a mapping or an empty section."""
+
+    return value if isinstance(value, dict) else {}
+
+
 def generate_variables() -> dict[str, str]:
     """Run the source-bound experiment and return manuscript variables."""
 
@@ -191,12 +197,12 @@ def generate_variables() -> dict[str, str]:
         if independent_replay_path.is_file()
         else {}
     )
-    independent_replay_external = independent_replay_report.get("external_receipt", {})
-    if not isinstance(independent_replay_external, dict):
-        independent_replay_external = {}
-    protected_replay_score = independent_replay_report.get("protected_score", {})
-    if not isinstance(protected_replay_score, dict):
-        protected_replay_score = {}
+    independent_replay_external = _mapping_or_empty(
+        independent_replay_report.get("external_receipt", {})
+    )
+    protected_replay_score = _mapping_or_empty(
+        independent_replay_report.get("protected_score", {})
+    )
 
     def replay_metric(name: str) -> str:
         value = protected_replay_score.get(name)
