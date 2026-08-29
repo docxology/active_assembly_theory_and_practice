@@ -69,6 +69,28 @@ PUBLIC_BUNDLE_FILES = (
     PUBLIC_TOOLCHAIN,
     PUBLIC_INSTRUCTIONS,
 )
+# The guest does not need the research data, private source contracts, or
+# manuscript surfaces to replay the public CLI.  Keeping the transfer archive
+# to this runtime allow-list makes the public/private boundary inspectable and
+# prevents tracked generated data from crossing it accidentally.
+SOURCE_ARCHIVE_INCLUDED_PATHS = (
+    "README.md",
+    "pyproject.toml",
+    "uv.lock",
+    "src/",
+    "scripts/",
+)
+SOURCE_ARCHIVE_EXCLUDED_PATHS = (
+    "AGENTS.md",
+    "configs/",
+    "data/",
+    "docs/",
+    "figures/",
+    "formal/",
+    "julia/",
+    "manuscript/",
+    "tests/",
+)
 
 
 def vm_root() -> Path:
@@ -493,6 +515,82 @@ def _deterministic_tar(path: Path, members: dict[str, bytes]) -> None:
             archive.addfile(info, io.BytesIO(data))
 
 
+def _runtime_source_archive(
+    project_root: Path, source_archive: Path, source_revision: str
+) -> None:
+    """Create a deterministic runtime-only archive from the committed tree.
+
+    A full ``git archive`` is intentionally not transferred: this repository
+    tracks generated data and source-bound label contracts that are useful to
+    the owner-side scientific pipeline but are outside the public replay
+    surface.  The archive is filtered by an explicit allow-list and checked
+    for unsafe members before it is repacked.
+    """
+
+    raw_archive = source_archive.with_suffix(".git-archive.tar")
+    try:
+        with raw_archive.open("wb") as handle:
+            result = subprocess.run(
+                [
+                    "git",
+                    "archive",
+                    "--format=tar",
+                    "--prefix=repository/",
+                    source_revision,
+                ],
+                cwd=project_root,
+                stdout=handle,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+        if result.returncode != 0:
+            detail = result.stderr.decode(errors="replace")
+            raise RuntimeError(f"could not create source archive: {detail}")
+        members: dict[str, bytes] = {}
+        with tarfile.open(raw_archive, mode="r:") as archive:
+            for member in archive.getmembers():
+                name = member.name
+                if name == "repository":
+                    continue
+                if not name.startswith("repository/"):
+                    raise ValueError(f"source archive member escapes prefix: {name!r}")
+                relative = name.removeprefix("repository/")
+                relative_path = Path(relative)
+                if relative_path.is_absolute() or ".." in relative_path.parts:
+                    raise ValueError(f"source archive member is unsafe: {name!r}")
+                if member.issym() or member.islnk():
+                    raise ValueError(f"source archive contains a link: {name!r}")
+                if member.isdir():
+                    continue
+                included = any(
+                    relative == prefix or relative.startswith(prefix)
+                    for prefix in SOURCE_ARCHIVE_INCLUDED_PATHS
+                )
+                if not included:
+                    continue
+                if not member.isfile():
+                    raise ValueError(
+                        f"source archive member is not a regular file: {name!r}"
+                    )
+                extracted = archive.extractfile(member)
+                if extracted is None:
+                    raise ValueError(f"source archive member cannot be read: {name!r}")
+                members[name] = extracted.read()
+        required = {
+            "repository/README.md",
+            "repository/pyproject.toml",
+            "repository/uv.lock",
+        }
+        missing = sorted(required - members.keys())
+        if missing:
+            raise ValueError(
+                f"runtime source archive is missing required files: {missing}"
+            )
+        _deterministic_tar(source_archive, members)
+    finally:
+        raw_archive.unlink(missing_ok=True)
+
+
 def prepare_public_guest_bundle(
     project_root: Path = PROJECT_ROOT,
 ) -> dict[str, Any]:
@@ -511,25 +609,11 @@ def prepare_public_guest_bundle(
     paths["transfer"].mkdir(parents=True, exist_ok=True)
     source_archive = paths["transfer"] / f"source-{source_revision}.tar"
     if not source_archive.is_file():
-        with source_archive.open("wb") as handle:
-            result = subprocess.run(
-                [
-                    "git",
-                    "archive",
-                    "--format=tar",
-                    "--prefix=repository/",
-                    "HEAD",
-                ],
-                cwd=project_root,
-                stdout=handle,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-        if result.returncode != 0:
+        try:
+            _runtime_source_archive(project_root, source_archive, source_revision)
+        except (OSError, RuntimeError, ValueError):
             source_archive.unlink(missing_ok=True)
-            raise RuntimeError(
-                f"could not create source archive: {result.stderr.decode(errors='replace')}"
-            )
+            raise
     public_members: dict[str, bytes] = {}
     for relative_path in PUBLIC_BUNDLE_FILES:
         source_path = project_root / relative_path
@@ -541,6 +625,9 @@ def prepare_public_guest_bundle(
         "schema_version": VM_SCHEMA_VERSION,
         "source_revision": source_revision,
         "source_archive_sha256": _sha256(source_archive),
+        "source_archive_included_paths": list(SOURCE_ARCHIVE_INCLUDED_PATHS),
+        "source_archive_excluded_paths": list(SOURCE_ARCHIVE_EXCLUDED_PATHS),
+        "source_archive_filter": "runtime_source_allowlist_v1",
         "public_archive_sha256": _sha256(public_archive),
         "public_bundle_sha256": _public_bundle_digest(project_root),
         "public_files": list(PUBLIC_BUNDLE_FILES),
@@ -618,6 +705,7 @@ sudo tar --extract --file /tmp/aapta-public.tar --directory {GUEST_ROOT} --no-sa
 sudo chown -R "$(id -u):$(id -g)" {GUEST_REPOSITORY}
 test ! -e {GUEST_REPOSITORY}/output/replication/private
 test ! -e {GUEST_REPOSITORY}/configs/external_label_contracts.yaml
+test ! -e {GUEST_REPOSITORY}/data
 {GUEST_TOOLCHAIN}/uv sync --locked --no-dev --python-preference only-system --directory {GUEST_REPOSITORY}
 test -x {GUEST_REPOSITORY}/.venv/bin/python
 {GUEST_REPOSITORY}/.venv/bin/python --version

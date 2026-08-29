@@ -516,6 +516,8 @@ def test_prepare_public_guest_bundle_is_clean_and_label_blind(
         path = repo / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(relative, encoding="utf-8")
+    for relative in ("README.md", "pyproject.toml", "uv.lock"):
+        (repo / relative).write_text(relative, encoding="utf-8")
     (repo / ".gitignore").write_text("output/\n", encoding="utf-8")
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     subprocess.run(
@@ -535,6 +537,57 @@ def test_prepare_public_guest_bundle_is_clean_and_label_blind(
     assert transfer["source_archive"].is_file()
     assert transfer["public_archive"].is_file()
     assert transfer["public_bundle_sha256"] == "bundle"
+
+
+def test_prepare_public_guest_bundle_filters_owner_only_tree(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    repo = tmp_path / "repo"
+    for relative in replay_vm.PUBLIC_BUNDLE_FILES:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(relative, encoding="utf-8")
+    for relative, content in {
+        "README.md": "runtime",
+        "pyproject.toml": "[project]\nname='runtime'\n",
+        "uv.lock": "version = 1\n",
+        "src/runtime.py": "runtime = True\n",
+        "scripts/runtime.py": "print('runtime')\n",
+        "configs/external_label_contracts.yaml": "secret: true\n",
+        "data/owner-results.json": '{"label": 1}\n',
+        "tests/owner_test.py": "secret = True\n",
+    }.items():
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    (repo / ".gitignore").write_text("output/\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
+    root = tmp_path / "vm"
+    monkeypatch.setattr(replay_vm, "vm_root", lambda: root)
+    monkeypatch.setattr(
+        replay_vm, "validate_public_replay_bundle", lambda _root: (True, "ok")
+    )
+    monkeypatch.setattr(replay_vm, "_public_bundle_digest", lambda _root: "bundle")
+
+    transfer = replay_vm.prepare_public_guest_bundle(repo)
+    with replay_vm.tarfile.open(transfer["source_archive"]) as archive:
+        names = set(archive.getnames())
+    assert "repository/README.md" in names
+    assert "repository/src/runtime.py" in names
+    assert "repository/scripts/runtime.py" in names
+    assert "repository/configs/external_label_contracts.yaml" not in names
+    assert "repository/data/owner-results.json" not in names
+    assert "repository/tests/owner_test.py" not in names
+    assert transfer["source_archive_filter"] == "runtime_source_allowlist_v1"
+    assert transfer["source_archive_excluded_paths"] == list(
+        replay_vm.SOURCE_ARCHIVE_EXCLUDED_PATHS
+    )
 
 
 def test_prepare_public_guest_bundle_rejects_dirty_checkout(
