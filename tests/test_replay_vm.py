@@ -872,6 +872,7 @@ def test_provision_records_transfer_and_guest_receipts(
     receipt_path = replay_vm.provision_replay_vm(tmp_path, allow_network=True)
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     assert receipt["status"] == "validated"
+    assert receipt["vm_manifest_sha256"] == replay_vm._sha256(paths["vm_manifest"])
     assert receipt["guest"]["private_gold_transferred"] is False
     assert len(copied) == 3
     assert (
@@ -1029,6 +1030,8 @@ def test_replay_and_attestation_preserve_control_boundary(
     summary = json.loads(replay_path.read_text(encoding="utf-8"))
     assert summary["private_gold_transferred"] is False
     assert summary["independent_reimplementation"] is False
+    assert paths["replay_manifest"].is_file()
+    assert summary["vm_manifest_sha256"] == replay_vm._sha256(paths["replay_manifest"])
 
     paths["replay_receipt"].write_text(
         replay_path.read_text(encoding="utf-8"), encoding="utf-8"
@@ -1062,13 +1065,66 @@ def test_attestation_rejects_unsafe_vm_summary(
     monkeypatch.setattr(replay_vm, "vm_root", lambda: root)
     paths = replay_vm.vm_paths(root)
     paths["receipts"].mkdir(parents=True)
-    for key in ("pending_receipt", "predictions", "vm_manifest", "network_proof"):
+    for key in (
+        "pending_receipt",
+        "predictions",
+        "vm_manifest",
+        "replay_manifest",
+        "network_proof",
+    ):
         paths[key].write_text("{}", encoding="utf-8")
     summary = {
         "network_namespace_verified": True,
         "private_gold_transferred": False,
+        "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
+        "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
     }
     summary[summary_field] = summary_value
+    paths["replay_receipt"].write_text(json.dumps(summary), encoding="utf-8")
+    monkeypatch.setattr(
+        replay_vm, "validate_replay_receipt", lambda *_args, **_kwargs: (True, "ok")
+    )
+    with pytest.raises(ValueError, match=message):
+        replay_vm.attest_and_ingest_vm_replay(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        (
+            "vm_manifest_snapshot",
+            "receipts/other.json",
+            "manifest snapshot path",
+        ),
+        ("vm_manifest_sha256", "0" * 64, "manifest snapshot hash"),
+    ],
+)
+def test_attestation_rejects_manifest_snapshot_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    root = tmp_path / "vm"
+    monkeypatch.setattr(replay_vm, "vm_root", lambda: root)
+    paths = replay_vm.vm_paths(root)
+    paths["receipts"].mkdir(parents=True)
+    for key in (
+        "pending_receipt",
+        "predictions",
+        "vm_manifest",
+        "replay_manifest",
+        "network_proof",
+    ):
+        paths[key].write_text("{}", encoding="utf-8")
+    summary = {
+        "network_namespace_verified": True,
+        "private_gold_transferred": False,
+        "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
+        "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+    }
+    summary[field] = value
     paths["replay_receipt"].write_text(json.dumps(summary), encoding="utf-8")
     monkeypatch.setattr(
         replay_vm, "validate_replay_receipt", lambda *_args, **_kwargs: (True, "ok")
@@ -1095,11 +1151,22 @@ def test_attestation_rejects_invalid_pending_receipt(
     monkeypatch.setattr(replay_vm, "vm_root", lambda: root)
     paths = replay_vm.vm_paths(root)
     paths["receipts"].mkdir(parents=True)
-    for key in ("pending_receipt", "predictions", "vm_manifest", "network_proof"):
+    for key in (
+        "pending_receipt",
+        "predictions",
+        "vm_manifest",
+        "replay_manifest",
+        "network_proof",
+    ):
         paths[key].write_text("{}", encoding="utf-8")
     paths["replay_receipt"].write_text(
         json.dumps(
-            {"network_namespace_verified": True, "private_gold_transferred": False}
+            {
+                "network_namespace_verified": True,
+                "private_gold_transferred": False,
+                "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
+                "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+            }
         ),
         encoding="utf-8",
     )
@@ -1119,11 +1186,22 @@ def test_attestation_rejects_invalid_attested_receipt(
     monkeypatch.setattr(replay_vm, "vm_root", lambda: root)
     paths = replay_vm.vm_paths(root)
     paths["receipts"].mkdir(parents=True)
-    for key in ("pending_receipt", "predictions", "vm_manifest", "network_proof"):
+    for key in (
+        "pending_receipt",
+        "predictions",
+        "vm_manifest",
+        "replay_manifest",
+        "network_proof",
+    ):
         paths[key].write_text("{}", encoding="utf-8")
     paths["replay_receipt"].write_text(
         json.dumps(
-            {"network_namespace_verified": True, "private_gold_transferred": False}
+            {
+                "network_namespace_verified": True,
+                "private_gold_transferred": False,
+                "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
+                "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+            }
         ),
         encoding="utf-8",
     )

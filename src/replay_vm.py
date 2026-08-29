@@ -128,6 +128,7 @@ def vm_paths(root: Path | None = None) -> dict[str, Path]:
         "transfer": vm_storage_root / "transfer",
         "receipts": vm_storage_root / "receipts",
         "vm_manifest": vm_storage_root / "receipts" / "vm_manifest.json",
+        "replay_manifest": vm_storage_root / "receipts" / "replay_vm_manifest.json",
         "provision_receipt": vm_storage_root / "receipts" / "provision_receipt.json",
         "replay_receipt": vm_storage_root / "receipts" / "vm_replay_receipt.json",
         "pending_receipt": vm_storage_root
@@ -722,6 +723,7 @@ test -x {GUEST_REPOSITORY}/.venv/bin/python
     (paths["receipts"] / "provision.stderr.txt").write_text(
         result.stderr, encoding="utf-8"
     )
+    write_vm_manifest(project_root, status="validated", extra={"provisioned": True})
     receipt = {
         "schema_version": VM_SCHEMA_VERSION,
         "receipt_kind": "blue_backed_lima_vm_provision",
@@ -756,7 +758,6 @@ test -x {GUEST_REPOSITORY}/.venv/bin/python
         ],
     }
     write_json_atomic(paths["provision_receipt"], receipt)
-    write_vm_manifest(project_root, status="validated", extra={"provisioned": True})
     return paths["provision_receipt"]
 
 
@@ -782,6 +783,13 @@ def replay_in_vm(
         )
     if not paths["provision_receipt"].is_file():
         raise RuntimeError("VM provision receipt is missing; provision before replay")
+    if not paths["vm_manifest"].is_file():
+        raise RuntimeError("VM manifest is missing; provision before replay")
+    # The live VM manifest is intentionally mutable because vm-stop and
+    # vm-status refresh its instance state. Preserve the exact running-state
+    # bytes used for this replay so a later stop cannot invalidate the receipt's
+    # manifest hash.
+    shutil.copyfile(paths["vm_manifest"], paths["replay_manifest"])
     guest_python = f"{GUEST_REPOSITORY}/.venv/bin/python"
     prediction_path = f"{GUEST_REPLAY_OUTPUT}/predictions.json"
     receipt_path = f"{GUEST_REPLAY_OUTPUT}/external-replay-receipt.json"
@@ -848,7 +856,8 @@ INNER
         "status": "validated",
         "created_at": _iso_now(),
         "vm_name": VM_NAME,
-        "vm_manifest_sha256": _sha256(paths["vm_manifest"]),
+        "vm_manifest_sha256": _sha256(paths["replay_manifest"]),
+        "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
         "pending_receipt_sha256": _sha256(paths["pending_receipt"]),
         "prediction_sha256": _sha256(paths["predictions"]),
         "public_bundle_sha256": _public_bundle_digest(project_root),
@@ -873,7 +882,13 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
     """Attest the completed same-host VM boundary and invoke protected scoring."""
 
     paths = vm_paths()
-    for key in ("pending_receipt", "predictions", "replay_receipt", "network_proof"):
+    for key in (
+        "pending_receipt",
+        "predictions",
+        "replay_receipt",
+        "replay_manifest",
+        "network_proof",
+    ):
         if not paths[key].is_file():
             raise ValueError(f"VM replay evidence is missing: {paths[key]}")
     pending = json.loads(paths["pending_receipt"].read_text(encoding="utf-8"))
@@ -887,6 +902,10 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
         raise ValueError("VM replay did not verify its isolated network namespace")
     if replay_summary.get("private_gold_transferred") is not False:
         raise ValueError("VM replay evidence reports private gold transfer")
+    if replay_summary.get("vm_manifest_snapshot") != "receipts/replay_vm_manifest.json":
+        raise ValueError("VM replay manifest snapshot path is invalid")
+    if replay_summary.get("vm_manifest_sha256") != _sha256(paths["replay_manifest"]):
+        raise ValueError("VM replay manifest snapshot hash mismatch")
     attested = deepcopy(pending)
     attestation = dict(attested.get("attestation", {}))
     attestation.update(
@@ -899,16 +918,19 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
             "control_scope": "same_host_separately_controlled_guest",
             "network_namespace_verified": True,
             "private_gold_transferred": False,
-            "vm_manifest_sha256": _sha256(paths["vm_manifest"]),
+            "vm_manifest_sha256": _sha256(paths["replay_manifest"]),
+            "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
             "network_proof_sha256": _sha256(paths["network_proof"]),
         }
     )
     attested["attestation"] = attestation
     input_hashes = dict(attested.get("input_hashes", {}))
-    input_hashes["vm_manifest"] = _sha256(paths["vm_manifest"])
+    input_hashes["vm_manifest"] = _sha256(paths["replay_manifest"])
+    input_hashes["vm_manifest_snapshot"] = _sha256(paths["replay_manifest"])
     input_hashes["network_proof"] = _sha256(paths["network_proof"])
     attested["input_hashes"] = input_hashes
-    attested["vm_manifest_sha256"] = _sha256(paths["vm_manifest"])
+    attested["vm_manifest_sha256"] = _sha256(paths["replay_manifest"])
+    attested["vm_manifest_snapshot"] = "receipts/replay_vm_manifest.json"
     attested["control_scope"] = "same_host_separately_controlled_guest"
     write_json_atomic(paths["attested_receipt"], attested)
     valid, detail = validate_replay_receipt(
