@@ -700,6 +700,10 @@ sudo install -m 0644 /tmp/aapta-uv.tar.gz {GUEST_ROOT}/uv.tar.gz
 printf '%s  %s\\n' '{UV_ARCHIVE_SHA256}' '{GUEST_ROOT}/uv.tar.gz' | sudo sha256sum -c -
 sudo tar --extract --gzip --file {GUEST_ROOT}/uv.tar.gz --directory {GUEST_TOOLCHAIN} --strip-components=1 --no-same-owner --no-same-permissions
 test "$(sudo {GUEST_TOOLCHAIN}/uv --version)" = 'uv {UV_VERSION}'
+if [ -e {GUEST_REPOSITORY} ]; then
+  sudo find {GUEST_REPOSITORY} -xdev -depth -delete
+fi
+sudo install -d -m 0755 {GUEST_REPOSITORY}
 sudo tar --extract --file /tmp/aapta-source.tar --directory {GUEST_ROOT} --no-same-owner --no-same-permissions
 sudo tar --extract --file /tmp/aapta-public.tar --directory {GUEST_ROOT} --no-same-owner --no-same-permissions
 sudo chown -R "$(id -u):$(id -g)" {GUEST_REPOSITORY}
@@ -738,6 +742,7 @@ test -x {GUEST_REPOSITORY}/.venv/bin/python
         },
         "guest": {
             "source_path": GUEST_REPOSITORY,
+            "runtime_tree_reset_before_extraction": True,
             "public_bundle_only": True,
             "private_gold_transferred": False,
             "network_used_for_provisioning": True,
