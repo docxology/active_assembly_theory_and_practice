@@ -924,10 +924,18 @@ def test_replay_and_attestation_preserve_control_boundary(
         "vm_status",
         lambda _paths: {"name": replay_vm.VM_NAME, "status": "Running"},
     )
+    guest_scripts: list[str] = []
+
+    def capture_guest_script(
+        _paths: dict[str, Path], script: str, **_kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        guest_scripts.append(script)
+        return subprocess.CompletedProcess([], 0, "guest", "")
+
     monkeypatch.setattr(
         replay_vm,
         "_guest_shell",
-        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 0, "guest", ""),
+        capture_guest_script,
     )
 
     def fake_copy(_paths: dict[str, Path], source: str, destination: Path) -> None:
@@ -951,6 +959,10 @@ def test_replay_and_attestation_preserve_control_boundary(
     )
     monkeypatch.setattr(replay_vm, "_public_bundle_digest", lambda _root: "b" * 64)
     replay_path = replay_vm.replay_in_vm(tmp_path, model="calibrated_interpretable")
+    assert guest_scripts
+    assert (
+        f"sudo install -d -m 0755 {replay_vm.GUEST_REPLAY_OUTPUT}" in guest_scripts[0]
+    )
     summary = json.loads(replay_path.read_text(encoding="utf-8"))
     assert summary["private_gold_transferred"] is False
     assert summary["independent_reimplementation"] is False

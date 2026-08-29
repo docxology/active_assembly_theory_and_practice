@@ -792,6 +792,8 @@ test ! -e output/replication/private
 test ! -e output/data/replication_manifest.json
 test -x {guest_python}
 command -v ip >/dev/null
+sudo install -d -m 0755 {GUEST_REPLAY_OUTPUT}
+sudo chown "$(id -u):$(id -g)" {GUEST_REPLAY_OUTPUT}
 sudo unshare --net --fork --pid --mount-proc /bin/bash -s <<'INNER'
 set -euo pipefail
 cd {GUEST_REPOSITORY}
