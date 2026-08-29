@@ -107,7 +107,19 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "EXTERNAL_CAPABILITIES_ARTIFACT": "Locally measured compiler and target capability receipt; advertised targets are not counted unless a static object is produced.",
     "EXTERNAL_CAPABILITIES_STATUS": "Evidence status of the local compiler capability receipt.",
     "EXTERNAL_CAPABILITY_TARGET_COUNT": "Number of compiler-target probes that produced a static object successfully.",
-    "INDEPENDENT_REPLAY_STATUS": "Current independent-replay endpoint status; local reruns remain not_yet_observed.",
+    "INDEPENDENT_REPLAY_STATUS": "Current separately controlled replay endpoint status; this does not imply an independent physical machine or independent reimplementation.",
+    "INDEPENDENT_REPLAY_CONTROL_SCOPE": "Control scope recorded by the replay receipt, such as same-host separately controlled guest; this is not a physical-machine or independent-reimplementation claim.",
+    "INDEPENDENT_REPLAY_MODEL": "Deterministic model used by the separately controlled replay receipt.",
+    "INDEPENDENT_REPLAY_ROW_COUNT": "Number of protected-score rows in the separately controlled replay receipt.",
+    "INDEPENDENT_REPLAY_POSITIVE_ROW_COUNT": "Number of positive/equivalence rows in the protected replay score.",
+    "INDEPENDENT_REPLAY_NEGATIVE_ROW_COUNT": "Number of negative/near-miss rows in the protected replay score.",
+    "INDEPENDENT_REPLAY_BALANCED_ACCURACY": "Balanced accuracy from the protected score of the separately controlled replay; a single replay result, not a new scientific sample.",
+    "INDEPENDENT_REPLAY_MACRO_F1": "Macro-F1 from the protected score of the separately controlled replay; a single replay result, not a new scientific sample.",
+    "INDEPENDENT_REPLAY_BRIER": "Brier score from the protected score of the separately controlled replay; lower is better and the result is bounded to the frozen bundle.",
+    "INDEPENDENT_REPLAY_ECE": "Fixed-bin expected calibration error from the protected score of the separately controlled replay; lower is better and the result is bounded to the frozen bundle.",
+    "INDEPENDENT_REPLAY_FALSE_EQUIVALENCE_RATE": "False-equivalence rate from the protected score of the separately controlled replay.",
+    "INDEPENDENT_REPLAY_NEAR_MISS_SEPARATION": "Near-miss separation rate from the protected score of the separately controlled replay.",
+    "INDEPENDENT_REPLAY_NETWORK_DISABLED": "Whether the separately controlled replay receipt records a network-disabled execution boundary.",
     "REPLICATION_PUBLIC_BUNDLE_SHA256": "SHA-256 digest of the public replay files, excluding private labels and protected scoring outputs.",
     "ARTIFACT_RECEIPT_SCHEMA_VERSION": "Common protocol-v2 receipt schema version layered above each domain-specific artifact schema.",
     "ARTIFACT_RECEIPT_REQUIRED_FIELD_COUNT": "Number of required common receipt fields in the protocol-v2 artifact envelope.",
@@ -439,11 +451,11 @@ def _input_hashes(
         "EXTERNAL_CAPABILITY_"
     ):
         paths.append(project_root / "output" / "data" / "external_capabilities.json")
-    elif token == "INDEPENDENT_REPLAY_STATUS":
+    elif token.startswith("INDEPENDENT_REPLAY_"):
         paths.append(project_root / "output" / "data" / "replication_manifest.json")
-        # If an external operator supplies a receipt, its bytes become part of
-        # the status lineage. Absence remains the explicit not_yet_observed
-        # state and does not block local variable generation.
+        # If a separately controlled operator supplies a receipt, its bytes
+        # become part of the variable lineage. Absence remains the explicit
+        # not_yet_observed state and does not block local variable generation.
         paths.append(
             project_root / "output" / "data" / "independent_replay_receipt.json"
         )

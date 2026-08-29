@@ -147,7 +147,7 @@ def theorem_or_countertheorem_payload(
         "unresolved": [
             "general trace-refinement theorem for the full declared user-mode subset",
             "compiler/source/architecture transfer guarantee",
-            "independent replay of the local harness",
+            "independent reimplementation or independent physical-machine replication of the local harness",
         ],
         "limitations": limitations,
         "unsupported_cases": unsupported_cases,

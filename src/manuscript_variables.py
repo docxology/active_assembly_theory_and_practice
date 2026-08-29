@@ -191,6 +191,27 @@ def generate_variables() -> dict[str, str]:
         if independent_replay_path.is_file()
         else {}
     )
+    independent_replay_external = independent_replay_report.get("external_receipt", {})
+    if not isinstance(independent_replay_external, dict):
+        independent_replay_external = {}
+    protected_replay_score = independent_replay_report.get("protected_score", {})
+    if not isinstance(protected_replay_score, dict):
+        protected_replay_score = {}
+
+    def replay_metric(name: str) -> str:
+        value = protected_replay_score.get(name)
+        return (
+            f"{float(value):.3f}" if isinstance(value, (int, float)) else "not_observed"
+        )
+
+    def replay_count(name: str) -> str:
+        value = protected_replay_score.get(name)
+        return (
+            str(value)
+            if isinstance(value, int) and not isinstance(value, bool)
+            else "not_observed"
+        )
+
     memory_evidence = json.loads(
         (ADVANCED_OUTPUT_DIR / "data" / "memory_evidence.json").read_text(
             encoding="utf-8"
@@ -688,6 +709,32 @@ def generate_variables() -> dict[str, str]:
         ),
         "INDEPENDENT_REPLAY_STATUS": str(
             independent_replay_report.get("endpoint_status", "not_yet_observed")
+        ),
+        "INDEPENDENT_REPLAY_CONTROL_SCOPE": str(
+            independent_replay_external.get("control_scope", "not_observed")
+        ),
+        "INDEPENDENT_REPLAY_MODEL": str(
+            independent_replay_external.get("model", "not_observed")
+        ),
+        "INDEPENDENT_REPLAY_ROW_COUNT": replay_count("rows"),
+        "INDEPENDENT_REPLAY_POSITIVE_ROW_COUNT": replay_count("positive_rows"),
+        "INDEPENDENT_REPLAY_NEGATIVE_ROW_COUNT": replay_count("negative_rows"),
+        "INDEPENDENT_REPLAY_BALANCED_ACCURACY": replay_metric("balanced_accuracy"),
+        "INDEPENDENT_REPLAY_MACRO_F1": replay_metric("macro_f1"),
+        "INDEPENDENT_REPLAY_BRIER": replay_metric("brier_score"),
+        "INDEPENDENT_REPLAY_ECE": replay_metric("expected_calibration_error"),
+        "INDEPENDENT_REPLAY_FALSE_EQUIVALENCE_RATE": replay_metric(
+            "false_equivalence_rate"
+        ),
+        "INDEPENDENT_REPLAY_NEAR_MISS_SEPARATION": replay_metric(
+            "near_miss_separation_rate"
+        ),
+        "INDEPENDENT_REPLAY_NETWORK_DISABLED": (
+            "yes"
+            if independent_replay_external.get("network_disabled") is True
+            else "no"
+            if independent_replay_external
+            else "not_observed"
         ),
         "SENSOR_COST_ARTIFACT": f"../{advanced_paths['sensor_cost_receipt']}",
         "SENSOR_COST_SENSOR_COUNT": str(len(sensor_cost_report["sensors"])),

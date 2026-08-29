@@ -36,10 +36,11 @@ application-effectiveness claims.
 
 Finite active sensing is certified by exact dynamic programming with auditable
 deterministic costs and an optional machine-specific calibration. The local frozen
-replication harness separates public inputs from protected labels, while independent
-replay remains `{{INDEPENDENT_REPLAY_STATUS}}` until a separately controlled receipt
-is supplied. Every result, figure, caption, manuscript variable, and document
-surface is generated from hashed receipts. The contribution is therefore a
-reproducible, formally bounded and statistically audited research substrate for
-assembly-to-inference experiments, with explicit negative results and promotion
-boundaries. It is not a general reverse-engineering system.
+replication harness separates public inputs from protected labels. A separately
+controlled replay is currently `{{INDEPENDENT_REPLAY_STATUS}}` in the recorded
+`{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` scope; this is not an independent physical
+machine or independent reimplementation. Every result, figure, caption, manuscript
+variable, and document surface is generated from hashed receipts. The contribution
+is therefore a reproducible, formally bounded and statistically audited research
+substrate for assembly-to-inference experiments, with explicit negative results and
+promotion boundaries. It is not a general reverse-engineering system.

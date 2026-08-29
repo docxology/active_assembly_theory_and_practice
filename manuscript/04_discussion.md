@@ -86,9 +86,11 @@ frontier as a general law.
 
 The replication boundary follows the same logic. The public bundle is label-blind,
 hash-bound, and replayable without network access; its protected scorer can compare
-predictions without distributing the gold labels. A local rerun demonstrates
-determinism and pipeline closure, while a separately operated receipt is required
-before independent replay is observed. Independent replay would still be evidence
-about reproducibility, not an independent reimplementation or an independent
-scientific review. Keeping those evidence states separate prevents a successful
-engineering rerun from being mistaken for external confirmation.
+predictions without distributing the gold labels. The current receipt records a
+same-host separately controlled guest replay, which demonstrates that the frozen
+public interface crossed a distinct control boundary. It is not an independent
+physical-machine run, independent reimplementation, or independent scientific
+review. The protected score is also poor, so the replay provides reproducibility
+evidence and a negative model result rather than external confirmation of the
+inference claim. Keeping these evidence states separate prevents an engineering
+rerun from being mistaken for scientific generalization.

@@ -19,7 +19,8 @@ source-bound implementation or explicit blocked/planned receipt, but their
 broad promotion claims remain gated: P3 has a 64-family classifier benchmark
 and a separate four-state representation pilot, P4 has no full-ISA theorem,
 P5 has no licensed external-source evaluation, P6 is finite-benchmark
-optimality, P7 has no independent replay, and P8 has no broad theorem. A
+optimality, P7 has an observed same-host controlled replay but no independent
+implementation, and P8 has no broad theorem. A
 bounded receipt is an implementation result, not automatic scientific
 promotion.
 

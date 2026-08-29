@@ -101,8 +101,8 @@ The new source-bound artifact family is:
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |
 | external static corpus | ten pinned source rows, archive/license digests, static compilation, disassembly hashes, Capstone coverage, and explicit failed rows | static coverage and lineage only; no application effectiveness |
 | source-bound label contract | 100 accepted rows across five projects and two revisions: 40 lexical-equivalence witnesses, 40 contract-directed near misses, and 20 identity negative controls; base/pair source, object, and disassembly hashes; project-held-out test split | source-contract and static provenance evidence only; lexical comments are not universal equivalence proofs, near misses are not executed behavioral labels, and no application claim follows |
-| replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | local harness only until a separately controlled receipt is ingested |
-| replay ingestion | pending external receipt schema, protected scoring boundary, explicit separate-control attestation, mismatch retention | `{{INDEPENDENT_REPLAY_STATUS}}`; independent replay does not imply independent reimplementation |
+| replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | frozen interface and local replay contract; no independent implementation claim |
+| replay ingestion | protected scoring boundary, explicit separate-control attestation, mismatch retention, and source-bound receipt hashes | `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`; observed controlled replay does not imply independent physical-machine replication or independent reimplementation |
 | theorem phase | checked Lean theorem list plus generated bounded counterexample | fail-closed; unresolved claims remain unresolved |
 
 The registry and figure validator apply the same source-bound rule to the

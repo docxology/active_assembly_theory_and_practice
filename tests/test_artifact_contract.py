@@ -100,6 +100,24 @@ def test_artifact_protocol_mismatch_fails_closed(tmp_path: Path) -> None:
     assert "protocol hash mismatch" in detail
 
 
+def test_surface_validator_rejects_stale_protocol_envelopes(tmp_path: Path) -> None:
+    path = tmp_path / "output/data/stale.json"
+    sealed = write_json_artifact(
+        path,
+        {"schema_version": "domain-v1", "rows": []},
+        project_root=tmp_path,
+        producer_path=Path("src/artifact_contract.py"),
+    )
+    sealed["protocol_sha256"] = "e" * 64
+    write_json_atomic(path, sealed)
+
+    diagnostics = validate_data_artifact_surface(tmp_path)
+
+    assert len(diagnostics) == 1
+    assert diagnostics[0]["path"] == "output/data/stale.json"
+    assert "protocol hash mismatch" in diagnostics[0]["detail"]
+
+
 def test_artifact_writer_does_not_reuse_stale_protocol_file(tmp_path: Path) -> None:
     protocol_path = tmp_path / "output/data/research_protocol.json"
     protocol_path.parent.mkdir(parents=True)

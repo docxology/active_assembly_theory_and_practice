@@ -501,7 +501,8 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
             current_result=(
                 "Implemented local tranche: a frozen CLI generator, label-separated public and "
                 "gold manifests, hash validation, and no-network replay contract are available. "
-                "The harness is not an independent implementation or a completed public challenge."
+                "A same-host separately controlled Lima replay has also been observed and protected-scored; "
+                "the harness is not an independent implementation, physical-machine replication, or completed public challenge."
             ),
         ),
         ScientificMilestone(
@@ -920,8 +921,10 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
                 "the benchmark cannot be reconstructed from public materials",
             ),
             current_result=(
-                "A frozen local no-network harness exists; independent external replay has not "
-                "been observed and remains blocked."
+                "A frozen local no-network harness exists, and a same-host separately controlled "
+                "Lima guest replay has been observed with protected scoring. Independent "
+                "implementation or independent physical/CI replay remains unobserved, so the "
+                "broad P15 gate remains blocked."
             ),
         ),
         ScientificMilestone(

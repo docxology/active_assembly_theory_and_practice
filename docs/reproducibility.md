@@ -142,8 +142,11 @@ receipt, and offline instructions. Its bundle digest excludes private gold
 labels. A receipt produced by `write-replay-receipt` remains
 `submitted_pending_verification`; protected ingestion requires a separately
 controlled-run attestation before it can emit
-`independent_replay_observed`. This is independent replay of the frozen
-interface, not independent reimplementation.
+`independent_replay_observed`. The current checked-in evidence includes that
+endpoint for a same-host separately controlled guest, with the protected score
+retained in `output/data/independent_replay_receipt.json`. This is controlled
+replay of the frozen interface, not independent reimplementation or an
+independent physical-machine result.
 
 The public operator surface is intentionally usable without the owner-side
 gold directory: `verify-public`, `replay --offline`, and `run-model` read only

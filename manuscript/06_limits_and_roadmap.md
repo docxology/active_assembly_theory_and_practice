@@ -176,15 +176,15 @@ promotion state remains deliberately asymmetric:
 | P4 formal correspondence | explicit 16-register/width-aware Python state, real Capstone/Unicorn step comparison, and a separately kernel-checked Lean fragment | broad Lean/Python correspondence theorem for the full declared user-mode subset |
 | P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
 | P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |
-| P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, and replay metadata | independent external replay by a separately controlled implementation |
+| P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, replay metadata, and an observed same-host controlled guest run | independent implementation, independent physical/CI replay, and external scientific review |
 | P8 theorem phase | proved small algebraic theorem group and automatically generated bounded counterexample | broad trace theorem, transfer guarantee, or field-changing general result |
 | P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
 | P12 scaled transfer/quotient | 64-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
-| P13 licensed external validation | ten pinned rows across five projects and two revisions, static-only acquisition/compiler path, Capstone decoding, 100 source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and separately operated replay gates pass |
+| P13 licensed external validation | ten pinned rows across five projects and two revisions, static-only acquisition/compiler path, Capstone decoding, 100 source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
 | P14 measured policy robustness | deterministic/calibrated cost receipts and finite oracle certificate | universal cost law or non-oracle near-optimality claim |
-| P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, pending receipt schema, and protected ingestion boundary | `{{INDEPENDENT_REPLAY_STATUS}}`; independent replay only after a separately controlled receipt, and still not independent reimplementation |
+| P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; the observed same-host guest is not independent reimplementation |
 | P16 promotion hardening | theorem/countertheorem status map, source-bound claim/figure/scholarship closure, and accessible regeneration path | publication or award-level claim absent independent scientific review |
 | P17 protocol/artifact closure | protocol-v2 envelope on the project-owned JSON surface, atomic producer writes, receipt audit, and source-bound manuscript/document closure | semantic identifiability, external validity, independent replication, or theorem promotion |
 
@@ -202,10 +202,12 @@ Application-facing promotion remains closed: the licensed-source receipt is
 `{{EXTERNAL_SOURCE_STATUS}}` with `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` project
 families and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples,
 the correspondence is `{{FORMAL_CORRESPONDENCE_STATUS}}`, and the replication
-bundle reports only local label separation
-`{{REPLICATION_LABEL_SEPARATED}}`. Until licensed provenance,
-project-held-out labels, static-only safety, reproducible builds, and
-independent replay pass together, this manuscript uses “demonstrator,”
+bundle reports local label separation `{{REPLICATION_LABEL_SEPARATED}}` plus a
+same-host controlled replay status of `{{INDEPENDENT_REPLAY_STATUS}}`. The
+licensed-source external gate remains `{{EXTERNAL_SOURCE_STATUS}}` because its
+independent acquisition/build replay requirement is not satisfied. Until
+licensed provenance, project-held-out labels, static-only safety, reproducible
+builds, and the external-validation replay gate pass together, this manuscript uses “demonstrator,”
 “bounded endpoint,” and “capability receipt” rather than “general
 reverse-engineering system,” “architecture invariant,” or “application
 effectiveness.” This rule protects scientific integrity.

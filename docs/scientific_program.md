@@ -112,15 +112,15 @@ the generated program receipt. The abbreviated sequence is:
 | P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Explicit 16-register, width-aware Python state, real Capstone/Unicorn step matching, and a separate Lean fragment; no full-ISA Lean/Python theorem |
 | P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local compiler/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
 | P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Eight-component deterministic costs, local calibration with overhead/regression diagnostics, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
-| P7 | Independent implementation and open challenge | Implemented local frozen harness; independent replay unearned | No-network CLI, digest-ordered label-blind public inputs, private gold separation, hash validation, and replay receipt |
+| P7 | Independent implementation and open challenge | Local frozen harness plus an observed same-host controlled guest replay; independent implementation remains unearned | No-network CLI, digest-ordered label-blind public inputs, private gold separation, hash validation, protected scoring, and replay receipt |
 | P8 | General theorem or decisive countertheorem | Implemented fail-closed phase; broad theorem unresolved | Checked local theorem group, finite computational certificate, and generated bounded counterexample; no broad theorem promotion |
 | P9 | Finite intervention power and separating sets | Implemented finite diagnostic; identifiability promotion blocked | Exhaustive enumeration of the separate four-state pilot catalog, minimum separating sets, and one-state negative control; no universal identifiability claim |
 | P10 | Initialization robustness of observation-only learning | Implemented finite robustness diagnostic; stability promotion blocked | Five-start holdout ledger with accuracy spread and sequence agreement; no stable latent-parameter claim |
 | P11 | Complete normalized machine-state correspondence | Active bounded implementation; cross-language bridge unresolved | 64-bit all-GPR state, width/flag/memory boundary tests, Lean normalized-state definitions, and explicit unsupported outcomes |
 | P12 | Scaled transfer and quotient evaluation | Active promotion candidate; external evidence absent | 64-family classifier receipt, compiler/source/architecture capability matrix, and source-bound split/leakage receipts |
-| P13 | Licensed-source external validation | Underpowered after pinned acquisition | Ten pinned rows across five projects and two revisions, 10/10 static rows decoded, 100 source-bound contract rows with project-held-out labeling, and the remaining separately operated replay gate |
+| P13 | Licensed-source external validation | Underpowered after pinned acquisition | Ten pinned rows across five projects and two revisions, 10/10 static rows decoded, 100 source-bound contract rows with project-held-out labeling, and the remaining external acquisition/build replay gate |
 | P14 | Measured active-sensing robustness | Active bounded implementation | Deterministic vectors, calibrated local timing, finite oracle regret, non-oracle baselines, and matching calibration receipts |
-| P15 | Blind replication and adversarial audit | Local harness implemented; separate replay not yet observed | Public/private separation, hashed protocol/toolchain/instructions, offline replay, pending receipt schema, protected scoring, and independently controlled external replay receipt |
+| P15 | Blind replication and adversarial audit | Same-host separately controlled replay observed; independent implementation and physical/CI replay remain unearned | Public/private separation, hashed protocol/toolchain/instructions, offline replay, protected scoring, controlled replay receipt, and explicit independent-reimplementation boundary |
 | P16 | Theorem/countertheorem synthesis and publication promotion | Planned; fail closed | Kernel-checked theorem or preserved counterexample, claim-evidence closure, regenerated accessible package, and owner/reviewer promotion gates |
 | P17 | Protocol-v2 artifact and manuscript closure | Implemented locally; integrity-only | Shared receipt envelope, atomic producer writes, fail-closed artifact audit, source-bound figure/variable closure, and post-render document lineage |
 
@@ -394,7 +394,8 @@ document. Current status is intentionally conservative: P0–P2 are implemented
 locally, and P3–P17 have implemented bounded tranches with explicit receipts.
 The remaining promotion gates are not implied: P3 remains a bounded benchmark,
 P4 lacks a full-ISA theorem, P5 lacks licensed external validity, P6 is
-finite-benchmark optimality, P7 lacks independent replay, P13 has source-bound
-labels but remains underpowered until the separate replay gate is observed, and
+finite-benchmark optimality, P7 has an observed same-host controlled replay but
+no independent implementation, P13 has source-bound labels but remains
+underpowered until its external acquisition/build replay gate is observed, and
 P16 lacks a broad theorem. The source-bound status is therefore “implemented,
 bounded, and fail-closed,” not “scientifically complete.”

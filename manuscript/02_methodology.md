@@ -1229,8 +1229,13 @@ rows and `{{REPLICATION_GOLD_COUNT}}` gold rows, with label separation reported
 as `{{REPLICATION_LABEL_SEPARATED}}`. The public protocol, toolchain receipt,
 and offline instructions are part of the hashed public bundle
 (`{{REPLICATION_PUBLIC_BUNDLE_SHA256}}`). Replay is local and no-network; the
-receipt status deliberately distinguishes this from independent external
-replay, currently `{{INDEPENDENT_REPLAY_STATUS}}`.
+protected receipt separately records the current endpoint as
+`{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
+scope. The observed run uses `{{INDEPENDENT_REPLAY_MODEL}}` over
+`{{INDEPENDENT_REPLAY_ROW_COUNT}}` protected-score rows, with
+`{{INDEPENDENT_REPLAY_NETWORK_DISABLED}}` recorded for the network-disabled
+boundary; it is evidence about replay of the frozen interface, not an
+independent physical-machine run or an independent reimplementation.
 
 The separation contract is stronger than omitting a visible `label` key. Public
 record identifiers are derived only from public sequence/features, and the

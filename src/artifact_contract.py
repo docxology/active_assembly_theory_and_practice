@@ -465,6 +465,11 @@ def validate_data_artifact_surface(
     diagnostics: list[dict[str, str]] = []
     if not data_dir.is_dir():
         return [{"path": "output/data", "detail": "data directory is missing"}]
+    # A receipt can be structurally complete while still belonging to an
+    # older protocol.  The surface validator is the fail-closed boundary for
+    # manuscript evidence, so it must compare every artifact with the current
+    # canonical protocol rather than accepting any valid historical envelope.
+    expected_protocol = scientific_protocol_payload()
     for path in sorted(data_dir.glob("*.json")):
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -473,7 +478,9 @@ def validate_data_artifact_surface(
                 {"path": _relative(path, project_root), "detail": str(exc)}
             )
             continue
-        valid, detail = validate_artifact_envelope(payload)
+        valid, detail = validate_artifact_envelope(
+            payload, expected_protocol=expected_protocol
+        )
         if not valid:
             diagnostics.append(
                 {"path": _relative(path, project_root), "detail": detail}

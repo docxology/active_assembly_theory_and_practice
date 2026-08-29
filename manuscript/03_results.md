@@ -502,12 +502,11 @@ of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The separate source-bound label receipt is
 `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` contract-directed near misses, and
 `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls) and
 `{{EXTERNAL_LABEL_EXCLUSION_COUNT}}` explicit exclusions; the held-out project
-is `{{EXTERNAL_LABEL_TEST_PROJECTS}}`. The remaining open gate is the
-separately controlled replay, so these source-contract and static results are
-not failed accuracy results and do not support application-facing
-effectiveness.
+is `{{EXTERNAL_LABEL_TEST_PROJECTS}}`. The external acquisition/build replay
+gate remains unpassed, so these source-contract and static results are not
+failed accuracy results and do not support application-facing effectiveness.
 
-![Licensed-source provenance and application gate. The left panel shows ten pinned source rows across five projects and two revisions, explicit acquisition, static-only compilation, and canonical disassembly. The right panel reports the eight promotion gates; source-bound labels are `{{EXTERNAL_LABEL_ROW_COUNT}}` contract-audited rows divided into `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` one-change near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls, while separately controlled replay remains open. All counts are provenance diagnostics, not accuracy estimates; no unavailable or unsupported evidence is rendered as zero, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
+![Licensed-source provenance and application gate. The left panel shows ten pinned source rows across five projects and two revisions, explicit acquisition, static-only compilation, and canonical disassembly. The right panel reports the eight promotion gates; source-bound labels are `{{EXTERNAL_LABEL_ROW_COUNT}}` contract-audited rows divided into `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` one-change near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls. The separate external acquisition/build replay gate remains unpassed even though a same-host controlled replay of the public interface was observed in a distinct receipt. All counts are provenance diagnostics, not accuracy estimates; no unavailable or unsupported evidence is rendered as zero, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
 
 The accepted-row census makes the denominator and split topology explicit in
 [@fig:external-label-coverage]. It shows the role composition by project and
@@ -531,11 +530,23 @@ replace the deterministic cost vector or imply a cross-machine speed law.
 
 The replication bundle has `{{REPLICATION_PUBLIC_COUNT}}` public rows and
 `{{REPLICATION_GOLD_COUNT}}` separated gold rows, with label separation
-`{{REPLICATION_LABEL_SEPARATED}}`. The current status is a frozen local,
-no-network harness; independent replay is not inferred from the existence of a
-CLI. A changed protocol/source hash invalidates the receipt, preserving the
-distinction between rerunning the same code and independently implementing the
-method.
+`{{REPLICATION_LABEL_SEPARATED}}`. The current public harness is frozen and
+no-network. A separately controlled replay is recorded as
+`{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
+scope, using `{{INDEPENDENT_REPLAY_ROW_COUNT}}` rows (`{{INDEPENDENT_REPLAY_POSITIVE_ROW_COUNT}}`
+positive/equivalence rows and `{{INDEPENDENT_REPLAY_NEGATIVE_ROW_COUNT}}`
+negative/near-miss rows): balanced accuracy is
+`{{INDEPENDENT_REPLAY_BALANCED_ACCURACY}}`, macro-F1 is
+`{{INDEPENDENT_REPLAY_MACRO_F1}}`, Brier score is
+`{{INDEPENDENT_REPLAY_BRIER}}`, and expected calibration error is
+`{{INDEPENDENT_REPLAY_ECE}}`. The same protected score reports a
+false-equivalence rate of `{{INDEPENDENT_REPLAY_FALSE_EQUIVALENCE_RATE}}` and
+near-miss separation of `{{INDEPENDENT_REPLAY_NEAR_MISS_SEPARATION}}`. These
+are the results of one protected replay of the configured deterministic model,
+not a new scientific sample; the poor discrimination is retained as a negative
+replay result. A changed protocol/source hash invalidates the receipt,
+preserving the distinction between rerunning the same code, controlled replay,
+and independently implementing the method.
 
 ## Theorem-or-countertheorem outcome {#sec:theorem-countertheorem}
 
