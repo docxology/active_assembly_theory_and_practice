@@ -24,7 +24,7 @@ available in `{{GENERATIVE_ADEQUACY_ARTIFACT}}`.
 This fixed-parameter categorical phase-HMM does not establish learned semantic
 representations or external validity.
 
-![Observed fixture structure versus fixed-HMM simulations. Diamonds are the observed phase-transition rate and temporal recovery accuracy; circles and vertical intervals are medians and central 95% simulation intervals from same-length sequences generated from the fixed likelihood A, transition B, and prior D. The intervals are model-checking diagnostics rather than posterior or population uncertainty.]({{GENERATIVE_ADEQUACY_FIGURE}}){#fig:generative-adequacy width=96%}
+![{{FIGURE_GENERATIVE_ADEQUACY_CAPTION}}]({{FIGURE_GENERATIVE_ADEQUACY_PATH}}){#fig:generative-adequacy width=96%}
 
 Several limitations remain substantive. The corpus contains six transparent
 x86-64 programs, so complete fixtures rather than independent instruction steps
@@ -163,7 +163,7 @@ small number of independent families visible; they are not posterior or
 population uncertainty, and the negative-control panel is an intervention
 sensitivity check rather than a competing fitted model.
 
-![Primary final-`RAX` equivalence consistency and near-miss separation for the source-family benchmark, alongside the deliberately insufficient single-state negative control. Bars are family-level endpoint proportions and whiskers are descriptive 95% Wilson intervals; unresolved negative-control near misses remain visible as a protocol-sensitivity result rather than being silently excluded.]({{REPRESENTATION_BENCHMARK_FIGURE}}){#fig:representation-invariance-benchmark width=88%}
+![{{FIGURE_REPRESENTATION_INVARIANCE_BENCHMARK_CAPTION}}]({{FIGURE_REPRESENTATION_INVARIANCE_BENCHMARK_PATH}}){#fig:representation-invariance-benchmark width=88%}
 
 ## Current promotion ledger for P3--P17 {#sec:promotion-ledger}
 
@@ -211,3 +211,32 @@ builds, and the external-validation replay gate pass together, this manuscript u
 “bounded endpoint,” and “capability receipt” rather than “general
 reverse-engineering system,” “architecture invariant,” or “application
 effectiveness.” This rule protects scientific integrity.
+
+## Generated figure atlas {#sec:figure-atlas}
+
+The complete visual inventory is generated alongside the manuscript rather
+than maintained as a second hand-edited appendix. The source-bound registry
+is `{{FIGURE_REGISTRY_ARTIFACT}}` and the offline accessible atlas is
+`{{FIGURE_ATLAS_ARTIFACT}}`. Together they retain all 62 substantive figures,
+including diagnostics that are too dense for the main narrative. Each entry
+records its source artifact hashes, evidence status, population grain, split,
+uncertainty method, visible caption, short alternative text, and long
+description. The cover remains a separate document asset under the existing
+cover-media contract.
+
+The atlas is intentionally a scientific audit surface. It makes unavailable,
+unsupported, excluded, underpowered, and not-yet-observed states visible;
+provides exact tables for dense matrices where a chart alone would be
+ambiguous; and keeps deterministic enumerations separate from inferential
+intervals. It should therefore be read together with the claim register and
+the corresponding receipt, not as a collection of independent results. The
+canonical command is:
+
+```bash
+uv run python scripts/run_scientific_program.py generate-figures \
+  --formats png svg pdf atlas
+```
+
+The renderer hydrates figure captions and paths through the same variable
+registry used for the rest of the manuscript. No rendered caption, figure
+number, or accessibility string is hand-edited after hydration.

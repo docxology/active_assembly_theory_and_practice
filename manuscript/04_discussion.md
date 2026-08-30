@@ -94,3 +94,47 @@ review. The protected score is also poor, so the replay provides reproducibility
 evidence and a negative model result rather than external confirmation of the
 inference claim. Keeping these evidence states separate prevents an engineering
 rerun from being mistaken for scientific generalization.
+
+## What the visual atlas adds to the scientific argument
+
+The visual atlas is not an ornamental supplement. It is a second, inspectable
+projection of the evidence graph. The architecture and state plates show where
+static decoding ends and dynamic state begins; the quotient construction and
+statistical hierarchy show why source roles, interventions, and clusters cannot
+be collapsed into one row count; the coverage matrix and theorem-status map show
+which formal statements are checked and which remain outside the contract; and
+the replay audit shows the protected failure boundary rather than hiding it in a
+log file. This is especially important for assembly research, where a readable
+listing can create an impression of semantic completeness even when the actual
+observation channel is narrow.
+
+The atlas also makes absence legible. An unavailable compiler target is not a
+zero-valued performance cell; an unsupported instruction is not a failed
+semantic transition; a missing observation is not an observed zero; and a
+one-run controlled replay is not an independent sample. Text labels, hatching,
+direct annotations, and accessible tables reinforce those distinctions without
+requiring color perception. The long descriptions and source hashes provide a
+route from a visual claim back to the producer receipt, while the visible
+captions state the population and uncertainty boundary in the place where a
+reader is most likely to encounter the result.
+
+The added observation-semantics plate is useful because it locates these
+negative spaces before any model score is interpreted. It treats the typed
+record as an evidence object with a vocabulary, not as a bag of numerical
+defaults: `__MISSING__` means that an observation was not supplied, whereas
+`__UNKNOWN__` means that a categorical value was outside the fitted support.
+Unsupported and unavailable statuses describe contract boundaries, while a
+zero is retained only when a receipt measured zero. The public/private replay
+boundary is shown in the same vocabulary, so protected labels remain a scoring
+resource rather than an input feature. This is an important methodological
+discipline, but it does not by itself prove that the observation channel is
+complete, that a protected boundary has no side channel, or that the finite
+quotient relation is unrestricted program equivalence.
+
+The central interpretation therefore remains modest but useful. The package
+demonstrates how to make an assembly-to-inference experiment inspectable across
+representation, execution, formal, statistical, and document boundaries. It
+does not demonstrate that a model has recovered program meaning in the
+unrestricted sense. Its scientific value lies in making the stronger claim
+harder to assert without the corresponding source-bound evidence, and in
+turning the next stronger claim into an explicit, falsifiable research task.

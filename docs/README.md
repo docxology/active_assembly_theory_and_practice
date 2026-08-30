@@ -48,6 +48,9 @@ folder and the `manuscript/` sources are authored interfaces.
   `blocked_external`, `underpowered`, `unavailable`, `falsified`, and
   `unresolved` statuses remain visible and are not promoted to positive claims.
 - `reproducibility.md` defines the generated artifact hash manifest, build receipt, and figure/variable registries.
+- `visual_atlas.md` defines the canonical 62-figure source-bound registry,
+  nine narrative producers, vector/raster outputs, offline accessible atlas,
+  caption rules, status semantics, and visual-QA gates.
 - `analysis_validation.md` defines the generated-output validation oracle.
 - `assembly_packages.md` also documents the pinned Lean formal fragment, real
   multi-architecture adapter fixtures, and exact finite-horizon information

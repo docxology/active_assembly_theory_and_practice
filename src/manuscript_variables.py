@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from .advanced_inference import OUTPUT_DIR as ADVANCED_OUTPUT_DIR
@@ -21,6 +22,7 @@ from .evaluation import CALIBRATION_BIN_COUNT, WILSON_CONFIDENCE_LEVEL
 from .experiments import OUTPUT_DIR, run_experiment
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .figures import plot_inference_diagnostics
+from .figure_contract import build_figure_specs
 from .manuscript_registry import write_variable_registry
 from .reproducibility import MANIFEST_TARGETS, write_reproducibility_manifest
 from .rxinfer_bridge import (
@@ -275,6 +277,7 @@ def generate_variables() -> dict[str, str]:
     from .advanced_figures import write_advanced_figures
 
     advanced_figure_paths = write_advanced_figures()
+    figure_specs = build_figure_specs(ADVANCED_OUTPUT_DIR)
     reproducibility_path = write_reproducibility_manifest()
     # Close the project-owned JSON surface before the first validation pass.
     # This migrates only legacy metadata wrappers; domain payloads and their
@@ -924,6 +927,8 @@ def generate_variables() -> dict[str, str]:
         "ARTIFACT_RECEIPT_CLOSURE_FIGURE": (
             f"../{advanced_figure_paths['artifact_receipt_closure']}"
         ),
+        "FIGURE_REGISTRY_ARTIFACT": "../output/data/figure_registry.json",
+        "FIGURE_ATLAS_ARTIFACT": "../output/figure_atlas/index.html",
         "COVER_IMAGE_ARTIFACT": "manuscript/assets/active_assembly_cover.png",
         "DOCX_RENDER_ARTIFACT": (
             "../output/docx/active_assembly_theory_and_practice_combined.docx"
@@ -947,6 +952,34 @@ def generate_variables() -> dict[str, str]:
             else "pending"
         ),
     }
+    # The canonical figure contract is the single source for every visual's
+    # path, caption, alternative text, long description, status, and source
+    # note.  Emit metadata for all substantive figures; the manuscript may
+    # embed only the narrative subset while the remaining metadata is retained
+    # explicitly as atlas-only in the variable registry.
+    for spec in figure_specs:
+        prefix = f"FIGURE_{spec.figure_id.upper()}"
+        source_note = (
+            "Source receipts: "
+            + "; ".join(
+                f"{artifact} ({spec.input_hashes.get(artifact, 'missing')[:12]})"
+                for artifact in spec.input_artifacts
+            )
+            + "."
+        )
+        variables.update(
+            {
+                f"{prefix}_PATH": f"../{spec.png_path}",
+                f"{prefix}_CAPTION": spec.caption,
+                f"{prefix}_ALT_TEXT": spec.alt_text,
+                f"{prefix}_LONG_DESCRIPTION": spec.long_description,
+                f"{prefix}_SOURCE_NOTE": source_note,
+                f"{prefix}_STATUS": f"{spec.evidence_status}/{spec.receipt_status}",
+                f"{prefix}_ATLAS_PATH": f"../{spec.atlas_path}",
+                f"{prefix}_SVG_PATH": f"../{spec.svg_path}",
+                f"{prefix}_PDF_PATH": f"../{spec.pdf_path}",
+            }
+        )
     # These are populated after the first validation pass. Initial values
     # make the source-token coverage check valid even before hydration exists.
     variables.update(
@@ -970,7 +1003,21 @@ def generate_variables() -> dict[str, str]:
     # The first validation pass is allowed to inspect the pre-hydration
     # interface; the final pass below receives the concrete validation values.
     write_build_provenance(PROJECT_ROOT)
-    validation_report = write_validation_report()
+    # A source-only regeneration necessarily runs before the sibling template
+    # has rebuilt the DOCX/PDF.  If an older rendered artifact is present, its
+    # figure/caption/media counts describe the previous registry and must not
+    # make the source producer report a scientific failure.  The script-level
+    # hydration path already uses this guard; keep the public Python producer
+    # on the same explicit pre-render contract for direct callers and tests.
+    previous_docx_mode = os.environ.get("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER")
+    os.environ["ACTIVE_ASSEMBLY_DOCX_PRE_RENDER"] = "1"
+    try:
+        validation_report = write_validation_report()
+    finally:
+        if previous_docx_mode is None:
+            os.environ.pop("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER", None)
+        else:
+            os.environ["ACTIVE_ASSEMBLY_DOCX_PRE_RENDER"] = previous_docx_mode
     variables.update(
         {
             "VALIDATION_PASS_COUNT": str(validation_report.summary["passed"]),

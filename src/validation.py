@@ -82,8 +82,12 @@ from .compiler_transfer import (
     compiler_transfer_payload,
     validate_compiler_transfer_payload,
 )
-from .figures import FIGURE_CAPTIONS, plot_validation_summary, write_figure_captions
-from .manuscript_registry import MANUSCRIPT_VARIABLE_REGISTRY
+from .figures import FIGURE_CAPTIONS, plot_validation_summary
+from .figure_contract import FIGURE_REGISTRY_SCHEMA_VERSION
+from .manuscript_registry import (
+    COMPATIBILITY_ONLY_TOKENS,
+    MANUSCRIPT_VARIABLE_REGISTRY,
+)
 from .parameter_learning import (
     PARAMETER_LEARNING_SCHEMA_VERSION,
     parameter_learning_payload,
@@ -1171,25 +1175,45 @@ def _figure_registry_checks(output_dir: Path) -> list[ValidationCheck]:
         return [_check("figure_registry_contract", False, str(exc))]
     expected = {f"{stem}.png" for stem in FIGURE_CAPTIONS}
     rows = payload.get("figures", [])
-    filenames = [row.get("filename") for row in rows]
+    filenames = [
+        Path(str(row.get("png_path", ""))).name
+        for row in rows
+        if isinstance(row, dict) and isinstance(row.get("png_path"), str)
+    ]
     duplicate_filenames = sorted(
         filename for filename in set(filenames) if filenames.count(filename) > 1
     )
+    # Validate the canonical v2 names directly.  The older caption ledger
+    # remains a compatibility view, but it must not be allowed to make a v1
+    # row appear source-bound in the canonical registry.
     required_fields = {
         "figure_id",
-        "filename",
         "label",
         "generator",
         "input_artifacts",
-        "analysis_population",
-        "statistics",
-        "citation_keys",
+        "input_hashes",
+        "population",
+        "sample_hierarchy",
+        "metrics",
+        "uncertainty",
+        "missing_semantics",
+        "evidence_status",
+        "receipt_status",
+        "scholarship_keys",
         "caption",
         "alt_text",
         "long_description",
         "claim_ids",
         "validation_checks",
         "visual_qa",
+        "png_path",
+        "caption_word_count",
+        "alt_text_word_count",
+        "long_description_word_count",
+        "palette_contract",
+        "table_companion_path",
+        "source_note",
+        "visual_qa_status",
     }
     rows_ok = True
     metadata_errors: list[str] = []
@@ -1197,27 +1221,32 @@ def _figure_registry_checks(output_dir: Path) -> list[ValidationCheck]:
     for row in rows:
         missing = sorted(required_fields - set(row))
         visual_qa = row.get("visual_qa", {})
-        citation_keys = row.get("citation_keys")
+        citation_keys = row.get("scholarship_keys")
         if missing:
-            metadata_errors.append(f"{row.get('filename')}:missing={missing}")
+            metadata_errors.append(f"{row.get('figure_id')}:missing={missing}")
         if not isinstance(citation_keys, list) or any(
             key not in known_citation_keys for key in citation_keys
         ):
             metadata_errors.append(
-                f"{row.get('filename')}:unknown-citation-keys={citation_keys}"
+                f"{row.get('figure_id')}:unknown-citation-keys={citation_keys}"
             )
         if (
             not row.get("input_artifacts")
             or not row.get("claim_ids")
             or not row.get("validation_checks")
         ):
-            metadata_errors.append(f"{row.get('filename')}:missing-lineage")
+            metadata_errors.append(f"{row.get('figure_id')}:missing-lineage")
         if (
             not str(row.get("alt_text", "")).strip()
             or not str(row.get("long_description", "")).strip()
         ):
-            metadata_errors.append(f"{row.get('filename')}:missing-accessibility")
-        path = output_dir / "figures" / str(row.get("filename", ""))
+            metadata_errors.append(f"{row.get('figure_id')}:missing-accessibility")
+        path_value = row.get("png_path")
+        path = (
+            output_dir.parent / path_value
+            if isinstance(path_value, str)
+            else output_dir / "figures" / ""
+        )
         expected_hash = visual_qa.get("sha256")
         actual_hash = (
             hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
@@ -1228,9 +1257,9 @@ def _figure_registry_checks(output_dir: Path) -> list[ValidationCheck]:
             or not isinstance(expected_hash, str)
             or expected_hash != actual_hash
         ):
-            metadata_errors.append(f"{row.get('filename')}:visual-qa-or-hash")
+            metadata_errors.append(f"{row.get('figure_id')}:visual-qa-or-hash")
     rows_ok = (
-        payload.get("schema_version") == "1.1"
+        payload.get("schema_version") == FIGURE_REGISTRY_SCHEMA_VERSION
         and payload.get("figure_count") == len(expected)
         and set(filenames) == expected
         and len(filenames) == len(set(filenames))
@@ -1243,7 +1272,9 @@ def _figure_registry_checks(output_dir: Path) -> list[ValidationCheck]:
         template_payload = _load_json(template_registry_path)
         template_rows = template_payload.get("figures", [])
         canonical_by_filename = {
-            str(row.get("filename")): row for row in rows if row.get("filename")
+            Path(str(row.get("png_path"))).name: row
+            for row in rows
+            if isinstance(row, dict) and row.get("png_path")
         }
         for template_row in template_rows:
             filename = str(template_row.get("filename", ""))
@@ -1419,44 +1450,30 @@ def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
     )
     files = {path.name for path in source_paths}
     text = "\n".join(path.read_text(encoding="utf-8") for path in source_paths)
+    # The canonical figure registry is the source of truth for the manuscript
+    # surface.  Requiring the caption and path tokens as a pair prevents a
+    # figure from silently retaining a legacy literal caption or a legacy path
+    # while its registry metadata has moved on.  Atlas-only rows are generated
+    # and validated but need not be embedded in the narrative source.
+    try:
+        from .figure_contract import build_figure_specs
+
+        figure_specs = build_figure_specs(project_root / "output")
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        figure_specs = []
     expected_figures = {
-        "OBSERVATION_FIGURE",
-        "PACKAGE_PROVENANCE_FIGURE",
-        "TRACE_FEATURE_FIGURE",
-        "POSTERIOR_FIGURE",
-        "RXINFER_FREE_ENERGY_FIGURE",
-        "RXINFER_CATEGORICAL_FREE_ENERGY_FIGURE",
-        "INFERENCE_DIAGNOSTIC_FIGURE",
-        "SCHOLARSHIP_FIGURE",
-        "SCHOLARSHIP_MATRIX_FIGURE",
-        "CLAIM_FIGURE",
-        "VALIDATION_FIGURE",
-        "REPRODUCIBILITY_FIGURE",
-        "TEMPORAL_BELIEFS_FIGURE",
-        "MODEL_COMPARISON_FIGURE",
-        "ACTIVE_EFE_FIGURE",
-        "CALIBRATION_CURVE_FIGURE",
-        "CONFUSION_MATRIX_FIGURE",
-        "AMBIGUITY_ABLATION_FIGURE",
-        "SEGMENTATION_RIBBONS_FIGURE",
-        "CORPUS_STABILITY_FIGURE",
-        "PHASE_RECOVERY_FIGURE",
-        "DECODER_CALIBRATION_FIGURE",
-        "GENERATIVE_MODEL_FIGURE",
-        "ASSEMBLY_CFG_FIGURE",
-        "ASSEMBLY_MEMORY_FIGURE",
-        "OBSERVATION_INFO_FIGURE",
-        "MODEL_EVIDENCE_FIGURE",
-        "TRANSITION_ABLATION_FIGURE",
-        "GENERATIVE_ADEQUACY_FIGURE",
-        "TYPED_OBSERVATION_MATRIX_FIGURE",
-        "FACTORIZED_OBSERVATION_COMPARISON_FIGURE",
-        "REPRESENTATION_BENCHMARK_FIGURE",
-        "EXTERNAL_LABEL_COVERAGE_FIGURE",
+        (
+            f"FIGURE_{spec.figure_id.upper()}_CAPTION",
+            f"FIGURE_{spec.figure_id.upper()}_PATH",
+        )
+        for spec in figure_specs
+        if spec.placement != "atlas"
     }
     missing_sections = sorted(expected_sections - files)
     missing_figures = sorted(
-        token for token in expected_figures if f"{{{{{token}}}}}" not in text
+        f"{caption_token}|{path_token}"
+        for caption_token, path_token in expected_figures
+        if f"{{{{{caption_token}}}}}" not in text or f"{{{{{path_token}}}}}" not in text
     )
     raw_figure_refs = sorted(set(re.findall(r"`(fig:[A-Za-z0-9_-]+)`", text)))
     return [
@@ -1501,7 +1518,11 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
     except (OSError, json.JSONDecodeError) as exc:
         return [_check("manuscript_variable_coverage", False, str(exc))]
     missing = sorted(required - set(variables))
-    unused = sorted(set(variables) - required)
+    atlas_only = {token for token in variables if token.startswith("FIGURE_")}
+    compatibility_only = {
+        token for token in variables if token in COMPATIBILITY_ONLY_TOKENS
+    }
+    unused = sorted((set(variables) - required) - atlas_only - compatibility_only)
     pending = sorted(
         token for token, value in variables.items() if str(value).lower() == "pending"
     )
@@ -1538,6 +1559,14 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
         registry_errors.append("registry missing-token summary is stale")
     if registry_payload.get("unused_generated_tokens") != unused:
         registry_errors.append("registry unused-token summary is stale")
+    recorded_atlas_only = set(registry_payload.get("atlas_only_tokens", []))
+    if recorded_atlas_only != atlas_only - set(required):
+        registry_errors.append("registry atlas-only token summary is stale")
+    recorded_compatibility_only = set(
+        registry_payload.get("compatibility_only_tokens", [])
+    )
+    if recorded_compatibility_only != compatibility_only - set(required):
+        registry_errors.append("registry compatibility-only token summary is stale")
     if not registry_payload.get("summary", {}).get("no_pending_values", False):
         registry_errors.append("registry contains pending values")
     record_consumer_errors = [
@@ -2899,7 +2928,9 @@ def write_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     plot_validation_summary(
         [check.to_dict() for check in first_pass.checks], figure_path
     )
-    write_figure_captions(output_dir)
+    from .figure_contract import write_figure_bundle
+
+    write_figure_bundle(output_dir)
     report = build_validation_report(project_root)
     write_json_artifact(
         report_path,
@@ -2910,7 +2941,7 @@ def write_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     plot_validation_summary([check.to_dict() for check in report.checks], figure_path)
     # The validation figure itself is part of the caption ledger. Refresh after
     # plotting so a clean checkout cannot retain a stale "missing" status.
-    write_figure_captions(output_dir)
+    write_figure_bundle(output_dir)
     from .build_provenance import write_build_provenance
 
     write_build_provenance(project_root)

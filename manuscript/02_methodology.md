@@ -75,6 +75,18 @@ by the inference model.
 {{ASSEMBLY_LISTING}}
 ```
 
+![{{FIGURE_ASSEMBLY_STATE_PLATE_CAPTION}}]({{FIGURE_ASSEMBLY_STATE_PLATE_PATH}}){#fig:assembly-state-plate width=100%}
+
+The state plate is the visual companion to [@lst:assembly_fixture]. It is
+generated from the same listing and correspondence receipts, but it keeps the
+evidence types visually separate: bytes and decoded operands are static
+observations, register and program-counter snapshots are bounded dynamic
+observations, and flag/memory annotations are included only when the contract
+defines them. An unsupported or out-of-bounds transition is a status-bearing
+result, not a fabricated state. This layout is useful for reviewing the
+mechanics of a single step without suggesting that a short fixture is a
+complete architectural model.
+
 The fixture exercises four distinct pieces of x86-64 notation: an immediate
 load into `EAX`, an arithmetic update, a shift-based representation transform,
 and a second arithmetic update. A write to a 32-bit register such as `EAX`
@@ -130,6 +142,37 @@ as a high-cardinality semantic target. A missing value is encoded as
 `__UNKNOWN__`. This makes the missing-field policy an explicit model input,
 rather than an implicit zero or an exception.
 
+### Observation semantics and protected evidence {#sec:observation-semantics}
+
+The observation contract makes absence and protection first-class data states.
+An observed categorical value is different from a field that an action did not
+produce; a value outside the training vocabulary is different from either of
+those; and an instruction, target, or capability outside the declared contract
+is not a measured numeric outcome. The serialized tokens `__MISSING__` and
+`__UNKNOWN__` preserve the first two distinctions through feature construction,
+while structured `unsupported` and `unavailable` statuses preserve the latter
+two. A genuine numeric zero remains valid when, and only when, a producer
+receipt measures zero. This prevents a convenient sentinel from silently
+changing the estimand or making a capability gap appear to be a failed method.
+
+The same principle governs the replay interface. Public rows expose only the
+label-blind fields declared by the replication manifest; predictions return
+with stable identifiers; and gold labels remain in a protected scoring
+surface. Protocol and artifact hashes connect these surfaces without turning
+protected labels into model inputs. The boundary is provenance-preserving, not
+a cryptographic claim about every possible side channel. It establishes what
+the model was permitted to observe and what the scorer was permitted to know.
+
+![{{FIGURE_OBSERVATION_SEMANTICS_CAPTION}}]({{FIGURE_OBSERVATION_SEMANTICS_PATH}}){#fig:observation-semantics width=100%}
+
+[@fig:observation-semantics] is therefore a schema and evidence-boundary
+visual rather than a performance result. It is generated from the typed
+observation, research-protocol, and replication receipts, and its exact status
+table makes the semantics inspectable in grayscale and without relying on
+color. The diagram does not assert that the current observation channel is
+complete, that protected labels are recoverable, or that agreement under the
+finite channel entails unrestricted program equivalence.
+
 The typed records are evaluated as a companion to the collapsed channel across
 `{{TYPED_FIXTURE_COUNT}}` complete labelled fixtures. For a training-only
 support $V_f$ for field $f$, a smoothed field factor is
@@ -165,7 +208,7 @@ complete schema is visualized in [@fig:typed-observation-matrix], while the
 fixture-level comparison, field-family ablation, and masked-memory sensitivity
 are shown in [@fig:factorized-observation-comparison].
 
-![Typed observation record for the canonical fixture. Text cells preserve instruction family, operand class, Capstone register sets, flag effect, memory mode, branch target class, and bounded dynamic status; row shading marks evidence families, and an em dash means missing rather than zero.]({{TYPED_OBSERVATION_MATRIX_FIGURE}}){#fig:typed-observation-matrix width=100%}
+![{{FIGURE_TYPED_OBSERVATION_MATRIX_CAPTION}}]({{FIGURE_TYPED_OBSERVATION_MATRIX_PATH}}){#fig:typed-observation-matrix width=100%}
 
 The factorized evaluation uses `{{TYPED_FIELD_GROUP_COUNT}}` field groups and
 `{{FACTORIZED_ABLATION_GROUP_COUNT}}` corresponding leave-one-group-out
@@ -183,7 +226,7 @@ memory-addressing field yields mean accuracy `{{MISSING_FIELD_MEAN_ACCURACY}}`
 (`{{MISSING_FIELD_MEAN_DELTA}}` relative to full factorization), a useful null
 result because the labelled fixtures contain little memory-mode variation.
 
-![Typed observation model comparison. The left panel reports complete-fixture held-out accuracy for the collapsed categorical, static typed, factorized, and hierarchical composite scores; the middle removes one evidence family at a time; the right masks memory metadata under the explicit missing-field policy. Each fit excludes the displayed fixture, so the figure is a leakage diagnostic rather than a population benchmark.]({{FACTORIZED_OBSERVATION_COMPARISON_FIGURE}}){#fig:factorized-observation-comparison width=100%}
+![{{FIGURE_FACTORIZED_OBSERVATION_COMPARISON_CAPTION}}]({{FIGURE_FACTORIZED_OBSERVATION_COMPARISON_PATH}}){#fig:factorized-observation-comparison width=100%}
 
 ### Fixture-design coverage
 
@@ -217,7 +260,7 @@ artifact is a promotion gate for fixture diversity, not a semantic score: it
 cannot show that a field is intrinsic to program meaning or that six toy
 programs represent arbitrary binaries.
 
-![Transparent fixture-design coverage across the labelled corpus. The left panel separates static decoded span from bounded executed path length; the right panel records memory operands, alternate dynamic paths, repeated authored phases, and direct branch edges. These are design diagnostics rather than independent binary samples.]({{CORPUS_COVERAGE_FIGURE}}){#fig:corpus-coverage width=100%}
+![{{FIGURE_CORPUS_COVERAGE_CAPTION}}]({{FIGURE_CORPUS_COVERAGE_PATH}}){#fig:corpus-coverage width=100%}
 
 ### Bounded transfer functions and control-flow formalism
 
@@ -280,7 +323,17 @@ undefined or preserved flag is not silently treated as a match. These are
 trace-refinement checks for a declared subset, not a proof of the complete
 x86-64 transition relation [@intel_sdm;@dasgupta2019x86semantics].
 
-![Stepwise bounded transfer-function refinement. Post-instruction `RAX` markers from the local transfer functions and real Unicorn are overlaid for executed steps; the companion panel counts only explicitly modeled `EFLAGS` bit comparisons. Static instructions not visited by the bounded run are omitted. Exact agreement validates the declared fixture instrument, not complete x86-64 semantics.]({{TRACE_REFINEMENT_FIGURE}}){#fig:trace-refinement width=96%}
+![{{FIGURE_TRACE_REFINEMENT_CAPTION}}]({{FIGURE_TRACE_REFINEMENT_PATH}}){#fig:trace-refinement width=96%}
+
+![{{FIGURE_SEMANTIC_COVERAGE_MATRIX_CAPTION}}]({{FIGURE_SEMANTIC_COVERAGE_MATRIX_PATH}}){#fig:semantic-coverage-matrix width=100%}
+
+The coverage matrix should be interpreted as a scope ledger. A check mark in
+the Lean column is evidence about the checked formal fragment; a Capstone or
+Unicorn mark is evidence about the corresponding adapter call on the recorded
+fixture. These marks are not interchangeable and do not aggregate into a
+percentage of the entire x86-64 architecture. Textual statuses and hatching
+preserve the distinction between unsupported semantics, unavailable tooling,
+and a cell that has simply not yet been observed.
 
 ### Mechanically checked closed-world semantics {#sec:formal-fragment}
 
@@ -330,7 +383,7 @@ Lean 4's scholarly account describes the system as both an extensible theorem
 prover and a programming language [@demoura2021lean4]; here, only the kernel
 checked receipt for the declared local fragment is promoted.
 
-![Kernel-checked formal theorem manifest. Every marker is a theorem declared in the Lean project and is shown as locally checked by the pinned toolchain. The fragment covers only modular accumulator algebra; it does not certify the Python trace adapter or complete x86-64 semantics.]({{FORMAL_VERIFICATION_FIGURE}}){#fig:formal-verification-receipt width=96%}
+![{{FIGURE_FORMAL_VERIFICATION_RECEIPT_CAPTION}}]({{FIGURE_FORMAL_VERIFICATION_RECEIPT_PATH}}){#fig:formal-verification-receipt width=96%}
 
 ### Cross-architecture adapter falsification surface {#sec:cross-architecture}
 
@@ -355,7 +408,7 @@ benchmark is therefore a falsification surface for adapter drift and a
 starting point for source-family-disjoint cross-compiler work, not evidence of
 cross-architecture latent-state invariance.
 
-![Cross-architecture executable fixture benchmark. The left panel compares three static Capstone decodes with the two bounded Unicorn steps actually executed; the right panel shows the common accumulator outcome. Values are exact fixture counts for three transparent architectures, not population estimates or a cross-ISA semantic-equivalence theorem.]({{CROSS_ARCHITECTURE_FIGURE}}){#fig:cross-architecture-benchmark width=96%}
+![{{FIGURE_CROSS_ARCHITECTURE_BENCHMARK_CAPTION}}]({{FIGURE_CROSS_ARCHITECTURE_BENCHMARK_PATH}}){#fig:cross-architecture-benchmark width=96%}
 
 The static direct-branch partition produces {{CFG_BLOCK_COUNT}} basic blocks and
 {{CFG_EDGE_COUNT}} CFG edges in the current bundle. A target outside the decoded
@@ -408,7 +461,7 @@ visualized in [@fig:assembly-cfg]. It makes the distinction between a decoded
 direct branch, a fall-through successor, and an out-of-span target inspectable
 without importing a larger reverse-engineering framework.
 
-![Bounded CFG evidence for the branch-bearing fixture. Blocks retain decoded addresses and mnemonic sequences; colored edges distinguish fall-through from branch-taken relations, blue borders mark the bounded dynamic path, and the dashed external node preserves an out-of-span target rather than inventing a destination.]({{ASSEMBLY_CFG_FIGURE}}){#fig:assembly-cfg width=100%}
+![{{FIGURE_ASSEMBLY_CFG_CAPTION}}]({{FIGURE_ASSEMBLY_CFG_PATH}}){#fig:assembly-cfg width=100%}
 
 ### Memory operands and dynamic access provenance
 
@@ -458,7 +511,7 @@ value, providing a minimal end-to-end check that the static operand, effective
 address, dynamic hook, and terminal register result agree. This is an
 instrumentation demonstration, not evidence of general memory semantics.
 
-![Static-to-dynamic memory provenance for the transparent x86_memory fixture. The left panel marks Capstone memory operands; the right panel orders real Unicorn read/write hooks and reports triggering instruction, stack-relative effective address, and observed value. The store-to-load join is bounded to this fixture and is not heap recovery or alias analysis.]({{ASSEMBLY_MEMORY_FIGURE}}){#fig:assembly-memory-timeline width=100%}
+![{{FIGURE_ASSEMBLY_MEMORY_TIMELINE_CAPTION}}]({{FIGURE_ASSEMBLY_MEMORY_TIMELINE_PATH}}){#fig:assembly-memory-timeline width=100%}
 
 The native RxInfer layer is invoked through `julia --project` and reads the
 same trace bundle. The current model maps observation IDs into numeric event
@@ -495,13 +548,13 @@ finite, correctly namespaced free-energy and posterior artifacts. The companion
 is therefore an implemented method path, while its fixed parameters and small
 fixture input remain insufficient for claims of learned program semantics.
 
-![Categorical RxInfer Bethe Free Energy values for the fixed phase-HMM companion. The trajectory is reported on its own model-specific scale and is not numerically compared with the Gaussian event-code diagnostic.]({{RXINFER_CATEGORICAL_FREE_ENERGY_FIGURE}}){#fig:rxinfer-categorical-free-energy width=88%}
+![{{FIGURE_RXINFER_CATEGORICAL_FREE_ENERGY_CAPTION}}]({{FIGURE_RXINFER_CATEGORICAL_FREE_ENERGY_PATH}}){#fig:rxinfer-categorical-free-energy width=88%}
 
-![Source-bound assembly evidence map for the selected x86-64 fixture. Each card shows address, mnemonic/operands, and the categorical observation channel; solid borders mark addresses observed during bounded Unicorn execution, and observation IDs are labels rather than continuous measurements.]({{OBSERVATION_FIGURE}}){#fig:observation-pipeline width=95%}
+![{{FIGURE_OBSERVATION_PIPELINE_CAPTION}}]({{FIGURE_OBSERVATION_PIPELINE_PATH}}){#fig:observation-pipeline width=95%}
 
-![Package-provenance audit for required Capstone and Unicorn adapters plus optional roadmap slots. Available probes are distinguished from unavailable probes, and hatching marks optional slots; optional packages are recorded as provenance, not as evidence streams.]({{PACKAGE_PROVENANCE_FIGURE}}){#fig:package-provenance width=90%}
+![{{FIGURE_PACKAGE_PROVENANCE_CAPTION}}]({{FIGURE_PACKAGE_PROVENANCE_PATH}}){#fig:package-provenance width=90%}
 
-![Trace-feature audit for every decoded instruction. Binary execution/immediate/accumulator flags are shown beside an annotated table of observation IDs, category codes, and semantic labels; categorical codes are not plotted as a continuous scale.]({{TRACE_FEATURE_FIGURE}}){#fig:trace-feature-matrix width=95%}
+![{{FIGURE_TRACE_FEATURE_MATRIX_CAPTION}}]({{FIGURE_TRACE_FEATURE_MATRIX_PATH}}){#fig:trace-feature-matrix width=95%}
 
 ## Temporal, active, and evaluated inference {#sec:advanced-methods}
 
@@ -603,7 +656,7 @@ agreement is evidence that the latent fit is initialization-sensitive. Start
 selection is not performed using held-out labels, and every start—including
 weak or unstable fits—is retained in `{{PARAMETER_LEARNING_ARTIFACT}}`.
 
-![Conceptual graph of the discrete generative model and its active-selection extension. Hidden phases form a left-to-right Markov chain through transition `B`, emit categorical observations through likelihood `A`, and begin from prior `D`; the right-hand extension scores candidate policies with epistemic value and preference `C`. The schematic is deterministic and source-controlled, not an empirical network diagram.]({{GENERATIVE_MODEL_FIGURE}}){#fig:generative-model width=95%}
+![{{FIGURE_GENERATIVE_MODEL_CAPTION}}]({{FIGURE_GENERATIVE_MODEL_PATH}}){#fig:generative-model width=95%}
 
 ## Formal description
 
@@ -643,7 +696,7 @@ temporal forward update reduces exactly to the per-step memoryless posterior
 `P(s_t | o_t) ∝ A[o_t]`; the temporal and memoryless decoders then coincide.
 :::
 
-![Temporal forward-filter beliefs for the `{{SAMPLE_NAME}}` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phase labels after one decoded observation; the cell values expose filtering uncertainty, and the most-probable sequence is `{{TEMPORAL_PHASE_SEQUENCE}}`. The heatmap is a model-state diagnostic, not a discovered control-flow graph.]({{TEMPORAL_BELIEFS_FIGURE}}){#fig:temporal-beliefs-x86-accumulator width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_ACCUMULATOR_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_ACCUMULATOR_PATH}}){#fig:temporal-beliefs-x86-accumulator width=90%}
 
 The companion heatmaps below expose the same filtering contract across the
 labelled fixtures. They are supporting diagnostics rather than additional
@@ -653,15 +706,15 @@ bytes. The final two panels make the expanded design explicit: one includes
 bounded stack-memory operands, and the other includes a taken branch whose
 static fall-through instruction is not executed.
 
-![Temporal forward-filter beliefs for the `x86_bitwise` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; observation IDs label rows and are categorical identifiers, not numeric magnitudes.]({{TEMPORAL_BELIEFS_BITWISE_FIGURE}}){#fig:temporal-beliefs-x86-bitwise width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_BITWISE_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_BITWISE_PATH}}){#fig:temporal-beliefs-x86-bitwise width=90%}
 
-![Temporal forward-filter beliefs for the `x86_guard` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the heatmap displays filtering uncertainty and is not a discovered control-flow graph.]({{TEMPORAL_BELIEFS_GUARD_FIGURE}}){#fig:temporal-beliefs-x86-guard width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_PATH}}){#fig:temporal-beliefs-x86-guard width=90%}
 
-![Temporal forward-filter beliefs for the `x86_long_accumulator` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the longer fixture makes state persistence visible without changing the inference contract.]({{TEMPORAL_BELIEFS_LONG_ACCUMULATOR_FIGURE}}){#fig:temporal-beliefs-x86-long-accumulator width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_LONG_ACCUMULATOR_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_LONG_ACCUMULATOR_PATH}}){#fig:temporal-beliefs-x86-long-accumulator width=90%}
 
-![Temporal forward-filter beliefs for the `x86_memory` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; this fixture adds a bounded stack-relative store/load contrast to the typed evidence surface without claiming general memory semantics.]({{TEMPORAL_BELIEFS_MEMORY_FIGURE}}){#fig:temporal-beliefs-x86-memory width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_MEMORY_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_MEMORY_PATH}}){#fig:temporal-beliefs-x86-memory width=90%}
 
-![Temporal forward-filter beliefs for the `x86_guard_taken` fixture. Each row is a normalized posterior over the `{{HIDDEN_STATE_COUNT}}` hand-authored phases after one decoded observation; the taken branch leaves a statically decoded fall-through instruction outside the bounded dynamic path.]({{TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE}}){#fig:temporal-beliefs-x86-guard-taken width=90%}
+![{{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_TAKEN_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_TAKEN_PATH}}){#fig:temporal-beliefs-x86-guard-taken width=90%}
 
 To make the *active* in Active Inference explicit, the expected-free-energy
 heuristic ([@def:expected-free-energy]) scores each candidate observation by an
@@ -772,7 +825,16 @@ Section @sec:measured-sensing is a separate, deterministic/calibrated layer;
 neither artifact supports a universal cost claim or a policy guarantee outside
 the finite declared family.
 
-![Exact finite-horizon information-per-cost frontier. Each curve is the expected information gain in nats from exhaustive dynamic programming over the declared finite sensor family at one cost weight; increasing horizon permits additional non-repeating field queries. Curves may coincide when the finite contract selects the same frontier at every cost weight, and the figure marks that observation explicitly. The plot is a local mechanism result using the finite sensor likelihood model; the separately measured receipt in Section @sec:measured-sensing supplies auditable cost vectors rather than a universal active-sensing law.]({{ACTIVE_INFORMATION_FIGURE}}){#fig:active-information-frontier width=96%}
+![{{FIGURE_ACTIVE_INFORMATION_FRONTIER_CAPTION}}]({{FIGURE_ACTIVE_INFORMATION_FRONTIER_PATH}}){#fig:active-information-frontier width=96%}
+
+![{{FIGURE_POLICY_CERTIFICATE_FRONTIER_CAPTION}}]({{FIGURE_POLICY_CERTIFICATE_FRONTIER_PATH}}){#fig:policy-certificate-frontier width=100%}
+
+The certificate frontier makes the cost model auditable at the same time as
+it makes the optimization boundary visible. Exact dynamic programming supplies
+the finite oracle and its regret/optimality gap; any timing overlay is a local
+calibration with its own machine receipt. The visual must therefore be read as
+two linked coordinate systems, not as a universal exchange rate between
+information and hardware time.
 
 A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
 carrying a hand-authored ground-truth phase sequence aligned to its decoded
@@ -992,7 +1054,7 @@ terminal-only success. The Lean prerequisite is reported separately in
 Word64 boundary fixture, but a compiled Lean theorem is not silently promoted
 to a proof of the Python lifter or the complete x86-64 ISA.
 
-![Python reference, Capstone decoding, and bounded Unicorn correspondence. Each fixture bar is marked PASS only when every declared intervention trace matches at every compared step; the workload panel reports reference steps and average steps per intervention for the three transparent fixtures. Comparisons include decoded addresses, RAX/RSP post-state, modeled CF/ZF/SF/OF bits, and terminal RAX. The receipt is a bounded mechanized correspondence for the declared subset, not complete x86-64 semantics.]({{FORMAL_CORRESPONDENCE_FIGURE}}){#fig:formal-correspondence width=100%}
+![{{FIGURE_FORMAL_CORRESPONDENCE_CAPTION}}]({{FIGURE_FORMAL_CORRESPONDENCE_PATH}}){#fig:formal-correspondence width=100%}
 
 The transfer track is deliberately separate from the transparent-execution
 track. Portable source families are compiled with the exact locally available
@@ -1050,7 +1112,16 @@ status `{{EXTERNAL_CAPABILITIES_STATUS}}` and `{{EXTERNAL_CAPABILITY_TARGET_COUN
 target probes that produced a static object. A compiler-advertised target is
 not counted unless this empirical probe succeeds.
 
-![Compiler/source/architecture transfer capability receipt. Check marks indicate exact local compilation followed by Capstone decoding of a static object; dashes are unavailable or failed target rows and are not zero-valued results. The line panel reports the count of validated source-family-by-optimization rows for each target, not decoded instruction totals. No compiled object is executed, so the figure supports capability and provenance claims rather than compiler correctness or semantic equivalence.]({{COMPILER_TRANSFER_FIGURE}}){#fig:compiler-transfer width=100%}
+![{{FIGURE_COMPILER_TRANSFER_CAPTION}}]({{FIGURE_COMPILER_TRANSFER_PATH}}){#fig:compiler-transfer width=100%}
+
+![{{FIGURE_STATISTICAL_HIERARCHY_CAPTION}}]({{FIGURE_STATISTICAL_HIERARCHY_PATH}}){#fig:statistical-hierarchy width=100%}
+
+The hierarchy is the reason the analysis reports family-level uncertainty.
+Transformations, interventions, traces, and instruction steps are useful
+observations, but they share source lineage and cannot be treated as a flat
+independent sample. Fixing the family split before fitting also prevents the
+development and test boundaries from being reconstructed from row-level
+features or source order.
 
 ## Quotient classes and co-primary classifier portfolio {#sec:quotient-classifier}
 
@@ -1127,7 +1198,17 @@ rule are both satisfied. The receipt retains
 `{{QUOTIENT_CLASSIFIER_RAW_COMPARISON_COUNT}}` model-by-baseline comparison rows;
 no post-hoc baseline winner is promoted.
 
-![Formal-quotient membership under source-family holdout. The left panel shows balanced accuracy and macro-F1 with source-family-clustered 95% intervals for three co-primary NumPy model families and a surface baseline; the right panel shows held-out Brier score and ten-bin expected calibration error, for which lower is better. The endpoint has {{QUOTIENT_CLASSIFIER_FAMILY_COUNT}} source families and {{QUOTIENT_CLASSIFIER_ROW_COUNT}} pair rows under a three-way split; labels come from the declared intervention relation and are absent from typed features.]({{QUOTIENT_CLASSIFIER_FIGURE}}){#fig:quotient-classifier width=100%}
+![{{FIGURE_QUOTIENT_CLASSIFIER_CAPTION}}]({{FIGURE_QUOTIENT_CLASSIFIER_PATH}}){#fig:quotient-classifier width=100%}
+
+![{{FIGURE_QUOTIENT_CONSTRUCTION_CAPTION}}]({{FIGURE_QUOTIENT_CONSTRUCTION_PATH}}){#fig:quotient-construction width=100%}
+
+The construction diagram separates three operations that are often conflated:
+declaring a source-level pair role, applying the finite intervention catalog,
+and assigning an observational label from the resulting normalized traces.
+Only the last operation supplies the classifier target. The relation is useful
+for a controlled benchmark because it is reproducible; it is not a claim that
+two programs agree under every input, architecture, exception, or calling
+convention.
 
 ### Exact intervention power and finite separating sets {#sec:intervention-power}
 
@@ -1170,7 +1251,7 @@ useful counterexample to an underpowered catalog. No intervention subset is
 allowed to be chosen after inspecting a model prediction, and the promotion
 status remains fail closed.
 
-![Exact finite intervention power for the declared quotient catalog. Every non-empty intervention subset is shown as an individual point, with the exact minimum--maximum envelope and mean at each subset cardinality; singleton bars show the separation contribution of each initial-state intervention. The analysis enumerates `{{INTERVENTION_POWER_SUBSET_COUNT}}` subsets over `{{INTERVENTION_POWER_PAIR_COUNT}}` pair outcomes, has minimum fully separating cardinality `{{INTERVENTION_POWER_MINIMAL_CARDINALITY}}`, and retains the one-state negative control with `{{INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT}}` unresolved near-miss families. No sampling uncertainty is shown because the result is exact finite enumeration.]({{INTERVENTION_POWER_FIGURE}}){#fig:intervention-power width=100%}
+![{{FIGURE_INTERVENTION_POWER_CAPTION}}]({{FIGURE_INTERVENTION_POWER_PATH}}){#fig:intervention-power width=100%}
 
 ## Measured sensing costs and finite policy certification {#sec:measured-sensing}
 
@@ -1210,7 +1291,7 @@ deterministic cost vectors are comparison diagnostics; the oracle is an
 inadmissible reference and the non-oracle policies receive no certificate
 unless they independently satisfy the preregistered tolerance.
 
-![Measured sensing costs and finite policy certificates. The left panel shows four exact components of the eight-component deterministic cost vector, with all components retained in the receipt; the right panel shows machine-specific calibrated nanoseconds per query as medians with five-repetition min--max whiskers. The policy certificates compare the implemented objective with exact finite dynamic programming and are scoped to the frozen sensor/action space.]({{SENSOR_COST_FIGURE}}){#fig:sensor-costs width=100%}
+![{{FIGURE_SENSOR_COSTS_CAPTION}}]({{FIGURE_SENSOR_COSTS_PATH}}){#fig:sensor-costs width=100%}
 
 ## Frozen blind replication harness {#sec:replication-harness}
 
@@ -1251,4 +1332,14 @@ an explicit separately controlled-run attestation and a protected scoring
 boundary, so a local rerun cannot promote itself. The data flow is summarized
 in [@fig:replication-manifest].
 
-![Frozen local replication harness and provenance boundary. Public feature rows and separately held-out gold-label rows each contain the same number of records; predictions are scored only after exact identifier matching, and receipts bind the process to hashes and the frozen protocol. Public filenames, ordering, and metadata are label-free. The bundle is a no-network local replay package, not evidence of independent public replication.]({{REPLICATION_FIGURE}}){#fig:replication-manifest width=100%}
+![{{FIGURE_REPLICATION_MANIFEST_CAPTION}}]({{FIGURE_REPLICATION_MANIFEST_PATH}}){#fig:replication-manifest width=100%}
+
+![{{FIGURE_REPLAY_FAILURE_AUDIT_CAPTION}}]({{FIGURE_REPLAY_FAILURE_AUDIT_PATH}}){#fig:replay-failure-audit width=100%}
+
+The controlled replay audit is included because a reproducibility package must
+make failure inspectable. The protected score is a single replay of a frozen
+interface; its chance-level discrimination is not converted into a favorable
+claim by changing the model, labels, or endpoint. The guest boundary confirms
+the separation procedure used for this run, while the protected scoring boundary
+confirms where labels were available. This is controlled replay evidence, not
+independent physical replication or independent reimplementation.

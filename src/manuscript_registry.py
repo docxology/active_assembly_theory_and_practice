@@ -53,6 +53,73 @@ _PROPORTION_HINTS = (
     "SPAN",
 )
 
+# These names are retained so older project/template callers can continue to
+# resolve the original figure-path interface.  They are deliberately recorded
+# as compatibility-only values when the manuscript source has migrated to the
+# canonical ``FIGURE_<ID>_*`` metadata surface; silently calling them orphaned
+# would make the registry reject an intentional compatibility view.
+COMPATIBILITY_ONLY_TOKENS = frozenset(
+    {
+        "ACTION_SENSING_FIGURE",
+        "ACTIVE_EFE_FIGURE",
+        "ACTIVE_INFORMATION_FIGURE",
+        "AMBIGUITY_ABLATION_FIGURE",
+        "ASSEMBLY_CFG_FIGURE",
+        "ASSEMBLY_MEMORY_FIGURE",
+        "ARTIFACT_RECEIPT_CLOSURE_FIGURE",
+        "CALIBRATION_BIN_COUNT",
+        "CALIBRATION_CURVE_FIGURE",
+        "CALIBRATION_NONEMPTY_BIN_COUNT",
+        "CLAIM_FIGURE",
+        "COMPILER_TRANSFER_FIGURE",
+        "CONFUSION_MATRIX_FIGURE",
+        "CROSS_ARCHITECTURE_FIGURE",
+        "CORPUS_COVERAGE_FIGURE",
+        "CORPUS_STABILITY_FIGURE",
+        "DECODER_CALIBRATION_FIGURE",
+        "EXTERNAL_LABEL_COVERAGE_FIGURE",
+        "EXTERNAL_LABEL_REVISION_COUNT",
+        "EXTERNAL_SOURCE_PROVENANCE_FIGURE",
+        "FACTORIZED_OBSERVATION_COMPARISON_FIGURE",
+        "FORMAL_CORRESPONDENCE_FIGURE",
+        "FORMAL_VERIFICATION_FIGURE",
+        "GENERATIVE_ADEQUACY_FIGURE",
+        "GENERATIVE_MODEL_FIGURE",
+        "INFERENCE_DIAGNOSTIC_FIGURE",
+        "INTERVENTION_POWER_FIGURE",
+        "MODEL_COMPARISON_FIGURE",
+        "MODEL_EVIDENCE_FIGURE",
+        "OBSERVATION_FIGURE",
+        "OBSERVATION_INFO_FIGURE",
+        "PACKAGE_PROVENANCE_FIGURE",
+        "PARAMETER_LEARNING_FIGURE",
+        "PHASE_RECOVERY_FIGURE",
+        "POSTERIOR_FIGURE",
+        "QUOTIENT_CLASSIFIER_FIGURE",
+        "REPRESENTATION_BENCHMARK_FIGURE",
+        "REPRODUCIBILITY_FIGURE",
+        "REPLICATION_FIGURE",
+        "RXINFER_CATEGORICAL_FREE_ENERGY_FIGURE",
+        "RXINFER_FREE_ENERGY_FIGURE",
+        "SCHOLARSHIP_FIGURE",
+        "SCHOLARSHIP_MATRIX_FIGURE",
+        "SENSOR_COST_FIGURE",
+        "SEGMENTATION_RIBBONS_FIGURE",
+        "TEMPORAL_BELIEFS_BITWISE_FIGURE",
+        "TEMPORAL_BELIEFS_FIGURE",
+        "TEMPORAL_BELIEFS_GUARD_FIGURE",
+        "TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE",
+        "TEMPORAL_BELIEFS_LONG_ACCUMULATOR_FIGURE",
+        "TEMPORAL_BELIEFS_MEMORY_FIGURE",
+        "TEMPORAL_PHASE_SEQUENCE",
+        "TRACE_FEATURE_FIGURE",
+        "TRACE_REFINEMENT_FIGURE",
+        "TRANSITION_ABLATION_FIGURE",
+        "TYPED_OBSERVATION_MATRIX_FIGURE",
+        "VALIDATION_FIGURE",
+    }
+)
+
 VARIABLE_DEFINITIONS: dict[str, str] = {
     "DOCX_RENDER_ARTIFACT": "Standard template-generated combined DOCX manuscript artifact.",
     "DOCX_RENDER_RECEIPT": "Post-render DOCX integrity and source-lineage receipt.",
@@ -127,6 +194,8 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "ARTIFACT_RECEIPT_ERROR_COUNT": "Number of project-owned JSON data artifacts failing the common receipt-envelope validator.",
     "ARTIFACT_RECEIPT_AUDIT_COMMAND": "Canonical offline command for validating the project-owned artifact receipt surface.",
     "ARTIFACT_RECEIPT_CLOSURE_FIGURE": "Source-generated provenance visualization of the protocol, artifact, validation, and document-production boundary.",
+    "FIGURE_REGISTRY_ARTIFACT": "Canonical source-bound registry for all substantive figures and their accessibility metadata.",
+    "FIGURE_ATLAS_ARTIFACT": "Offline accessible HTML atlas containing the complete substantive figure set.",
     "QUOTIENT_CLASSIFIER_INTERVENTION_COUNT": "Number of initial-state interventions used by the co-primary quotient classifier benchmark.",
     "PARAMETER_LEARNING_ARTIFACT": "Held-out observation-only ordered-HMM EM artifact with training complements, fitted tensors, diagnostics, and comparator scores.",
     "PARAMETER_LEARNING_FIGURE": "Figure comparing observation-only ordered EM, supervised MAP, and fixed-reference held-out scores with training evidence trajectories.",
@@ -297,6 +366,8 @@ def _precision(rendered: str) -> int | None:
 
 
 def _canonical_source(token: str) -> str:
+    if token.startswith("FIGURE_"):
+        return "src.figure_contract.build_figure_specs / src.visual_atlas"
     if token.endswith("_FIGURE"):
         return "src.figures / src.advanced_figures"
     if token.endswith(_PATH_SUFFIXES):
@@ -484,6 +555,21 @@ def build_variable_registry(
     consumers, counts = source_token_consumers(project_root)
     source_tokens = sorted(consumers)
     generated_tokens = sorted(variables)
+    # The canonical figure contract emits metadata for the complete visual
+    # atlas.  A figure can be appendix/atlas-only while still requiring a
+    # generated, hash-bound caption and accessibility record.  Keep that
+    # distinction explicit rather than weakening the general unused-token
+    # check for every generated manuscript value.
+    atlas_only_tokens = sorted(
+        token
+        for token in generated_tokens
+        if token.startswith("FIGURE_") and token not in source_tokens
+    )
+    compatibility_only_tokens = sorted(
+        token
+        for token in generated_tokens
+        if token in COMPATIBILITY_ONLY_TOKENS and token not in source_tokens
+    )
     records: list[dict[str, Any]] = []
     for token in generated_tokens:
         rendered = str(variables[token])
@@ -523,7 +609,13 @@ def build_variable_registry(
         "source_token_counts": dict(sorted(counts.items())),
         "generated_tokens": generated_tokens,
         "missing_tokens": sorted(set(source_tokens) - set(generated_tokens)),
-        "unused_generated_tokens": sorted(set(generated_tokens) - set(source_tokens)),
+        "atlas_only_tokens": atlas_only_tokens,
+        "compatibility_only_tokens": compatibility_only_tokens,
+        "unused_generated_tokens": sorted(
+            (set(generated_tokens) - set(source_tokens))
+            - set(atlas_only_tokens)
+            - set(compatibility_only_tokens)
+        ),
         "duplicate_registry_tokens": [],
         "records": records,
         "summary": {
@@ -531,7 +623,13 @@ def build_variable_registry(
             "generated_token_count": len(generated_tokens),
             "record_count": len(records),
             "all_source_tokens_generated": set(source_tokens).issubset(variables),
-            "no_unused_generated_tokens": set(generated_tokens).issubset(source_tokens),
+            "no_unused_generated_tokens": not (
+                (set(generated_tokens) - set(source_tokens))
+                - set(atlas_only_tokens)
+                - set(compatibility_only_tokens)
+            ),
+            "atlas_only_token_count": len(atlas_only_tokens),
+            "compatibility_only_token_count": len(compatibility_only_tokens),
             "no_pending_values": not any(
                 str(value).lower() == "pending" for value in variables.values()
             ),

@@ -29,6 +29,11 @@ uv run python scripts/run_scientific_program.py replay --offline
 uv run python scripts/run_scientific_program.py verify-public
 uv run python scripts/run_scientific_program.py promote-evidence
 
+uv run python scripts/run_scientific_program.py generate-figures \
+  --formats png svg pdf atlas
+uv run python scripts/run_scientific_program.py audit-figures
+uv run python scripts/run_scientific_program.py render-manuscript
+
 uv run python scripts/run_rxinfer_backend.py
 
 uv run python scripts/validate_analysis_outputs.py
@@ -76,6 +81,15 @@ producer and validates the generated source tree. Then pass
 that validated tree without silently regenerating it under a different
 timeout. Any source, protocol, or generator change requires fresh project-side
 hydration before rendering.
+
+The figure gates require all 62 substantive specifications to have unique
+labels, current input hashes, nonblank PNGs, parseable vector companions, and
+complete caption/alternative/long-description metadata. The offline atlas must
+contain one semantic figure card per registry row and no remote dependency.
+Unavailable, unsupported, excluded, and not-observed cells must remain textual
+statuses rather than zero-valued measurements. A passing atlas gate is a
+source-bound document property, not a promotion of the scientific claim shown
+by a figure.
 
 Post-render sanity checks:
 

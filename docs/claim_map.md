@@ -52,3 +52,12 @@ parity (with validator-produced summaries checked independently); the PDF
 accessibility report separately establishes the configured tag-tree and
 PDF/UA checks. Neither format receipt is evidence of semantic generalization
 or peer-review-level scholarship.
+
+The visual atlas adds a parallel claim-control surface. `output/data/figure_registry.json`
+binds each of the 62 substantive visuals to producer code, source-artifact
+hashes, population, hierarchy, uncertainty semantics, caption, alternatives,
+and claim IDs. The registry can therefore establish that a figure is generated
+and source-bound; it cannot strengthen a `blocked_external`, `underpowered`,
+`unsupported`, or `unresolved` scientific result. The nine narrative figures
+are interpretive maps and plates, while the legacy diagnostic figures retain
+their original receipt-defined evidence roles.

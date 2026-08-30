@@ -54,6 +54,14 @@ uv run python scripts/run_scientific_program.py generate-public
 uv run python scripts/run_scientific_program.py verify-public
 ```
 
+The public bundle is a frozen replay input once generated. In particular,
+regenerating manuscript variables or figures does not silently replace its
+platform-specific `toolchain_receipt.json`; that receipt contributes to the
+public-bundle hash used by a separately controlled replay. To change the
+protocol, public rows, or toolchain contract, deliberately reseed the public
+bundle, record the new hash, and obtain a new replay receipt. A host package
+or OS update alone is not evidence that the public interface changed.
+
 The VM transfer requires a clean committed checkout because its source archive
 is bound to `git rev-parse HEAD`. After the source-bound changes have been
 committed, create and provision the guest:

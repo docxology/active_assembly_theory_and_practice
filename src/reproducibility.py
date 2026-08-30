@@ -737,6 +737,96 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("figure_artifact_receipt_closure",),
     ),
     ArtifactManifestTarget(
+        path="output/figures/research_architecture.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_research_architecture",
+        claim_ids=("CLM-009",),
+        validation_checks=(
+            "figure_research_architecture",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/observation_semantics.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_observation_semantics",
+        claim_ids=("CLM-003", "CLM-009"),
+        validation_checks=(
+            "figure_observation_semantics",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/assembly_state_plate.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_assembly_state_plate",
+        claim_ids=("CLM-001", "CLM-019"),
+        validation_checks=(
+            "figure_assembly_state_plate",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/quotient_construction.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_quotient_construction",
+        claim_ids=("CLM-027", "CLM-034"),
+        validation_checks=(
+            "figure_quotient_construction",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/semantic_coverage_matrix.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_semantic_coverage_matrix",
+        claim_ids=("CLM-030",),
+        validation_checks=(
+            "figure_semantic_coverage_matrix",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/statistical_hierarchy.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_statistical_hierarchy",
+        claim_ids=("CLM-009", "CLM-027"),
+        validation_checks=(
+            "figure_statistical_hierarchy",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/replay_failure_audit.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_replay_failure_audit",
+        claim_ids=("CLM-009",),
+        validation_checks=(
+            "figure_replay_failure_audit",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/policy_certificate_frontier.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_policy_certificate_frontier",
+        claim_ids=("CLM-031",),
+        validation_checks=(
+            "figure_policy_certificate_frontier",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/theorem_status_map.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_theorem_status_map",
+        claim_ids=("CLM-009",),
+        validation_checks=(
+            "figure_theorem_status_map",
+            "figure_accessibility_contract",
+        ),
+    ),
+    ArtifactManifestTarget(
         path="output/data/temporal_inference.json",
         artifact_type="inference",
         generated_by="src.advanced_inference.run_advanced_inference",

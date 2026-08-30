@@ -33,13 +33,13 @@ semantics report, stepwise transfer-function/Unicorn refinement, direct-target C
 cover-image presence/nonblankness; these checks are engineering and provenance
 contracts, not evidence of scientific generality.
 
-![Counts of sources in the curated scholarship ledger by source type. The ledger separates peer-reviewed theory and binary-analysis context from software papers, package documentation, and roadmap references; counts describe support roles rather than evidence strength by themselves.]({{SCHOLARSHIP_FIGURE}}){#fig:scholarship-source-roles width=92%}
+![{{FIGURE_SCHOLARSHIP_SOURCE_ROLES_CAPTION}}]({{FIGURE_SCHOLARSHIP_SOURCE_ROLES_PATH}}){#fig:scholarship-source-roles width=92%}
 
-![Scholarship-source counts crossed by project stage and evidence tier. Implemented and comparison rows contextualize executed paths, while roadmap and context rows remain explicitly outside the currently executed evidence-producing surface.]({{SCHOLARSHIP_MATRIX_FIGURE}}){#fig:scholarship-evidence-matrix width=92%}
+![{{FIGURE_SCHOLARSHIP_EVIDENCE_MATRIX_CAPTION}}]({{FIGURE_SCHOLARSHIP_EVIDENCE_MATRIX_PATH}}){#fig:scholarship-evidence-matrix width=92%}
 
-![Claim-register coverage map. For each bounded claim, bars count linked source keys, generated artifacts, and validation checks; these counts audit traceability and do not turn a linked claim into independent scientific replication.]({{CLAIM_FIGURE}}){#fig:claim-evidence-map width=95%}
+![{{FIGURE_CLAIM_EVIDENCE_MAP_CAPTION}}]({{FIGURE_CLAIM_EVIDENCE_MAP_PATH}}){#fig:claim-evidence-map width=95%}
 
-![Reproducibility-manifest coverage by artifact class. Bar height is total tracked file size in KiB and annotations give file counts; each file is independently recorded with SHA-256 and byte size.]({{REPRODUCIBILITY_FIGURE}}){#fig:artifact-hash-manifest width=92%}
+![{{FIGURE_ARTIFACT_HASH_MANIFEST_CAPTION}}]({{FIGURE_ARTIFACT_HASH_MANIFEST_PATH}}){#fig:artifact-hash-manifest width=92%}
 
 The shared artifact boundary is separately audited rather than inferred from
 the reproducibility manifest. The current receipt layer is schema
@@ -54,7 +54,7 @@ practice [@w3cprov2013;@rocrate2023;@sandve2013repro], while preserving the
 important distinction between local reproducibility and independent replication
 [@acm2020artifact].
 
-![Protocol-v2 artifact receipt closure for {{ARTIFACT_RECEIPT_COUNT}} project-owned JSON artifacts. The flow binds the protocol to producers, sealed domain payloads, validation, and the hydrated manuscript/DOCX/tagged-PDF boundary; the companion status bars retain blocked and planned roadmap states. Counts are deterministic provenance checks with no inferential uncertainty, and unavailable evidence is not rendered as zero performance.]({{ARTIFACT_RECEIPT_CLOSURE_FIGURE}}){#fig:artifact-receipt-closure width=100%}
+![{{FIGURE_ARTIFACT_RECEIPT_CLOSURE_CAPTION}}]({{FIGURE_ARTIFACT_RECEIPT_CLOSURE_PATH}}){#fig:artifact-receipt-closure width=100%}
 
 The analysis validator reports `{{VALIDATION_PASS_COUNT}}` passing checks out
 of `{{VALIDATION_TOTAL_COUNT}}`, with `{{VALIDATION_FAIL_COUNT}}` failures and
@@ -69,7 +69,7 @@ citation closure, source-shape quality, source-stage and evidence-tier
 partitioning, claim-register links, fixed-parameter generative adequacy, and
 cautious claim-boundary language.
 
-![Generated validation checks for trace structure, assembly-listing lineage, inference artifacts, figures, scholarship, manuscript hydration, provenance, and reproducibility. A pass means the named project oracle evaluated true; it is not a substitute for scientific peer review.]({{VALIDATION_FIGURE}}){#fig:validation-summary width=96%}
+![{{FIGURE_VALIDATION_SUMMARY_CAPTION}}]({{FIGURE_VALIDATION_SUMMARY_PATH}}){#fig:validation-summary width=96%}
 
 This validation layer is intentionally adversarial. It is designed to fail if a
 future edit reports RxInfer free energy without finite JSONL values, adds a

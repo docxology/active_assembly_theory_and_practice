@@ -121,7 +121,7 @@ _PRODUCER_MODULES = {
     "external_label_contract.json": "src/external_labeling.py",
     "independent_replay_receipt.json": "src/replication.py",
     "factorized_observation_model.json": "src/advanced_inference.py",
-    "figure_registry.json": "src/figures.py",
+    "figure_registry.json": "src/figure_contract.py",
     "formal_trace_correspondence.json": "src/formal_correspondence.py",
     "formal_verification.json": "src/formal_verification.py",
     "generative_adequacy.json": "src/advanced_inference.py",

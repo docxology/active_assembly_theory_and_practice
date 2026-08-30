@@ -9,6 +9,8 @@ from typing import cast
 
 import pytest
 
+import src.replication as replication_module
+
 from src.replication import (
     INDEPENDENT_REPLAY_ARTIFACT,
     GOLD_LABELS,
@@ -55,6 +57,23 @@ def test_all_label_blind_reference_models_use_only_public_rows(
     assert payload["label_blind"] is True
     assert len(payload["predictions"]) == 2
     assert all(0.0 <= row["probability"] <= 1.0 for row in payload["predictions"])
+
+
+def test_public_toolchain_receipt_is_frozen_across_regeneration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Host drift cannot silently change the replay input hash."""
+
+    write_replication_bundle(tmp_path)
+    receipt_path = tmp_path / "output/replication/public/toolchain_receipt.json"
+    original = receipt_path.read_bytes()
+
+    monkeypatch.setattr(replication_module.platform, "platform", lambda: "drifted")
+    monkeypatch.setattr(replication_module.platform, "python_version", lambda: "99.0.0")
+    monkeypatch.setattr(replication_module.platform, "machine", lambda: "drifted")
+    write_replication_bundle(tmp_path)
+
+    assert receipt_path.read_bytes() == original
 
 
 def test_label_blind_model_rejects_unreadable_empty_and_leaking_inputs(

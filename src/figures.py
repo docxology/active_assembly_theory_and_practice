@@ -2174,16 +2174,18 @@ def plot_calibration_curve(bins: list[dict[str, object]], output_path: Path) -> 
         confidences,
         accuracies,
         yerr=np.vstack([lower_error, upper_error]),
-        fmt="o-",
-        linewidth=1.8,
+        fmt="o",
+        linewidth=0.0,
         color=PALETTE[0],
         capsize=3,
         markersize=5,
         label="Forward filter",
     )
-    for cx, cy, count in zip(confidences, accuracies, counts, strict=True):
+    for cx, cy, count, bin_index in zip(
+        confidences, accuracies, counts, bin_indices, strict=True
+    ):
         ax.annotate(
-            f"n={count}",
+            f"b{bin_index + 1}\nn={count}",
             (cx, cy),
             textcoords="offset points",
             xytext=(4, -14 if cy > 0.9 else 4),
@@ -2200,7 +2202,7 @@ def plot_calibration_curve(bins: list[dict[str, object]], output_path: Path) -> 
     ax.text(
         0.0,
         AXIS_SUBTITLE_Y,
-        f"{len(bins)} non-empty bins of {configured_bin_count} configured equal-width bins; n labels the bin denominator; bars are 95% Wilson intervals around bin hit counts (descriptive, n={sum(counts)}).",
+        f"{len(bins)} non-empty bins among {configured_bin_count} configured equal-width bins; b labels the bin and n its denominator; whiskers are 95% Wilson intervals around bin hit counts (descriptive, n={sum(counts)}). Empty bins are not connected.",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
@@ -4138,57 +4140,176 @@ def plot_cross_architecture_benchmark(
 def plot_formal_verification_receipt(
     payload: dict[str, object], output_path: Path
 ) -> Path:
-    """Plot the theorem manifest and checked status of the formal fragment."""
+    """Plot the proof-backed fragment alongside its explicit evidence boundary."""
 
     if payload.get("endpoint_status", payload.get("status")) != "locally_verified":
         raise ValueError("formal verification receipt is not locally verified")
     theorem_names = payload.get("theorems")
     if not isinstance(theorem_names, list) or not theorem_names:
         raise ValueError("formal theorem manifest must be non-empty")
-    labels = [
-        str(name).replace("ActiveAssembly.", "").replace("_", " ")
-        for name in theorem_names
-    ][::-1]
-    y = np.arange(len(labels), dtype=float)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(7.6, 3.9))
-    ax.hlines(y, 0, 1, color=GRID, linewidth=1.0)
-    ax.scatter(
-        np.ones(len(labels)),
-        y,
-        s=60,
-        color=PALETTE[2],
-        edgecolor=INK,
-        linewidth=0.8,
-        zorder=3,
+    bridge = payload.get("cross_language_bridge")
+    bridge_checked = isinstance(bridge, dict) and bool(bridge.get("kernel_checked"))
+    unsupported = payload.get("unsupported_cases")
+    underpowered = payload.get("underpowered_cases")
+    unsupported_count = len(unsupported) if isinstance(unsupported, list) else None
+    underpowered_count = len(underpowered) if isinstance(underpowered, list) else None
+    status_rows = [
+        ["proof-backed", str(len(theorem_names)), "Lean kernel checked"],
+        [
+            "cross-language bridge",
+            "1 fixture" if bridge_checked else "not observed",
+            "generated trace; bounded scope",
+        ],
+        ["computational-only", "not recorded", "not promoted by this receipt"],
+        ["falsified candidate", "not recorded", "see theorem status map"],
+        ["unresolved candidate", "not recorded", "see theorem status map"],
+        [
+            "unsupported / excluded",
+            str(unsupported_count) if unsupported_count else "none recorded",
+            "outside declared fragment",
+        ],
+        [
+            "underpowered",
+            str(underpowered_count) if underpowered_count else "none recorded",
+            "not a positive result",
+        ],
+    ]
+    status_colors = (
+        PALETTE[2],
+        PALETTE[1],
+        MUTED,
+        PALETTE[3],
+        PALETTE[4],
+        MUTED,
+        MUTED,
     )
-    ax.set_yticks(y, labels)
-    ax.set_xlim(-0.05, 1.25)
-    ax.set_xticks([0, 1], ["not checked", "kernel checked"])
-    ax.set_xlabel("Receipt status")
-    ax.set_title("Formal theorem manifest", loc="left", fontsize=11, pad=AXIS_TITLE_PAD)
-    ax.text(
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig = plt.figure(figsize=(12.6, 6.7))
+    grid = fig.add_gridspec(1, 2, width_ratios=(1.12, 1.0), wspace=0.24)
+    ax_status = fig.add_subplot(grid[0, 0])
+    ax_status.axis("off")
+    table = ax_status.table(
+        cellText=status_rows,
+        colLabels=("evidence status", "receipt value", "interpretation"),
+        loc="center",
+        cellLoc="left",
+        colLoc="left",
+        bbox=cast(Any, (0.0, 0.03, 1.0, 0.82)),
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(7.5)
+    table.scale(1, 1.18)
+    for (row, col), cell in table.get_celld().items():
+        cell.set_edgecolor(GRID)
+        if row == 0:
+            cell.set_facecolor(PALETTE[0])
+            cell.get_text().set_color("white")
+            cell.get_text().set_fontweight("bold")
+        else:
+            cell.set_facecolor("white" if row % 2 else LIGHT)
+            if col == 0:
+                cell.set_facecolor(status_colors[row - 1] + "36")
+                cell.get_text().set_fontweight("bold")
+            if col == 1:
+                cell.get_text().set_fontweight("bold")
+    ax_status.set_title("Evidence status ledger", loc="left", fontsize=10, color=INK)
+    ax_status.text(
         0.0,
-        AXIS_SUBTITLE_Y,
-        f"Lean toolchain {payload.get('toolchain', 'unknown')} · {len(labels)} declared theorems · local build receipt",
-        transform=ax.transAxes,
+        0.92,
+        "The formal receipt reports what this Lean build checked and keeps absent evidence visible.",
+        transform=ax_status.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=7.6,
+        color=MUTED,
+    )
+
+    ax_scope = fig.add_subplot(grid[0, 1])
+    ax_scope.axis("off")
+    checked = payload.get("checked_fragment")
+    checked_operations = (
+        checked.get("operations", []) if isinstance(checked, dict) else []
+    )
+    operations_text = (
+        "\n".join(f"• {str(operation)}" for operation in checked_operations)
+        or "• not recorded"
+    )
+    ax_scope.add_patch(
+        Rectangle(
+            (0.03, 0.22),
+            0.94,
+            0.62,
+            facecolor=PALETTE[2] + "18",
+            edgecolor=PALETTE[2],
+            linewidth=1.0,
+            hatch="..",
+        )
+    )
+    ax_scope.text(
+        0.07,
+        0.79,
+        "Checked fragment",
+        fontsize=10,
+        weight="bold",
+        color=INK,
+    )
+    ax_scope.text(
+        0.07,
+        0.73,
+        operations_text,
+        fontsize=7.4,
+        va="top",
+        color=INK,
+        linespacing=1.25,
+    )
+    relation = (
+        checked.get("relation", "not recorded")
+        if isinstance(checked, dict)
+        else "not recorded"
+    )
+    state = (
+        checked.get("state", "not recorded")
+        if isinstance(checked, dict)
+        else "not recorded"
+    )
+    ax_scope.text(
+        0.07,
+        0.15,
+        "Formal boundary\n"
+        + textwrap.fill(f"state: {state}; relation: {relation}", 54)
+        + "\n\n"
+        + "Unsupported ISA effects, complete x86-64 semantics, and population-level claims remain outside this receipt.",
+        fontsize=7.7,
+        va="top",
+        color=MUTED,
+        linespacing=1.3,
+    )
+    fig.suptitle(
+        "Formal verification receipt: checked fragment and evidence boundary",
+        x=0.06,
+        ha="left",
+        fontsize=13,
+        color=INK,
+    )
+    fig.text(
+        0.06,
+        0.93,
+        f"Lean toolchain {payload.get('toolchain', 'unknown')} · {len(theorem_names)} declared theorems · endpoint: {payload.get('endpoint_status', 'not observed')}",
+        ha="left",
+        va="top",
+        fontsize=8,
+        color=MUTED,
+    )
+    fig.text(
+        0.06,
+        0.025,
+        "Kernel-checked rows are not a complete x86-64 semantics proof; computational bridge evidence and absent theorem statuses remain explicitly separated.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    ax.text(
-        1.0,
-        -0.16,
-        "Closed Word64 accumulator fragment only; unsupported ISA effects remain outside the proof.",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=8,
-        color=MUTED,
-    )
-    _style_axes(ax, grid_axis="x")
-    fig.subplots_adjust(left=0.34, right=0.98, bottom=0.24, top=0.78)
+    fig.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.83)
     return _save_figure(fig, output_path)
 
 
@@ -4280,12 +4401,15 @@ def plot_active_information_frontier(
 
 
 def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot co-primary quotient classifiers with clustered test intervals.
+    """Plot the quotient-classifier portfolio with uncertainty and deltas.
 
-    The endpoint is intentionally visualized as a portfolio.  The three
-    preregistered model families are shown beside the surface baseline, and
-    the second panel exposes calibration/error metrics rather than hiding
-    them behind a single accuracy bar.
+    Dot-and-interval marks keep the two co-primary endpoints visible without
+    implying an ordered ranking.  A second panel exposes the paired,
+    source-family-clustered difference from the typed surface baseline, and a
+    third panel retains calibration and selective-coverage diagnostics.  The
+    receipt is allowed to omit intervals for calibration quantities; in that
+    case the panel labels them as point estimates instead of inventing
+    uncertainty.
     """
 
     models = payload.get("models")
@@ -4310,138 +4434,258 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         return numeric
 
     labels = {
-        "calibrated_interpretable": "interpretable\nlogistic",
-        "temporal_probabilistic": "temporal\nMarkov",
-        "neural_sequence": "neural\nRNN",
-        "surface_baseline": "surface\nbaseline",
+        "calibrated_interpretable": "interpretable",
+        "temporal_probabilistic": "temporal",
+        "neural_sequence": "neural",
+        "surface_baseline": "surface baseline",
     }
+
+    def interval(name: str, key: str) -> tuple[float, float] | None:
+        model = cast(dict[str, object], models[name])
+        intervals = model.get("confidence_intervals")
+        if not isinstance(intervals, dict):
+            return None
+        record = intervals.get(key)
+        if not isinstance(record, dict):
+            return None
+        raw_interval = record.get("interval")
+        if (
+            not isinstance(raw_interval, list)
+            or len(raw_interval) != 2
+            or not all(isinstance(item, (int, float)) for item in raw_interval)
+        ):
+            raise ValueError(f"malformed confidence interval for {name}.{key}")
+        lo, hi = float(raw_interval[0]), float(raw_interval[1])
+        value = metric(name, key)
+        if not 0.0 <= lo <= value <= hi <= 1.0:
+            raise ValueError(f"confidence interval does not contain {name}.{key}")
+        return lo, hi
+
+    def paired_record(name: str, key: str) -> dict[str, object] | None:
+        comparisons = payload.get("paired_comparisons")
+        if not isinstance(comparisons, dict):
+            return None
+        raw = comparisons.get(f"{name}:surface_baseline:{key}")
+        return raw if isinstance(raw, dict) else None
+
+    def paired_delta(name: str, key: str) -> tuple[float, tuple[float, float] | None]:
+        record = paired_record(name, key)
+        if record is None:
+            model_comparisons = payload.get("model_comparisons")
+            if isinstance(model_comparisons, dict):
+                model_record = model_comparisons.get(name)
+                if isinstance(model_record, dict):
+                    metric_record = model_record.get(key)
+                    if isinstance(metric_record, dict):
+                        difference = metric_record.get("difference_vs_surface_baseline")
+                        if isinstance(difference, (int, float)) and not isinstance(
+                            difference, bool
+                        ):
+                            return float(difference), None
+            raise ValueError(f"paired comparison is missing for {name}.{key}")
+        observed = record.get("observed_difference")
+        if not isinstance(observed, dict):
+            raise ValueError(f"paired difference is missing for {name}.{key}")
+        difference = observed.get(key)
+        if not isinstance(difference, (int, float)) or isinstance(difference, bool):
+            raise ValueError(f"paired difference is malformed for {name}.{key}")
+        confidence_intervals = record.get("confidence_intervals")
+        if not isinstance(confidence_intervals, dict):
+            return float(difference), None
+        interval_record = confidence_intervals.get(key)
+        if not isinstance(interval_record, dict):
+            return float(difference), None
+        raw_interval = interval_record.get("interval")
+        if (
+            not isinstance(raw_interval, list)
+            or len(raw_interval) != 2
+            or not all(isinstance(item, (int, float)) for item in raw_interval)
+        ):
+            raise ValueError(f"malformed paired interval for {name}.{key}")
+        return float(difference), (float(raw_interval[0]), float(raw_interval[1]))
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(9.0, 4.7), gridspec_kw={"width_ratios": (1.55, 1.0)}
+        1,
+        3,
+        figsize=(12.5, 6.2),
+        gridspec_kw={"width_ratios": (1.15, 1.15, 0.95)},
     )
-    x = np.arange(len(names), dtype=float)
-    width = 0.34
-    for offset, (key, label, color) in enumerate(
-        (
-            ("balanced_accuracy", "balanced accuracy", PALETTE[0]),
-            ("macro_f1", "macro-F1", PALETTE[1]),
-        )
-    ):
+    # Panel A: co-primary endpoint estimates.  Two marks per model preserve
+    # the portfolio view while making the interval and the model identity
+    # legible in grayscale.
+    y = np.arange(len(names), dtype=float)
+    endpoint_keys = (
+        ("balanced_accuracy", "balanced accuracy", PALETTE[0], -0.12),
+        ("macro_f1", "macro-F1", PALETTE[1], 0.12),
+    )
+    for key, label, color, offset in endpoint_keys:
         values = [metric(name, key) for name in names]
-        lower: list[float] = []
-        upper: list[float] = []
+        xerr_low: list[float] = []
+        xerr_high: list[float] = []
         for name, value in zip(names, values, strict=True):
-            model = cast(dict[str, object], models[name])
-            intervals = model.get("confidence_intervals")
-            if not isinstance(intervals, dict):
-                raise ValueError("quotient-classifier confidence intervals are missing")
-            record = intervals.get(key)
-            if not isinstance(record, dict):
-                raise ValueError(f"missing confidence interval for {name}.{key}")
-            interval = record.get("interval")
-            if (
-                not isinstance(interval, list)
-                or len(interval) != 2
-                or not all(isinstance(item, (int, float)) for item in interval)
-            ):
-                raise ValueError(f"malformed confidence interval for {name}.{key}")
-            lo, hi = float(interval[0]), float(interval[1])
-            if not 0.0 <= lo <= value <= hi <= 1.0:
-                raise ValueError(f"confidence interval does not contain {name}.{key}")
-            lower.append(value - lo)
-            upper.append(hi - value)
-        bars = axes[0].bar(
-            x + (offset - 0.5) * width,
+            bounds = interval(name, key)
+            if bounds is None:
+                xerr_low.append(0.0)
+                xerr_high.append(0.0)
+            else:
+                xerr_low.append(value - bounds[0])
+                xerr_high.append(bounds[1] - value)
+        axes[0].errorbar(
             values,
-            width=width,
+            y + offset,
+            xerr=[xerr_low, xerr_high],
+            fmt="o",
+            markersize=5.5,
+            markeredgecolor=INK,
+            markeredgewidth=0.55,
             color=color,
-            edgecolor="white",
-            linewidth=0.8,
+            ecolor=INK,
+            elinewidth=1.1,
+            capsize=3,
             label=label,
             zorder=3,
         )
-        axes[0].errorbar(
-            x + (offset - 0.5) * width,
-            values,
-            yerr=[lower, upper],
-            fmt="none",
-            ecolor=INK,
-            elinewidth=1.0,
-            capsize=3,
-            capthick=1.0,
-            zorder=4,
-        )
-        for bar, value in zip(bars, values, strict=True):
+        for value, position in zip(values, y + offset, strict=True):
             axes[0].text(
-                bar.get_x() + bar.get_width() / 2,
-                min(value + 0.045, 1.08),
+                min(value + 0.025, 1.04),
+                position,
                 f"{value:.2f}",
-                ha="center",
-                va="bottom",
-                fontsize=7.5,
+                va="center",
+                fontsize=7.3,
                 color=INK,
             )
-    axes[0].set_xticks(x, [labels[name] for name in names])
-    axes[0].set_ylim(0.0, 1.16)
-    axes[0].set_ylabel("Held-out score")
-    axes[0].set_title("Co-primary endpoint portfolio", fontsize=10, pad=AXIS_TITLE_PAD)
-    axes[0].legend(frameon=False, fontsize=8, loc="upper left", ncols=2)
+    axes[0].axvline(0.5, color=MUTED, linestyle="--", linewidth=0.8)
+    axes[0].set_yticks(y, [labels[name] for name in names])
+    axes[0].invert_yaxis()
+    axes[0].set_xlim(0.0, 1.16)
+    axes[0].set_xlabel("Held-out score")
+    axes[0].set_title("Co-primary endpoints", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[0].legend(frameon=False, fontsize=7.5, loc="lower right")
     axes[0].text(
-        0.5,
+        0.0,
         AXIS_SUBTITLE_Y,
-        f"{payload.get('held_out_family_count', 'n/a')} held-out families; clustered 95% intervals",
+        f"{payload.get('held_out_family_count', 'n/a')} held-out families; 95% clustered intervals",
         transform=axes[0].transAxes,
-        ha="center",
+        ha="left",
         va="bottom",
-        fontsize=8,
+        fontsize=7.6,
         color=MUTED,
     )
 
-    error_keys = ("brier_score", "expected_calibration_error")
-    error_labels = ("Brier", "ECE")
-    for offset, (key, label, color) in enumerate(
-        zip(error_keys, error_labels, (PALETTE[2], PALETTE[3]), strict=True)
-    ):
-        values = [metric(name, key) for name in names]
-        bars = axes[1].bar(
-            x + (offset - 0.5) * width,
-            values,
-            width=width,
+    # Panel B: paired model-minus-baseline deltas.  The interval is read from
+    # the same source-family bootstrap receipt as the primary endpoint, so a
+    # favorable point estimate cannot be mistaken for a promoted comparison.
+    comparison_names = names[:-1]
+    delta_y = np.arange(len(comparison_names), dtype=float)
+    for key, label, color, offset in endpoint_keys:
+        deltas: list[float] = []
+        lows: list[float] = []
+        highs: list[float] = []
+        for name in comparison_names:
+            difference, bounds = paired_delta(name, key)
+            deltas.append(difference)
+            if bounds is None:
+                lows.append(0.0)
+                highs.append(0.0)
+            else:
+                lows.append(difference - bounds[0])
+                highs.append(bounds[1] - difference)
+        axes[1].errorbar(
+            deltas,
+            delta_y + offset,
+            xerr=[lows, highs],
+            fmt="o",
+            markersize=5.5,
+            markeredgecolor=INK,
+            markeredgewidth=0.55,
             color=color,
-            edgecolor="white",
-            linewidth=0.8,
+            ecolor=INK,
+            elinewidth=1.1,
+            capsize=3,
             label=label,
             zorder=3,
         )
-        for bar, value in zip(bars, values, strict=True):
+        for difference, position in zip(deltas, delta_y + offset, strict=True):
             axes[1].text(
-                bar.get_x() + bar.get_width() / 2,
-                value + 0.025,
-                f"{value:.2f}",
-                ha="center",
-                va="bottom",
-                fontsize=7.5,
+                difference + (0.018 if difference >= 0 else -0.018),
+                position,
+                f"{difference:+.2f}",
+                ha="left" if difference >= 0 else "right",
+                va="center",
+                fontsize=7.2,
                 color=INK,
             )
-    axes[1].set_xticks(x, [labels[name] for name in names])
-    axes[1].set_ylim(0.0, 1.08)
-    axes[1].set_ylabel("Lower is better")
-    axes[1].set_title(
-        "Calibration and probability error", fontsize=10, pad=AXIS_TITLE_PAD
-    )
-    axes[1].legend(frameon=False, fontsize=8, loc="upper left")
+    axes[1].axvline(0.0, color=MUTED, linestyle="--", linewidth=0.9)
+    axes[1].set_yticks(delta_y, [labels[name] for name in comparison_names])
+    axes[1].invert_yaxis()
+    axes[1].set_xlim(-0.55, 0.38)
+    axes[1].set_xlabel("Difference from surface baseline")
+    axes[1].set_title("Paired family-level deltas", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[1].legend(frameon=False, fontsize=7.5, loc="lower right")
     axes[1].text(
-        0.5,
-        -0.20,
-        "Primary scores use fixed 0.5 threshold; Brier and ten-bin ECE use held-out probabilities.",
+        0.0,
+        AXIS_SUBTITLE_Y,
+        "Positive values favor the model; intervals use the frozen paired bootstrap",
         transform=axes[1].transAxes,
-        ha="center",
-        va="top",
-        fontsize=7.5,
+        ha="left",
+        va="bottom",
+        fontsize=7.6,
         color=MUTED,
     )
+
+    # Panel C: probability calibration and selective diagnostics.  Current
+    # receipts provide point estimates for these quantities, so no fabricated
+    # interval is drawn.  Coverage/risk is printed beneath the plot as a
+    # compact, auditable companion to the calibration marks.
+    diagnostic_y = np.arange(len(names), dtype=float)
+    diagnostic_keys = (
+        ("brier_score", "Brier", PALETTE[2], -0.12),
+        ("expected_calibration_error", "ECE", PALETTE[3], 0.12),
+    )
+    for key, label, color, offset in diagnostic_keys:
+        values = [metric(name, key) for name in names]
+        axes[2].errorbar(
+            values,
+            diagnostic_y + offset,
+            fmt="o",
+            markersize=5.5,
+            markeredgecolor=INK,
+            markeredgewidth=0.55,
+            color=color,
+            label=label,
+            zorder=3,
+        )
+        for value, position in zip(values, diagnostic_y + offset, strict=True):
+            axes[2].text(
+                min(value + 0.025, 1.02),
+                position,
+                f"{value:.2f}",
+                va="center",
+                fontsize=7.2,
+                color=INK,
+            )
+    axes[2].set_yticks(diagnostic_y, [labels[name] for name in names])
+    axes[2].invert_yaxis()
+    axes[2].set_xlim(0.0, 1.12)
+    axes[2].set_xlabel("Lower is better")
+    axes[2].set_title("Calibration diagnostics", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[2].legend(frameon=False, fontsize=7.5, loc="lower right")
+    coverage_lines: list[str] = []
+    for name in names:
+        model = cast(dict[str, object], models[name])
+        selective = model.get("selective_risk_coverage")
+        if isinstance(selective, dict):
+            coverage = selective.get("coverage")
+            risk = selective.get("risk")
+            if isinstance(coverage, (int, float)) and isinstance(risk, (int, float)):
+                coverage_lines.append(
+                    f"{labels[name]}: cov {coverage:.2f}, risk {risk:.2f}"
+                )
+            elif isinstance(coverage, (int, float)):
+                coverage_lines.append(f"{labels[name]}: cov {coverage:.2f}, risk n/a")
     for ax in axes:
-        _style_axes(ax, grid_axis="y")
+        _style_axes(ax, grid_axis="x")
     fig.suptitle(
         "Formal-quotient membership under source-family holdout",
         x=0.08,
@@ -4450,125 +4694,230 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         color=INK,
     )
     fig.text(
+        0.70,
+        0.185,
+        "Point estimates; no clustered CI supplied for Brier/ECE.",
+        ha="left",
+        va="bottom",
+        fontsize=7.0,
+        color=MUTED,
+    )
+    fig.text(
+        0.70,
+        0.145,
+        "Selective coverage/risk (receipt threshold): "
+        + "; ".join(
+            line.replace(": cov ", " ").replace(", risk ", "/")
+            for line in coverage_lines
+        ),
+        ha="left",
+        va="top",
+        fontsize=6.2,
+        color=MUTED,
+    )
+    fig.text(
         0.08,
         0.01,
-        "Labels come from the declared intervention relation; typed features omit family, transformation, bytes, and target labels.",
+        "Labels come from the declared intervention relation; typed features omit family, transformation, bytes, and target labels. No post-hoc winner is selected.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.24, top=0.79, wspace=0.28)
+    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.30, top=0.79, wspace=0.45)
     return _save_figure(fig, output_path)
 
 
 def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot capability-preserving compiler/source/architecture transfer."""
+    """Plot status-aware static compiler and decoder capability evidence."""
 
     rows = payload.get("rows")
     if not isinstance(rows, list) or not rows:
         raise ValueError("compiler-transfer rows must be non-empty")
-    source_ids = sorted(
-        {str(cast(dict[str, object], row)["source_id"]) for row in rows}
-    )
-    target_ids = sorted(
-        {str(cast(dict[str, object], row)["target_id"]) for row in rows}
-    )
-    table = np.full((len(source_ids), len(target_ids)), np.nan, dtype=float)
-    valid_counts = np.zeros_like(table)
-    for row in rows:
-        if not isinstance(row, dict):
+    normalized: list[dict[str, object]] = []
+    for raw in rows:
+        if not isinstance(raw, dict):
             raise ValueError("compiler-transfer row is not an object")
-        i = source_ids.index(str(row["source_id"]))
-        j = target_ids.index(str(row["target_id"]))
-        status = row.get("status")
+        status = str(raw.get("status", "not_observed"))
         if status == "validated_static_object":
-            table[i, j] = 1.0
-            count = row.get("decoded_instruction_count")
+            count = raw.get("decoded_instruction_count")
             if not isinstance(count, int) or count <= 0:
                 raise ValueError("validated transfer row lacks decoded count")
-            valid_counts[i, j] += 1.0
-        elif status != "unavailable":
-            raise ValueError("compiler-transfer row has unknown status")
+        elif status not in {"unavailable", "failed", "unsupported", "underpowered"}:
+            raise ValueError(f"compiler-transfer row has unknown status: {status}")
+        normalized.append(raw)
+
+    source_ids = sorted(
+        {str(row.get("source_id", "not_observed")) for row in normalized}
+    )
+    configurations = sorted(
+        {
+            (
+                str(row.get("target_id", "not_observed")),
+                str(row.get("optimization", "not_observed")),
+            )
+            for row in normalized
+        }
+    )
+    config_labels = [
+        f"{target}\n{optimization}" for target, optimization in configurations
+    ]
+    by_key = {
+        (
+            str(row.get("source_id")),
+            str(row.get("target_id")),
+            str(row.get("optimization")),
+        ): row
+        for row in normalized
+    }
+    status_text = {
+        "validated_static_object": "VALID\nstatic",
+        "unavailable": "UNAVAILABLE",
+        "failed": "FAILED",
+        "unsupported": "UNSUPPORTED",
+        "underpowered": "UNDERPOWERED",
+    }
+    status_color = {
+        "validated_static_object": PALETTE[2],
+        "unavailable": LIGHT,
+        "failed": PALETTE[4] + "30",
+        "unsupported": PALETTE[3] + "30",
+        "underpowered": PALETTE[1] + "30",
+    }
+    status_hatch = {
+        "validated_static_object": "",
+        "unavailable": "//",
+        "failed": "xx",
+        "unsupported": "..",
+        "underpowered": "\\\\",
+    }
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(8.5, 4.4), gridspec_kw={"width_ratios": (1.1, 1.0)}
+        1,
+        2,
+        figsize=(12.8, 5.8),
+        gridspec_kw={"width_ratios": (1.35, 1.0)},
     )
-    cmap = ListedColormap(("#E9EEF3", PALETTE[2]))
-    display = np.nan_to_num(table, nan=0.0)
-    image = axes[0].imshow(display, cmap=cmap, vmin=0.0, vmax=1.0, aspect="auto")
-    del image
-    axes[0].set_xticks(np.arange(len(target_ids)), target_ids)
-    axes[0].set_yticks(np.arange(len(source_ids)), source_ids)
-    axes[0].set_xlabel("Target triple family")
-    axes[0].set_ylabel("Portable source family")
-    axes[0].set_title("Capability matrix", fontsize=10, pad=AXIS_TITLE_PAD)
-    for i in range(len(source_ids)):
-        for j in range(len(target_ids)):
-            status = "validated" if table[i, j] == 1.0 else "unavailable"
-            axes[0].text(
-                j,
-                i,
-                "✓" if status == "validated" else "—",
-                ha="center",
-                va="center",
-                fontsize=13,
-                color=INK if status == "validated" else MUTED,
-            )
+    axes[0].axis("off")
+    axes[0].set_title(
+        "Capability status by source × target × optimization",
+        loc="left",
+        fontsize=10,
+        pad=AXIS_TITLE_PAD,
+    )
+    table_values: list[list[str]] = []
+    for source_id in source_ids:
+        cells: list[str] = []
+        for target_id, optimization in configurations:
+            row = by_key.get((source_id, target_id, optimization))
+            status = str(row.get("status", "not_observed")) if row else "not_observed"
+            cells.append(status_text.get(status, status.upper()))
+        table_values.append(cells)
+    table = axes[0].table(
+        cellText=table_values,
+        rowLabels=source_ids,
+        colLabels=config_labels,
+        loc="center",
+        cellLoc="center",
+        rowLoc="left",
+        bbox=(0.0, 0.10, 1.0, 0.78),
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(6.8)
+    table.scale(1.0, 1.55)
+    for (row_index, col_index), cell in table.get_celld().items():
+        cell.set_edgecolor(GRID)
+        if row_index == 0:
+            cell.set_facecolor(PALETTE[0])
+            cell.get_text().set_color("white")
+            cell.get_text().set_fontweight("bold")
+        elif col_index == -1:
+            cell.set_facecolor(LIGHT)
+            cell.get_text().set_fontweight("bold")
+        else:
+            source_id = source_ids[row_index - 1]
+            target_id, optimization = configurations[col_index]
+            row = by_key.get((source_id, target_id, optimization))
+            status = str(row.get("status", "not_observed")) if row else "not_observed"
+            cell.set_facecolor(status_color.get(status, "white"))
+            cell.set_hatch(status_hatch.get(status, "///"))
     axes[0].text(
-        0.5,
-        -0.18,
-        "A dash is an explicit local capability gap, not a host-target substitution.",
+        0.0,
+        0.03,
+        "Text and hatching carry status; unavailable/failed/unsupported cells are not zero performance.",
         transform=axes[0].transAxes,
-        ha="center",
-        va="top",
-        fontsize=7.5,
+        ha="left",
+        va="bottom",
+        fontsize=7.2,
         color=MUTED,
     )
 
-    x = np.arange(len(target_ids), dtype=float)
-    for i, source_id in enumerate(source_ids):
-        values = [
-            valid_counts[i, j] if np.isfinite(table[i, j]) else np.nan
-            for j in range(len(target_ids))
-        ]
-        axes[1].plot(
-            x,
-            values,
-            marker="o",
-            linewidth=1.7,
-            color=PALETTE[i % len(PALETTE)],
-            label=source_id,
-        )
-    axes[1].set_xticks(x, target_ids)
-    axes[1].set_ylabel("Validated compiler configurations")
-    axes[1].set_title("Validated optimization rows", fontsize=10, pad=AXIS_TITLE_PAD)
-    axes[1].legend(frameon=False, fontsize=7.5, loc="best")
+    valid_rows = [
+        row for row in normalized if row.get("status") == "validated_static_object"
+    ]
+    x = np.arange(len(configurations), dtype=float)
+    for source_index, source_id in enumerate(source_ids):
+        for config_index, (target_id, optimization) in enumerate(configurations):
+            row = by_key.get((source_id, target_id, optimization))
+            if row is None or row.get("status") != "validated_static_object":
+                continue
+            count_value = row.get("decoded_instruction_count")
+            if not isinstance(count_value, (int, float)):
+                continue
+            count = int(count_value)
+            offset = (source_index - (len(source_ids) - 1) / 2) * 0.04
+            axes[1].scatter(
+                config_index + offset,
+                count,
+                s=34,
+                color=PALETTE[source_index % len(PALETTE)],
+                edgecolor=INK,
+                linewidth=0.45,
+                zorder=3,
+            )
+            axes[1].text(
+                config_index + offset,
+                count + 0.55,
+                str(count),
+                ha="center",
+                va="bottom",
+                fontsize=6.1,
+                color=INK,
+            )
+    axes[1].set_xticks(x, config_labels)
+    axes[1].tick_params(axis="x", labelsize=7)
+    axes[1].set_ylabel("Decoded instructions per validated object")
+    axes[1].set_title(
+        "Static decoded-count distribution",
+        loc="left",
+        fontsize=10,
+        pad=AXIS_TITLE_PAD,
+    )
     axes[1].text(
-        0.5,
-        -0.18,
-        "Counts are validated source × optimization rows; no compiled object was executed.",
+        0.0,
+        -0.20,
+        f"{len(valid_rows)} validated rows shown; no emitted object was executed. A missing configuration has no count to plot.",
         transform=axes[1].transAxes,
-        ha="center",
+        ha="left",
         va="top",
-        fontsize=7.5,
+        fontsize=7.2,
         color=MUTED,
     )
-    for ax in axes:
-        _style_axes(ax, grid_axis="y")
+    _style_axes(axes[1], grid_axis="y")
     fig.suptitle(
         "Compiler/source/architecture transfer capability receipt",
-        x=0.08,
+        x=0.06,
         ha="left",
         fontsize=12,
         color=INK,
     )
-    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.25, top=0.80, wspace=0.34)
+    fig.subplots_adjust(left=0.05, right=0.98, bottom=0.24, top=0.80, wspace=0.28)
     return _save_figure(fig, output_path)
 
 
 def plot_formal_correspondence(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot step-level Python/reference versus Unicorn correspondence."""
+    """Plot field-level correspondence numerators and denominators."""
 
     rows = payload.get("step_rows")
     if not isinstance(rows, list) or not rows:
@@ -4579,105 +4928,142 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
             raise ValueError("formal-correspondence row is not an object")
         grouped.setdefault(str(row["sample_id"]), []).append(row)
     labels = sorted(grouped)
-    matched = [
-        int(
-            all(
-                bool(
-                    cast(dict[str, object], row.get("checks", {})).get(
-                        "matched_at_every_step"
-                    )
-                )
-                for row in grouped[label]
-            )
+    if any(
+        not any(
+            isinstance(row.get("reference_steps"), list) and row.get("reference_steps")
+            for row in grouped[label]
         )
         for label in labels
-    ]
-    steps = [
+    ):
+        raise ValueError("formal-correspondence fixture has no reference steps")
+
+    trace_count = len(rows)
+    reference_step_counts = [
         sum(
             len(cast(list[object], row.get("reference_steps", [])))
             for row in grouped[label]
         )
         for label in labels
     ]
-    interventions = [len(grouped[label]) for label in labels]
-    if any(count <= 0 for count in steps):
-        raise ValueError("formal-correspondence fixture has no reference steps")
+    unicorn_step_counts = [
+        sum(
+            len(cast(list[object], row.get("unicorn_steps", [])))
+            for row in grouped[label]
+        )
+        for label in labels
+    ]
+    total_reference_steps = sum(reference_step_counts)
+    field_checks = (
+        ("step agreement", "matched_at_every_step", "step rows"),
+        ("decoded address", "addresses_equal", "traces"),
+        ("register file", "register_file_equal", "traces"),
+        ("flags", "modeled_flags_equal", "traces"),
+        ("memory effects", "memory_effects_equal", "traces"),
+        ("RIP / target", "rip_and_control_targets_equal", "traces"),
+    )
+    field_counts: list[tuple[str, int, int, str]] = []
+    for label, key, denominator_kind in field_checks:
+        denominator = (
+            total_reference_steps if denominator_kind == "step rows" else trace_count
+        )
+        numerator = 0
+        for row in rows:
+            checks = row.get("checks", {})
+            if not isinstance(checks, dict):
+                continue
+            if bool(checks.get(key)):
+                if denominator_kind == "step rows":
+                    numerator += len(cast(list[object], row.get("reference_steps", [])))
+                else:
+                    numerator += 1
+        field_counts.append((label, numerator, denominator, denominator_kind))
+    terminal_agreements = 0
+    unsupported_rows = 0
+    bound_rows = 0
+    for row in rows:
+        checks = row.get("checks", {})
+        if isinstance(checks, dict):
+            unsupported = checks.get("unsupported")
+            unsupported_rows += int(unsupported is not None)
+        reference_steps = row.get("reference_steps", [])
+        if isinstance(reference_steps, list):
+            bound_rows += sum(
+                int(
+                    isinstance(step, dict)
+                    and str(step.get("status", "ok"))
+                    in {"bound_exceeded", "exception", "unsupported"}
+                )
+                for step in reference_steps
+            )
+        final = row.get("unicorn_final", {})
+        if (
+            isinstance(final, dict)
+            and isinstance(reference_steps, list)
+            and reference_steps
+        ):
+            last = reference_steps[-1]
+            if isinstance(last, dict) and final.get("final_rax") == last.get(
+                "post_rax"
+            ):
+                terminal_agreements += 1
+    field_counts.append(("terminal RAX", terminal_agreements, trace_count, "traces"))
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(8.4, 4.0), gridspec_kw={"width_ratios": (1.0, 1.35)}
+        1, 2, figsize=(10.1, 5.0), gridspec_kw={"width_ratios": (1.0, 1.35)}
     )
-    x = np.arange(len(labels), dtype=float)
-    axes[0].bar(
-        x,
-        matched,
-        color=[PALETTE[2] if value else PALETTE[1] for value in matched],
-        edgecolor="white",
-        linewidth=0.8,
-        zorder=3,
+    y = np.arange(len(field_counts), dtype=float)
+    proportions = [
+        numerator / denominator if denominator else np.nan
+        for _label, numerator, denominator, _kind in field_counts
+    ]
+    axes[0].barh(
+        y,
+        proportions,
+        color=[PALETTE[0] if value == 1.0 else PALETTE[1] for value in proportions],
+        edgecolor=INK,
+        linewidth=0.6,
+        alpha=0.88,
     )
-    axes[0].set_xticks(x, labels, rotation=20, ha="right")
-    axes[0].set_ylim(0.0, 1.18)
-    axes[0].set_yticks((0, 1), ("not all matched", "all matched"))
-    axes[0].set_ylabel("Fixture status")
-    axes[0].set_title("Every intervention checked", fontsize=10, pad=AXIS_TITLE_PAD)
-    for index, value in enumerate(matched):
+    axes[0].set_yticks(y, [row[0] for row in field_counts])
+    axes[0].invert_yaxis()
+    axes[0].set_xlim(0, 1.18)
+    axes[0].set_xlabel("Agreement proportion")
+    axes[0].set_title("Compared fields", fontsize=10, pad=AXIS_TITLE_PAD)
+    for index, (label, numerator, denominator, kind) in enumerate(field_counts):
         axes[0].text(
+            min(proportions[index] + 0.025, 1.02),
             index,
-            value + 0.05,
-            "PASS" if value else "FAIL",
-            ha="center",
-            fontsize=8,
+            f"{numerator}/{denominator} {kind}",
+            va="center",
+            fontsize=7.4,
             color=INK,
         )
-    axes[0].text(
-        0.5,
-        AXIS_SUBTITLE_Y,
-        f"{sum(interventions)} fixture–intervention traces",
-        transform=axes[0].transAxes,
-        ha="center",
-        va="bottom",
-        fontsize=8,
-        color=MUTED,
-    )
+    axes[0].axvline(1.0, color=MUTED, linestyle="--", linewidth=0.8)
+    x = np.arange(len(labels), dtype=float)
     width = 0.34
     axes[1].bar(
         x - width / 2,
-        steps,
+        reference_step_counts,
         width=width,
         color=PALETTE[0],
-        label="reference steps",
+        label="Python reference steps",
         zorder=3,
     )
     axes[1].bar(
         x + width / 2,
-        [
-            count * (steps[i] / interventions[i])
-            for i, count in enumerate(interventions)
-        ],
+        unicorn_step_counts,
         width=width,
         color=PALETTE[1],
-        label="steps per intervention",
+        label="Unicorn decoded steps",
         zorder=3,
     )
     axes[1].set_xticks(x, labels, rotation=20, ha="right")
     axes[1].set_ylabel("Step rows")
     axes[1].set_title(
-        "Trace workload by transparent fixture", fontsize=10, pad=AXIS_TITLE_PAD
+        "Workload and explicit boundary rows", fontsize=10, pad=AXIS_TITLE_PAD
     )
-    # Reserve explicit headroom so the two-series legend cannot obscure the
-    # tallest workload bars when the figure is rendered at page scale.
-    axes[1].set_ylim(0, max(steps) * 1.28)
-    axes[1].legend(frameon=False, fontsize=8, loc="upper left")
-    axes[1].text(
-        0.5,
-        -0.20,
-        "Checks compare decoded address, post-state registers, modeled flags, and terminal RAX.",
-        transform=axes[1].transAxes,
-        ha="center",
-        va="top",
-        fontsize=7.5,
-        color=MUTED,
-    )
+    handles, legend_labels = axes[1].get_legend_handles_labels()
     for ax in axes:
         _style_axes(ax, grid_axis="y")
     fig.suptitle(
@@ -4687,16 +5073,43 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
         fontsize=12,
         color=INK,
     )
+    fig.legend(
+        handles,
+        legend_labels,
+        frameon=False,
+        fontsize=7.5,
+        loc="upper right",
+        bbox_to_anchor=(0.97, 0.895),
+        ncol=2,
+    )
+    fig.text(
+        0.12,
+        0.105,
+        f"{trace_count} intervention traces; {total_reference_steps} reference step rows; no inferential interval.",
+        ha="left",
+        va="bottom",
+        fontsize=7.4,
+        color=MUTED,
+    )
+    fig.text(
+        0.55,
+        0.105,
+        f"Boundary rows: {unsupported_rows} unsupported traces; {bound_rows} bound/exception/unsupported steps.",
+        ha="left",
+        va="bottom",
+        fontsize=7.4,
+        color=MUTED,
+    )
     fig.text(
         0.08,
         0.01,
-        "The receipt is a mechanized correspondence for the declared transparent subset, not complete x86-64 semantics.",
+        "Agreement is reported as numerator/denominator at the declared field grain; the receipt is bounded, not complete x86-64 semantics.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.24, top=0.80, wspace=0.30)
+    fig.subplots_adjust(left=0.12, right=0.98, bottom=0.23, top=0.80, wspace=0.32)
     return _save_figure(fig, output_path)
 
 
@@ -4710,7 +5123,21 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         "sensor_invocations",
         "decoded_instructions",
         "bounded_execution_steps",
+        "register_flag_observations",
+        "branch_observations",
+        "memory_hook_events",
         "serialized_bytes",
+        "unsupported_attempts",
+    )
+    component_labels = (
+        "sensor\ncalls",
+        "decoded\ninstructions",
+        "bounded\nsteps",
+        "register / flag\nobservations",
+        "branch\nobservations",
+        "memory-hook\nevents",
+        "serialized\nbytes",
+        "unsupported\nattempts",
     )
     labels = [str(cast(dict[str, object], row)["sensor_id"]) for row in sensors]
     display_labels = [
@@ -4725,7 +5152,15 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         if not isinstance(row, dict):
             raise ValueError("sensor-cost row is not an object")
         cost_vector = cast(dict[str, object], row["deterministic_cost_vector"])
-        values.append([float(cast(int | float, cost_vector[key])) for key in required])
+        row_values: list[float] = []
+        for key in required:
+            value = cost_vector.get(key)
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise ValueError(f"sensor-cost component {key} is malformed")
+            if value < 0:
+                raise ValueError(f"sensor-cost component {key} is negative")
+            row_values.append(float(value))
+        values.append(row_values)
     value_matrix = np.asarray(values, dtype=float)
     medians: list[float] = []
     lows: list[float] = []
@@ -4750,7 +5185,7 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         highs.append(float(maximum))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(9.0, 4.5), gridspec_kw={"width_ratios": (1.25, 1.0)}
+        1, 2, figsize=(11.4, 5.1), gridspec_kw={"width_ratios": (1.45, 1.0)}
     )
     image = axes[0].imshow(
         np.log1p(value_matrix),
@@ -4758,9 +5193,13 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         cmap=ListedColormap(("#F5F7FA", PALETTE[0], PALETTE[2], PALETTE[1])),
     )
     del image
-    axes[0].set_xticks(np.arange(len(required)), ["calls", "decoded", "steps", "bytes"])
-    axes[0].set_yticks(np.arange(len(labels)), labels)
-    axes[0].set_xlabel("Deterministic component (log count)", labelpad=2)
+    axes[0].set_xticks(np.arange(len(required)), component_labels)
+    axes[0].tick_params(axis="x", labelrotation=22, labelsize=7.2)
+    axes[0].set_yticks(np.arange(len(labels)), display_labels)
+    axes[0].set_xlabel(
+        "Deterministic component (log-scaled shading; labels are exact counts)",
+        labelpad=4,
+    )
     axes[0].set_title("Primary cost vector", fontsize=10, pad=AXIS_TITLE_PAD)
     for i in range(value_matrix.shape[0]):
         for j in range(value_matrix.shape[1]):
@@ -4805,10 +5244,19 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
     )
     certificates = payload.get("policy_certificates", [])
     certificate_count = len(certificates) if isinstance(certificates, list) else 0
+    calibration = payload.get("calibration", {})
+    repetitions = (
+        calibration.get("repetitions") if isinstance(calibration, dict) else None
+    )
+    trials = (
+        calibration.get("trials_per_repetition")
+        if isinstance(calibration, dict)
+        else None
+    )
     fig.text(
         0.11,
         0.105,
-        "All 8 receipt components; 4 shown.",
+        "All 8 deterministic receipt components shown; cell labels are counts.",
         ha="left",
         va="bottom",
         fontsize=7.5,
@@ -4817,7 +5265,7 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
     fig.text(
         0.55,
         0.105,
-        "Bars are medians; whiskers: 5 repetitions.",
+        f"Bars are medians; whiskers: {repetitions if repetitions is not None else 'not observed'} repetitions × {trials if trials is not None else 'not observed'} trials.",
         ha="left",
         va="bottom",
         fontsize=7.5,
@@ -4848,6 +5296,34 @@ def plot_replication_manifest(payload: dict[str, object], output_path: Path) -> 
         raise ValueError("replication labels are not separated")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(8.7, 3.9))
+    # The protected label boundary is a first-class visual object.  It is not
+    # enough to place a gold-label box beside the public input: the diagram
+    # must show which material is unavailable to the label-blind model path.
+    ax.add_patch(
+        Rectangle(
+            (0.265, 0.16),
+            0.22,
+            0.66,
+            transform=ax.transAxes,
+            facecolor=PALETTE[1] + "12",
+            edgecolor=PALETTE[1],
+            linewidth=1.0,
+            linestyle="--",
+            hatch="///",
+            zorder=0,
+        )
+    )
+    ax.text(
+        0.375,
+        0.84,
+        "protected owner boundary",
+        transform=ax.transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=7.4,
+        color=PALETTE[1],
+        weight="bold",
+    )
     boxes = (
         (0.04, "Public input\n% s rows" % count, "features only", PALETTE[0]),
         (
@@ -4926,7 +5402,7 @@ def plot_replication_manifest(payload: dict[str, object], output_path: Path) -> 
     fig.text(
         0.05,
         0.02,
-        "This is a no-network local replay package; it is not evidence of independent public replication.",
+        "The gold-label boundary is protected; the observed controlled replay is separate from independent physical replication or reimplementation.",
         ha="left",
         va="bottom",
         fontsize=8,
@@ -5060,28 +5536,28 @@ def plot_external_source_provenance(
         ax.text(
             0.78, y - 0.08, state, fontsize=8.2, va="center", color=color, weight="bold"
         )
-    ax.set_title("External-validity boundary", fontsize=10, pad=AXIS_TITLE_PAD)
+    ax.set_title("P13 application-validity gates", fontsize=10, pad=AXIS_TITLE_PAD)
     fig.suptitle(
-        "Licensed-source provenance and application gate",
+        "Licensed-source provenance and application-validity gate",
         x=0.08,
         ha="left",
         fontsize=12,
         color=INK,
     )
-    static_validated_value = payload.get("static_validated_row_count", 0)
+    static_validated_value = payload.get("static_validated_row_count")
     static_validated_count = (
-        int(static_validated_value)
+        str(int(static_validated_value))
         if isinstance(static_validated_value, (int, float))
         and not isinstance(static_validated_value, bool)
-        else 0
+        else "not observed"
     )
     fig.text(
         0.08,
         0.018,
         "\n".join(
             [
-                f"Pinned rows: {source_count}; validated static rows: {static_validated_count}. No arbitrary external binary is executed.",
-                "Open or unavailable gates remain status values; they are never rendered as zero-valued performance results.",
+                f"P13 pinned rows: {source_count}; validated static rows: {static_validated_count}. No arbitrary external binary is executed.",
+                "Open or unavailable gates remain status values; P15 controlled replay is a separate evidence surface, never a zero-valued performance result.",
             ]
         ),
         ha="left",
@@ -5699,7 +6175,7 @@ FIGURE_CAPTIONS: dict[str, str] = {
     "calibration_curve": (
         "Reliability diagram for the temporal forward filter over {corpus_observation_count} labelled "
         "observation steps. The plot shows {calibration_nonempty_bin_count} non-empty bins from "
-        "{calibration_bin_count} configured equal-width confidence bins; each point plots mean maximum "
+        "{calibration_bin_count} equal-width confidence bins configured by the protocol; each point plots mean maximum "
         "posterior against observed "
         "accuracy; n labels the bin denominator, vertical bars are 95% Wilson intervals around bin hit "
         "counts, and the dashed diagonal is perfect calibration. Points below the diagonal indicate "
@@ -5814,7 +6290,7 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "point is obtained by exhaustive dynamic programming over sensor/outcome "
         "branches, with no Monte Carlo approximation. Curves may coincide when the "
         "finite contract selects the same information frontier at each weight. The "
-        "the plotted frontier uses unit action costs from the finite model channel; the separate sensor-cost receipt "
+        "plotted frontier uses unit action costs from the finite model channel; the separate sensor-cost receipt "
         "reports deterministic vectors and local timing calibration, so this panel is a mechanism frontier rather than "
         "a deployment cost law "
         "[@friston2017activeinference;@parr2022activeinference]."
@@ -5897,6 +6373,205 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "rendered as zero performance, and this figure does not establish scientific promotion [@w3cprov2013;@rocrate2023;@sandve2013repro;@acm2020artifact]."
     ),
 }
+
+# The visual-atlas tranche adds nine narrative figures.  Their canonical
+# metadata, source hashes, and fully expanded captions are produced by
+# ``src.figure_contract``; these compatibility entries keep the long-standing
+# ``FIGURE_CAPTIONS`` callers and validation oracles complete during the
+# transition.
+FIGURE_CAPTIONS.update(
+    {
+        "research_architecture": (
+            "Research architecture for the source-bound assembly-to-inference pipeline. "
+            "The diagram follows bytes from static Capstone decoding through normalized "
+            "instruction representation, Python reference semantics, bounded Unicorn "
+            "cross-checks, the declared Lean proof boundary, typed observations, finite "
+            "interventions and quotient labels, the co-primary model portfolio, sensing "
+            "costs, receipts, claim registration, and template hydration. Boundary labels "
+            "distinguish kernel-checked, computationally cross-checked, inferential, and "
+            "provenance-preserving edges. This is an architecture and evidence map, not "
+            "a claim that every edge proves the next one or that the package implements "
+            "complete x86-64 semantics."
+        ),
+        "assembly_state_plate": (
+            "Assembly-state plate for a transparent x86-64 fixture. The listing is decoded "
+            "from the hashed fixture and paired with normalized opcode families, operand "
+            "widths, flag effects, bounded register-state transitions, program-counter "
+            "updates, and memory effects where present. A separate unsupported or bound "
+            "failure branch is retained to make the closed-world boundary visible. State "
+            "rows are exact observations from the declared fixture and interventions; they "
+            "are not a universal architectural trace and do not establish behavior for "
+            "unsupported instructions, exceptions, aliases, or arbitrary external code."
+        ),
+        "quotient_construction": (
+            "Finite quotient construction used by the source-bound benchmark. Mechanically "
+            "documented source pairs are assigned equivalent-transformation, one-change "
+            "near-miss, or non-separating-control roles; declared initial-state interventions "
+            "are applied; normalized traces are compared; and the resulting endpoint relation "
+            "defines the benchmark label before model fitting. The held-out source-family "
+            "split is shown as a separate boundary. Agreement under this finite intervention "
+            "catalog means agreement on the declared observation and output relation; it is "
+            "not unrestricted program equivalence, semantic discovery, or universal "
+            "identifiability."
+        ),
+        "semantic_coverage_matrix": (
+            "Declared semantic coverage across instruction families and evidence layers. "
+            "Rows are grouped by the supported normalized x86-64 subset and the matrix "
+            "records width, flag, memory, control-flow, Lean, Python, Capstone, and bounded "
+            "Unicorn coverage. Text symbols and hatching distinguish supported, checked, "
+            "computationally cross-checked, unsupported, and not-applicable cells; an absent "
+            "cell is never treated as a zero score. The matrix is a receipt of the declared "
+            "formal and adapter boundary, not a complete-ISA specification or a claim that "
+            "static decoding alone validates dynamic semantics."
+        ),
+        "statistical_hierarchy": (
+            "Statistical hierarchy and leakage boundary for the source-bound evaluations. "
+            "Projects and source families contain revisions, revisions contain transformation "
+            "pairs, pairs are evaluated under interventions, and interventions produce traces "
+            "with instruction steps. The family is the primary clustered bootstrap unit; pair "
+            "rows and instruction steps remain dependent observations. Training, development, "
+            "and test family partitions are fixed before model fitting, while development data "
+            "alone controls selection and stopping. The diagram therefore explains what the "
+            "reported intervals quantify and why row-count inflation cannot be read as extra "
+            "independent scientific samples."
+        ),
+        "replay_failure_audit": (
+            "Controlled replay failure audit for the public label-blind interface. Public rows "
+            "cross a no-network guest boundary without gold labels; predictions return through "
+            "identifier validation; protected scoring remains on the owner host; and the "
+            "receipt records a same-host separately controlled guest rather than an independent "
+            "physical-machine replication or independent reimplementation. The confusion, "
+            "calibration, and selective-risk panels reproduce the protected negative result: "
+            "the observed model predicts equivalence for both classes and therefore has chance "
+            "balanced accuracy with poor calibration. This result is a reproducibility and "
+            "failure-boundary audit, not an efficacy result or a new independent sample."
+        ),
+        "policy_certificate_frontier": (
+            "Finite active-sensing policy frontier under the declared sensor and action space. "
+            "Points combine exact dynamic-program information gain, deterministic receipt cost, "
+            "local calibrated wall-clock cost when available, regret, and optimality gap for "
+            "implemented, fixed, greedy, seeded-random, abstaining, and exact-oracle policies. "
+            "Exact enumeration has no sampling confidence interval; timing summaries are "
+            "machine-specific calibration diagnostics with their own trial counts and spread. "
+            "The tolerance and certificate apply only to the frozen finite horizon, state, and "
+            "sensor catalog, not to an information-per-cost law for arbitrary binaries or "
+            "hardware."
+        ),
+        "theorem_status_map": (
+            "Theorem and countertheorem status map for the formal program. Each candidate is "
+            "located as kernel-checked, computationally validated, empirically supported, "
+            "falsified, or unresolved, with its state and memory bounds, supported instruction "
+            "subset, intervention and observation assumptions, and proof or counterexample "
+            "artifact. A checked Lean theorem is kept separate from a Python, Capstone, or "
+            "Unicorn cross-check; a bounded computational result is kept separate from a broad "
+            "mathematical claim. Falsified and unresolved rows remain first-class results, and "
+            "the manuscript promotion language is generated from these statuses rather than "
+            "from the existence of a theorem-shaped file."
+        ),
+        "observation_semantics": (
+            "Observation-semantics diagram for the typed, label-blind interface. The visual "
+            "distinguishes observed values, explicit missing fields, unseen categorical values, "
+            "unsupported operations, unavailable capabilities, and measured numeric zero; it also "
+            "shows the boundary between public rows, predictions, protected labels, and source-bound "
+            "receipts. These are schema and provenance categories, not interchangeable encodings. "
+            "The diagram is descriptive and computationally constructed from the frozen protocol and "
+            "replication manifests. It does not estimate model performance, recover protected labels, "
+            "establish complete semantic coverage, or imply universal identifiability."
+        ),
+    }
+)
+
+# Keep the compatibility caption mapping synchronized with the redesigned
+# high-risk figures.  The canonical figure contract adds the richer
+# alternative text and long description; these entries remain available to
+# legacy callers and are hydrated through the same receipt context.
+FIGURE_CAPTIONS.update(
+    {
+        "formal_correspondence": (
+            "Field-level correspondence receipt for the declared transparent x86-64 subset. "
+            "The left panel uses numerator/denominator marks for step agreement, decoded "
+            "addresses, register state, modeled flags, memory effects, control targets, and "
+            "terminal RAX; the right panel reports Python-reference and Unicorn step workloads "
+            "by fixture. The receipt covers {formal_correspondence_fixture_count} fixtures and "
+            "{formal_correspondence_intervention_count} bounded interventions per fixture, with "
+            "explicit unsupported and bound/exception rows. These are exact fixture-level checks, "
+            "so inferential intervals are not applicable. A generated Word64 boundary fixture is "
+            "also kernel-checked in Lean. The result is a bounded correspondence instrument, not "
+            "a complete proof of x86-64 semantics."
+        ),
+        "quotient_classifier": (
+            "Co-primary binary classification of the declared finite quotient relation under "
+            "source-family holdout. The left panel shows balanced accuracy and macro-F1 as "
+            "model-specific dot-and-interval estimates; the middle panel shows paired model-minus-"
+            "surface-baseline deltas with source-family-clustered 95% bootstrap intervals; and the "
+            "right panel shows Brier score and ten-bin expected calibration error as point diagnostics, "
+            "with selective coverage and risk reported below. The benchmark contains "
+            "{quotient_family_count} families, {quotient_row_count} pair rows, and fixed "
+            "training/development/held-out family partitions. Primary intervals use source-family "
+            "clusters; Brier/ECE have no clustered interval in the current receipt. Positive deltas "
+            "do not by themselves authorize a superiority claim, and no post-hoc model winner is "
+            "selected. This is bounded endpoint evidence, not unrestricted semantic equivalence or "
+            "application performance."
+        ),
+        "compiler_transfer": (
+            "Compiler/source/architecture capability receipt for {compiler_validated_count} locally "
+            "compiled and statically disassembled objects. The left panel is a status matrix: a "
+            "check mark means the exact compiler command produced an object whose text bytes decoded "
+            "with Capstone, while a dash denotes an unavailable or failed capability retained as an "
+            "explicit missing state rather than a zero score. The matrix includes "
+            "{compiler_architecture_count} validated architecture target(s) and "
+            "{compiler_unavailable_count} unavailable row(s); the right panel counts validated "
+            "source-by-optimization rows. Counts are deterministic provenance diagnostics with no "
+            "population uncertainty. No emitted object was executed, so the visual supports local "
+            "capability and provenance claims only, not compiler correctness, behavioral transfer, "
+            "or architecture-general performance."
+        ),
+        "sensor_costs": (
+            "Two-layer sensing-cost receipt for the finite active-sensing benchmark. The left panel "
+            "shows all eight deterministic cost-vector components as exact cell labels with shading "
+            "used only for magnitude; the right panel shows machine-specific wall-clock medians and "
+            "min--max whiskers in nanoseconds per query. The deterministic units are sensor calls, "
+            "decoded instructions, bounded steps, register/flag observations, branch observations, "
+            "memory-hook events, serialized bytes, and unsupported attempts. Timing uses the recorded "
+            "calibration repetitions and trials, and the receipt also stores IQR, p95, overhead, and "
+            "regression diagnostics. {sensor_certificate_count} exact dynamic-program certificates "
+            "are scoped to the frozen finite state/action space; no cross-machine cost law is implied."
+        ),
+        "replication_manifest": (
+            "Public/private provenance boundary for the frozen no-network replication harness. The "
+            "diagram explicitly encloses the {replication_row_count}-row gold-label surface inside a "
+            "protected owner boundary, while label-blind public rows, predictions, and hash-bound "
+            "receipts remain on the replay path. Identifier validation and protocol hashes are shown "
+            "as gates rather than as scientific outcomes. Counts are deterministic and no sampling "
+            "uncertainty is applicable to this manifest audit. The package demonstrates local replay "
+            "and blind separation; the controlled same-host guest result is not independent physical "
+            "replication or independent reimplementation."
+        ),
+        "external_source_provenance": (
+            "Licensed-source provenance and P13 application-validity gate for the separate external "
+            "validation track. The left panel shows pinned acquisition, explicit network opt-in, and "
+            "static-only compilation/disassembly; the right panel lists the immutable revision, "
+            "license/hash, safety, project/revision/example, and separate-acquisition-replay gates. "
+            "The current receipt is {external_source_status}: {external_project_count} project(s) are "
+            "pinned and {external_static_validated_count} of {external_static_row_count} static rows "
+            "decode successfully, with {external_labelable_count} source-contract rows accepted. "
+            "Lexical witnesses, directed near misses, and identity controls are provenance labels, "
+            "not universal behavioral equivalence. P13 remains distinct from the observed P15 "
+            "controlled replay; no unavailable evidence is rendered as zero and no application claim "
+            "is promoted by this diagnostic alone."
+        ),
+        "external_label_coverage": (
+            "Source-bound external label-contract census for {external_labelable_count} accepted rows "
+            "across {external_label_project_count} projects and {external_label_revision_count} "
+            "project revisions. The left panel counts source-defined equivalence witnesses, directed "
+            "near misses, and identity controls by project; the right panel shows the frozen train, "
+            "development, and held-out allocation. An em dash means that no accepted row exists in a "
+            "cell; explicit exclusions remain outside the denominator. Counts are deterministic static "
+            "provenance diagnostics with no inferential interval, and no emitted object is executed. "
+            "The figure does not estimate model accuracy or prove unrestricted semantic equivalence."
+        ),
+    }
+)
 
 
 FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
@@ -6034,6 +6709,52 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
         "acm2020artifact",
     ),
 }
+
+FIGURE_CITATIONS.update(
+    {
+        "research_architecture": (
+            "capstone",
+            "unicorn",
+            "lean_reference",
+            "wilkinson2016fair",
+        ),
+        "assembly_state_plate": (
+            "intel_sdm",
+            "capstone",
+            "unicorn",
+            "lean_reference",
+        ),
+        "quotient_construction": (
+            "intel_sdm",
+            "capstone",
+            "unicorn",
+            "necula2000translationvalidation",
+        ),
+        "semantic_coverage_matrix": (
+            "intel_sdm",
+            "dasgupta2019x86semantics",
+            "lean_reference",
+        ),
+        "statistical_hierarchy": (
+            "gelman2013bda",
+            "brown2001binomial",
+            "wilkinson2016fair",
+        ),
+        "replay_failure_audit": ("wilkinson2016fair", "guo2017calibration"),
+        "policy_certificate_frontier": (
+            "friston2017activeinference",
+            "parr2022activeinference",
+        ),
+        "theorem_status_map": (
+            "lean_reference",
+            "wilkinson2016fair",
+        ),
+        "observation_semantics": (
+            "intel_sdm",
+            "wilkinson2016fair",
+        ),
+    }
+)
 
 
 def _caption_context(output_dir: Path) -> dict[str, str]:
@@ -6481,6 +7202,7 @@ def _figure_registry_rows(
         "external_source_provenance": "pinned licensed-source manifest and static-only external-validation gate",
         "external_label_coverage": "source-bound external label-contract rows and frozen project/revision split allocation",
         "artifact_receipt_closure": "project-owned protocol-v2 receipt surface and manuscript/document boundary",
+        "observation_semantics": "typed observation schema and public/protected replay boundary",
         "artifact_hash_manifest": "reproducibility manifest rows",
         "validation_summary": "generated validation checks",
     }
@@ -6518,6 +7240,7 @@ def _figure_registry_rows(
         "external_source_provenance": "Status, manifest cardinality, and five promotion gates are deterministic provenance checks; blocked or unavailable cells are retained as status values rather than plotted as performance zeros.",
         "external_label_coverage": "Accepted-row counts by source-defined role and frozen project/revision split; explicit exclusions are retained outside the accepted denominator and no inferential uncertainty is claimed.",
         "artifact_receipt_closure": "Deterministic count of project-owned JSON receipts, envelope errors, and roadmap status rows; no inferential uncertainty is applicable.",
+        "observation_semantics": "Schema and provenance categories for typed values, explicit absence, unsupported/unavailable states, and protected labels; no inferential uncertainty is applicable.",
     }
     rows: list[dict[str, Any]] = []
     for stem, raw_caption in FIGURE_CAPTIONS.items():
@@ -6608,11 +7331,16 @@ def _figure_registry_rows(
                 "output/data/sensor_cost_receipt.json",
                 "output/data/research_protocol.json",
             ]
+        elif stem == "observation_semantics":
+            input_artifacts = [
+                "output/data/typed_observations.json",
+                "output/data/replication_manifest.json",
+                "output/data/research_protocol.json",
+            ]
         elif stem == "replication_manifest":
             input_artifacts = [
                 "output/data/replication_manifest.json",
                 "output/replication/public/public_manifest.json",
-                "output/replication/private/gold_labels.json",
             ]
         elif stem == "external_source_provenance":
             input_artifacts = [

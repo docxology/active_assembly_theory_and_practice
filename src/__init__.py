@@ -56,6 +56,7 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     ),
     "TypedObservation": ("typed_observations", "TypedObservation"),
     "ValidationReport": ("validation", "ValidationReport"),
+    "FigureSpec": ("figure_contract", "FigureSpec"),
     "active_observation_order": ("active_selection", "active_observation_order"),
     "action_conditioned_sensing_payload": (
         "action_sensing",
@@ -63,6 +64,7 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     ),
     "build_assembly_listing": ("assembly_formalism", "build_assembly_listing"),
     "build_corpus": ("corpus", "build_corpus"),
+    "build_figure_specs": ("figure_contract", "build_figure_specs"),
     "build_generative_model": ("generative_model", "build_generative_model"),
     "cross_architecture_payload": ("multi_arch", "cross_architecture_payload"),
     "build_static_cfg": ("assembly_packages", "build_static_cfg"),
@@ -187,12 +189,14 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
         "docx_validation",
         "validate_docx_render_receipt",
     ),
+    "validate_figure_bundle": ("figure_contract", "validate_figure_bundle"),
     "validate_active_information_payload": (
         "information_policy",
         "validate_active_information_payload",
     ),
     "viterbi_decode": ("temporal_model", "viterbi_decode"),
     "write_advanced_figures": ("advanced_figures", "write_advanced_figures"),
+    "write_figure_bundle": ("figure_contract", "write_figure_bundle"),
     "write_claim_register": ("claim_register", "write_claim_register"),
     "write_docx_render_receipt": (
         "docx_validation",

@@ -123,5 +123,20 @@ The project follows the template code-project pattern:
     discipline as the trace surface. See
     `docs/evaluation.md`.
 
+35. `src.visual_atlas.py` produces the nine narrative visuals from live
+    receipts, while `src/figure_contract.py` unifies all 62 substantive figure
+    specifications, source hashes, captions, alternatives, long descriptions,
+    vector companions, and the offline semantic atlas. Legacy plotting callers
+    remain compatible through `FIGURE_CAPTIONS` and the existing path tokens.
+36. `src.manuscript_variables.py` projects canonical figure metadata into the
+    template variable surface. Embedded figures use registry-backed caption and
+    path tokens; unembedded figures are marked explicitly as atlas-only so the
+    variable audit does not confuse a complete metadata surface with an unused
+    scientific value.
+37. `scripts/run_scientific_program.py` exposes `generate-figures`,
+    `audit-figures`, and `render-manuscript` as thin orchestration entry points.
+    The sibling template remains the renderer of record for DOCX, PDF, HTML,
+    and slides.
+
 Scripts are thin entrypoints. Manuscript variables are generated from the live
 experiment so prose and figures stay aligned with the code.

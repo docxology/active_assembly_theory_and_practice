@@ -106,6 +106,23 @@ def main() -> int:
     subparsers.add_parser(
         "promote-evidence", help="summarize current evidence statuses without mutation"
     )
+    generate_figures = subparsers.add_parser(
+        "generate-figures", help="generate the source-bound figure bundle and atlas"
+    )
+    generate_figures.add_argument(
+        "--formats",
+        nargs="+",
+        choices=("png", "svg", "pdf", "atlas"),
+        default=("png", "svg", "pdf", "atlas"),
+    )
+    subparsers.add_parser(
+        "audit-figures",
+        help="validate figure specs, hashes, vectors, and offline atlas",
+    )
+    subparsers.add_parser(
+        "render-manuscript",
+        help="regenerate variables and hydrate the manuscript through docxology/template",
+    )
     subparsers.add_parser(
         "vm-probe", help="write the blue-backed Lima VM capability/config receipt"
     )
@@ -306,6 +323,46 @@ def main() -> int:
             }
         _write_json({"status": "read_only_summary", "surfaces": rows})
         return 0
+    elif command == "generate-figures":
+        from src.advanced_figures import write_advanced_figures
+
+        from src.figure_contract import validate_figure_bundle, write_figure_bundle
+
+        # ``write_advanced_figures`` remains the full producer path; the
+        # explicit bundle call honors the public format interface and refreshes
+        # the canonical registries after all base figures exist.
+        write_advanced_figures(root / "output")
+        bundle = write_figure_bundle(root / "output", formats=args.formats)
+        errors = validate_figure_bundle(root / "output")
+        _write_json(
+            {
+                "status": "validated" if not errors else "failed",
+                "formats": list(args.formats),
+                "bundle": bundle,
+                "errors": errors,
+            }
+        )
+        return 0 if not errors else 1
+    elif command == "audit-figures":
+        from src.figure_contract import validate_figure_bundle
+
+        errors = validate_figure_bundle(root / "output")
+        _write_json(
+            {"status": "validated" if not errors else "failed", "errors": errors}
+        )
+        return 0 if not errors else 1
+    elif command == "render-manuscript":
+        import subprocess
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(root / "scripts" / "z_generate_manuscript_variables.py"),
+            ],
+            cwd=root,
+            check=False,
+        )
+        return int(result.returncode)
     elif command == "vm-probe":
         print(write_vm_manifest(root))
     elif command == "vm-create":

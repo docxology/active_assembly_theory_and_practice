@@ -57,11 +57,11 @@ The observed store-to-load value and terminal result are retained in
 `{{MEMORY_EVIDENCE_ARTIFACT}}`; this is evidence that the instrumentation path
 functions on the transparent fixture, not a claim of general memory analysis.
 
-![Memoryless posterior beliefs over the `{{HIDDEN_STATE_COUNT}}` hand-authored latent phase labels at each of the `{{INSTRUCTION_COUNT}}` decoded steps. Each line is a normalized probability from the fixed comparison path; the figure shows the belief update and does not supply independent phase ground truth.]({{POSTERIOR_FIGURE}}){#fig:posterior-beliefs width=88%}
+![{{FIGURE_POSTERIOR_BELIEFS_CAPTION}}]({{FIGURE_POSTERIOR_BELIEFS_PATH}}){#fig:posterior-beliefs width=88%}
 
-![Bethe Free Energy values emitted by the native Julia/RxInfer backend for the implemented Gaussian event-code model. Points are backend iterations from the canonical trace bundle; this objective is distinct from the pymdp comparison diagnostic and is not a semantic-understanding score.]({{RXINFER_FREE_ENERGY_FIGURE}}){#fig:rxinfer-free-energy width=88%}
+![{{FIGURE_RXINFER_FREE_ENERGY_CAPTION}}]({{FIGURE_RXINFER_FREE_ENERGY_PATH}}){#fig:rxinfer-free-energy width=88%}
 
-![Two inference diagnostics kept on separate axes: the pymdp comparison variational diagnostic above and native RxInfer Bethe Free Energy below. The traces share input lineage but are distinct objectives and are not numerically interchangeable.]({{INFERENCE_DIAGNOSTIC_FIGURE}}){#fig:inference-diagnostics width=92%}
+![{{FIGURE_INFERENCE_DIAGNOSTICS_CAPTION}}]({{FIGURE_INFERENCE_DIAGNOSTICS_PATH}}){#fig:inference-diagnostics width=92%}
 
 The exact active-information analysis provides a second, mechanism-level
 result. The declared finite sensor family contains
@@ -186,7 +186,7 @@ not turn a favorable predictive interval into evidence of semantic adequacy. If
 the ordered model remains initialization-sensitive, that instability is
 retained as a negative result.
 
-![Observation-only ordered-HMM parameter learning under complete-fixture holdouts. The left panel shows per-fixture held-out temporal accuracy for ordered Baum--Welch EM, supervised MAP, the fixed reference, and the fixed-penalty Dirichlet-MAP comparator; lines are not pooled pseudo-replicates. The middle panel shows training log evidence across EM iterations for each holdout, with the mean trajectory overlaid. The right panel shows held-out accuracy for the five frozen initialization families, with dots for holdouts and bars for within-start means. The receipt additionally contains label-free posterior-predictive checks and a training-only model-selection ledger. Labels are reserved for scoring, and the evidence, predictive checks, and initialization panels are optimization/robustness diagnostics rather than population uncertainty intervals.]({{PARAMETER_LEARNING_FIGURE}}){#fig:parameter-learning width=100%}
+![{{FIGURE_PARAMETER_LEARNING_CAPTION}}]({{FIGURE_PARAMETER_LEARNING_PATH}}){#fig:parameter-learning width=100%}
 
 ### Typed observation expansion {#sec:typed-results}
 
@@ -264,7 +264,7 @@ fixed parameters, and instruction steps within a fixture are correlated. The sta
 purpose is auditability of a mechanism demonstration, not a population-level
 benchmark.
 
-![Reliability diagram for the temporal forward filter over `{{CORPUS_OBSERVATION_COUNT}}` labelled steps. The plot shows `{{CALIBRATION_NONEMPTY_BIN_COUNT}}` non-empty bins from `{{CALIBRATION_BIN_COUNT}}` configured equal-width confidence bins; each point plots mean maximum posterior against observed accuracy, `n` gives the bin denominator, vertical bars are 95% Wilson intervals around bin hit counts, and the dashed diagonal is perfect calibration. Points below the diagonal indicate overconfidence for this fixture corpus [@guo2017calibration;@brown2001binomial].]({{CALIBRATION_CURVE_FIGURE}}){#fig:calibration-curve width=82%}
+![{{FIGURE_CALIBRATION_CURVE_CAPTION}}]({{FIGURE_CALIBRATION_CURVE_PATH}}){#fig:calibration-curve width=82%}
 
 Calibration is also compared across decoders. Reporting each decoder's own
 per-step posterior ([@fig:decoder-calibration]) shows ECE tracking accuracy
@@ -273,9 +273,9 @@ on this corpus: the `{{DECODER_BEST_CALIBRATED}}` per-step decoder is the best c
 identity-transition filter is worst (`{{IDENTITY_TRANSITION_ECE}}`). This is stated honestly: the
 temporal model is neither the most accurate nor the best calibrated.
 
-![Decoder calibration on the labelled corpus. Separate panels report expected calibration error and Brier score for memoryless, temporal, and identity-transition decoders; both are dimensionless and lower is better. The ECE ordering identifies `{{DECODER_BEST_CALIBRATED}}` as best for these hand-authored traces, not as a deployment-reliability guarantee.]({{DECODER_CALIBRATION_FIGURE}}){#fig:decoder-calibration width=88%}
+![{{FIGURE_DECODER_CALIBRATION_CAPTION}}]({{FIGURE_DECODER_CALIBRATION_PATH}}){#fig:decoder-calibration width=88%}
 
-![Pooled phase-decoding confusion matrix for the temporal forward filter across the labelled fixtures. Each cell shows the integer count followed by the percentage of its true-phase row; diagonal cells are correct recoveries and off-diagonal mass identifies confusable phase labels.]({{CONFUSION_MATRIX_FIGURE}}){#fig:confusion-matrix width=78%}
+![{{FIGURE_CONFUSION_MATRIX_CAPTION}}]({{FIGURE_CONFUSION_MATRIX_PATH}}){#fig:confusion-matrix width=78%}
 
 The decoding results above are classification metrics. A complementary,
 principled *generative* comparison — the log marginal likelihood of the observed
@@ -289,7 +289,7 @@ best explains the observed sequences even though the memoryless decoder is the
 better per-step classifier: the two comparison criteria (discriminative accuracy
 vs generative evidence) do not pick the same model, and we report both honestly.
 
-![Pooled log marginal likelihood under temporal-HMM, identity-transition, and memoryless assumptions. Higher values indicate better in-sample predictive normalization for these fixed parameters; the highlighted model is `{{BEST_MODEL}}`. This is a descriptive model-evidence comparison in the Bayes-factor tradition [@kass1995bayes], not a population-level model-selection claim.]({{MODEL_EVIDENCE_FIGURE}}){#fig:model-evidence width=82%}
+![{{FIGURE_MODEL_EVIDENCE_CAPTION}}]({{FIGURE_MODEL_EVIDENCE_PATH}}){#fig:model-evidence width=82%}
 
 ## Where temporal dynamics matter {#sec:ambiguity-ablation}
 
@@ -337,7 +337,7 @@ one-step expected information of the authored observation channel is
 [@fig:active-efe] keeps the realized and predictive EFE traces visibly
 separate.
 
-![Three linked ablations on the same `{{CORPUS_FIXTURE_COUNT}}` transparent fixtures. Left: mean per-step decoder accuracy as the fixed categorical likelihood is blended toward uniform. Middle: pooled phase-boundary F1 for smoothed temporal and memoryless segmentations. Right: fixtures in which the realized-EFE policy reaches its confidence threshold sooner than a fixed scan. Blend 0 is authored and blend 1 is uniform, so this is a mechanism demonstration under synthetic ambiguity rather than a measurement of real-world binary noise.]({{AMBIGUITY_ABLATION_FIGURE}}){#fig:ambiguity-ablation width=100%}
+![{{FIGURE_AMBIGUITY_ABLATION_CAPTION}}]({{FIGURE_AMBIGUITY_ABLATION_PATH}}){#fig:ambiguity-ablation width=100%}
 
 ## How well we segment phases {#sec:segmentation-evaluation}
 
@@ -353,7 +353,7 @@ ribbon is the ground-truth phase sequence and the bottom ribbon is the sequence
 recovered from the smoothed beliefs, so a mis-segmentation shows up as a
 boundary mismatch between the two rows.
 
-![Per-fixture phase-segmentation ribbons. For each fixture, the upper row is the hand-authored phase sequence and the lower row is the sequence decoded from smoothed forward-backward beliefs. Contiguous runs share a color, so a boundary disagreement is a displaced color transition; the pooled boundary F1 is reported in the figure subtitle.]({{SEGMENTATION_RIBBONS_FIGURE}}){#fig:segmentation-ribbons width=100%}
+![{{FIGURE_SEGMENTATION_RIBBONS_CAPTION}}]({{FIGURE_SEGMENTATION_RIBBONS_PATH}}){#fig:segmentation-ribbons width=100%}
 
 A second ablation isolates the contribution of the transition structure itself
 ([@fig:transition-ablation]; [@prop:transition-collapse]): as the transition matrix `B` is blended toward
@@ -366,7 +366,7 @@ mild blend (`{{TRANSITION_PEAK_ACC}}` at blend `{{TRANSITION_PEAK_BLEND}}`), an
 honest reminder that brute accuracy and the authored transition structure need
 not coincide.
 
-![Mean temporal accuracy as transition matrix `B` is blended toward uniform, with constant memoryless and identity-transition references. At the uniform endpoint, `B` removes state persistence and the temporal update converges to memoryless, isolating the transition contribution; the marked peak records the corpus-specific accuracy optimum.]({{TRANSITION_ABLATION_FIGURE}}){#fig:transition-ablation width=88%}
+![{{FIGURE_TRANSITION_ABLATION_CAPTION}}]({{FIGURE_TRANSITION_ABLATION_PATH}}){#fig:transition-ablation width=88%}
 
 ## Which phases are recoverable {#sec:phase-recovery}
 
@@ -384,9 +384,9 @@ Likelihood information is uneven ([@fig:observation-informativeness]):
 `{{MOST_INFORMATIVE_OBS}}` is most informative and `{{LEAST_INFORMATIVE_OBS}}`
 least, with an information range of `{{OBS_INFO_RANGE}}` nats.
 
-![Realized information gain for each decoded-instruction category over prior `D`, sorted from largest to smallest and colored by the phase receiving the largest posterior contribution. The companion predictive contribution weights each category by its prior predictive probability, and the weighted contributions sum to {{EXPECTED_OBSERVATION_INFO_GAIN}} nats of one-step channel information.]({{OBSERVATION_INFO_FIGURE}}){#fig:observation-informativeness width=92%}
+![{{FIGURE_OBSERVATION_INFORMATIVENESS_CAPTION}}]({{FIGURE_OBSERVATION_INFORMATIVENESS_PATH}}){#fig:observation-informativeness width=92%}
 
-![Per-phase recall and F1 for the temporal forward filter, ordered by F1. Bars report recovery of the `{{HIDDEN_STATE_COUNT}}` hand-authored phase labels; the hardest phase and macro F1 are stated in the figure subtitle. These are corpus-specific label-recovery metrics, not evidence of universal phase discovery.]({{PHASE_RECOVERY_FIGURE}}){#fig:phase-recovery width=88%}
+![{{FIGURE_PHASE_RECOVERY_CAPTION}}]({{FIGURE_PHASE_RECOVERY_PATH}}){#fig:phase-recovery width=88%}
 
 ## Robustness to the small corpus {#sec:corpus-stability}
 
@@ -402,9 +402,9 @@ This makes the small-corpus fragility explicit rather than hidden: the headline
 temporal result is not the artifact of any one fixture, and the span quantifies
 how much a single fixture moves the estimate.
 
-![Leave-one-fixture-out stability analysis. Bars show pooled temporal accuracy on the full corpus and after removing each fixture; the dashed line is the pooled identity-transition reference and the dotted line is the configured chance floor. The span in the title is the observed range across holdouts, making small-corpus sensitivity explicit.]({{CORPUS_STABILITY_FIGURE}}){#fig:corpus-stability width=95%}
+![{{FIGURE_CORPUS_STABILITY_CAPTION}}]({{FIGURE_CORPUS_STABILITY_PATH}}){#fig:corpus-stability width=95%}
 
-![Phase-decoder accuracy across the `{{CORPUS_FIXTURE_COUNT}}`-fixture labelled corpus. The left panel shows fixture-level identity-transition, memoryless, and temporal accuracy; the right panel shows pooled per-step accuracy with descriptive Wilson intervals over `{{CORPUS_OBSERVATION_COUNT}}` labelled steps. The dashed reference is chance (`{{CHANCE_ACCURACY}}`); dependent steps and the small corpus make the intervals descriptive rather than population-level uncertainty.]({{MODEL_COMPARISON_FIGURE}}){#fig:model-comparison width=100%}
+![{{FIGURE_MODEL_COMPARISON_CAPTION}}]({{FIGURE_MODEL_COMPARISON_PATH}}){#fig:model-comparison width=100%}
 
 The active-disassembly policy is reported honestly as a non-result at corpus
 scale. On programs this short the first observation already pushes the phase
@@ -416,7 +416,7 @@ in the unit tests; the absence of a corpus-scale advantage is recorded as a
 measured fact rather than hidden. The complete evaluation surface is regenerated
 from `{{EVALUATION_REPORT_ARTIFACT}}` before template hydration.
 
-![Greedy active-disassembly trajectory for the `{{SAMPLE_NAME}}` fixture. The upper panel compares decoded-category EFE with the predictive information-contribution EFE; the lower panel reports posterior entropy on a separate axis. Lower EFE is preferred, and the corpus-level result is a tie on the short fixtures rather than an asserted active-policy gain.]({{ACTIVE_EFE_FIGURE}}){#fig:active-efe width=88%}
+![{{FIGURE_ACTIVE_EFE_CAPTION}}]({{FIGURE_ACTIVE_EFE_PATH}}){#fig:active-efe width=88%}
 
 ## Action-conditioned sensing
 
@@ -436,7 +436,7 @@ displayed fixture, and predictive ranking receives no realized field value.
 The complete policy records and revealed values are available in
 `{{ACTION_SENSING_ARTIFACT}}`.
 
-![Held-out action-conditioned sensing over typed assembly fields. The left panel reports the mean number of actions used before the configured confidence threshold, retaining failures at the common budget; the right panel reports mean final posterior confidence. Active choices use predictive training-only field likelihoods, fixed and seeded-random policies use the same candidate pool, and the oracle is explicitly inadmissible. Equal normalized action cost is a mechanism contract, not a wall-clock measurement.]({{ACTION_SENSING_FIGURE}}){#fig:action-sensing width=95%}
+![{{FIGURE_ACTION_SENSING_CAPTION}}]({{FIGURE_ACTION_SENSING_PATH}}){#fig:action-sensing width=95%}
 
 ## Open-roadmap evidence tranche {#sec:open-roadmap-results}
 
@@ -506,7 +506,7 @@ is `{{EXTERNAL_LABEL_TEST_PROJECTS}}`. The external acquisition/build replay
 gate remains unpassed, so these source-contract and static results are not
 failed accuracy results and do not support application-facing effectiveness.
 
-![Licensed-source provenance and application gate. The left panel shows ten pinned source rows across five projects and two revisions, explicit acquisition, static-only compilation, and canonical disassembly. The right panel reports the eight promotion gates; source-bound labels are `{{EXTERNAL_LABEL_ROW_COUNT}}` contract-audited rows divided into `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` one-change near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity controls. The separate external acquisition/build replay gate remains unpassed even though a same-host controlled replay of the public interface was observed in a distinct receipt. All counts are provenance diagnostics, not accuracy estimates; no unavailable or unsupported evidence is rendered as zero, and no arbitrary external binary is executed.]({{EXTERNAL_SOURCE_PROVENANCE_FIGURE}}){#fig:external-source-provenance width=96%}
+![{{FIGURE_EXTERNAL_SOURCE_PROVENANCE_CAPTION}}]({{FIGURE_EXTERNAL_SOURCE_PROVENANCE_PATH}}){#fig:external-source-provenance width=96%}
 
 The accepted-row census makes the denominator and split topology explicit in
 [@fig:external-label-coverage]. It shows the role composition by project and
@@ -518,7 +518,20 @@ visible in the caption and the receipt. The accepted rows therefore support a
 provenance and coverage statement, not a claim of application effectiveness or
 universal program equivalence.
 
-![Source-bound external label coverage. The left panel counts accepted equivalence witnesses, contract-directed near misses, and identity controls for each of the `{{EXTERNAL_LABEL_PROJECT_COUNT}}` source projects. The right panel allocates the `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows across `{{EXTERNAL_LABEL_REVISION_COUNT}}` project revisions and the frozen train, development, and held-out test splits; held-out project(s) are marked directly. Counts are deterministic provenance diagnostics with no inferential uncertainty, an em dash means no accepted row in that cell, explicit exclusions remain outside the accepted denominator, and static-only rows do not execute emitted objects or establish universal semantic equivalence.]({{EXTERNAL_LABEL_COVERAGE_FIGURE}}){#fig:external-label-coverage width=100%}
+![{{FIGURE_EXTERNAL_LABEL_COVERAGE_CAPTION}}]({{FIGURE_EXTERNAL_LABEL_COVERAGE_PATH}}){#fig:external-label-coverage width=100%}
+
+The observation-semantics plate makes the preceding boundary operational. It
+shows that the model input is a typed, label-blind record in which a missing
+field, an unseen categorical value, an unsupported operation, an unavailable
+capability, and a measured zero have different meanings. This supports the
+interpretation of the transfer and external-corpus panels as capability and
+provenance diagnostics: an unavailable target is retained as unavailable, not
+counted as a failed prediction. It also clarifies what the protected replay
+does and does not test. The public rows and returned predictions can be
+validated without exposing the gold labels, but the boundary alone does not
+establish absence of every side channel or make a same-host controlled run an
+independent replication. The visual is therefore a receipt-backed schema
+result, not another accuracy endpoint.
 
 The measured sensing receipt reports `{{SENSOR_COST_SENSOR_COUNT}}` deterministic
 sensor vectors and `{{SENSOR_CERTIFICATE_COUNT}}` exact finite certificates.
@@ -566,3 +579,13 @@ from `{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` computationally validated
 finite-policy result(s); broad trace-refinement, compiler-transfer, and
 independent-replay claims remain unresolved. No broader theorem or complete
 x86-64 claim is promoted.
+
+![{{FIGURE_THEOREM_STATUS_MAP_CAPTION}}]({{FIGURE_THEOREM_STATUS_MAP_PATH}}){#fig:theorem-status-map width=100%}
+
+The status map is intentionally a promotion ledger rather than a list of
+aspirational theorem titles. A `proved` row is backed by the checked formal
+artifact and its assumptions; a computationally validated row is bounded by
+the enumerated state space; a falsified row retains its smallest counterexample;
+and an unresolved row is not converted into a theorem by prose. This separation
+lets the manuscript report productive negative results without confusing them
+with either proof or failure of the unrestricted scientific question.

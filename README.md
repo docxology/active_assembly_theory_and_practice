@@ -129,6 +129,12 @@ uv run pytest tests \
 uv run python scripts/run_julia_tests.py
 ```
 
+The first `generate-public` call freezes the public toolchain receipt. An
+intentional protocol or public-bundle refresh must explicitly reseed that
+surface; manuscript or figure regeneration does not silently replace it.
+Acquisition is the only network-enabled operation, and operator-side replay
+consumes only the label-blind `output/replication/public/` directory.
+
 After rendering through the sibling template checkout, validate the standard
 DOCX and tagged PDF as separate delivery surfaces:
 

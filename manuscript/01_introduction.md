@@ -50,6 +50,34 @@ architecture. These constraints are part of the result: the package makes the
 assumptions, failure states, and missing evidence inspectable instead of averaging
 them away.
 
+## Evidence map and contribution boundary
+
+The paper should be read as a chain of evidence objects rather than as one
+undifferentiated claim. Static decoding establishes what the bytes can be
+parsed as; bounded execution records what a transparent fixture did under a
+declared intervention; the normalized reference path states which effects are
+modeled; Lean checks only the formal fragment named in its receipt; the
+statistical layers evaluate fixed endpoints on declared splits; and the
+document pipeline records how those results become a citable artifact. The
+architecture figure makes those boundaries visible so that a successful
+downstream render cannot be mistaken for a successful upstream scientific
+claim.
+
+| Evidence surface | What is established here | What remains outside the claim |
+| --- | --- | --- |
+| Static and dynamic fixture path | Real Capstone decoding and bounded Unicorn instrumentation on transparent repository-owned inputs | Arbitrary-binary execution, complete path recovery, and general reverse engineering |
+| Normalized state and Lean fragment | A width-aware, bounded operational contract and selected kernel-checked algebra | Complete x86-64 semantics, ABI behavior, exceptions, and unrestricted aliasing |
+| Quotient and model portfolio | Source-bound finite labels, family-disjoint evaluation, calibration, and clustered diagnostics | Universal identifiability, population-level semantic recovery, and post-hoc model selection |
+| External and replay surfaces | Provenance, static-only acquisition safeguards, and the recorded controlled replay outcome | Application effectiveness, independent physical replication, and independent reimplementation |
+| Document and receipt pipeline | Reproducible source-to-render lineage with explicit unavailable and negative states | Peer review, adoption, and scientific validity inferred from engineering gates |
+
+![{{FIGURE_RESEARCH_ARCHITECTURE_CAPTION}}]({{FIGURE_RESEARCH_ARCHITECTURE_PATH}}){#fig:research-architecture width=100%}
+
+The figure is therefore both a reader's map and a claim-control device. Its
+arrows describe the recorded relationship between artifacts, not a transitive
+proof that every representation preserves program meaning. The relevant unit
+of interpretation is always the receipt named by the adjacent text.
+
 The broader package roadmap is intentionally larger than the implemented
 fixture. Binary-analysis platform work such as BAP and GTIRB motivates
 intermediate-representation and tool-interchange questions [@brumley2011bap;

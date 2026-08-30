@@ -55,7 +55,6 @@ from .figures import (
     plot_sensor_costs,
     plot_temporal_beliefs_heatmap,
     plot_typed_observation_matrix,
-    write_figure_captions,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -366,7 +365,15 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     plot_memory_access_timeline(memory_payload, memory_figure_path)
 
     stats_paths = write_stats_figures(output_dir)
-    captions_path = write_figure_captions(output_dir)
+    # The canonical figure contract regenerates the nine narrative visuals,
+    # enriches all legacy rows with source hashes and accessibility metadata,
+    # and emits the vector/atlas surfaces.  It retains the legacy caption
+    # writer inside its compatibility boundary so existing callers remain
+    # valid while the canonical registry becomes the final generated surface.
+    from .figure_contract import write_figure_bundle
+
+    figure_bundle = write_figure_bundle(output_dir)
+    captions_path = output_dir / "figures" / "README.md"
 
     temporal_figure_paths = {Path(path).stem: path for path in temporal_paths}
     return {
@@ -411,4 +418,5 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "artifact_receipt_closure": stats_paths["artifact_receipt_closure"],
         "active_information_frontier": stats_paths["active_information_frontier"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
+        **figure_bundle,
     }

@@ -154,6 +154,61 @@ def _public_bundle_digest(project_root: Path) -> str:
     return _digest(entries)
 
 
+def _write_frozen_public_toolchain(project_root: Path) -> Path:
+    """Create the producer toolchain receipt once for a frozen public bundle.
+
+    The public bundle is an input to a separately operated replay.  Rewriting
+    its platform-specific capability receipt every time the owner regenerates
+    manuscript artifacts would silently invalidate an otherwise identical
+    replay (for example after a host OS patch).  Keep the bundle input stable
+    once created; the current producer environment remains recorded in the
+    owner-side receipt envelope.  An operator who intentionally changes the
+    public bundle must remove this file and obtain a new replay receipt.
+    """
+
+    path = project_root / PUBLIC_TOOLCHAIN
+    if path.exists():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                "frozen public toolchain receipt is unreadable; repair or remove "
+                "the public bundle explicitly before regeneration"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ValueError("frozen public toolchain receipt must be an object")
+        required = {
+            "schema_version",
+            "python",
+            "platform",
+            "architecture",
+            "packages",
+            "network_required",
+        }
+        missing = sorted(required - set(payload))
+        if missing:
+            raise ValueError(
+                f"frozen public toolchain receipt is incomplete: missing={missing}"
+            )
+        if payload.get("network_required") is not False:
+            raise ValueError(
+                "frozen public toolchain receipt must declare network_required=false"
+            )
+        return path
+    write_json_atomic(
+        path,
+        {
+            "schema_version": REPLAY_RECEIPT_SCHEMA_VERSION,
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "architecture": platform.machine(),
+            "packages": toolchain_versions(("numpy",)),
+            "network_required": False,
+        },
+    )
+    return path
+
+
 def _public_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     public: list[dict[str, Any]] = []
     gold: list[dict[str, Any]] = []
@@ -491,17 +546,7 @@ def write_replication_bundle(project_root: Path = PROJECT_ROOT) -> Path:
             "arbitrary_external_execution": False,
         },
     )
-    write_json_atomic(
-        project_root / PUBLIC_TOOLCHAIN,
-        {
-            "schema_version": REPLAY_RECEIPT_SCHEMA_VERSION,
-            "python": platform.python_version(),
-            "platform": platform.platform(),
-            "architecture": platform.machine(),
-            "packages": toolchain_versions(("numpy",)),
-            "network_required": False,
-        },
-    )
+    _write_frozen_public_toolchain(project_root)
     (project_root / PUBLIC_INSTRUCTIONS).write_text(
         """# Offline replay bundle
 

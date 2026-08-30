@@ -7,6 +7,8 @@ the current manuscript and validation report. It writes:
 - `output/data/reproducibility_manifest.md`
 - `output/figures/artifact_hash_manifest.png`
 - `output/figures/README.md` (a caption ledger documenting every figure)
+- `output/data/figure_registry.json` (the canonical 62-row figure contract)
+- `output/figure_atlas/index.html` (the offline accessible visual atlas)
 
 The rendered PDF has a separate post-render audit at
 `output/data/pdf_accessibility_report.json`. It is intentionally not folded
@@ -56,6 +58,23 @@ This is a reproducibility and freshness contract, not a scientific-validity
 certificate. It can say that a rendered manuscript is pointing to the same
 bytes the validator inspected; it cannot say that the model is the best model
 for program semantics.
+
+## Visual-bundle lineage
+
+The figure bundle is generated after source receipts and before manuscript
+hydration. `src.figure_contract.build_figure_specs` resolves all input paths and
+hashes, while `src.visual_atlas` generates the nine narrative figures from the
+formal, quotient, sensing, replay, and theorem receipts. The remaining
+diagnostic figures retain their established producers but receive the same
+canonical registry projection. PNG hashes are checked directly; native SVG/PDF
+exports are parsed, and the atlas registry must have exact figure/figcaption,
+alternative-text, and long-description parity.
+
+The atlas is an offline accessibility surface, not an additional analysis
+runtime. It deliberately exposes source digests and status semantics without
+embedding protected labels in public model inputs. A source or protocol change
+requires the bundle and manuscript variables to be regenerated before any
+rendered document is considered fresh.
 
 ## Current research-extension receipts
 
@@ -139,7 +158,15 @@ an audit surface, not an external-accuracy result.
 
 The public replay directory also contains a protocol manifest, toolchain
 receipt, and offline instructions. Its bundle digest excludes private gold
-labels. A receipt produced by `write-replay-receipt` remains
+labels. Once a public bundle has been generated, its toolchain receipt is
+treated as a frozen input: manuscript regeneration does not rewrite the
+platform-specific receipt merely because the owner workstation received an
+OS or package update. The current producer environment is retained in the
+owner-side receipt envelope. An intentional protocol or public-bundle refresh
+must explicitly reseed the public directory and obtain a new replay receipt;
+it is not an incidental side effect of rendering.
+
+A receipt produced by `write-replay-receipt` remains
 `submitted_pending_verification`; protected ingestion requires a separately
 controlled-run attestation before it can emit
 `independent_replay_observed`. The current checked-in evidence includes that
