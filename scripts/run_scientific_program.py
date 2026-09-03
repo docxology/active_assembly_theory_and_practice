@@ -19,13 +19,14 @@ from src.artifact_contract import (  # noqa: E402
 )
 from src.external_sources import (  # noqa: E402
     EXTERNAL_CAPABILITY_ARTIFACT,
+    EXTERNAL_ACQUISITION_ARTIFACT,
     EXTERNAL_MANIFEST_PATH,
     EXTERNAL_STATIC_RECEIPT_ARTIFACT,
-    acquire_external_manifest,
     load_external_manifest,
     validate_external_manifest,
     write_compiler_capabilities,
     write_external_static_validation,
+    write_external_acquisition_payload,
     write_external_source_validation_payload,
 )
 from src.external_corpus import (  # noqa: E402
@@ -232,6 +233,14 @@ def main() -> int:
         "--completed-at",
         help="recorded ISO-8601 completion timestamp with timezone; defaults to now",
     )
+    receipt.add_argument(
+        "--source-revision",
+        help="optional committed source revision for a reproducible runtime archive",
+    )
+    receipt.add_argument(
+        "--source-archive-sha256",
+        help="optional digest of the runtime source archive bound to source revision",
+    )
     # REMAINDER preserves command flags such as ``replay --offline`` in the
     # receipt rather than asking the outer parser to understand the operator's
     # replay command.  The receipt producer still validates every token.
@@ -303,6 +312,7 @@ def main() -> int:
             "P13_source_bound_labels": root / LABEL_CONTRACT_ARTIFACT,
             "P13_static_only": root / EXTERNAL_STATIC_RECEIPT_ARTIFACT,
             "P13_capabilities": root / EXTERNAL_CAPABILITY_ARTIFACT,
+            "P13_acquisition": root / EXTERNAL_ACQUISITION_ARTIFACT,
             "P15_local_replay_harness": root / "output/data/replication_manifest.json",
             "P15_independent_replay": root / INDEPENDENT_REPLAY_ARTIFACT,
         }
@@ -405,11 +415,15 @@ def main() -> int:
         )
         return 0 if not artifact_errors else 1
     elif command == "acquire-external":
-        result = acquire_external_manifest(
-            args.manifest, args.destination, allow_network=args.allow_network
+        result = write_external_acquisition_payload(
+            root,
+            manifest_path=args.manifest,
+            destination=args.destination,
+            allow_network=args.allow_network,
         )
-        _write_json(result)
-        return 0 if result["status"] in {"validated", "blocked_external"} else 1
+        print(result)
+        payload = json.loads(result.read_text(encoding="utf-8"))
+        return 0 if payload.get("status") in {"validated", "blocked_external"} else 1
     elif command == "generate-public":
         print(write_replication_bundle(root))
         valid, detail = validate_replication_bundle(root)
@@ -458,6 +472,8 @@ def main() -> int:
                 project_root=root,
                 started_at=args.started_at,
                 completed_at=args.completed_at,
+                source_revision=args.source_revision,
+                source_archive_sha256=args.source_archive_sha256,
             )
         )
     elif command == "ingest-replay":

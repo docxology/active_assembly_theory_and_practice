@@ -156,6 +156,10 @@ VARIABLE_DEFINITIONS: dict[str, str] = {
     "EXTERNAL_SOURCE_STATUS": "Evidence status of the licensed-source validation track; blocked or unavailable is not a zero result.",
     "EXTERNAL_SOURCE_PROJECT_COUNT": "Number of distinct source families recorded in the external-source manifest.",
     "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": "Number of mechanically labelable external evaluation examples in the external-source receipt.",
+    "EXTERNAL_ACQUISITION_ARTIFACT": "Explicit pinned external-source acquisition receipt with cache/network and safe-extraction provenance.",
+    "EXTERNAL_ACQUISITION_STATUS": "Status of the explicit external-source acquisition attempt; this is not a behavioral-validation status.",
+    "EXTERNAL_ACQUISITION_ROW_COUNT": "Number of pinned source rows retained by the external acquisition attempt.",
+    "EXTERNAL_ACQUISITION_NETWORK_USED": "Whether the external acquisition receipt records actual network use; cached verified reuse is not network acquisition.",
     "EXTERNAL_LABEL_ARTIFACT": "Source-bound external label-contract receipt containing mechanically generated pairs and explicit exclusions.",
     "EXTERNAL_LABEL_STATUS": "Evidence status of the source-bound label-contract producer; lexical witnesses and near-miss controls are not universal semantic proofs.",
     "EXTERNAL_LABEL_ROW_COUNT": "Number of accepted source-bound external pair rows after static compilation and Capstone decoding.",
@@ -512,6 +516,8 @@ def _input_hashes(
         paths.append(
             project_root / "output" / "data" / "external_source_validation.json"
         )
+    elif token.startswith("EXTERNAL_ACQUISITION_"):
+        paths.append(project_root / "output" / "data" / "external_acquisition.json")
     elif token.startswith("EXTERNAL_LABEL_"):
         paths.append(project_root / "output" / "data" / "external_label_contract.json")
     elif token.startswith("EXTERNAL_STATIC_"):

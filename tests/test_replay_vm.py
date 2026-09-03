@@ -19,6 +19,31 @@ import src.replay_vm as replay_vm
 from src.artifact_contract import write_json_atomic
 
 
+def _freshness_fixture() -> dict[str, str]:
+    return {
+        "source_revision": "a" * 40,
+        "source_archive_sha256": "b" * 64,
+        "public_bundle_sha256": "c" * 64,
+        "transfer_manifest_sha256": "d" * 64,
+    }
+
+
+@pytest.fixture(autouse=True)
+def _stub_vm_source_freshness(monkeypatch: pytest.MonkeyPatch):
+    """Keep subprocess-free VM tests focused on their stated boundary.
+
+    The source-freshness helper has dedicated tests below; replay receipt
+    tests use a controlled metadata fixture so they do not need a real Git
+    checkout or blue-backed transfer archive.
+    """
+
+    original = replay_vm._validate_vm_source_freshness
+    monkeypatch.setattr(
+        replay_vm, "_validate_vm_source_freshness", lambda *_args: _freshness_fixture()
+    )
+    return original
+
+
 def test_checked_in_vm_config_is_pinned() -> None:
     payload = replay_vm.load_replay_vm_config()
     assert payload["vmType"] == "qemu"
@@ -734,6 +759,82 @@ def test_prepare_public_guest_bundle_records_archive_failure(
         replay_vm.prepare_public_guest_bundle(repo)
 
 
+def test_vm_source_freshness_rejects_stale_transfer(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    _stub_vm_source_freshness,
+) -> None:
+    original = _stub_vm_source_freshness
+    root = tmp_path / "vm"
+    paths = replay_vm.vm_paths(root)
+    paths["transfer"].mkdir(parents=True)
+    paths["receipts"].mkdir(parents=True)
+    current_revision = "a" * 40
+    monkeypatch.setattr(
+        replay_vm,
+        "_git_output",
+        lambda _root, *arguments: "" if arguments[0] == "status" else current_revision,
+    )
+    monkeypatch.setattr(replay_vm, "_public_bundle_digest", lambda _root: "c" * 64)
+    write_json_atomic(
+        paths["transfer_manifest"],
+        {
+            "source_revision": "d" * 40,
+            "source_archive_sha256": "b" * 64,
+            "public_bundle_sha256": "c" * 64,
+            "private_gold_transferred": False,
+            "source_bound_label_contract_transferred": False,
+            "network_required_for_replay": False,
+        },
+    )
+    write_json_atomic(paths["provision_receipt"], {"transfer": {}})
+    with pytest.raises(RuntimeError, match="source revision is stale"):
+        original(tmp_path, paths)
+
+
+def test_vm_source_freshness_accepts_matching_transfer_and_provision(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    _stub_vm_source_freshness,
+) -> None:
+    original = _stub_vm_source_freshness
+    root = tmp_path / "vm"
+    paths = replay_vm.vm_paths(root)
+    paths["transfer"].mkdir(parents=True)
+    paths["receipts"].mkdir(parents=True)
+    current_revision = "a" * 40
+    archive = paths["transfer"] / f"source-{current_revision}.tar"
+    archive.write_bytes(b"source archive")
+    monkeypatch.setattr(
+        replay_vm,
+        "_git_output",
+        lambda _root, *arguments: "" if arguments[0] == "status" else current_revision,
+    )
+    monkeypatch.setattr(replay_vm, "_public_bundle_digest", lambda _root: "c" * 64)
+    transfer = {
+        "source_revision": current_revision,
+        "source_archive_sha256": replay_vm._sha256(archive),
+        "public_bundle_sha256": "c" * 64,
+        "private_gold_transferred": False,
+        "source_bound_label_contract_transferred": False,
+        "network_required_for_replay": False,
+    }
+    write_json_atomic(paths["transfer_manifest"], transfer)
+    write_json_atomic(
+        paths["provision_receipt"],
+        {
+            "transfer_manifest_sha256": replay_vm._sha256(paths["transfer_manifest"]),
+            "transfer": transfer,
+        },
+    )
+    freshness = original(tmp_path, paths)
+    assert freshness["source_revision"] == current_revision
+    assert freshness["source_archive_sha256"] == transfer["source_archive_sha256"]
+    assert freshness["transfer_manifest_sha256"] == replay_vm._sha256(
+        paths["transfer_manifest"]
+    )
+
+
 def test_git_and_guest_wrappers_use_explicit_arguments(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1013,7 +1114,14 @@ def test_replay_and_attestation_preserve_control_boundary(
                 },
             )
         elif source.endswith("external-replay-receipt.json"):
-            write_json_atomic(destination, {"pending": True})
+            write_json_atomic(
+                destination,
+                {
+                    "pending": True,
+                    "source_revision": "a" * 40,
+                    "source_archive_sha256": "b" * 64,
+                },
+            )
         else:
             destination.write_text("interfaces=lo\nroutes=\n", encoding="utf-8")
 
@@ -1078,6 +1186,7 @@ def test_attestation_rejects_unsafe_vm_summary(
         "private_gold_transferred": False,
         "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
         "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+        **_freshness_fixture(),
     }
     summary[summary_field] = summary_value
     paths["replay_receipt"].write_text(json.dumps(summary), encoding="utf-8")
@@ -1123,6 +1232,7 @@ def test_attestation_rejects_manifest_snapshot_drift(
         "private_gold_transferred": False,
         "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
         "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+        **_freshness_fixture(),
     }
     summary[field] = value
     paths["replay_receipt"].write_text(json.dumps(summary), encoding="utf-8")
@@ -1166,6 +1276,7 @@ def test_attestation_rejects_invalid_pending_receipt(
                 "private_gold_transferred": False,
                 "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
                 "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+                **_freshness_fixture(),
             }
         ),
         encoding="utf-8",
@@ -1201,9 +1312,14 @@ def test_attestation_rejects_invalid_attested_receipt(
                 "private_gold_transferred": False,
                 "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
                 "vm_manifest_sha256": replay_vm._sha256(paths["replay_manifest"]),
+                **_freshness_fixture(),
             }
         ),
         encoding="utf-8",
+    )
+    write_json_atomic(
+        paths["pending_receipt"],
+        {"source_revision": "a" * 40, "source_archive_sha256": "b" * 64},
     )
     results = iter(((True, "ok"), (False, "attested drift")))
     monkeypatch.setattr(

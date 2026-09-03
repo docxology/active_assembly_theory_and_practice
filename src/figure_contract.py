@@ -332,6 +332,7 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
     replay = _load(data_dir / "independent_replay_receipt.json")
     theorem = _load(data_dir / "theorem_or_countertheorem.json")
     typed = _load(data_dir / "typed_observations.json")
+    replication = _load(data_dir / "replication_manifest.json")
     protocol_hash = _safe_value(protocol.get("protocol_sha256"), "not observed")[:12]
     if stem == "research_architecture":
         caption = (
@@ -354,7 +355,13 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
         )
     elif stem == "observation_semantics":
         typed_fields = typed.get("fields", [])
-        input_contract = replay.get("input_contract", {})
+        # The visual producer receives the replication manifest as its
+        # canonical public/protected boundary.  The controlled-replay receipt
+        # records the outcome of a run, but it is not the schema authority and
+        # may intentionally omit the public-field vocabulary.  Reading the
+        # manifest here keeps the generated caption numerically aligned with
+        # the figure and its source table.
+        input_contract = replication.get("input_contract", {})
         public_fields = (
             input_contract.get("public_fields", [])
             if isinstance(input_contract, Mapping)

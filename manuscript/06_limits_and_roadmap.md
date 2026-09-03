@@ -89,9 +89,13 @@ Three further tranches make the roadmap more rigorous without inflating the
 claim. First, the formal receipt `{{FORMAL_VERIFICATION_ARTIFACT}}` reports a
 locally checked modular Word64 fragment under toolchain `{{FORMAL_TOOLCHAIN}}`,
 with `{{FORMAL_THEOREM_COUNT}}` named theorems and status
-`{{FORMAL_VERIFICATION_STATUS}}`. This earns a kernel-checked algebraic
-foundation for quotient witnesses, but not a correspondence theorem between
-Lean and the Python/Capstone/Unicorn trace. Second, the real adapter receipt
+`{{FORMAL_VERIFICATION_STATUS}}`. The generated bridge also records all 16
+general-purpose registers, `RIP`, modeled flag-definedness, bounded memory and
+stack bounds, step index, and running status, with kernel-checked fixture
+invariants for register preservation, carry preservation, step advancement, and
+bound preservation. This earns a bounded kernel-checked state foundation for
+quotient witnesses, but not a correspondence theorem between Lean and the
+Python/Capstone/Unicorn trace. Second, the real adapter receipt
 `{{CROSS_ARCHITECTURE_ARTIFACT}}` exercises `{{CROSS_ARCHITECTURE_COUNT}}`
 architectures, all with bounded result `{{CROSS_ARCHITECTURE_RESULT}}` and
 execution flag `{{CROSS_ARCHITECTURE_ALL_PASSED}}`. That is an integration and

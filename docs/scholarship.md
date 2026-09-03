@@ -73,7 +73,8 @@ claim appear stronger.
 - `implemented_backend`: RxInfer artifacts produced by the project.
 - `implemented_dependency`: required Capstone and Unicorn trace producers.
 - `comparison_baseline`: pymdp diagnostics.
-- `roadmap_adapter`: real packages that are named but not yet evidence streams.
+- `roadmap_adapter`: real packages retained as context-only extension
+  candidates; no evidence stream is assumed until a producer and receipt exist.
 - `binary_analysis_context`: peer-reviewed or technical binary-analysis context.
 - `theory`: FEP and active-inference background.
 - `integration_guidance`: documentation that constrains how packages are wired.

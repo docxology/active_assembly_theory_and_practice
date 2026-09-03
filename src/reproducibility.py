@@ -301,6 +301,16 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         validation_checks=("external_source_contract", "external_source_freshness"),
     ),
     ArtifactManifestTarget(
+        path="output/data/external_acquisition.json",
+        artifact_type="external_acquisition",
+        generated_by="src.external_sources.write_external_acquisition_payload",
+        claim_ids=("CLM-036",),
+        validation_checks=(
+            "external_acquisition_contract",
+            "external_acquisition_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
         path="output/data/external_label_contract.json",
         artifact_type="external_label_contract",
         generated_by="src.external_labeling.write_external_label_contract",

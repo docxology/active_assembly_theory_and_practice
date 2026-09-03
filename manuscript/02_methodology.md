@@ -1050,9 +1050,13 @@ with `{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` reference step rows. Its status is
 `{{FORMAL_CORRESPONDENCE_STATUS}}`. The comparison is all-step and fail-closed:
 an unsupported row, environment error, or mismatch cannot be converted into a
 terminal-only success. The Lean prerequisite is reported separately in
-`{{FORMAL_VERIFICATION_ARTIFACT}}`; a generated Lean bridge checks one shared
-Word64 boundary fixture, but a compiled Lean theorem is not silently promoted
-to a proof of the Python lifter or the complete x86-64 ISA.
+`{{FORMAL_VERIFICATION_ARTIFACT}}`; a generated Lean bridge now serializes one
+shared bounded state with all 16 general-purpose registers, `RIP`, modeled flag
+definedness, memory and stack bounds, step index, and running status. Its
+kernel-checked fixture invariants cover the 64-bit `RAX` increment, preservation
+of the other registers and carry flag, step advancement, and bound
+preservation. A compiled Lean theorem is not silently promoted to a proof of
+the Python lifter, the Capstone/Unicorn path, or the complete x86-64 ISA.
 
 ![{{FIGURE_FORMAL_CORRESPONDENCE_CAPTION}}]({{FIGURE_FORMAL_CORRESPONDENCE_PATH}}){#fig:formal-correspondence width=100%}
 
@@ -1111,6 +1115,20 @@ compiler capability receipt is `{{EXTERNAL_CAPABILITIES_ARTIFACT}}` with
 status `{{EXTERNAL_CAPABILITIES_STATUS}}` and `{{EXTERNAL_CAPABILITY_TARGET_COUNT}}`
 target probes that produced a static object. A compiler-advertised target is
 not counted unless this empirical probe succeeds.
+
+The acquisition attempt itself is separately recorded in
+`{{EXTERNAL_ACQUISITION_ARTIFACT}}` with status
+`{{EXTERNAL_ACQUISITION_STATUS}}`, `{{EXTERNAL_ACQUISITION_ROW_COUNT}}` retained
+source rows, and recorded network use `{{EXTERNAL_ACQUISITION_NETWORK_USED}}`.
+That receipt binds the manifest and producer hashes, preserves one row per
+pinned source, and distinguishes a verified local-cache reuse from a network
+download. Downloads are published only after archive-digest verification;
+extraction is staged, archive links are rejected, and the declared license
+bytes are checked before publication. The validator repeats those checks
+without network access. This is a freshness and safety improvement for the
+source-bound corpus, not evidence that the external build was independently
+replayed or that any source-level contract is a universal behavioral-
+equivalence label.
 
 ![{{FIGURE_COMPILER_TRANSFER_CAPTION}}]({{FIGURE_COMPILER_TRANSFER_PATH}}){#fig:compiler-transfer width=100%}
 

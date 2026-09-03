@@ -17,6 +17,16 @@ def test_generated_fixture_is_deterministic_and_elan_is_required(
     assert source.is_file()
     assert metadata["python_reference_final_rax"] == lean_bridge.BRIDGE_EXPECTED_RAX
     assert metadata["source_sha256"]
+    assert metadata["machine_state_schema"] == (
+        "explicit_16_gpr_rip_flags_memory_stack_step_status"
+    )
+    assert metadata["machine_state_register_names"] == list(
+        lean_bridge.BRIDGE_REGISTER_NAMES
+    )
+    assert len(metadata["python_initial_machine_state"]["registers"]) == 16
+    assert metadata["lean_machine_state_theorems"] == list(
+        lean_bridge.BRIDGE_MACHINE_STATE_THEOREMS
+    )
     monkeypatch.setattr(lean_bridge.shutil, "which", lambda name: None)
     with pytest.raises(RuntimeError, match="elan is required"):
         lean_bridge._elan_executable()

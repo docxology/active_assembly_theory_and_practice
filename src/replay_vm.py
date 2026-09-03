@@ -126,6 +126,7 @@ def vm_paths(root: Path | None = None) -> dict[str, Path]:
         "lima_home": vm_storage_root / "lima-home",
         "toolchain": vm_storage_root / "toolchain",
         "transfer": vm_storage_root / "transfer",
+        "transfer_manifest": vm_storage_root / "transfer" / "transfer_manifest.json",
         "receipts": vm_storage_root / "receipts",
         "vm_manifest": vm_storage_root / "receipts" / "vm_manifest.json",
         "replay_manifest": vm_storage_root / "receipts" / "replay_vm_manifest.json",
@@ -501,6 +502,102 @@ def _git_output(project_root: Path, *arguments: str) -> str:
     return result.stdout.strip()
 
 
+def _validate_vm_source_freshness(
+    project_root: Path, paths: dict[str, Path]
+) -> dict[str, Any]:
+    """Require the provisioned guest tree to match the current clean checkout.
+
+    A VM can remain healthy while still containing an older source archive. A
+    replay from that tree would be technically reproducible but scientifically
+    stale, so replay is rejected unless the committed revision, runtime source
+    archive, and public bundle all agree across the transfer manifest and the
+    provisioning receipt.
+    """
+
+    dirty = _git_output(project_root, "status", "--porcelain", "--untracked-files=all")
+    if dirty:
+        raise RuntimeError(
+            "VM replay requires a clean committed checkout; source freshness cannot be established from a dirty tree"
+        )
+    source_revision = _git_output(project_root, "rev-parse", "HEAD")
+    if (
+        not source_revision
+        or len(source_revision) != 40
+        or any(character not in "0123456789abcdef" for character in source_revision)
+    ):
+        raise RuntimeError("VM replay source revision is not a full committed hash")
+    transfer_path = paths["transfer_manifest"]
+    if not transfer_path.is_file():
+        raise RuntimeError(
+            "VM transfer manifest is missing; rerun vm-provision for the current committed source"
+        )
+    provision_path = paths["provision_receipt"]
+    try:
+        transfer = json.loads(transfer_path.read_text(encoding="utf-8"))
+        provision = json.loads(provision_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"VM source-freshness receipt is unreadable: {exc}") from exc
+    if not isinstance(transfer, dict) or not isinstance(provision, dict):
+        raise RuntimeError("VM source-freshness receipts must be JSON objects")
+    required_transfer = {
+        "source_revision",
+        "source_archive_sha256",
+        "public_bundle_sha256",
+        "private_gold_transferred",
+        "source_bound_label_contract_transferred",
+        "network_required_for_replay",
+    }
+    missing = sorted(required_transfer - set(transfer))
+    if missing:
+        raise RuntimeError(f"VM transfer manifest is incomplete: missing={missing}")
+    if transfer.get("source_revision") != source_revision:
+        raise RuntimeError(
+            "VM source revision is stale; rerun vm-provision after committing the current checkout"
+        )
+    source_archive = paths["transfer"] / f"source-{source_revision}.tar"
+    if not source_archive.is_file():
+        raise RuntimeError(
+            "VM source archive for the current revision is missing; rerun vm-provision"
+        )
+    if _sha256(source_archive) != transfer.get("source_archive_sha256"):
+        raise RuntimeError(
+            "VM source archive hash does not match its transfer manifest"
+        )
+    if transfer.get("public_bundle_sha256") != _public_bundle_digest(project_root):
+        raise RuntimeError(
+            "VM public bundle is stale; regenerate and reprovision the current committed checkout"
+        )
+    if transfer.get("private_gold_transferred") is not False:
+        raise RuntimeError("VM transfer manifest reports private gold transfer")
+    if transfer.get("source_bound_label_contract_transferred") is not False:
+        raise RuntimeError("VM transfer manifest reports source-bound label transfer")
+    if transfer.get("network_required_for_replay") is not False:
+        raise RuntimeError("VM transfer manifest reports network-required replay")
+    provision_transfer = provision.get("transfer")
+    if not isinstance(provision_transfer, dict):
+        raise RuntimeError("VM provision receipt does not contain transfer provenance")
+    for key in (
+        "source_revision",
+        "source_archive_sha256",
+        "public_bundle_sha256",
+    ):
+        if provision_transfer.get(key) != transfer.get(key):
+            raise RuntimeError(
+                "VM provision receipt is stale relative to the current transfer manifest"
+            )
+    recorded_manifest_hash = provision.get("transfer_manifest_sha256")
+    if recorded_manifest_hash is not None and recorded_manifest_hash != _sha256(
+        transfer_path
+    ):
+        raise RuntimeError("VM provision receipt transfer-manifest hash mismatch")
+    return {
+        "source_revision": source_revision,
+        "source_archive_sha256": str(transfer["source_archive_sha256"]),
+        "public_bundle_sha256": str(transfer["public_bundle_sha256"]),
+        "transfer_manifest_sha256": _sha256(transfer_path),
+    }
+
+
 def _deterministic_tar(path: Path, members: dict[str, bytes]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(path, mode="w") as archive:
@@ -731,6 +828,7 @@ test -x {GUEST_REPOSITORY}/.venv/bin/python
         "created_at": _iso_now(),
         "vm_name": VM_NAME,
         "vm_manifest_sha256": _sha256(paths["vm_manifest"]),
+        "transfer_manifest_sha256": _sha256(transfer["metadata_path"]),
         "transfer": {
             key: value
             for key, value in transfer.items()
@@ -785,6 +883,7 @@ def replay_in_vm(
         raise RuntimeError("VM provision receipt is missing; provision before replay")
     if not paths["vm_manifest"].is_file():
         raise RuntimeError("VM manifest is missing; provision before replay")
+    freshness = _validate_vm_source_freshness(project_root, paths)
     # The live VM manifest is intentionally mutable because vm-stop and
     # vm-status refresh its instance state. Preserve the exact running-state
     # bytes used for this replay so a later stop cannot invalidate the receipt's
@@ -825,6 +924,8 @@ completed_at="$(date -u --iso-8601=seconds)"
   --bundle-sha256 current \\
   --model {model} \\
   --seed {seed} \\
+  --source-revision {freshness["source_revision"]} \\
+  --source-archive-sha256 {freshness["source_archive_sha256"]} \\
   --started-at "$started_at" \\
   --completed-at "$completed_at" \\
   --command replay --offline
@@ -861,6 +962,9 @@ INNER
         "pending_receipt_sha256": _sha256(paths["pending_receipt"]),
         "prediction_sha256": _sha256(paths["predictions"]),
         "public_bundle_sha256": _public_bundle_digest(project_root),
+        "source_revision": freshness["source_revision"],
+        "source_archive_sha256": freshness["source_archive_sha256"],
+        "transfer_manifest_sha256": freshness["transfer_manifest_sha256"],
         "network_proof_sha256": _sha256(paths["network_proof"]),
         "network_namespace_verified": True,
         "interfaces": "lo",
@@ -891,6 +995,7 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
     ):
         if not paths[key].is_file():
             raise ValueError(f"VM replay evidence is missing: {paths[key]}")
+    freshness = _validate_vm_source_freshness(project_root, paths)
     pending = json.loads(paths["pending_receipt"].read_text(encoding="utf-8"))
     valid, detail = validate_replay_receipt(
         pending, project_root=project_root, predictions_path=paths["predictions"]
@@ -906,6 +1011,15 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
         raise ValueError("VM replay manifest snapshot path is invalid")
     if replay_summary.get("vm_manifest_sha256") != _sha256(paths["replay_manifest"]):
         raise ValueError("VM replay manifest snapshot hash mismatch")
+    for key in ("source_revision", "source_archive_sha256", "transfer_manifest_sha256"):
+        if replay_summary.get(key) != freshness.get(key):
+            raise ValueError(
+                "VM replay summary is stale relative to the current source"
+            )
+    if pending.get("source_revision") != freshness["source_revision"]:
+        raise ValueError("pending VM receipt source revision is stale")
+    if pending.get("source_archive_sha256") != freshness["source_archive_sha256"]:
+        raise ValueError("pending VM receipt source archive hash is stale")
     attested = deepcopy(pending)
     attestation = dict(attested.get("attestation", {}))
     attestation.update(
@@ -921,6 +1035,9 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
             "vm_manifest_sha256": _sha256(paths["replay_manifest"]),
             "vm_manifest_snapshot": "receipts/replay_vm_manifest.json",
             "network_proof_sha256": _sha256(paths["network_proof"]),
+            "source_revision": freshness["source_revision"],
+            "source_archive_sha256": freshness["source_archive_sha256"],
+            "transfer_manifest_sha256": freshness["transfer_manifest_sha256"],
         }
     )
     attested["attestation"] = attestation
@@ -928,10 +1045,14 @@ def attest_and_ingest_vm_replay(project_root: Path = PROJECT_ROOT) -> Path:
     input_hashes["vm_manifest"] = _sha256(paths["replay_manifest"])
     input_hashes["vm_manifest_snapshot"] = _sha256(paths["replay_manifest"])
     input_hashes["network_proof"] = _sha256(paths["network_proof"])
+    input_hashes["transfer_manifest"] = freshness["transfer_manifest_sha256"]
     attested["input_hashes"] = input_hashes
     attested["vm_manifest_sha256"] = _sha256(paths["replay_manifest"])
     attested["vm_manifest_snapshot"] = "receipts/replay_vm_manifest.json"
     attested["control_scope"] = "same_host_separately_controlled_guest"
+    attested["source_revision"] = freshness["source_revision"]
+    attested["source_archive_sha256"] = freshness["source_archive_sha256"]
+    attested["transfer_manifest_sha256"] = freshness["transfer_manifest_sha256"]
     write_json_atomic(paths["attested_receipt"], attested)
     valid, detail = validate_replay_receipt(
         attested, project_root=project_root, predictions_path=paths["predictions"]

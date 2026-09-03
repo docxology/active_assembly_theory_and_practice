@@ -166,6 +166,18 @@ def generate_variables() -> dict[str, str]:
             encoding="utf-8"
         )
     )
+    external_acquisition_path = (
+        ADVANCED_OUTPUT_DIR / "data" / "external_acquisition.json"
+    )
+    external_acquisition_report = (
+        json.loads(external_acquisition_path.read_text(encoding="utf-8"))
+        if external_acquisition_path.is_file()
+        else {
+            "status": "not_yet_observed",
+            "network_used": False,
+            "acquisition": {"rows": []},
+        }
+    )
     external_label_path = ADVANCED_OUTPUT_DIR / "data" / "external_label_contract.json"
     external_label_report = (
         json.loads(external_label_path.read_text(encoding="utf-8"))
@@ -205,6 +217,10 @@ def generate_variables() -> dict[str, str]:
     protected_replay_score = _mapping_or_empty(
         independent_replay_report.get("protected_score", {})
     )
+    external_acquisition_result = _mapping_or_empty(
+        external_acquisition_report.get("acquisition", {})
+    )
+    external_acquisition_rows = external_acquisition_result.get("rows", [])
 
     def replay_metric(name: str) -> str:
         value = protected_replay_score.get(name)
@@ -652,6 +668,18 @@ def generate_variables() -> dict[str, str]:
         ),
         "EXTERNAL_SOURCE_GATE_COUNT": str(
             len(external_source_report["promotion_gate"])
+        ),
+        "EXTERNAL_ACQUISITION_ARTIFACT": "../output/data/external_acquisition.json",
+        "EXTERNAL_ACQUISITION_STATUS": str(
+            external_acquisition_report.get("status", "not_yet_observed")
+        ),
+        "EXTERNAL_ACQUISITION_ROW_COUNT": str(
+            len(external_acquisition_rows)
+            if isinstance(external_acquisition_rows, list)
+            else 0
+        ),
+        "EXTERNAL_ACQUISITION_NETWORK_USED": (
+            "yes" if external_acquisition_report.get("network_used") is True else "no"
         ),
         "EXTERNAL_LABEL_ARTIFACT": f"../{advanced_paths.get('external_label_contract', 'output/data/external_label_contract.json')}",
         "EXTERNAL_LABEL_STATUS": str(

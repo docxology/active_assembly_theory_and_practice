@@ -8,6 +8,7 @@ import math
 from datetime import UTC, datetime
 from pathlib import Path
 import platform
+import re
 from typing import Any
 
 import numpy as np
@@ -28,6 +29,8 @@ PUBLIC_TOOLCHAIN = "output/replication/public/toolchain_receipt.json"
 PUBLIC_INSTRUCTIONS = "output/replication/public/REPLAY_INSTRUCTIONS.md"
 INDEPENDENT_REPLAY_ARTIFACT = "output/data/independent_replay_receipt.json"
 REPLAY_RECEIPT_SCHEMA_VERSION = "2.0.0"
+_GIT_REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STALE_PUBLIC_MANIFEST_PATH = "output/replication/public_manifest.json"
 STALE_GOLD_LABELS_PATH = "output/replication/gold_labels.json"
 
@@ -732,6 +735,8 @@ def replay_receipt_payload(
     project_root: Path = PROJECT_ROOT,
     started_at: str | None = None,
     completed_at: str | None = None,
+    source_revision: str | None = None,
+    source_archive_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Create a submission receipt without reading protected gold labels.
 
@@ -757,6 +762,16 @@ def replay_receipt_payload(
         raise ValueError("replay_bundle_sha256 must be a lowercase SHA-256 digest")
     if not np.isfinite(float(numerical_tolerance)) or numerical_tolerance < 0:
         raise ValueError("numerical_tolerance must be a finite non-negative number")
+    if source_revision is not None and not _GIT_REVISION_RE.fullmatch(source_revision):
+        raise ValueError("source_revision must be a 40-character lowercase commit hash")
+    if source_archive_sha256 is not None and not _SHA256_RE.fullmatch(
+        source_archive_sha256
+    ):
+        raise ValueError("source_archive_sha256 must be a lowercase SHA-256 digest")
+    if (source_revision is None) != (source_archive_sha256 is None):
+        raise ValueError(
+            "source_revision and source_archive_sha256 must be supplied together"
+        )
     started_timestamp = _replay_timestamp(started_at)
     completed_timestamp = _replay_timestamp(completed_at)
     if not _timestamps_ordered(started_timestamp, completed_timestamp):
@@ -820,7 +835,7 @@ def replay_receipt_payload(
             "Independent replay is not promoted by local receipt generation.",
         ),
     )
-    return {
+    payload = {
         **receipt,
         "schema_version": REPLAY_RECEIPT_SCHEMA_VERSION,
         "receipt_kind": "separate_operator_replay_submission",
@@ -854,6 +869,14 @@ def replay_receipt_payload(
             "independent_reimplementation": False,
         },
     }
+    if source_revision is not None and source_archive_sha256 is not None:
+        payload["source_revision"] = source_revision
+        payload["source_archive_sha256"] = source_archive_sha256
+        payload["input_hashes"] = {
+            **dict(payload["input_hashes"]),
+            "runtime_source_archive": source_archive_sha256,
+        }
+    return payload
 
 
 def validate_replay_receipt(
@@ -978,6 +1001,29 @@ def validate_replay_receipt(
             or any(character not in "0123456789abcdef" for character in value)
         ):
             return False, f"replay receipt {key} is not a lowercase SHA-256 digest"
+    has_source_revision = "source_revision" in payload
+    has_source_archive = "source_archive_sha256" in payload
+    if has_source_revision != has_source_archive:
+        return False, "replay source revision and archive hash must appear together"
+    if has_source_revision and (
+        not isinstance(payload.get("source_revision"), str)
+        or not _GIT_REVISION_RE.fullmatch(str(payload["source_revision"]))
+    ):
+        return False, "replay receipt source_revision is invalid"
+    if has_source_archive and (
+        not isinstance(payload.get("source_archive_sha256"), str)
+        or not _SHA256_RE.fullmatch(str(payload["source_archive_sha256"]))
+    ):
+        return False, "replay receipt source_archive_sha256 is invalid"
+    if has_source_archive:
+        input_hashes = payload.get("input_hashes")
+        if not isinstance(input_hashes, dict) or input_hashes.get(
+            "runtime_source_archive"
+        ) != payload.get("source_archive_sha256"):
+            return (
+                False,
+                "replay receipt source archive hash is not bound in input_hashes",
+            )
     public_path = project_root / PUBLIC_MANIFEST
     try:
         public = json.loads(public_path.read_text(encoding="utf-8"))
@@ -1034,6 +1080,8 @@ def write_replay_receipt(
     project_root: Path = PROJECT_ROOT,
     started_at: str | None = None,
     completed_at: str | None = None,
+    source_revision: str | None = None,
+    source_archive_sha256: str | None = None,
 ) -> Path:
     """Write a pending replay receipt for an external operator to submit."""
 
@@ -1050,6 +1098,8 @@ def write_replay_receipt(
         project_root=project_root,
         started_at=started_at,
         completed_at=completed_at,
+        source_revision=source_revision,
+        source_archive_sha256=source_archive_sha256,
     )
     valid, detail = validate_replay_receipt(
         payload, project_root=project_root, predictions_path=predictions_path

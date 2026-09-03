@@ -44,9 +44,10 @@ output/figure_atlas/figure_registry.json
 
 The PNG is the compatibility input for DOCX/PDF rendering. Native SVG/PDF
 exports are used for the nine narrative figures and explicit raster fallbacks are
-used only for legacy plots whose producer does not yet expose a vector path.
-The fallback remains source-bound to the same raster hash and is labelled in
-the visual-QA fields; it is not presented as a native vector chart.
+used only for compatibility plots whose producer exposes a raster path but no
+native vector path. The fallback remains source-bound to the same raster hash
+and is labelled in the visual-QA fields; it is not presented as a native vector
+chart.
 
 The HTML atlas is semantic and offline. Each entry has one `figure`, one
 `figcaption`, a short image alternative, a visible caption, an expandable long

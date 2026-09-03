@@ -3,9 +3,9 @@
 The project includes a reproducible, same-host VM boundary for the frozen
 label-blind replay interface. It is intended for a separately controlled
 operator run on the owner workstation when a second physical machine or CI
-worker is not yet available. It is evidence of replay under a distinct guest
-control boundary; it is not independent reimplementation, independent
-physical-machine replication, or a new scientific sample.
+worker is not part of the current receipt. It is evidence of replay under a
+distinct guest control boundary; it is not independent reimplementation,
+independent physical-machine replication, or a new scientific sample.
 
 ## Pinned environment
 
@@ -85,6 +85,15 @@ the namespace contain only `lo` and no routes. It runs `verify-public`,
 `replay --offline`, the selected deterministic label-blind model, and the
 public-only separation check. It writes the namespace proof, pending receipt,
 predictions, stdout, and stderr to the blue-backed receipt directory.
+
+Before entering the guest, the host requires a clean committed checkout and
+compares the current `HEAD`, its deterministic runtime source archive, the
+public bundle, the transfer manifest, and the provisioning receipt. A guest
+built from an older commit is therefore refused rather than reported as a
+fresh replay. The pending receipt carries the source revision and archive
+digest when this contract is available; attestation repeats the comparison
+before protected scoring. This freshness rule distinguishes a valid old replay
+artifact from evidence about the current repository revision.
 
 Attest the controlled boundary and perform protected scoring only after the
 host validates the hashes:

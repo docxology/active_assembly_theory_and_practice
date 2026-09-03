@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 import re
@@ -42,6 +43,7 @@ EXTERNAL_MANIFEST_PATH = "configs/external_sources.yaml"
 EXTERNAL_RECEIPT_ARTIFACT = "output/data/external_source_validation.json"
 EXTERNAL_STATIC_RECEIPT_ARTIFACT = "output/data/external_static_validation.json"
 EXTERNAL_CAPABILITY_ARTIFACT = "output/data/external_capabilities.json"
+EXTERNAL_ACQUISITION_ARTIFACT = "output/data/external_acquisition.json"
 EXTERNAL_LABEL_CONTRACT_PATH = "configs/external_label_contracts.yaml"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -314,65 +316,143 @@ def acquire_external_source(
 ) -> dict[str, object]:
     """Acquire one pinned archive; default behavior is an explicit block."""
 
-    if not allow_network:
+    destination.mkdir(parents=True, exist_ok=True)
+    archive_path = destination / f"{spec.source_id}-{spec.revision}.archive"
+    # A wrong cached archive is never overwritten automatically.  This is a
+    # deliberate fail-closed rule: silently replacing a file that may be part
+    # of a prior receipt would make the provenance of a later extraction
+    # ambiguous.  The operator must remove or quarantine the bad cache after
+    # reviewing it.
+    if archive_path.is_file():
+        try:
+            cached_digest = _sha256_path(archive_path)
+        except OSError as exc:
+            return {
+                "source_id": spec.source_id,
+                "status": "failed",
+                "reason": f"cached_archive_unreadable:{exc}",
+                "network_used": False,
+                "acquisition_mode": "cache",
+            }
+        if cached_digest != spec.source_archive_sha256:
+            return {
+                "source_id": spec.source_id,
+                "status": "failed",
+                "reason": "cached source archive digest mismatch",
+                "network_used": False,
+                "acquisition_mode": "cache",
+                "archive_sha256": cached_digest,
+                "expected_archive_sha256": spec.source_archive_sha256,
+            }
+        digest = cached_digest
+        acquisition_mode = "cache"
+        network_used = False
+    elif not allow_network:
         return {
             "source_id": spec.source_id,
             "status": "blocked_external",
             "reason": "network acquisition requires --allow-network",
             "network_used": False,
+            "acquisition_mode": "absent",
         }
-    destination.mkdir(parents=True, exist_ok=True)
-    archive_path = destination / f"{spec.source_id}-{spec.revision}.archive"
-    request = Request(
-        spec.repository_url, headers={"User-Agent": "active-assembly-research"}
-    )
-    try:
-        with (
-            urlopen(request, timeout=30) as response,
-            archive_path.open("wb") as output,
-        ):
-            shutil.copyfileobj(response, output)
-    except (OSError, URLError) as exc:
+    else:
+        # Download into a same-directory temporary file, verify its digest,
+        # and publish it with os.replace only after verification.  A network
+        # failure or hash mismatch therefore cannot truncate a previously
+        # valid archive or leave a partially downloaded archive at the
+        # canonical path.
+        request = Request(
+            spec.repository_url, headers={"User-Agent": "active-assembly-research"}
+        )
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                prefix=f".{spec.source_id}-",
+                suffix=".download",
+                dir=destination,
+                delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                with urlopen(request, timeout=30) as response:  # noqa: S310
+                    shutil.copyfileobj(response, temporary)
+            digest = _sha256_path(temporary_path)
+            if digest != spec.source_archive_sha256:
+                return {
+                    "source_id": spec.source_id,
+                    "status": "failed",
+                    "reason": "source archive hash mismatch",
+                    "network_used": True,
+                    "acquisition_mode": "network",
+                    "archive_sha256": digest,
+                    "expected_archive_sha256": spec.source_archive_sha256,
+                }
+            os.replace(temporary_path, archive_path)
+            temporary_path = None
+        except (OSError, URLError) as exc:
+            return {
+                "source_id": spec.source_id,
+                "status": "failed",
+                "reason": f"acquisition_failed:{exc}",
+                "network_used": True,
+                "acquisition_mode": "network",
+            }
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+        acquisition_mode = "network"
+        network_used = True
+
+    extraction = destination / spec.source_id
+    if extraction.is_symlink():
         return {
             "source_id": spec.source_id,
             "status": "failed",
-            "reason": f"acquisition_failed:{exc}",
-            "network_used": True,
-        }
-    digest = _sha256_path(archive_path)
-    if digest != spec.source_archive_sha256:
-        return {
-            "source_id": spec.source_id,
-            "status": "failed",
-            "reason": "source archive hash mismatch",
-            "network_used": True,
+            "reason": "extraction destination may not be a symbolic link",
+            "network_used": network_used,
+            "acquisition_mode": acquisition_mode,
+            "archive_path": str(archive_path),
             "archive_sha256": digest,
         }
-    extraction = destination / spec.source_id
-    extraction.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=f".{spec.source_id}-", dir=destination))
     try:
-        _safe_extract(archive_path, extraction)
+        _safe_extract(archive_path, staging)
+        license_path = staging / spec.license_file
+        license_digest = _sha256_path(license_path) if license_path.is_file() else None
+        if license_digest != spec.license_file_sha256:
+            return {
+                "source_id": spec.source_id,
+                "status": "failed",
+                "reason": "license file hash mismatch or missing",
+                "network_used": network_used,
+                "acquisition_mode": acquisition_mode,
+                "archive_path": str(archive_path),
+                "archive_sha256": digest,
+                "license_file_sha256": license_digest,
+            }
+        if extraction.exists():
+            shutil.rmtree(extraction)
+        os.replace(staging, extraction)
+        staging = Path()
     except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as exc:
         return {
             "source_id": spec.source_id,
             "status": "failed",
             "reason": f"safe_extraction_failed:{exc}",
-            "network_used": True,
+            "network_used": network_used,
+            "acquisition_mode": acquisition_mode,
+            "archive_path": str(archive_path),
+            "archive_sha256": digest,
         }
-    license_path = extraction / spec.license_file
-    license_digest = _sha256_path(license_path) if license_path.is_file() else None
-    if license_digest != spec.license_file_sha256:
-        return {
-            "source_id": spec.source_id,
-            "status": "failed",
-            "reason": "license file hash mismatch or missing",
-            "network_used": True,
-            "license_file_sha256": license_digest,
-        }
+    finally:
+        # ``Path()`` is used only as a local sentinel after a successful
+        # os.replace; no filesystem operation is attempted for it.
+        if staging != Path():
+            shutil.rmtree(staging, ignore_errors=True)
     return {
         "source_id": spec.source_id,
         "status": "validated",
-        "network_used": True,
+        "network_used": network_used,
+        "acquisition_mode": acquisition_mode,
         "archive_path": str(archive_path),
         "archive_sha256": digest,
         "license_file_sha256": license_digest,
@@ -413,9 +493,235 @@ def acquire_external_manifest(
     return {
         "status": status,
         "source_count": len(rows),
-        "network_used": True,
+        "network_used": any(result.get("network_used") is True for result in results),
         "rows": results,
     }
+
+
+def external_acquisition_payload(
+    project_root: Path = PROJECT_ROOT,
+    *,
+    manifest_path: Path | None = None,
+    destination: Path | None = None,
+    allow_network: bool = False,
+) -> dict[str, object]:
+    """Return a source-bound receipt for one explicit acquisition attempt.
+
+    The acquisition receipt is deliberately separate from static validation:
+    an archive can be pinned and safely extracted without implying that an
+    emitted object is executable or that a source-level label is valid.  Cache
+    reuse is recorded as non-network evidence, while an absent cache remains a
+    visible ``blocked_external`` result when network opt-in is omitted.
+    """
+
+    resolved_manifest = manifest_path or project_root / EXTERNAL_MANIFEST_PATH
+    resolved_destination = destination or project_root / "output" / "external_sources"
+    manifest = load_external_manifest(resolved_manifest)
+    result = acquire_external_manifest(
+        resolved_manifest, resolved_destination, allow_network=allow_network
+    )
+    protocol = scientific_protocol_payload()
+    input_hashes: dict[str, str] = {
+        EXTERNAL_MANIFEST_PATH: sha256_path(resolved_manifest),
+        "src/external_sources.py": sha256_path(Path(__file__)),
+    }
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes=input_hashes,
+        toolchain_versions=toolchain_versions(("pyyaml",)),
+        status=str(result["status"]),
+        limitations=(
+            "Acquisition is a pinned source-ingress receipt; static compilation and source-level labels are separate evidence surfaces.",
+            "Cache reuse is valid only when the cached archive digest equals the manifest digest.",
+        ),
+        unsupported_cases=(
+            "Arbitrary URLs, mutable revisions, unsafe archive links, and path traversal are rejected.",
+        ),
+        underpowered_cases=(
+            "Acquisition and safe extraction do not establish behavioral equivalence or application effectiveness.",
+        ),
+    )
+    return {
+        **envelope,
+        "schema_version": EXTERNAL_MANIFEST_SCHEMA_VERSION,
+        "artifact": EXTERNAL_ACQUISITION_ARTIFACT,
+        "manifest_id": manifest["manifest_id"],
+        "manifest_sha256": sha256_path(resolved_manifest),
+        "destination": str(resolved_destination),
+        "allow_network": allow_network,
+        "acquisition": result,
+        "network_used": result.get("network_used") is True,
+        "execution_performed": False,
+        "static_only": True,
+    }
+
+
+def validate_external_acquisition_payload(payload: object) -> tuple[bool, str]:
+    """Validate acquisition receipt structure and the no-execution boundary."""
+
+    if not isinstance(payload, dict):
+        return False, "external acquisition receipt must be an object"
+    protocol = scientific_protocol_payload()
+    valid, detail = validate_receipt_envelope(payload, expected_protocol=protocol)
+    if not valid:
+        return False, f"external acquisition receipt: {detail}"
+    if payload.get("schema_version") != EXTERNAL_MANIFEST_SCHEMA_VERSION:
+        return False, "external acquisition receipt schema mismatch"
+    if payload.get("execution_performed") is not False:
+        return False, "external acquisition receipt records execution"
+    if payload.get("static_only") is not True:
+        return False, "external acquisition receipt is not static-only"
+    if (
+        not isinstance(payload.get("manifest_id"), str)
+        or not str(payload["manifest_id"]).strip()
+    ):
+        return False, "external acquisition manifest_id is missing"
+    for key in ("manifest_sha256",):
+        value = payload.get(key)
+        if not isinstance(value, str) or not _is_hash(value):
+            return False, f"external acquisition {key} is invalid"
+    acquisition = payload.get("acquisition")
+    if not isinstance(acquisition, dict):
+        return False, "external acquisition result is missing"
+    if acquisition.get("status") not in {
+        "validated",
+        "blocked_external",
+        "failed",
+    }:
+        return False, "external acquisition result has an unknown status"
+    if acquisition.get("execution_performed") is True:
+        return False, "external acquisition attempted execution"
+    rows = acquisition.get("rows")
+    if not isinstance(rows, list):
+        return False, "external acquisition rows must be a list"
+    for row in rows:
+        if not isinstance(row, dict) or row.get("status") not in {
+            "validated",
+            "failed",
+            "blocked_external",
+        }:
+            return False, "external acquisition row has an unknown status"
+        if row.get("network_used") not in {True, False}:
+            return False, "external acquisition row network flag is invalid"
+    if payload.get("status") == "validated" and (
+        not rows or any(row.get("status") != "validated" for row in rows)
+    ):
+        return False, "validated acquisition receipt contains a nonvalidated row"
+    if payload.get("status") == "blocked_external" and payload.get("network_used"):
+        return False, "blocked acquisition receipt cannot report network use"
+    return True, f"rows={len(rows)}"
+
+
+def validate_external_acquisition_freshness(
+    payload: object, project_root: Path = PROJECT_ROOT
+) -> tuple[bool, str]:
+    """Validate an acquisition receipt against local pinned cache state.
+
+    This check is intentionally offline.  It never retries a URL and never
+    treats a source archive's presence as evidence that its emitted object was
+    executed or that a source-level label is correct.  It only confirms that a
+    receipt still names the current manifest/producer and that every row
+    recorded as acquired remains backed by the expected archive and license
+    bytes.
+    """
+
+    valid, detail = validate_external_acquisition_payload(payload)
+    if not valid:
+        return False, detail
+    if not isinstance(payload, dict):
+        return False, "external acquisition receipt must be an object"
+    manifest_path = project_root / EXTERNAL_MANIFEST_PATH
+    source_path = project_root / "src" / "external_sources.py"
+    if not manifest_path.is_file():
+        return False, "pinned external manifest is missing"
+    if not source_path.is_file():
+        return False, "external acquisition producer is missing"
+    if payload.get("manifest_sha256") != _sha256_path(manifest_path):
+        return False, "external acquisition manifest hash is stale"
+    input_hashes = payload.get("input_hashes")
+    if not isinstance(input_hashes, dict):
+        return False, "external acquisition input hashes are missing"
+    if input_hashes.get(EXTERNAL_MANIFEST_PATH) != _sha256_path(manifest_path):
+        return False, "external acquisition manifest input hash is stale"
+    if input_hashes.get("src/external_sources.py") != _sha256_path(source_path):
+        return False, "external acquisition producer input hash is stale"
+    manifest = load_external_manifest(manifest_path)
+    specs = {
+        spec.source_id: spec
+        for index, row in enumerate(cast(list[dict[str, object]], manifest["sources"]))
+        for spec in (_spec_from_row(row, index),)
+    }
+    acquisition = payload.get("acquisition")
+    if not isinstance(acquisition, dict):
+        return False, "external acquisition result is missing"
+    rows = acquisition.get("rows")
+    if not isinstance(rows, list):
+        return False, "external acquisition rows are missing"
+    if acquisition.get("status") == "validated" and len(rows) != len(specs):
+        return False, "validated acquisition receipt does not cover the manifest"
+    destination = project_root / "output" / "external_sources"
+    for row in rows:
+        if not isinstance(row, dict):
+            return False, "external acquisition row is not an object"
+        source_id = row.get("source_id")
+        spec = specs.get(str(source_id))
+        if spec is None:
+            return False, f"external acquisition row names unknown source {source_id!r}"
+        if row.get("status") != "validated":
+            continue
+        archive = destination / f"{spec.source_id}-{spec.revision}.archive"
+        if not archive.is_file() or _sha256_path(archive) != spec.source_archive_sha256:
+            return False, f"acquired archive is stale or missing for {spec.source_id}"
+        extraction = destination / spec.source_id
+        license_path = extraction / spec.license_file
+        if (
+            not license_path.is_file()
+            or _sha256_path(license_path) != spec.license_file_sha256
+        ):
+            return (
+                False,
+                f"acquired license evidence is stale or missing for {spec.source_id}",
+            )
+    return True, f"offline cache freshness verified for {len(rows)} row(s)"
+
+
+def write_external_acquisition_payload(
+    project_root: Path = PROJECT_ROOT,
+    *,
+    manifest_path: Path | None = None,
+    destination: Path | None = None,
+    allow_network: bool = False,
+) -> Path:
+    """Write the explicit source-acquisition receipt atomically."""
+
+    payload = external_acquisition_payload(
+        project_root,
+        manifest_path=manifest_path,
+        destination=destination,
+        allow_network=allow_network,
+    )
+    valid, detail = validate_external_acquisition_payload(payload)
+    if not valid:
+        raise ValueError(detail)
+    path = project_root / EXTERNAL_ACQUISITION_ARTIFACT
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
+        status=str(payload["status"]),
+        limitations=tuple(
+            str(item) for item in cast(list[object], payload["limitations"])
+        ),
+        unsupported_cases=tuple(
+            str(item) for item in cast(list[object], payload["unsupported_cases"])
+        ),
+        underpowered_cases=tuple(
+            str(item) for item in cast(list[object], payload["underpowered_cases"])
+        ),
+    )
+    return path
 
 
 def static_compile_external_source(
@@ -1013,10 +1319,15 @@ __all__ = [
     "EXTERNAL_RECEIPT_ARTIFACT",
     "EXTERNAL_STATIC_RECEIPT_ARTIFACT",
     "EXTERNAL_CAPABILITY_ARTIFACT",
+    "EXTERNAL_ACQUISITION_ARTIFACT",
     "EXTERNAL_LABEL_CONTRACT_PATH",
     "ExternalSourceSpec",
     "acquire_external_manifest",
     "acquire_external_source",
+    "external_acquisition_payload",
+    "validate_external_acquisition_payload",
+    "validate_external_acquisition_freshness",
+    "write_external_acquisition_payload",
     "external_source_validation_payload",
     "compiler_capabilities_payload",
     "validate_compiler_capabilities_payload",

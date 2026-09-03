@@ -347,7 +347,7 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert variables["CROSS_ARCHITECTURE_ALL_PASSED"] == "yes"
     assert variables["CROSS_ARCHITECTURE_RESULT"] == "8"
     assert variables["FORMAL_VERIFICATION_STATUS"] == "locally_verified"
-    assert variables["FORMAL_THEOREM_COUNT"] == "12"
+    assert variables["FORMAL_THEOREM_COUNT"] == "17"
     assert variables["ACTIVE_INFORMATION_SENSOR_COUNT"] == "4"
     assert variables["ACTIVE_INFORMATION_FRONTIER_ROW_COUNT"] == "16"
     assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"

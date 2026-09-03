@@ -179,6 +179,38 @@ def test_replay_receipt_is_pending_and_binds_public_hashes(tmp_path: Path) -> No
     assert "bundle hash" in detail
 
 
+def test_replay_receipt_can_bind_a_committed_runtime_source_archive(
+    tmp_path: Path,
+) -> None:
+    receipt, predictions, _ = _pending_receipt_fixture(tmp_path)
+    receipt["source_revision"] = "a" * 40
+    receipt["source_archive_sha256"] = "b" * 64
+    receipt["input_hashes"] = {
+        **cast(dict[str, str], receipt["input_hashes"]),
+        "runtime_source_archive": "b" * 64,
+    }
+    valid, detail = validate_replay_receipt(
+        receipt, project_root=tmp_path, predictions_path=predictions
+    )
+    assert valid, detail
+
+    unbound = deepcopy(receipt)
+    cast(dict[str, str], unbound["input_hashes"]).pop("runtime_source_archive")
+    valid, detail = validate_replay_receipt(
+        unbound, project_root=tmp_path, predictions_path=predictions
+    )
+    assert not valid
+    assert "bound" in detail
+
+    half_bound = deepcopy(receipt)
+    half_bound.pop("source_archive_sha256")
+    valid, detail = validate_replay_receipt(
+        half_bound, project_root=tmp_path, predictions_path=predictions
+    )
+    assert not valid
+    assert "must appear together" in detail
+
+
 def test_public_replay_requires_no_private_gold_or_owner_manifest(
     tmp_path: Path,
 ) -> None:

@@ -82,9 +82,11 @@ The project follows the template code-project pattern:
     path fails closed for unsupported instructions and bounds.
 29. `src/formal_verification.py` builds the pinned Lean project, hashes its
     checked sources, and writes a deterministic theorem/build receipt. The
-    generated `src.lean_bridge` serializes one 64-bit boundary fixture into a
-    generated Lean theorem and records kernel-check status. The `formal/` tree
-    is a declared normalized fragment, not complete x86 semantics.
+    generated `src.lean_bridge` serializes a full 16-register bounded machine
+    state, `RIP`, modeled flags, memory/stack bounds, and step status into a
+    generated Lean fixture with kernel-checked state invariants. The `formal/`
+    tree is a declared normalized fragment, not complete x86 semantics or a
+    proof of the Python/Capstone/Unicorn path.
 29. `src/multi_arch.py` runs real Capstone and Unicorn adapters for one
     transparent numeric operation on x86-64, AArch64, and RISC-V64. Its
     receipt is an adapter benchmark with explicit cross-ISA non-claims.

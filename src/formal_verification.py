@@ -20,7 +20,7 @@ from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
-from .lean_bridge import run_generated_lean_fixture
+from .lean_bridge import BRIDGE_MACHINE_STATE_THEOREMS, run_generated_lean_fixture
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FORMAL_PROJECT_DIR = PROJECT_ROOT / "formal"
@@ -40,6 +40,7 @@ FORMAL_THEOREMS = (
     "ActiveAssembly.explicit_unsupported_is_not_supported",
     "ActiveAssembly.declared_opcode_has_decidable_status",
     "ActiveAssembly.generated_trace_matches",
+    *BRIDGE_MACHINE_STATE_THEOREMS,
 )
 
 
@@ -232,6 +233,38 @@ def validate_formal_verification_payload(payload: dict[str, Any]) -> tuple[bool,
         "lean_expected_final_rax"
     ):
         return False, "Python and Lean bridge values disagree"
+    if bridge.get("machine_state_schema") != (
+        "explicit_16_gpr_rip_flags_memory_stack_step_status"
+    ):
+        return False, "generated Lean bridge machine-state schema is incomplete"
+    if bridge.get("machine_state_register_names") != [
+        "rax",
+        "rbx",
+        "rcx",
+        "rdx",
+        "rsi",
+        "rdi",
+        "rbp",
+        "rsp",
+        "r8",
+        "r9",
+        "r10",
+        "r11",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+    ]:
+        return False, "generated Lean bridge omits an architectural register"
+    if bridge.get("lean_machine_state_theorems") != list(BRIDGE_MACHINE_STATE_THEOREMS):
+        return False, "generated Lean bridge machine-state theorem manifest drift"
+    initial_state = bridge.get("python_initial_machine_state")
+    if not isinstance(initial_state, dict) or set(
+        initial_state.get("registers", {})
+    ) != set(bridge["machine_state_register_names"]):
+        return False, "generated Lean bridge Python state is incomplete"
+    if not isinstance(bridge.get("python_initial_machine_state_sha256"), str):
+        return False, "generated Lean bridge Python state digest is missing"
     axiom_report = payload.get("axiom_report")
     if not isinstance(axiom_report, dict) or axiom_report.get("clean") is not True:
         return False, "formal source contains unfinished proof or escape-hatch findings"

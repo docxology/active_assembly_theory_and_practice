@@ -135,6 +135,19 @@ object is executed. `probe-capabilities` counts a target only after a static
 object is actually produced; compiler target advertisements alone do not pass
 that gate.
 
+The explicit acquisition attempt is recorded separately at
+`output/data/external_acquisition.json`. Its receipt binds the current
+manifest and acquisition producer, records whether network access was actually
+used, and retains one row for every pinned source rather than treating a
+partially acquired corpus as complete. A verified cached archive may be reused
+without network access; a wrong cached digest is rejected without overwriting
+the cache, and a network download is published only after digest verification.
+Extraction is staged and license bytes are checked before the source directory
+is replaced. The artifact validator repeats these checks offline against the
+local cache, so a changed manifest, producer, archive, or license file makes
+the receipt stale. This improves provenance freshness but does not satisfy the
+separate acquisition/build replay requirement for P13 promotion.
+
 The source-bound label producer is `src/external_labeling.py`, configured by
 `configs/external_label_design.yaml`, and writes
 `output/data/external_label_contract.json` plus the generated

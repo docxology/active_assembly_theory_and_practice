@@ -69,6 +69,14 @@ The project is intentionally narrow: it demonstrates an explicit bridge between
 machine-code observations and a discrete generative model. It does not claim
 general reverse-engineering automation or malware classification.
 
+The implementation tranches through the current bounded package are closed;
+the remaining work is organized by evidence gate in
+[`docs/roadmap.md`](docs/roadmap.md). That roadmap distinguishes minor
+maintenance, medium bounded experiments, and major promotion programs. A
+completed local receipt never silently promotes external validity, independent
+reimplementation, complete ISA semantics, universal identifiability, or a
+general sensing law.
+
 ## Run
 
 From the project checkout (`/Users/mini/Documents/GitHub/active_assembly_theory_and_practice`):

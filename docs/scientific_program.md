@@ -130,12 +130,14 @@ and tests a small formal contract, then exercises real compiler and adapter
 APIs, solves a finite active-information mechanism exactly, freezes a local
 replication interface, and finally records theorem/countertheorem outcomes.
 The remaining external-validity and broad-theorem gates are deliberately not
-silently inferred from these bounded receipts.
+silently inferred from these bounded receipts. Completed implementation work
+is closed in the maintainer backlog; actionable follow-up is now scoped as
+`MIN-*`, `MED-*`, and `MAJ-*` items in [`docs/roadmap.md`](roadmap.md).
 
 ## Source-bound visual atlas
 
 The visual-atlas tranche adds a canonical, receipt-backed specification layer
-over the legacy figure-path interface. The 62 substantive figure rows (the
+over the compatibility figure-path interface. The 62 substantive figure rows (the
 cover is separate) record the generator, source artifact hashes, population
 grain, split and uncertainty semantics, evidence status, claim boundary,
 visible caption, short alternative text, long description, and vector/raster
@@ -297,15 +299,18 @@ The current package now has two distinct prerequisites for this level:
 real Unicorn emits per-step `RAX`, `RIP`, `RSP`, and `EFLAGS` snapshots, and the
 closed-world interpreter checks pre/post `RAX` plus its defined flag bits at each
 executed step; independently, Lean compiles a Word64 accumulator semantics with
-explicit equivalence and counterexample theorems. The resulting
+explicit equivalence and counterexample theorems. The generated bridge now
+also serializes all 16 general-purpose registers, `RIP`, modeled flag
+definedness, bounded memory and stack bounds, step index, and running status
+into the Lean fixture. The resulting
 `trace_refinement.png`, `formal_trace_correspondence.json`, and
 `formal_verification.json` are stronger than a single final-state check. The
 Python/Capstone/Unicorn correspondence is now checked step by step for the
-transparent fixture subset, and a generated Lean bridge kernel-checks one
-shared 64-bit boundary fixture. These are distinct receipts: the bridge is not
-a proof that the full Python adapter, Capstone, Unicorn, and Lean semantics
-correspond for every supported instruction. The shared broad-state theorem and
-exhaustive full-subset proof remain open.
+transparent fixture subset, and a generated Lean bridge kernel-checks state
+invariants for one shared 64-bit boundary fixture. These are distinct receipts:
+the bridge is not a proof that the full Python adapter, Capstone, Unicorn, and
+Lean semantics correspond for every supported instruction. The shared
+broad-state theorem and exhaustive full-subset proof remain open.
 
 ### Level 2: quotient soundness
 

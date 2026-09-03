@@ -671,3 +671,19 @@ def test_theorem_writer_rejects_an_invalid_producer_payload(
     )
     with pytest.raises(ValueError, match="schema mismatch"):
         theorem_module.write_theorem_or_countertheorem(tmp_path)
+
+
+def test_roadmap_closes_delivered_work_and_scopes_future_tiers() -> None:
+    roadmap = (Path(__file__).parents[1] / "docs" / "roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    assert "Completed historical work: no open TODO remains" in roadmap
+    assert "## Open evidence gates" in roadmap
+    assert "### Minor: maintenance, clarity, and regression hardening" in roadmap
+    assert "### Medium: bounded scientific extensions" in roadmap
+    assert "### Major: promotion-gated research programs" in roadmap
+    for identifier in ("MIN-01", "MED-01", "MED-08", "MAJ-01", "MAJ-08"):
+        assert f"| {identifier} |" in roadmap
+    assert "The next Phase B tranche should" not in roadmap
+    assert "## The active program: P3" not in roadmap
+    assert "planned CFG and symbolic facts" not in roadmap

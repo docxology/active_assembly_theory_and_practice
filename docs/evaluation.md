@@ -92,8 +92,10 @@ exact numbers are emitted as manuscript variables (`IDENTITY_TRANSITION_MEAN_ACC
 `UNIFORM_CONTROL_ACCURACY`) and written to
 `output/data/evaluation_report.json`. Wilson intervals in the report are
 descriptive per-step score intervals; within-fixture observations are dependent
-and the toy corpus is not an inferential sample of binaries. Demonstrating a *positive* temporal
-advantage requires longer or more ambiguous fixtures and is future work.
+and the toy corpus is not an inferential sample of binaries. Demonstrating a
+*positive* temporal advantage requires longer or more ambiguous fixtures. That
+is scoped as `MED-01` in [`docs/roadmap.md`](roadmap.md), rather than treated
+as an unfinished part of the current result.
 
 ## Generative adequacy
 

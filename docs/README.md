@@ -15,7 +15,10 @@ folder and the `manuscript/` sources are authored interfaces.
 - `scholarship.md` defines citation roles and claim boundaries.
 - `claim_map.md` maps key claims to evidence artifacts and boundaries.
 - `claim_register.md` defines generated claim rows, source keys, artifacts, and validation checks.
-- `roadmap.md` defines the promotion criteria for the next scientific phases.
+- `roadmap.md` closes completed implementation tranches and defines the
+  actionable minor, medium, and major backlog for the remaining evidence
+  gates. It is the maintainer-facing execution view; the generated scientific
+  program receipt remains the machine-readable status source.
 - `scientific_program.md` defines the long-horizon conjecture, falsifiers,
   dependencies, promotion gates, replication requirements, and award-reality
   boundary for ambitious research advancement; its machine-readable receipt is

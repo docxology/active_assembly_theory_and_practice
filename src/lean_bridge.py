@@ -12,6 +12,7 @@ mechanized proof of the complete x86 lifter.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -23,10 +24,84 @@ GENERATED_RELATIVE_PATH = Path("formal/ActiveAssembly/GeneratedCorrespondence.le
 BRIDGE_CODE = bytes.fromhex("48 83 c0 02 48 ff c0")
 BRIDGE_INITIAL_RAX = (1 << 64) - 1
 BRIDGE_EXPECTED_RAX = 2
+BRIDGE_REGISTER_NAMES = (
+    "rax",
+    "rbx",
+    "rcx",
+    "rdx",
+    "rsi",
+    "rdi",
+    "rbp",
+    "rsp",
+    "r8",
+    "r9",
+    "r10",
+    "r11",
+    "r12",
+    "r13",
+    "r14",
+    "r15",
+)
+BRIDGE_INITIAL_REGISTER_VALUES = (
+    BRIDGE_INITIAL_RAX,
+    0x101,
+    0x102,
+    0x103,
+    0x104,
+    0x105,
+    0x106,
+    0x101000,
+    0x108,
+    0x109,
+    0x10A,
+    0x10B,
+    0x10C,
+    0x10D,
+    0x10E,
+    0x10F,
+)
+BRIDGE_INITIAL_RIP = 0x1000
+BRIDGE_INITIAL_EFLAGS = 0x2 | 0x1
+BRIDGE_STACK_BOUNDS = (0x100000, 0x102000)
+BRIDGE_MEMORY_BOUNDS = (0x1000, 0x2000)
+BRIDGE_MACHINE_STATE_THEOREMS = (
+    "ActiveAssembly.generated_machine_state_rax_increment",
+    "ActiveAssembly.generated_machine_state_other_registers_preserved",
+    "ActiveAssembly.generated_machine_state_preserves_cf",
+    "ActiveAssembly.generated_machine_state_increments_step",
+    "ActiveAssembly.generated_machine_state_preserves_bounds",
+)
 
 
 def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
+
+
+def _python_machine_state_payload() -> dict[str, Any]:
+    """Return the complete Python-side state used by the generated witness."""
+
+    registers = dict(zip(BRIDGE_REGISTER_NAMES, BRIDGE_INITIAL_REGISTER_VALUES))
+    return {
+        "registers": registers,
+        "rip": BRIDGE_INITIAL_RIP,
+        "eflags": BRIDGE_INITIAL_EFLAGS,
+        "flags_defined": {name: True for name in ("CF", "PF", "AF", "ZF", "SF", "OF")},
+        "memory": {},
+        "stack_bounds": list(BRIDGE_STACK_BOUNDS),
+        "memory_bounds": list(BRIDGE_MEMORY_BOUNDS),
+        "step_index": 0,
+        "status": "ok",
+    }
+
+
+def _lean_register_definition() -> str:
+    """Serialize every architectural register into a Lean function."""
+
+    lines = ["def generatedGpr (index : Fin 16) : Word64N :=", "  match index.val with"]
+    for index, value in enumerate(BRIDGE_INITIAL_REGISTER_VALUES):
+        lines.append(f"  | {index} => word64n {value}")
+    lines.append("  | _ => word64n 0")
+    return "\n".join(lines)
 
 
 def _elan_executable() -> str:
@@ -40,6 +115,7 @@ def _lean_source() -> str:
     """Return the generated, deterministic Lean witness source."""
 
     return f"""import ActiveAssembly.Semantics
+import ActiveAssembly.NormalizedMachine
 
 namespace ActiveAssembly
 
@@ -56,6 +132,53 @@ theorem generated_trace_matches :
   apply Fin.ext
   decide
 
+{_lean_register_definition()}
+
+def generatedMachineInitial : MachineStateN :=
+  {{ gprs := generatedGpr
+    rip := word64n {BRIDGE_INITIAL_RIP}
+    flags := FlagsN.mk true false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := {BRIDGE_STACK_BOUNDS[0]}
+    stackUpper := {BRIDGE_STACK_BOUNDS[1]}
+    memoryLower := {BRIDGE_MEMORY_BOUNDS[0]}
+    memoryUpper := {BRIDGE_MEMORY_BOUNDS[1]}
+    stepIndex := 0
+    status := MachineStatusN.running }}
+
+def generatedMachineAfterInc : MachineStateN := incStateN generatedMachineInitial
+
+theorem generated_machine_state_rax_increment :
+    generatedMachineAfterInc.gprs 0 = word64n 0 := by
+  apply Fin.ext
+  decide
+
+theorem generated_machine_state_other_registers_preserved :
+    ∀ index : Fin 16, index.val ≠ 0 ->
+      generatedMachineAfterInc.gprs index = generatedMachineInitial.gprs index := by
+  intro index index_nonzero
+  have index_ne_zero : index ≠ 0 := by
+    intro equality
+    apply index_nonzero
+    simpa [equality]
+  simp [generatedMachineAfterInc, incStateN, generatedMachineInitial,
+    generatedGpr, index_ne_zero]
+
+theorem generated_machine_state_preserves_cf :
+    generatedMachineAfterInc.flags.cf = generatedMachineInitial.flags.cf := by
+  exact inc_preserves_cf generatedMachineInitial
+
+theorem generated_machine_state_increments_step :
+    generatedMachineAfterInc.stepIndex = generatedMachineInitial.stepIndex + 1 := by
+  rfl
+
+theorem generated_machine_state_preserves_bounds :
+    generatedMachineAfterInc.memoryLower = generatedMachineInitial.memoryLower ∧
+    generatedMachineAfterInc.memoryUpper = generatedMachineInitial.memoryUpper ∧
+    generatedMachineAfterInc.stackLower = generatedMachineInitial.stackLower ∧
+    generatedMachineAfterInc.stackUpper = generatedMachineInitial.stackUpper := by
+  simp [generatedMachineAfterInc, incStateN, generatedMachineInitial]
+
 end ActiveAssembly
 """
 
@@ -67,6 +190,10 @@ def write_generated_lean_fixture(project_root: Path = PROJECT_ROOT) -> dict[str,
     path.parent.mkdir(parents=True, exist_ok=True)
     source = _lean_source().encode("utf-8")
     path.write_bytes(source)
+    state_payload = _python_machine_state_payload()
+    state_bytes = json.dumps(
+        state_payload, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
     return {
         "path": str(GENERATED_RELATIVE_PATH),
         "source_sha256": _sha256(source),
@@ -74,6 +201,11 @@ def write_generated_lean_fixture(project_root: Path = PROJECT_ROOT) -> dict[str,
         "initial_rax": BRIDGE_INITIAL_RAX,
         "python_reference_final_rax": BRIDGE_EXPECTED_RAX,
         "lean_expected_final_rax": BRIDGE_EXPECTED_RAX,
+        "machine_state_schema": "explicit_16_gpr_rip_flags_memory_stack_step_status",
+        "machine_state_register_names": list(BRIDGE_REGISTER_NAMES),
+        "python_initial_machine_state_sha256": _sha256(state_bytes),
+        "python_initial_machine_state": state_payload,
+        "lean_machine_state_theorems": list(BRIDGE_MACHINE_STATE_THEOREMS),
     }
 
 
@@ -123,6 +255,9 @@ __all__ = [
     "BRIDGE_CODE",
     "BRIDGE_EXPECTED_RAX",
     "BRIDGE_INITIAL_RAX",
+    "BRIDGE_REGISTER_NAMES",
+    "BRIDGE_INITIAL_REGISTER_VALUES",
+    "BRIDGE_MACHINE_STATE_THEOREMS",
     "FORMAL_TOOLCHAIN",
     "GENERATED_RELATIVE_PATH",
     "run_generated_lean_fixture",

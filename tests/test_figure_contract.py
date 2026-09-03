@@ -143,6 +143,8 @@ def test_observation_semantics_is_source_bound_and_caption_defects_are_absent() 
     assert "unsupported" in observation.caption.lower()
     assert "unavailable" in observation.caption.lower()
     assert "numeric zero" in observation.caption.lower()
+    assert "3 label-blind fields" in observation.caption
+    assert "5 forbidden fields" in observation.caption
     all_captions = " ".join(spec.caption for spec in specs.values()).lower()
     assert re.search(r"\b(the|a|an|configured)\s+\1\b", all_captions) is None
     assert "configured configured" not in all_captions

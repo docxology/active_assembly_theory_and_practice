@@ -1,4 +1,5 @@
 import ActiveAssembly.Semantics
+import ActiveAssembly.NormalizedMachine
 
 namespace ActiveAssembly
 
@@ -14,5 +15,70 @@ theorem generated_trace_matches :
     run generatedBridgeProgram generatedBridgeInitial = generatedBridgeExpected := by
   apply Fin.ext
   decide
+
+def generatedGpr (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 18446744073709551615
+  | 1 => word64n 257
+  | 2 => word64n 258
+  | 3 => word64n 259
+  | 4 => word64n 260
+  | 5 => word64n 261
+  | 6 => word64n 262
+  | 7 => word64n 1052672
+  | 8 => word64n 264
+  | 9 => word64n 265
+  | 10 => word64n 266
+  | 11 => word64n 267
+  | 12 => word64n 268
+  | 13 => word64n 269
+  | 14 => word64n 270
+  | 15 => word64n 271
+  | _ => word64n 0
+
+def generatedMachineInitial : MachineStateN :=
+  { gprs := generatedGpr
+    rip := word64n 4096
+    flags := FlagsN.mk true false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 8192
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def generatedMachineAfterInc : MachineStateN := incStateN generatedMachineInitial
+
+theorem generated_machine_state_rax_increment :
+    generatedMachineAfterInc.gprs 0 = word64n 0 := by
+  apply Fin.ext
+  decide
+
+theorem generated_machine_state_other_registers_preserved :
+    ∀ index : Fin 16, index.val ≠ 0 ->
+      generatedMachineAfterInc.gprs index = generatedMachineInitial.gprs index := by
+  intro index index_nonzero
+  have index_ne_zero : index ≠ 0 := by
+    intro equality
+    apply index_nonzero
+    simpa [equality]
+  simp [generatedMachineAfterInc, incStateN, generatedMachineInitial,
+    generatedGpr, index_ne_zero]
+
+theorem generated_machine_state_preserves_cf :
+    generatedMachineAfterInc.flags.cf = generatedMachineInitial.flags.cf := by
+  exact inc_preserves_cf generatedMachineInitial
+
+theorem generated_machine_state_increments_step :
+    generatedMachineAfterInc.stepIndex = generatedMachineInitial.stepIndex + 1 := by
+  rfl
+
+theorem generated_machine_state_preserves_bounds :
+    generatedMachineAfterInc.memoryLower = generatedMachineInitial.memoryLower ∧
+    generatedMachineAfterInc.memoryUpper = generatedMachineInitial.memoryUpper ∧
+    generatedMachineAfterInc.stackLower = generatedMachineInitial.stackLower ∧
+    generatedMachineAfterInc.stackUpper = generatedMachineInitial.stackUpper := by
+  simp [generatedMachineAfterInc, incStateN, generatedMachineInitial]
 
 end ActiveAssembly

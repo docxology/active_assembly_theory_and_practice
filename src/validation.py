@@ -41,9 +41,11 @@ from .docx_validation import (
 )
 from .external_sources import (
     EXTERNAL_CAPABILITY_ARTIFACT,
+    EXTERNAL_ACQUISITION_ARTIFACT,
     EXTERNAL_MANIFEST_SCHEMA_VERSION,
     EXTERNAL_STATIC_RECEIPT_ARTIFACT,
     compiler_capabilities_payload,
+    validate_external_acquisition_freshness,
     external_source_validation_payload,
     validate_compiler_capabilities_payload,
     validate_external_static_sources,
@@ -2231,6 +2233,35 @@ def _external_source_checks(project_root: Path) -> list[ValidationCheck]:
     ]
 
 
+def _external_acquisition_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate the offline freshness of the explicit acquisition receipt."""
+
+    path = project_root / EXTERNAL_ACQUISITION_ARTIFACT
+    if not path.exists():
+        return [
+            _check("external_acquisition_contract", False, "artifact missing"),
+            _check("external_acquisition_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_external_acquisition_freshness(payload, project_root)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        return [
+            _check("external_acquisition_contract", False, str(exc)),
+            _check("external_acquisition_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check("external_acquisition_contract", valid, detail),
+        _check(
+            "external_acquisition_freshness",
+            valid,
+            "offline acquisition cache and manifest inputs match"
+            if valid
+            else "offline acquisition cache freshness failed",
+        ),
+    ]
+
+
 def _external_label_checks(project_root: Path) -> list[ValidationCheck]:
     """Validate source-bound labels and every referenced static artifact."""
 
@@ -2882,6 +2913,7 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_formal_correspondence_checks(project_root))
     checks.extend(_compiler_transfer_checks(project_root))
     checks.extend(_sensor_cost_checks(project_root))
+    checks.extend(_external_acquisition_checks(project_root))
     checks.extend(_external_source_checks(project_root))
     checks.extend(_external_label_checks(project_root))
     checks.extend(_external_static_checks(project_root))
