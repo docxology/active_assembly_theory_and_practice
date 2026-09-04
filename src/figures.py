@@ -4400,6 +4400,204 @@ def plot_active_information_frontier(
     return _save_figure(fig, output_path)
 
 
+_COUNTEREXAMPLE_STATUS_COLORS = {
+    "falsified_by_counterexample": PALETTE[1],
+    "holds_in_searched_domain": PALETTE[2],
+}
+
+
+def plot_counterexample_search(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot the smallest-first exhaustive counterexample search receipt."""
+
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("counterexample-search candidates must be non-empty")
+    ids: list[str] = []
+    sizes: list[float] = []
+    colors: list[str] = []
+    witness_sizes: list[int | None] = []
+    for raw_row in candidates:
+        if not isinstance(raw_row, dict):
+            raise ValueError("counterexample-search candidate is not an object")
+        status = str(raw_row["status"])
+        if status not in _COUNTEREXAMPLE_STATUS_COLORS:
+            raise ValueError(f"unknown candidate status: {status}")
+        domain_size = raw_row.get("searched_domain_size")
+        if not isinstance(domain_size, int) or isinstance(domain_size, bool):
+            raise ValueError("searched_domain_size must be an integer")
+        if domain_size <= 0:
+            raise ValueError("searched_domain_size must be positive")
+        witness_size = None
+        raw_witness = raw_row.get("witness")
+        if isinstance(raw_witness, dict):
+            witness_size = raw_witness.get("witness_size")
+        if status == "falsified_by_counterexample":
+            if not isinstance(witness_size, int) or isinstance(witness_size, bool):
+                raise ValueError("falsified candidates must record witness_size")
+            if witness_size < 1:
+                raise ValueError("witness_size must be a positive rank")
+        ids.append(str(raw_row["property_id"]))
+        sizes.append(float(domain_size))
+        colors.append(_COUNTEREXAMPLE_STATUS_COLORS[status])
+        witness_sizes.append(
+            witness_size if status == "falsified_by_counterexample" else None
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(8.6, 4.6))
+    y = np.arange(len(ids), dtype=float)
+    ax.barh(y, sizes, color=colors, edgecolor="white", linewidth=0.8, zorder=3)
+    ax.set_yticks(y, ids)
+    ax.invert_yaxis()
+    if max(sizes) >= 100 * max(min(sizes), 1.0):
+        ax.set_xscale("log")
+    for position, size, witness in zip(y, sizes, witness_sizes, strict=True):
+        label = f"domain={int(size)}"
+        if witness is not None:
+            label += f", witness rank={witness}"
+        ax.text(
+            size,
+            position,
+            f"  {label}",
+            va="center",
+            ha="left",
+            fontsize=7.2,
+            color=MUTED,
+        )
+    ax.set_xlabel("Enumerated inputs before resolution (smallest-first order)")
+    ax.set_title(
+        "Formal counterexample search over the declared bounded model",
+        loc="left",
+        fontsize=11,
+        pad=AXIS_TITLE_PAD,
+    )
+    ax.text(
+        0.0,
+        AXIS_SUBTITLE_Y,
+        "Every falsified witness is re-verified by an independent second interpretation.",
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=8,
+        color=MUTED,
+    )
+    handles = [
+        Rectangle((0, 0), 1, 1, color=color, label=label.replace("_", " "))
+        for label, color in _COUNTEREXAMPLE_STATUS_COLORS.items()
+    ]
+    ax.legend(handles=handles, frameon=False, fontsize=8, loc="lower right")
+    ax.text(
+        1.0,
+        -0.18,
+        "A falsified candidate narrows the claim; a holds result is bounded to the declared search domain only.",
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=8,
+        color=MUTED,
+    )
+    _style_axes(ax, grid_axis="x")
+    fig.subplots_adjust(left=0.24, right=0.97, bottom=0.26, top=0.78)
+    return _save_figure(fig, output_path)
+
+
+def plot_sensing_stress(payload: dict[str, object], output_path: Path) -> Path:
+    """Plot the active-sensing stress grid and calibration stability."""
+
+    grid = payload.get("grid")
+    if not isinstance(grid, list) or not grid:
+        raise ValueError("sensing-stress grid must be non-empty")
+    curve = payload.get("budget_value_curve")
+    if not isinstance(curve, list) or not curve:
+        raise ValueError("sensing-stress budget value curve must be non-empty")
+    stability = payload.get("calibration_stability")
+    if not isinstance(stability, dict):
+        raise ValueError("sensing-stress calibration stability is missing")
+    max_regret: dict[str, float] = {}
+    for raw_row in grid:
+        if not isinstance(raw_row, dict):
+            raise ValueError("sensing-stress grid row is not an object")
+        policy = str(raw_row["policy"])
+        regret = float(raw_row["regret_vs_exact"])
+        if regret < 0.0:
+            raise ValueError("sensing-stress regret is negative")
+        max_regret[policy] = max(max_regret.get(policy, 0.0), regret)
+    budgets = [int(cast(int, row["budget"])) for row in curve]
+    upper = [float(cast(float, row["upper_bound_information_gain"])) for row in curve]
+    achieved = [float(cast(float, row["achieved_information_gain"])) for row in curve]
+    gaps = [float(cast(float, row["unattained_information_gain_gap"])) for row in curve]
+    if any(gap < -1e-12 for gap in gaps):
+        raise ValueError("sensing-stress value-curve gap is negative")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(
+        1, 2, figsize=(11.4, 4.6), gridspec_kw={"width_ratios": (1.2, 1.0)}
+    )
+    policies = sorted(max_regret)
+    x = np.arange(len(policies), dtype=float)
+    colors = [
+        PALETTE[2] if policy == "exact_oracle" else PALETTE[0] for policy in policies
+    ]
+    axes[0].bar(
+        x,
+        [max_regret[policy] for policy in policies],
+        color=colors,
+        edgecolor="white",
+        linewidth=0.8,
+        zorder=3,
+    )
+    axes[0].set_xticks(x, [policy.replace("_", "\n") for policy in policies])
+    axes[0].set_ylabel("Maximum regret vs exact reference (objective units)")
+    axes[0].set_title(
+        "Policy controls vs exact dynamic program", fontsize=10, pad=AXIS_TITLE_PAD
+    )
+    axes[1].plot(
+        budgets,
+        upper,
+        linestyle="--",
+        color=MUTED,
+        linewidth=1.4,
+        marker="s",
+        markersize=4,
+        label="unconstrained exact bound",
+    )
+    axes[1].plot(
+        budgets,
+        achieved,
+        color=PALETTE[0],
+        linewidth=1.8,
+        marker="o",
+        markersize=5,
+        label="achieved at budget",
+    )
+    axes[1].fill_between(
+        budgets, achieved, upper, color=PALETTE[1], alpha=0.25, label="unattained gap"
+    )
+    axes[1].set_xticks(budgets)
+    axes[1].set_xlabel("Action budget (sensing actions)")
+    axes[1].set_ylabel("Expected information gain (nats)")
+    axes[1].set_title("Budget-constrained value curve", fontsize=10, pad=AXIS_TITLE_PAD)
+    axes[1].legend(frameon=False, fontsize=8, loc="lower right")
+    for ax in axes:
+        _style_axes(ax, grid_axis="y")
+    fig.text(
+        0.01,
+        0.97,
+        "Active-sensing stress study",
+        fontsize=11,
+        color=INK,
+        ha="left",
+    )
+    fig.text(
+        0.01,
+        0.925,
+        "Exact-enumeration references and fixed-seed rollouts; the timing-stability panel is a local-machine receipt, not a universal law.",
+        fontsize=8,
+        color=MUTED,
+        ha="left",
+    )
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.2, top=0.86, wspace=0.24)
+    return _save_figure(fig, output_path)
+
+
 def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> Path:
     """Plot the quotient-classifier portfolio with uncertainty and deltas.
 
@@ -6573,6 +6771,32 @@ FIGURE_CAPTIONS.update(
     }
 )
 
+FIGURE_CAPTIONS.update(
+    {
+        "counterexample_search": (
+            "Smallest-first exhaustive counterexample search over the declared bounded "
+            "x86-64 reference model. Each bar is one declared candidate theorem resolved "
+            "inside its declared finite domain; orange bars were falsified by a verified "
+            "minimal witness and green bars held across every enumerated input. Witness "
+            "ranks are re-checked by an independent second interpretation of the same "
+            "reference semantics. Falsified candidates remain part of the evidence and "
+            "narrow the claim; a holds result is bounded to the searched domain and "
+            "establishes no complete-ISA theorem."
+        ),
+        "sensing_stress": (
+            "Active-sensing stress study over the declared label-blind typed-field "
+            "sensor channels. The left panel shows each policy control's maximum regret "
+            "against the exact finite-horizon dynamic-programming reference across the "
+            "horizon, budget, and cost-weight grid; the right panel shows the "
+            "budget-constrained value curve with the exact unconstrained bound and the "
+            "unattained gap that finite budgets forgo. Regret and gaps are "
+            "exact-enumeration quantities; the accompanying calibration-stability rows "
+            "repeat the local timing regression and are machine-specific measurements, "
+            "not a universal information-per-cost law."
+        ),
+    }
+)
+
 
 FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "generative_model": ("friston2017activeinference", "parr2022activeinference"),
@@ -7205,6 +7429,8 @@ def _figure_registry_rows(
         "observation_semantics": "typed observation schema and public/protected replay boundary",
         "artifact_hash_manifest": "reproducibility manifest rows",
         "validation_summary": "generated validation checks",
+        "counterexample_search": "declared candidate theorems over the bounded Word64 reference interpreter with width-aware sub-register writes, flag definedness, and memory/stack bounds",
+        "sensing_stress": "declared label-blind typed-field sensor channels with exact dynamic-programming references and fixed-seed policy rollouts",
     }
     statistics = {
         "assembly_cfg": "Static direct-target block and edge inventory for the branch-bearing fixture; dynamic borders are address-membership annotations.",
@@ -7241,6 +7467,8 @@ def _figure_registry_rows(
         "external_label_coverage": "Accepted-row counts by source-defined role and frozen project/revision split; explicit exclusions are retained outside the accepted denominator and no inferential uncertainty is claimed.",
         "artifact_receipt_closure": "Deterministic count of project-owned JSON receipts, envelope errors, and roadmap status rows; no inferential uncertainty is applicable.",
         "observation_semantics": "Schema and provenance categories for typed values, explicit absence, unsupported/unavailable states, and protected labels; no inferential uncertainty is applicable.",
+        "counterexample_search": "Per-candidate searched-domain size, minimal witness rank, and falsified/holds status from exhaustive smallest-first enumeration with independent witness re-verification; no population uncertainty is claimed.",
+        "sensing_stress": "Per-policy maximum regret and exact-enumeration optimality gaps on the horizon x budget x cost-weight grid, budget-constrained value gaps against the unconstrained exact bound, and cross-repetition calibration coefficient drift over repeated local timing runs.",
     }
     rows: list[dict[str, Any]] = []
     for stem, raw_caption in FIGURE_CAPTIONS.items():
@@ -7363,6 +7591,16 @@ def _figure_registry_rows(
             input_artifacts = ["output/data/reproducibility_manifest.json"]
         elif stem == "validation_summary":
             input_artifacts = ["output/data/validation_report.json"]
+        elif stem == "counterexample_search":
+            input_artifacts = [
+                "output/data/counterexample_search.json",
+                "output/data/formal_trace_correspondence.json",
+            ]
+        elif stem == "sensing_stress":
+            input_artifacts = [
+                "output/data/sensing_stress.json",
+                "output/data/active_information_frontier.json",
+            ]
         visual_qa: dict[str, Any]
         if path.is_file():
             digest = hashlib.sha256(path.read_bytes()).hexdigest()

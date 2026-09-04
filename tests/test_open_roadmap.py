@@ -682,7 +682,7 @@ def test_roadmap_closes_delivered_work_and_scopes_future_tiers() -> None:
     assert "### Minor: maintenance, clarity, and regression hardening" in roadmap
     assert "### Medium: bounded scientific extensions" in roadmap
     assert "### Major: promotion-gated research programs" in roadmap
-    for identifier in ("MIN-01", "MED-01", "MED-08", "MAJ-01", "MAJ-08"):
+    for identifier in ("MIN-01", "MED-01", "MED-02", "MAJ-01", "MAJ-08"):
         assert f"| {identifier} |" in roadmap
     assert "The next Phase B tranche should" not in roadmap
     assert "## The active program: P3" not in roadmap

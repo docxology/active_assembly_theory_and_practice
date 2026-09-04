@@ -1531,22 +1531,23 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
         color=MUTED,
     )
     ax_cm = fig.add_subplot(gs[1, 0])
-    cm = np.array(
-        [
+    if score:
+        cm = np.array(
             [
-                _number(confusion.get("true_positive")),
-                _number(confusion.get("false_negative")),
-            ],
-            [
-                _number(confusion.get("false_positive")),
-                _number(confusion.get("true_negative")),
-            ],
-        ]
-    )
+                [
+                    _number(confusion.get("true_positive")),
+                    _number(confusion.get("false_negative")),
+                ],
+                [
+                    _number(confusion.get("false_positive")),
+                    _number(confusion.get("true_negative")),
+                ],
+            ]
+        )
+    else:
+        cm = np.zeros((2, 2), dtype=float)
     cm_max = max(1.0, float(np.max(cm)))
     ax_cm.imshow(cm, cmap="Greys", vmin=0, vmax=cm_max)
-    ax_cm.set_xticks((0, 1), ("pred. equivalent", "pred. near miss"))
-    ax_cm.set_yticks((0, 1), ("actual equivalent", "actual near miss"))
     ax_cm.tick_params(axis="x", labelrotation=20, labelsize=7)
     ax_cm.tick_params(axis="y", labelsize=7)
     for i in range(2):
@@ -1563,6 +1564,16 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
                 weight="bold",
             )
     ax_cm.set_title("Protected confusion counts", loc="left", fontsize=10, color=INK)
+    if not score:
+        ax_cm.text(
+            0.5,
+            -0.42,
+            "no separately operated receipt ingested: protected counts not observed",
+            transform=ax_cm.transAxes,
+            ha="center",
+            fontsize=8,
+            color=MUTED,
+        )
     ax_cal = fig.add_subplot(gs[1, 1])
     metrics = ("balanced\naccuracy", "macro-F1", "Brier", "ECE")
     values = [
@@ -1571,28 +1582,43 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
         _number(score.get("brier_score")),
         _number(score.get("expected_calibration_error")),
     ]
-    bars = ax_cal.bar(
-        np.arange(4),
-        values,
-        color=[PALETTE[0], PALETTE[1], PALETTE[3], PALETTE[4]],
-        edgecolor=INK,
-        linewidth=0.6,
-    )
+    bars: object
+    if score:
+        bars = ax_cal.bar(
+            np.arange(4),
+            values,
+            color=[PALETTE[0], PALETTE[1], PALETTE[3], PALETTE[4]],
+            edgecolor=INK,
+            linewidth=0.6,
+        )
+    else:
+        bars = []
     ax_cal.set_xticks(np.arange(4), metrics)
     ax_cal.set_ylim(0, max(1.0, max(values) * 1.25))
     ax_cal.set_ylabel("score")
     ax_cal.set_title(
         "Observed single-replay metrics", loc="left", fontsize=10, color=INK
     )
-    for bar, value in zip(bars, values, strict=True):
+    if score:
+        for bar, value in zip(bars, values, strict=True):
+            ax_cal.text(
+                bar.get_x() + bar.get_width() / 2,
+                value + 0.02,
+                f"{value:.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=7.2,
+                color=INK,
+            )
+    if not score:
         ax_cal.text(
-            bar.get_x() + bar.get_width() / 2,
-            value + 0.02,
-            f"{value:.3f}",
+            0.5,
+            0.55,
+            "protected metrics not observed\n(no separately operated receipt ingested)",
+            transform=ax_cal.transAxes,
             ha="center",
-            va="bottom",
-            fontsize=7.2,
-            color=INK,
+            fontsize=8,
+            color=MUTED,
         )
     ax_risk = fig.add_subplot(gs[1, 2])
     coverage = _number(
@@ -1605,7 +1631,10 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
         if isinstance(score.get("selective_risk_coverage"), Mapping)
         else None
     )
-    ax_risk.scatter([coverage], [risk], s=75, color=PALETTE[3], edgecolor=INK, zorder=3)
+    if score:
+        ax_risk.scatter(
+            [coverage], [risk], s=75, color=PALETTE[3], edgecolor=INK, zorder=3
+        )
     ax_risk.set_xlim(0, 1.05)
     ax_risk.set_ylim(0, 1.05)
     ax_risk.set_xlabel("coverage")
@@ -1892,7 +1921,8 @@ def write_visual_atlas_figures(output_dir: Path) -> dict[str, str]:
     theorem = _json(data / "theorem_or_countertheorem.json")
     sensor = _json(data / "sensor_cost_receipt.json")
     frontier = _json(data / "active_information_frontier.json")
-    replay = _json(data / "independent_replay_receipt.json")
+    replay_path = data / "independent_replay_receipt.json"
+    replay = _json(replay_path) if replay_path.is_file() else {}
     typed = _json(data / "typed_observations.json")
     replication = _json(data / "replication_manifest.json")
 

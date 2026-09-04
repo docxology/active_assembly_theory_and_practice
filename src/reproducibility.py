@@ -356,6 +356,23 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
+        path="output/data/counterexample_search.json",
+        artifact_type="counterexample_search",
+        generated_by="src.counterexample_search.write_counterexample_search",
+        claim_ids=("CLM-040",),
+        validation_checks=(
+            "counterexample_search_contract",
+            "counterexample_search_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
+        path="output/data/sensing_stress.json",
+        artifact_type="sensing_stress",
+        generated_by="src.sensing_stress.write_sensing_stress",
+        claim_ids=("CLM-041",),
+        validation_checks=("sensing_stress_contract", "sensing_stress_freshness"),
+    ),
+    ArtifactManifestTarget(
         path="output/replication/public/public_manifest.json",
         artifact_type="replication_public_input",
         generated_by="src.replication.write_replication_bundle",
@@ -710,6 +727,20 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         generated_by="src.figures.plot_cross_architecture_benchmark",
         claim_ids=("CLM-029",),
         validation_checks=("figure_cross_architecture_benchmark",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/counterexample_search.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_counterexample_search",
+        claim_ids=("CLM-040",),
+        validation_checks=("figure_counterexample_search",),
+    ),
+    ArtifactManifestTarget(
+        path="output/figures/sensing_stress.png",
+        artifact_type="figure",
+        generated_by="src.figures.plot_sensing_stress",
+        claim_ids=("CLM-041",),
+        validation_checks=("figure_sensing_stress",),
     ),
     ArtifactManifestTarget(
         path="output/figures/formal_verification_receipt.png",

@@ -31,12 +31,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 
 
-def test_canonical_registry_has_exactly_62_unique_figures() -> None:
+def test_canonical_registry_has_exactly_64_unique_figures() -> None:
     specs = build_figure_specs(OUTPUT_DIR)
 
-    assert len(specs) == 62
-    assert len({spec.figure_id for spec in specs}) == 62
-    assert len({spec.label for spec in specs}) == 62
+    assert len(specs) == 64
+    assert len({spec.figure_id for spec in specs}) == 64
+    assert len({spec.label for spec in specs}) == 64
     assert set(NARRATIVE_FIGURE_IDS).issubset(FIGURE_CAPTIONS)
     assert set(NARRATIVE_FIGURE_IDS).issubset({spec.figure_id for spec in specs})
 
@@ -77,10 +77,10 @@ def test_figure_bundle_and_offline_atlas_are_closed() -> None:
     )
     assert f'"schema_version": "{FIGURE_REGISTRY_SCHEMA_VERSION}"' in registry
     atlas = (OUTPUT_DIR / "figure_atlas" / "index.html").read_text(encoding="utf-8")
-    assert atlas.count("<figure>") == 62
-    assert atlas.count("<figcaption>") == 62
-    assert atlas.count('alt="') == 62
-    assert atlas.count("<details>") == 62
+    assert atlas.count("<figure>") == 64
+    assert atlas.count("<figcaption>") == 64
+    assert atlas.count('alt="') == 64
+    assert atlas.count("<details>") == 64
     assert not re.search(r"(?:https?:)?//|<script|<link", atlas, re.IGNORECASE)
 
 
@@ -245,3 +245,54 @@ def test_figure_bundle_rebuilds_vector_and_atlas_surfaces_from_producers() -> No
     assert (OUTPUT_DIR / "figures" / "vector" / "model_comparison.svg").is_file()
     assert (OUTPUT_DIR / "figures" / "vector" / "model_comparison.pdf").is_file()
     assert (OUTPUT_DIR / "figure_atlas" / "index.html").is_file()
+
+
+def test_counterexample_search_figure_renders_from_receipt(tmp_path: Path) -> None:
+    """The counterexample-search figure renders from its real receipt."""
+
+    from src.figures import plot_counterexample_search
+
+    payload = _load(OUTPUT_DIR / "data" / "counterexample_search.json")
+    path = plot_counterexample_search(payload, tmp_path / "counterexample_search.png")
+    assert path.is_file() and path.stat().st_size > 0
+
+
+def test_counterexample_search_figure_rejects_witnessless_falsified(
+    tmp_path: Path,
+) -> None:
+    """A falsified candidate without a witness rank fails closed."""
+
+    from src.figures import plot_counterexample_search
+
+    payload = _load(OUTPUT_DIR / "data" / "counterexample_search.json")
+    falsified = next(
+        candidate
+        for candidate in payload["candidates"]
+        if candidate["status"] == "falsified_by_counterexample"
+    )
+    falsified["witness"] = {
+        key: value
+        for key, value in falsified["witness"].items()
+        if key != "witness_size"
+    }
+    with pytest.raises(ValueError, match="witness_size"):
+        plot_counterexample_search(payload, tmp_path / "broken.png")
+
+
+def test_sensing_stress_figure_renders_from_receipt(tmp_path: Path) -> None:
+    """The sensing-stress figure renders from its real receipt."""
+
+    from src.figures import plot_sensing_stress
+
+    payload = _load(OUTPUT_DIR / "data" / "sensing_stress.json")
+    path = plot_sensing_stress(payload, tmp_path / "sensing_stress.png")
+    assert path.is_file() and path.stat().st_size > 0
+
+
+def test_replay_failure_audit_renders_not_observed_state(tmp_path: Path) -> None:
+    """An absent receipt renders the documented not-observed audit state."""
+
+    from src.visual_atlas import plot_replay_failure_audit
+
+    path = plot_replay_failure_audit({}, tmp_path / "replay_failure_audit.png")
+    assert path.is_file() and path.stat().st_size > 0

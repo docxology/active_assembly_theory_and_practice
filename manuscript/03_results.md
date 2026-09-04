@@ -589,3 +589,63 @@ the enumerated state space; a falsified row retains its smallest counterexample;
 and an unresolved row is not converted into a theorem by prose. This separation
 lets the manuscript report productive negative results without confusing them
 with either proof or failure of the unrestricted scientific question.
+
+## Formal counterexample search {#sec:counterexample-search}
+
+The theorem phase above resolves one deliberately strong intervention claim.
+To make that falsification discipline routine rather than episodic, a
+smallest-first exhaustive search resolves a declared list of
+`{{COUNTEREXAMPLE_SEARCH_CANDIDATE_COUNT}}` candidate theorems against the same
+bounded reference interpreter used for the stepwise correspondence receipt
+(`{{FORMAL_CORRESPONDENCE_ARTIFACT}}`). Each candidate declares its finite
+enumeration domain in advance; the search enumerates inputs in increasing
+declared size order until a witness fails the property or the domain is
+exhausted, and every falsified witness is re-verified by an independent second
+interpretation of the same reference semantics before it is recorded. The
+receipt is `{{COUNTEREXAMPLE_SEARCH_ARTIFACT}}`, with declared method
+`{{COUNTEREXAMPLE_SEARCH_METHOD}}`.
+
+The search falsifies `{{COUNTEREXAMPLE_SEARCH_FALSIFIED_COUNT}}` candidate(s)
+and resolves `{{COUNTEREXAMPLE_SEARCH_HOLD_COUNT}}` as holding across every
+enumerated input. The first declared falsified candidate is
+`{{COUNTEREXAMPLE_SEARCH_EXAMPLE}}`. Both outcome kinds are retained as
+evidence: a falsified candidate narrows the plausible claim, while a holds
+result is valid only inside its declared search domain. The figure reports each
+candidate's searched-domain size and outcome; domain sizes are exact
+enumeration counts, not samples, so no population uncertainty is claimed.
+
+![{{FIGURE_COUNTEREXAMPLE_SEARCH_CAPTION}}]({{FIGURE_COUNTEREXAMPLE_SEARCH_PATH}}){#fig:counterexample-search width=100%}
+
+The search strengthens the bounded instrument only. It does not prove a
+cross-language theorem, establish complete x86-64 semantics, or promote a
+holds-in-domain row to an unrestricted identity; those remain behind the
+promotion gates recorded in the limits and roadmap section.
+
+## Active-sensing stress study {#sec:sensing-stress}
+
+The finite sensing certificate is exact, but exactness on one grid is not
+robustness evidence. The active-sensing stress study therefore re-evaluates the
+declared label-blind typed-field sensor channels over
+`{{SENSING_STRESS_GRID_ROW_COUNT}}` horizon, budget, policy, and cost-weight
+combinations. Every row is scored against an exact finite-horizon
+dynamic-programming reference that is itself cross-checked against the
+repository's reference planner; the largest regret of any policy rollout on
+this grid is `{{SENSING_STRESS_MAX_REGRET}}` in objective units, and each row
+records whether its uncertainty class is exact enumeration or a fixed-seed
+rollout.
+
+Budgets change the answer, not just the cost. The budget-constrained value
+curve reports `{{SENSING_STRESS_BUDGET_COUNT}}` action budgets against the
+unconstrained exact bound; the unattained gap that a finite budget forgoes is
+plotted as a gap and is never zero-filled. Separately, the local timing
+calibration is repeated and the receipt records the maximum relative
+coefficient drift `{{SENSING_STRESS_CALIBRATION_DRIFT}}` across runs; these
+timing rows are machine-specific measurements on the calibration host, not a
+cross-machine cost law.
+
+![{{FIGURE_SENSING_STRESS_CAPTION}}]({{FIGURE_SENSING_STRESS_PATH}}){#fig:sensing-stress width=100%}
+
+The study improves the finite robustness evidence for the sensing tranche. It
+does not establish a universal information-per-cost law, cross-machine
+calibration invariance, or semantic discovery; those boundaries remain
+explicit in the receipt and in the limits section.

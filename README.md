@@ -33,6 +33,15 @@ byte-addressable memory, stack bounds, and structured unsupported states. These
 advances strengthen the local falsification and formalization surface; they do
 not establish complete ISA semantics, cross-compiler invariance, semantic
 identifiability, external validity, or a general active-sensing law.
+The formal-semantics surface now also runs a smallest-first exhaustive
+counterexample search over declared candidate theorems of the bounded
+reference model, preserving re-verified minimal witnesses and explicit
+holds-in-domain rows as first-class evidence, and the active-sensing tranche
+adds a stress-grid robustness study with exact dynamic-programming references,
+fixed-seed policy rollouts, repeated calibration-stability rows, and
+budget-constrained value gaps. Both are bounded instruments: they narrow
+claims and record machine-specific diagnostics; they do not establish
+complete ISA semantics, cross-machine cost laws, or external validity.
 
 The current P3--P17 tranche additionally freezes protocol v2, expands the
 co-primary quotient benchmark to 64 source families and eight declared
@@ -199,6 +208,8 @@ changes, rerun project-side hydration before rendering again.
 - `output/data/sensor_cost_receipt.json`
 - `output/data/replication_manifest.json`
 - `output/data/theorem_or_countertheorem.json`
+- `output/data/counterexample_search.json`
+- `output/data/sensing_stress.json`
 - `output/docx/active_assembly_theory_and_practice_combined.docx`
 - `output/data/docx_render_receipt.json`
 - `output/data/scholarship_sources.json`
@@ -263,6 +274,8 @@ changes, rerun project-side hydration before rendering again.
 - `output/figures/artifact_receipt_closure.png`
 - `output/figures/sensor_costs.png`
 - `output/figures/replication_manifest.png`
+- `output/figures/counterexample_search.png`
+- `output/figures/sensing_stress.png`
 - `output/figures/external_label_coverage.png`
 - `output/figures/README.md` (generated caption ledger for every figure)
 - `output/data/figure_registry.json` (generator, inputs, statistics, claims,

@@ -534,7 +534,7 @@ def _fit_logistic(
     scale[scale < 1e-12] = 1.0
     x = (x_train - mean) / scale
     rng = np.random.default_rng(seed)
-    weights = rng.normal(0.0, 0.01, size=x.shape[1])
+    weights: np.ndarray = np.asarray(rng.normal(0.0, 0.01, size=x.shape[1]))
     bias = 0.0
     for _ in range(LOGISTIC_EPOCHS):
         probability = _sigmoid(x @ weights + bias)

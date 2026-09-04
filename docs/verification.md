@@ -82,7 +82,7 @@ that validated tree without silently regenerating it under a different
 timeout. Any source, protocol, or generator change requires fresh project-side
 hydration before rendering.
 
-The figure gates require all 62 substantive specifications to have unique
+The figure gates require all 64 substantive specifications to have unique
 labels, current input hashes, nonblank PNGs, parseable vector companions, and
 complete caption/alternative/long-description metadata. The offline atlas must
 contain one semantic figure card per registry row and no remote dependency.
@@ -182,7 +182,10 @@ freshness; a hand-edited summary cannot clear the contract.
 It also includes the source-family-disjoint quotient classifier portfolio, the
 formal Capstone/Unicorn correspondence path, compiler-transfer capability
 matrix, sensing-cost calibration, replication manifest, and theorem-or-
-countertheorem outcome. Unavailable, unsupported, and underpowered cells remain
+countertheorem outcome, the smallest-first counterexample-search receipt
+(freshness-recomputed with re-verified witnesses), and the active-sensing
+stress receipt (exact reference cross-checks, seeded rollouts, and repeated
+calibration-stability rows). Unavailable, unsupported, and underpowered cells remain
 explicit rather than being converted to zero or silently removed.
 The program, quotient, and representation-invariance receipts are
 roadmap/protocol evidence only; they do not promote a local fixture result into

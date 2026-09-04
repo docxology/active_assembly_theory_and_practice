@@ -181,13 +181,13 @@ promotion state remains deliberately asymmetric:
 | P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
 | P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |
 | P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, replay metadata, and an observed same-host controlled guest run | independent implementation, independent physical/CI replay, and external scientific review |
-| P8 theorem phase | proved small algebraic theorem group and automatically generated bounded counterexample | broad trace theorem, transfer guarantee, or field-changing general result |
+| P8 theorem phase | proved small algebraic theorem group, automatically generated bounded counterexample, and a smallest-first exhaustive counterexample-search receipt over declared candidates | broad trace theorem, transfer guarantee, or field-changing general result |
 | P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
 | P12 scaled transfer/quotient | 64-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
 | P13 licensed external validation | ten pinned rows across five projects and two revisions, static-only acquisition/compiler path, Capstone decoding, 100 source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
-| P14 measured policy robustness | deterministic/calibrated cost receipts and finite oracle certificate | universal cost law or non-oracle near-optimality claim |
+| P14 measured policy robustness | deterministic/calibrated cost receipts, finite oracle certificate, stress-grid policy regret and budget-value gaps, and repeated local calibration-stability rows | universal cost law or non-oracle near-optimality claim beyond the declared grid |
 | P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; the observed same-host guest is not independent reimplementation |
 | P16 promotion hardening | theorem/countertheorem status map, source-bound claim/figure/scholarship closure, and accessible regeneration path | publication or award-level claim absent independent scientific review |
 | P17 protocol/artifact closure | protocol-v2 envelope on the project-owned JSON surface, atomic producer writes, receipt audit, and source-bound manuscript/document closure | semantic identifiability, external validity, independent replication, or theorem promotion |
@@ -201,6 +201,16 @@ separating assumptions, not to call the failed single-state claim “almost
 true.” The local formal proof count is `{{THEOREM_PROVED_COUNT}}`, while
 `{{THEOREM_COMPUTATIONAL_ONLY_COUNT}}` result(s) remain computationally
 validated rather than kernel proved.
+
+Two bounded falsification-and-robustness receipts extend this ledger. The
+counterexample search (`{{COUNTEREXAMPLE_SEARCH_ARTIFACT}}`) resolves
+`{{COUNTEREXAMPLE_SEARCH_CANDIDATE_COUNT}}` declared candidates with
+`{{COUNTEREXAMPLE_SEARCH_FALSIFIED_COUNT}}` falsification(s); each holds row is
+bounded to its enumerated domain and is not promoted to an unrestricted
+identity. The sensing-stress receipt (`{{SENSING_STRESS_ARTIFACT}}`) scores
+policy controls against exact references on a declared grid and repeats the
+local timing calibration; its regret and drift rows are machine-bounded
+diagnostics, not cross-machine laws.
 
 Application-facing promotion remains closed: the licensed-source receipt is
 `{{EXTERNAL_SOURCE_STATUS}}` with `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` project
@@ -221,7 +231,8 @@ effectiveness.” This rule protects scientific integrity.
 The complete visual inventory is generated alongside the manuscript rather
 than maintained as a second hand-edited appendix. The source-bound registry
 is `{{FIGURE_REGISTRY_ARTIFACT}}` and the offline accessible atlas is
-`{{FIGURE_ATLAS_ARTIFACT}}`. Together they retain all 62 substantive figures,
+`{{FIGURE_ATLAS_ARTIFACT}}`. Together they retain all {{SUBSTANTIVE_FIGURE_COUNT}} substantive
+figures,
 including diagnostics that are too dense for the main narrative. Each entry
 records its source artifact hashes, evidence status, population grain, split,
 uncertainty method, visible caption, short alternative text, and long

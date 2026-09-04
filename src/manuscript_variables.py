@@ -161,6 +161,16 @@ def generate_variables() -> dict[str, str]:
             encoding="utf-8"
         )
     )
+    counterexample_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "counterexample_search.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    sensing_stress_report = json.loads(
+        (ADVANCED_OUTPUT_DIR / "data" / "sensing_stress.json").read_text(
+            encoding="utf-8"
+        )
+    )
     external_source_report = json.loads(
         (ADVANCED_OUTPUT_DIR / "data" / "external_source_validation.json").read_text(
             encoding="utf-8"
@@ -290,11 +300,23 @@ def generate_variables() -> dict[str, str]:
     )
     scholarship_path = write_scholarship_sources()
     claim_register_path = write_claim_register()
+    # Bootstrap the two self-referential summary figures before the figure
+    # bundle contract validates the complete PNG set: the artifact-hash
+    # manifest and the validation summary are produced by stages that
+    # otherwise run after the bundle check in variable-generation order.
+    write_reproducibility_manifest()
+    from .validation import build_validation_report
+    from .figures import plot_validation_summary
+
+    bootstrap_report = build_validation_report(PROJECT_ROOT)
+    plot_validation_summary(
+        [check.to_dict() for check in bootstrap_report.checks],
+        OUTPUT_DIR / "figures" / "validation_summary.png",
+    )
     from .advanced_figures import write_advanced_figures
 
     advanced_figure_paths = write_advanced_figures()
     figure_specs = build_figure_specs(ADVANCED_OUTPUT_DIR)
-    reproducibility_path = write_reproducibility_manifest()
     # Close the project-owned JSON surface before the first validation pass.
     # This migrates only legacy metadata wrappers; domain payloads and their
     # local schemas remain untouched and are then validated independently.
@@ -803,6 +825,43 @@ def generate_variables() -> dict[str, str]:
                 for item in theorem_report["candidate_theorems"]
             )
         ),
+        "COUNTEREXAMPLE_SEARCH_ARTIFACT": ("../output/data/counterexample_search.json"),
+        "COUNTEREXAMPLE_SEARCH_METHOD": str(
+            counterexample_report["enumeration_rule"]["order"]
+        ),
+        "COUNTEREXAMPLE_SEARCH_CANDIDATE_COUNT": str(
+            counterexample_report["candidate_count"]
+        ),
+        "COUNTEREXAMPLE_SEARCH_FALSIFIED_COUNT": str(
+            sum(
+                item.get("status") == "falsified_by_counterexample"
+                for item in counterexample_report["candidates"]
+            )
+        ),
+        "COUNTEREXAMPLE_SEARCH_HOLD_COUNT": str(
+            sum(
+                item.get("status") == "holds_in_searched_domain"
+                for item in counterexample_report["candidates"]
+            )
+        ),
+        "COUNTEREXAMPLE_SEARCH_EXAMPLE": str(
+            next(
+                f"{item['property_id']} (witness rank {item['witness']['witness_size']})"
+                for item in counterexample_report["candidates"]
+                if item.get("status") == "falsified_by_counterexample"
+            )
+        ),
+        "SENSING_STRESS_ARTIFACT": "../output/data/sensing_stress.json",
+        "SENSING_STRESS_GRID_ROW_COUNT": str(len(sensing_stress_report["grid"])),
+        "SENSING_STRESS_MAX_REGRET": (
+            f"{max(float(row['regret_vs_exact']) for row in sensing_stress_report['grid']):.3f}"
+        ),
+        "SENSING_STRESS_CALIBRATION_DRIFT": (
+            f"{float(sensing_stress_report['calibration_stability']['max_relative_coefficient_drift']):.3f}"
+        ),
+        "SENSING_STRESS_BUDGET_COUNT": str(
+            len(sensing_stress_report["budget_value_curve"])
+        ),
         "FACTORIZED_COLLAPSED_MEAN_ACCURACY": f"{factorized_summary['mean_collapsed_accuracy']:.3f}",
         "FACTORIZED_STATIC_MEAN_ACCURACY": f"{factorized_summary['mean_static_factorized_accuracy']:.3f}",
         "FACTORIZED_MEAN_ACCURACY": f"{factorized_summary['mean_factorized_accuracy']:.3f}",
@@ -923,6 +982,10 @@ def generate_variables() -> dict[str, str]:
         "GENERATIVE_ADEQUACY_ARTIFACT": f"../{advanced_paths['generative_adequacy']}",
         "TYPED_OBSERVATION_ARTIFACT": f"../{advanced_paths['typed_observations']}",
         "FACTORIZED_OBSERVATION_ARTIFACT": f"../{advanced_paths['factorized_observation_model']}",
+        "COUNTEREXAMPLE_SEARCH_FIGURE": (
+            f"../{advanced_figure_paths['counterexample_search']}"
+        ),
+        "SENSING_STRESS_FIGURE": f"../{advanced_figure_paths['sensing_stress']}",
         "TYPED_OBSERVATION_MATRIX_FIGURE": f"../{advanced_figure_paths['typed_observation_matrix']}",
         "FACTORIZED_OBSERVATION_COMPARISON_FIGURE": f"../{advanced_figure_paths['factorized_observation_comparison']}",
         "CORPUS_COVERAGE_FIGURE": f"../{advanced_figure_paths['corpus_coverage']}",
@@ -931,6 +994,7 @@ def generate_variables() -> dict[str, str]:
         "REPRESENTATION_BENCHMARK_FIGURE": (
             f"../{advanced_figure_paths['representation_invariance_benchmark']}"
         ),
+        "SUBSTANTIVE_FIGURE_COUNT": str(len(figure_specs)),
         "INTERVENTION_POWER_FIGURE": f"../{advanced_figure_paths['intervention_power']}",
         "CROSS_ARCHITECTURE_FIGURE": (
             f"../{advanced_figure_paths['cross_architecture_benchmark']}"

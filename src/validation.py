@@ -145,10 +145,20 @@ from .sensor_costs import (
     sensor_cost_payload,
     validate_sensor_cost_payload,
 )
+from .counterexample_search import (
+    COUNTEREXAMPLE_SEARCH_SCHEMA_VERSION,
+    counterexample_search_payload,
+    validate_counterexample_search_payload,
+)
 from .theorem_phase import (
     THEOREM_PHASE_SCHEMA_VERSION,
     theorem_or_countertheorem_payload,
     validate_theorem_or_countertheorem_payload,
+)
+from .sensing_stress import (
+    SENSING_STRESS_SCHEMA_VERSION,
+    sensing_stress_payload,
+    validate_sensing_stress_payload,
 )
 from .symbolic_semantics import SEMANTICS_SCHEMA_VERSION
 from .typed_observations import (
@@ -2447,6 +2457,84 @@ def _theorem_countertheorem_checks(project_root: Path) -> list[ValidationCheck]:
     ]
 
 
+def _counterexample_search_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate the smallest-first exhaustive counterexample-search receipt."""
+
+    path = project_root / "output" / "data" / "counterexample_search.json"
+    if not path.exists():
+        return [
+            _check("counterexample_search_contract", False, "artifact missing"),
+            _check("counterexample_search_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_counterexample_search_payload(payload)
+        fresh = counterexample_search_payload(project_root)
+        fresh_match = _domain_payload_equal(payload, fresh)
+    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
+        return [
+            _check("counterexample_search_contract", False, str(exc)),
+            _check("counterexample_search_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check(
+            "counterexample_search_contract",
+            valid
+            and payload.get("schema_version") == COUNTEREXAMPLE_SEARCH_SCHEMA_VERSION,
+            detail,
+        ),
+        _check(
+            "counterexample_search_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
+def _sensing_stress_checks(project_root: Path) -> list[ValidationCheck]:
+    """Validate the active-sensing stress-study receipt against a fresh recompute."""
+
+    path = project_root / "output" / "data" / "sensing_stress.json"
+    if not path.exists():
+        return [
+            _check("sensing_stress_contract", False, "artifact missing"),
+            _check("sensing_stress_freshness", False, "artifact missing"),
+        ]
+    try:
+        payload = _load_json(path)
+        valid, detail = validate_sensing_stress_payload(payload)
+        fresh = sensing_stress_payload(project_root)
+        # Machine-timing rows vary between runs by design (the receipt says
+        # so in its uncertainty fields); enforce freshness on the exact
+        # enumeration surface only, mirroring the sensor-cost receipt.
+        stable = {
+            key: value
+            for key, value in payload.items()
+            if key != "calibration_stability"
+        }
+        fresh_stable = {
+            key: value for key, value in fresh.items() if key != "calibration_stability"
+        }
+        fresh_match = _domain_payload_equal(stable, fresh_stable)
+    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
+        return [
+            _check("sensing_stress_contract", False, str(exc)),
+            _check("sensing_stress_freshness", False, "artifact unreadable"),
+        ]
+    return [
+        _check(
+            "sensing_stress_contract",
+            valid and payload.get("schema_version") == SENSING_STRESS_SCHEMA_VERSION,
+            detail,
+        ),
+        _check(
+            "sensing_stress_freshness",
+            fresh_match,
+            f"recompute_matches_disk={fresh_match}",
+        ),
+    ]
+
+
 def _build_provenance_checks(project_root: Path) -> list[ValidationCheck]:
     """Ensure the current candidate has a source/template lineage receipt."""
 
@@ -2921,6 +3009,8 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_replication_checks(project_root))
     checks.extend(_independent_replay_checks(project_root))
     checks.extend(_theorem_countertheorem_checks(project_root))
+    checks.extend(_counterexample_search_checks(project_root))
+    checks.extend(_sensing_stress_checks(project_root))
     checks.extend(
         _claim_register_checks(project_root, {check.name for check in checks})
     )

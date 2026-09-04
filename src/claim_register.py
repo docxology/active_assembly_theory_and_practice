@@ -826,6 +826,64 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         ),
         status="validated",
     ),
+    ClaimRecord(
+        claim_id="CLM-040",
+        claim_type="formal_counterexample_search",
+        statement=(
+            "A smallest-first exhaustive search over the declared bounded x86-64 "
+            "reference model resolves each declared candidate theorem to a re-verified "
+            "minimal counterexample or an explicit holds-in-searched-domain result, "
+            "keeping falsified generalizations as preserved evidence."
+        ),
+        support_keys=("intel_sdm", "sandve2013repro"),
+        artifact_paths=(
+            "output/data/counterexample_search.json",
+            "output/data/formal_trace_correspondence.json",
+            "output/figures/counterexample_search.png",
+        ),
+        validation_checks=(
+            "counterexample_search_contract",
+            "counterexample_search_freshness",
+            "figure_counterexample_search",
+        ),
+        boundary=(
+            "The search is bounded to the declared finite candidate list and the "
+            "declared reference-interpreter domain. A holds result covers only the "
+            "enumerated inputs; a falsified candidate narrows the claim and does not "
+            "prove the strongest negation, establish complete ISA semantics, or "
+            "promote a cross-language theorem."
+        ),
+        status="validated",
+    ),
+    ClaimRecord(
+        claim_id="CLM-041",
+        claim_type="active_sensing_stress_study",
+        statement=(
+            "The active-sensing stress study evaluates policy controls against exact "
+            "finite-horizon dynamic-programming references across a declared horizon, "
+            "budget, and cost-weight grid, and repeats the local timing calibration to "
+            "record coefficient drift and residual stability."
+        ),
+        support_keys=("friston2017activeinference", "sandve2013repro"),
+        artifact_paths=(
+            "output/data/sensing_stress.json",
+            "output/data/active_information_frontier.json",
+            "output/figures/sensing_stress.png",
+        ),
+        validation_checks=(
+            "sensing_stress_contract",
+            "sensing_stress_freshness",
+            "figure_sensing_stress",
+        ),
+        boundary=(
+            "Regret and optimality gaps are exact-enumeration quantities over the "
+            "declared finite sensor space; seeded rollouts are fixed-seed diagnostics; "
+            "timing-stability rows are machine-specific measurements. The study "
+            "establishes no universal information-per-cost law and no cross-machine "
+            "calibration invariance."
+        ),
+        status="validated",
+    ),
 )
 
 

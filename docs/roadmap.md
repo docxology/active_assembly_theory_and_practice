@@ -39,9 +39,9 @@ evidence remain visibly unearned.
 | P3 quotient and representation-invariance benchmark | Closed bounded tranche | Promotion blocked; no semantic-discovery claim | `output/data/representation_invariance_benchmark.json`, `output/data/quotient_classifier.json` |
 | P4/P11 normalized formal correspondence | Closed bounded implementation tranche | `validated_bounded`; no complete x86-64 theorem | `output/data/formal_trace_correspondence.json`, `output/data/formal_verification.json` |
 | P5/P12 compiler, architecture, and transfer surface | Closed local capability tranche | Bounded transfer evidence; external/general transfer unearned | `output/data/compiler_transfer.json`, `output/data/cross_architecture_fixtures.json` |
-| P6/P14 active sensing and cost accounting | Closed finite measured-cost tranche | `validated_bounded`; no universal information-per-cost law | `output/data/sensor_cost_receipt.json`, `output/data/active_information_frontier.json` |
+| P6/P14 active sensing and cost accounting | Closed finite measured-cost tranche with a stress-grid robustness receipt | `validated_bounded`; no universal information-per-cost law | `output/data/sensor_cost_receipt.json`, `output/data/active_information_frontier.json`, `output/data/sensing_stress.json` |
 | P7/P15 public replay interface | Closed local harness and same-host controlled guest run | Replay observed under a distinct guest boundary; independent physical replay and independent reimplementation remain unearned | `output/data/replication_manifest.json`, `output/data/independent_replay_receipt.json` |
-| P8/P16 theorem and countertheorem phase | Closed fail-closed bounded phase | Counterexample and unresolved candidates retained; no broad theorem | `output/data/theorem_or_countertheorem.json` |
+| P8/P16 theorem and countertheorem phase | Closed fail-closed bounded phase with a smallest-first exhaustive counterexample-search receipt | Counterexample and unresolved candidates retained; no broad theorem | `output/data/theorem_or_countertheorem.json`, `output/data/counterexample_search.json` |
 | P9 intervention power | Closed finite diagnostic | Identifiability promotion blocked outside the declared finite catalog | `output/data/intervention_power.json` |
 | P10 initialization robustness | Closed finite robustness diagnostic | Stability promotion blocked by initialization sensitivity | `output/data/parameter_learning.json` |
 | P13 licensed-source track | Acquisition, static compilation, and source-bound labels closed locally | External validation remains `underpowered` until the full gate passes | `output/data/external_acquisition.json`, `output/data/external_static_validation.json`, `output/data/external_label_contract.json` |
@@ -70,9 +70,17 @@ surfaces, not unstarted roadmap tasks:
   policy certificates, and non-oracle baselines;
 - the public/private replay bundle, no-network replay path, controlled guest
   replay receipt, and stale-source rejection;
-- the 62-substantive-figure source-bound atlas, cover contract, caption and
+- the 64-substantive-figure source-bound atlas, cover contract, caption and
   alternative-text registry, vector/raster outputs, tagged PDF, and DOCX
   validation surface.
+- the MIN-04 formal boundary regression pack covering width updates,
+  `INC`/`DEC` carry preservation, `ADC`/`SBB` carry consumption, memory and
+  stack bounds, branch outcomes, serialization, and unsupported instructions;
+- the MED-08 smallest-first exhaustive counterexample-search receipt over
+  declared candidate theorems of the bounded reference interpreter; and
+- the MED-04 active-sensing stress-grid receipt with exact dynamic-programming
+  references, fixed-seed policy rollouts, repeated calibration-stability rows,
+  and budget-constrained value gaps.
 
 These items should receive regression coverage and freshness audits. They should
 not reappear in future documentation as “to do,” “next tranche,” or “not yet
@@ -112,7 +120,6 @@ label contract, split rule, or promotion language without a protocol revision.
 | MIN-01 | Receipt-refresh guard | Run `all`, `audit-artifacts`, `audit-figures`, manuscript-variable validation, and post-render checks from a clean producer order; stale source/protocol hashes fail closed. | Freshness is an engineering property, not scientific validity. |
 | MIN-02 | Command and runbook consistency | Keep `README.md`, `docs/verification.md`, `docs/reproducibility.md`, `docs/replay_operator_runbook.md`, and CLI help synchronized; every documented command has a smoke test or explicit environment prerequisite. | A runnable command does not imply a promoted result. |
 | MIN-03 | Figure-atlas maintenance | For every future figure change, require one canonical spec, source hashes, caption, short alternative, long description, exact status table where needed, and page/contact-sheet visual QA. | Accessibility and source closure do not strengthen the underlying evidence. |
-| MIN-04 | Formal boundary regression pack | Add focused boundary fixtures for width updates, `INC`/`DEC` carry preservation, `ADC`/`SBB` carry consumption, memory bounds, branch outcomes, serialization, and unsupported instructions. | More boundary tests strengthen the bounded instrument only. |
 | MIN-05 | Claim and scholarship lint | Verify that each changed claim has a receipt, each methodological citation supports the exact statement, and no stale quantitative literal or hard-coded figure number enters the manuscript. | Citation closure is not peer review. |
 | MIN-06 | Reproducible developer envelope | Keep the locked Python/Julia/Lean toolchain receipts, supported platform notes, and optional-dependency behavior current; record unavailable capabilities explicitly. | Toolchain parity enables replay but is not independent evidence. |
 | MIN-07 | Failure-surface maintenance | Preserve `underpowered`, `unavailable`, `unsupported`, `blocked_external`, `falsified`, and `unresolved` rows in tests, figures, captions, and docs; add a regression whenever a failure mode is found. | Negative evidence remains evidence; it is not converted into a null score. |
@@ -128,11 +135,9 @@ scientifically material, and a manuscript boundary statement.
 | MED-01 | Longer transparent corpus | Add longer programs with repeated phases, ambiguous observations, taken/not-taken branches, bounded memory, stack-local state, calls/returns, and optimization-sensitive rewrites. Freeze family-level splits before scoring; retain all exclusions. | May improve mechanism-level inference evidence; cannot establish external validity. |
 | MED-02 | Broader declared-subset semantics | Extend the normalized IR and Lean/Python fixtures for the highest-value supported instruction families, including exact flag definedness and memory effects. Compare Python, Capstone, Unicorn, and Lean field by field; preserve unsupported outcomes. | May strengthen P11 to a larger bounded fragment; no complete-ISA claim. |
 | MED-03 | Robust classifier portfolio | Refit all co-primary models over the expanded corpus using development-only selection, multiple deterministic starts, family-clustered bootstrap, calibration, selective risk, label permutation, family-shuffle, compiler/architecture leakage attacks, and near-duplicate checks. | May support a stronger bounded benchmark result; no semantic-identifiability claim without the major gate. |
-| MED-04 | Active-sensing stress study | Evaluate multiple finite budgets and horizons, fixed/greedy/random/abstaining controls, exact dynamic-program references, deterministic eight-component costs, repeated local timing runs, calibration residuals, regret, and optimality gaps. | May improve P14 finite robustness; no universal cost law. |
 | MED-05 | Separately controlled replay | Run the public bundle on a separately controlled CI worker or machine, disable network access, return the signed/hash-bound receipt and predictions, and ingest them through the protected scorer. | Can change P15 from local/guest evidence to observed external replay, but not to independent reimplementation. |
 | MED-06 | Capability-controlled transfer expansion | Probe locally available compilers, target triples, optimization levels, decoders, and object formats. Add only rows with complete source/object/disassembly provenance; leave unavailable targets explicit. | May enlarge bounded P5/P12 coverage; cannot turn capability coverage into behavioral transfer. |
 | MED-07 | External corpus preparation audit | Rehearse pinned manifest parsing, license-file checks, archive safety, static-only compilation, build reproducibility, source contracts, and exclusion accounting without using the rows as an efficacy claim. | Reduces P13 operational risk; promotion still requires the major external gate. |
-| MED-08 | Formal counterexample search | Search the declared bounded model for the smallest failure of each candidate theorem, store the counterexample and assumptions, and regenerate theorem-status figures and manuscript text. | A falsified or narrowed theorem can itself be a valid result. |
 
 ### Major: promotion-gated research programs
 

@@ -329,7 +329,8 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
     classifier = _load(data_dir / "quotient_classifier.json")
     sensor = _load(data_dir / "sensor_cost_receipt.json")
     frontier = _load(data_dir / "active_information_frontier.json")
-    replay = _load(data_dir / "independent_replay_receipt.json")
+    replay_path = data_dir / "independent_replay_receipt.json"
+    replay = _load(replay_path) if replay_path.is_file() else {}
     theorem = _load(data_dir / "theorem_or_countertheorem.json")
     typed = _load(data_dir / "typed_observations.json")
     replication = _load(data_dir / "replication_manifest.json")
@@ -720,7 +721,12 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
                 chart_family,
                 evidence_status,
             ) = _metadata_for(stem)
-            artifacts = _narrative_artifacts(stem)
+            artifacts = tuple(
+                artifact
+                for artifact in _narrative_artifacts(stem)
+                if (root / artifact).is_file()
+                or artifact != "output/data/independent_replay_receipt.json"
+            )
             copy = _dynamic_narrative_copy(output_dir, stem)
             generator = "src.visual_atlas"
             claims = ("CLM-009",)
@@ -730,7 +736,12 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
                 "figure_accessibility_contract",
             )
             citation_keys = tuple(FIGURE_CITATIONS.get(stem, ()))
-            receipt_status = _safe_value(_load(root / artifacts[0]).get("status"))
+            primary_artifact = root / artifacts[0]
+            receipt_status = (
+                _safe_value(_load(primary_artifact).get("status"))
+                if primary_artifact.is_file()
+                else "not observed"
+            )
             population = "source-bound protocol and generated receipts for the declared narrative evidence layer"
             hierarchy = "artifact-level visual; nested sample hierarchy is reported in the caption and source receipt"
             split = (
@@ -1215,10 +1226,17 @@ def validate_figure_bundle(output_dir: Path) -> list[str]:
                 errors.append(f"{spec.figure_id}: blank or unreadable PNG")
         for artifact in spec.input_artifacts:
             path = root / artifact
-            if not path.is_file():
+            if path.is_file():
+                if spec.input_hashes.get(artifact) != _sha256(path):
+                    errors.append(f"{spec.figure_id}: stale source hash {artifact}")
+            elif artifact == "output/data/independent_replay_receipt.json":
+                # The separately controlled replay receipt is an optional
+                # promotion artifact (required=False in the reproducibility
+                # manifest); its absence is the documented not-observed
+                # state, not a broken figure producer.
+                continue
+            else:
                 errors.append(f"{spec.figure_id}: missing source artifact {artifact}")
-            elif spec.input_hashes.get(artifact) != _sha256(path):
-                errors.append(f"{spec.figure_id}: stale source hash {artifact}")
         if not spec.alt_text.strip():
             errors.append(f"{spec.figure_id}: missing alternative text")
         if len(spec.alt_text.split()) > 45:

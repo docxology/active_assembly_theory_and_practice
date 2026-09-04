@@ -7,7 +7,7 @@ the current manuscript and validation report. It writes:
 - `output/data/reproducibility_manifest.md`
 - `output/figures/artifact_hash_manifest.png`
 - `output/figures/README.md` (a caption ledger documenting every figure)
-- `output/data/figure_registry.json` (the canonical 62-row figure contract)
+- `output/data/figure_registry.json` (the canonical 64-row figure contract)
 - `output/figure_atlas/index.html` (the offline accessible visual atlas)
 
 The rendered PDF has a separate post-render audit at
@@ -115,6 +115,13 @@ extension tranche:
   `output/replication/private/gold_labels.json` is retained as a separate local
   scoring input; `output/data/theorem_or_countertheorem.json`
   records the fail-closed theorem phase and generated counterexample.
+- `output/data/counterexample_search.json` binds the smallest-first exhaustive
+  counterexample search over the declared bounded reference model; every
+  falsified witness is re-verified and every holds row stays bounded to its
+  declared enumeration domain.
+- `output/data/sensing_stress.json` binds the active-sensing stress grid with
+  exact dynamic-programming references, fixed-seed policy rollouts, repeated
+  local calibration-stability rows, and budget-constrained value gaps.
 
 These receipts are bounded implementation and computational-evidence surfaces,
 not independent replication, external-validity, or broad-theorem certificates.

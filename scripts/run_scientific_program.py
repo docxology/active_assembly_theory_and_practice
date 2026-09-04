@@ -39,6 +39,7 @@ from src.external_labeling import (  # noqa: E402
     LABEL_CONTRACT_ARTIFACT,
     write_external_label_contract,
 )
+from src.counterexample_search import write_counterexample_search  # noqa: E402
 from src.formal_correspondence import write_formal_correspondence  # noqa: E402
 from src.intervention_analysis import write_intervention_power_payload  # noqa: E402
 from src.quotient_classifier import write_quotient_classifier_report  # noqa: E402
@@ -68,6 +69,7 @@ from src.replication import (  # noqa: E402
 from src.scientific_protocol import write_scientific_protocol  # noqa: E402
 from src.sensor_costs import write_sensor_cost_payload  # noqa: E402
 from src.theorem_phase import write_theorem_or_countertheorem  # noqa: E402
+from src.sensing_stress import write_sensing_stress  # noqa: E402
 
 
 def _path(value: str | None) -> Path:
@@ -89,6 +91,14 @@ def main() -> int:
     subparsers.add_parser("transfer", help="write compiler capability receipt")
     subparsers.add_parser("sensing", help="write measured sensing-cost receipt")
     subparsers.add_parser("theorem", help="write theorem/countertheorem receipt")
+    subparsers.add_parser(
+        "counterexamples",
+        help="write the formal counterexample-search receipt",
+    )
+    subparsers.add_parser(
+        "sensing-stress",
+        help="write the active-sensing stress-study receipt",
+    )
     subparsers.add_parser("external", help="write offline external-source receipt")
     subparsers.add_parser(
         "label-external",
@@ -270,6 +280,10 @@ def main() -> int:
         print(write_sensor_cost_payload(root))
     elif command == "theorem":
         print(write_theorem_or_countertheorem(root))
+    elif command == "counterexamples":
+        print(write_counterexample_search(root))
+    elif command == "sensing-stress":
+        print(write_sensing_stress(root))
     elif command == "external":
         print(write_external_label_contract(root))
         print(write_external_source_validation_payload(root))
@@ -493,6 +507,8 @@ def main() -> int:
             write_compiler_transfer(root),
             write_sensor_cost_payload(root),
             write_theorem_or_countertheorem(root),
+            write_counterexample_search(root),
+            write_sensing_stress(root),
             write_compiler_capabilities(root),
             write_external_label_contract(root),
             write_external_static_validation(root),

@@ -397,6 +397,13 @@ def test_vm_status_returns_none_for_other_instances(
     assert replay_vm.vm_status(replay_vm.vm_paths(tmp_path / "vm")) is None
 
 
+@pytest.mark.skipif(
+    not Path("/Volumes/blue").exists(),
+    reason=(
+        "blue-backed VM volume is not mounted; the blue storage contract "
+        "is exercised on hosts where the capability is available"
+    ),
+)
 def test_write_vm_manifest_records_storage_and_replay_contract(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

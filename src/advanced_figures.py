@@ -30,6 +30,7 @@ from .figures import (
     plot_compiler_transfer,
     plot_corpus_coverage,
     plot_corpus_stability,
+    plot_counterexample_search,
     plot_decoder_calibration,
     plot_generative_model,
     plot_generative_adequacy,
@@ -51,6 +52,7 @@ from .figures import (
     plot_quotient_classifier,
     plot_replication_manifest,
     plot_segmentation_ribbons,
+    plot_sensing_stress,
     plot_transition_ablation,
     plot_sensor_costs,
     plot_temporal_beliefs_heatmap,
@@ -282,6 +284,18 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     )
     plot_active_information_frontier(information_payload, information_path)
 
+    counterexample_path = figure_dir / "counterexample_search.png"
+    counterexample_payload = json.loads(
+        (output_dir / "data" / "counterexample_search.json").read_text(encoding="utf-8")
+    )
+    plot_counterexample_search(counterexample_payload, counterexample_path)
+
+    stress_path = figure_dir / "sensing_stress.png"
+    stress_payload = json.loads(
+        (output_dir / "data" / "sensing_stress.json").read_text(encoding="utf-8")
+    )
+    plot_sensing_stress(stress_payload, stress_path)
+
     return {
         "calibration_curve": str(calibration_curve_path.relative_to(PROJECT_ROOT)),
         "confusion_matrix": str(confusion_path.relative_to(PROJECT_ROOT)),
@@ -321,6 +335,8 @@ def write_stats_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "external_label_coverage": str(external_label_path.relative_to(PROJECT_ROOT)),
         "artifact_receipt_closure": str(receipt_path.relative_to(PROJECT_ROOT)),
         "active_information_frontier": str(information_path.relative_to(PROJECT_ROOT)),
+        "counterexample_search": str(counterexample_path.relative_to(PROJECT_ROOT)),
+        "sensing_stress": str(stress_path.relative_to(PROJECT_ROOT)),
     }
 
 
@@ -417,6 +433,8 @@ def write_advanced_figures(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "external_label_coverage": stats_paths["external_label_coverage"],
         "artifact_receipt_closure": stats_paths["artifact_receipt_closure"],
         "active_information_frontier": stats_paths["active_information_frontier"],
+        "counterexample_search": stats_paths["counterexample_search"],
+        "sensing_stress": stats_paths["sensing_stress"],
         "captions": str(captions_path.relative_to(PROJECT_ROOT)),
         **figure_bundle,
     }

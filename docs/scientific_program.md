@@ -137,7 +137,7 @@ is closed in the maintainer backlog; actionable follow-up is now scoped as
 ## Source-bound visual atlas
 
 The visual-atlas tranche adds a canonical, receipt-backed specification layer
-over the compatibility figure-path interface. The 62 substantive figure rows (the
+over the compatibility figure-path interface. The 64 substantive figure rows (the
 cover is separate) record the generator, source artifact hashes, population
 grain, split and uncertainty semantics, evidence status, claim boundary,
 visible caption, short alternative text, long description, and vector/raster
