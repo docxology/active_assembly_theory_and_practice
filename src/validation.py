@@ -2308,7 +2308,10 @@ def _external_static_checks(project_root: Path) -> list[ValidationCheck]:
     try:
         payload = _load_json(path)
         valid, detail = validate_external_static_validation_payload(payload)
-        fresh = validate_external_static_sources(project_root)
+        # The static producer records absolute object paths; the recompute
+        # must resolve against the same absolute root or a relative caller
+        # cwd turns the -o argument into an unwritable relative path.
+        fresh = validate_external_static_sources(project_root.resolve())
         fresh_match = _domain_payload_equal(payload, fresh)
     except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
         return [

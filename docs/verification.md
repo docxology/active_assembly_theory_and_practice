@@ -149,6 +149,14 @@ summary figures are checked independently because including them in the
 receipt digest would be self-referential. A passing DOCX receipt does not
 certify PDF/UA tags or reading order.
 
+The DOCX lane additionally expects the configured cover asset to be embedded
+beside the substantive figures (media count = registry figures + 1). That
+embedding is supplied by the sibling template's combined-DOCX renderer; a
+template checkout whose DOCX path does not yet carry the cover produces a
+precisely diagnosed media/alternative-text mismatch in the receipt rather
+than a silently relaxed contract. The PDF and EPUB lanes embed the cover
+independent of this parity gate.
+
 ## What the validation gate enforces
 
 `scripts/validate_analysis_outputs.py` regenerates the full analysis surface and
