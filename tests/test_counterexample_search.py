@@ -204,3 +204,90 @@ def test_payload_is_deterministic_across_calls() -> None:
     second = counterexample_search_payload()
     assert first["candidates"] == second["candidates"]
     assert first["schema_version"] == COUNTEREXAMPLE_SEARCH_SCHEMA_VERSION
+
+
+def test_validator_rejects_structural_drift() -> None:
+    """Roster, count, and witness-structure drift all fail closed."""
+
+    def falsified_row(payload: dict[str, object]) -> dict[str, object]:
+        return next(
+            row
+            for row in payload["candidates"]  # type: ignore[index,union-attr]
+            if row["status"] == "falsified_by_counterexample"
+        )
+
+    base = counterexample_search_payload()
+
+    drifted = counterexample_search_payload()
+    drifted["candidates"] = drifted["candidates"][:7]
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "candidates are missing" in detail
+
+    drifted = counterexample_search_payload()
+    drifted["candidates"] = list(reversed(drifted["candidates"]))
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "roster drift" in detail
+
+    drifted = counterexample_search_payload()
+    drifted["falsified_count"] += 1
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "falsified_count drift" in detail
+
+    drifted = counterexample_search_payload()
+    drifted["holds_count"] += 1
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "holds_count drift" in detail
+
+    drifted = counterexample_search_payload()
+    drifted["enumeration_rule"] = None
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "enumeration_rule is missing" in detail
+
+    drifted = counterexample_search_payload()
+    holds_row = next(
+        row
+        for row in drifted["candidates"]
+        if row["status"] == "holds_in_searched_domain"
+    )
+    holds_row["witness"] = falsified_row(base)["witness"]
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "carries a witness" in detail
+
+    drifted = counterexample_search_payload()
+    row = falsified_row(drifted)
+    row["witness"] = {**row["witness"], "reverified": False}
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "was not re-verified" in detail
+
+    drifted = counterexample_search_payload()
+    row = falsified_row(drifted)
+    row["witness"] = {
+        key: value for key, value in row["witness"].items() if key != "before"
+    }
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "lacks state projections" in detail
+
+    drifted = counterexample_search_payload()
+    row = falsified_row(drifted)
+    row["searched_domain_size"] = 0
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "positive searched_domain_size" in detail
+
+    drifted = counterexample_search_payload()
+    row = falsified_row(drifted)
+    row["witness"] = {
+        **row["witness"],
+        "inputs": {"registers": "not-a-mapping"},
+    }
+    valid, detail = validate_counterexample_search_payload(drifted)
+    assert not valid
+    assert "inputs" in detail and "malformed" in detail

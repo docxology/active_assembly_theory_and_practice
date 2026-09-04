@@ -296,3 +296,115 @@ def test_replay_failure_audit_renders_not_observed_state(tmp_path: Path) -> None
 
     path = plot_replay_failure_audit({}, tmp_path / "replay_failure_audit.png")
     assert path.is_file() and path.stat().st_size > 0
+
+
+def test_counterexample_search_figure_rejects_structural_drift(
+    tmp_path: Path,
+) -> None:
+    """Empty, malformed, and unknown-status payloads fail closed."""
+
+    from src.figures import plot_counterexample_search
+
+    with pytest.raises(ValueError, match="must be non-empty"):
+        plot_counterexample_search({"candidates": []}, tmp_path / "empty.png")
+
+    payload = _load(OUTPUT_DIR / "data" / "counterexample_search.json")
+    payload["candidates"] = [
+        {
+            "property_id": "x",
+            "status": "mystery_status",
+            "searched_domain_size": 3,
+            "witness": None,
+        }
+    ]
+    with pytest.raises(ValueError, match="unknown candidate status"):
+        plot_counterexample_search(payload, tmp_path / "status.png")
+
+    payload = _load(OUTPUT_DIR / "data" / "counterexample_search.json")
+    payload["candidates"] = ["not-an-object"]
+    with pytest.raises(ValueError, match="not an object"):
+        plot_counterexample_search(payload, tmp_path / "row.png")
+
+
+def test_counterexample_search_figure_switches_to_log_domain_scale(
+    tmp_path: Path,
+) -> None:
+    """A four-orders-of-magnitude domain span renders on a log axis."""
+
+    from src.figures import plot_counterexample_search
+
+    payload = {
+        "candidates": [
+            {
+                "property_id": "tiny_domain",
+                "status": "holds_in_searched_domain",
+                "searched_domain_size": 1,
+                "witness": None,
+            },
+            {
+                "property_id": "huge_domain",
+                "status": "holds_in_searched_domain",
+                "searched_domain_size": 1_000_000,
+                "witness": None,
+            },
+        ]
+    }
+    path = plot_counterexample_search(payload, tmp_path / "log_scale.png")
+    assert path.is_file() and path.stat().st_size > 0
+
+
+def test_sensing_stress_figure_rejects_structural_drift(tmp_path: Path) -> None:
+    """Empty grid, negative regret, and negative gaps fail closed."""
+
+    from src.figures import plot_sensing_stress
+
+    payload = _load(OUTPUT_DIR / "data" / "sensing_stress.json")
+
+    with pytest.raises(ValueError, match="grid must be non-empty"):
+        plot_sensing_stress({**payload, "grid": []}, tmp_path / "empty.png")
+
+    drifted = {
+        **payload,
+        "grid": [{**payload["grid"][0], "regret_vs_exact": -1.0}],
+    }
+    with pytest.raises(ValueError, match="regret is negative"):
+        plot_sensing_stress(drifted, tmp_path / "regret.png")
+
+    drifted = {
+        **payload,
+        "budget_value_curve": [
+            {**row, "unattained_information_gain_gap": -1.0}
+            for row in payload["budget_value_curve"]
+        ],
+    }
+    with pytest.raises(ValueError, match="gap is negative"):
+        plot_sensing_stress(drifted, tmp_path / "gap.png")
+
+
+def test_replay_failure_audit_renders_populated_score(tmp_path: Path) -> None:
+    """A receipt-backed protected score renders every audit panel."""
+
+    from src.visual_atlas import plot_replay_failure_audit
+
+    payload = {
+        "control_scope": "same_host_separately_controlled_guest",
+        "network_disabled": True,
+        "protected_score": {
+            "rows": 40,
+            "confusion_matrix": {
+                "true_positive": 10,
+                "false_negative": 10,
+                "false_positive": 18,
+                "true_negative": 2,
+            },
+            "balanced_accuracy": 0.3,
+            "macro_f1": 0.28,
+            "brier_score": 0.61,
+            "expected_calibration_error": 0.19,
+            "selective_risk_coverage": {"coverage": 0.5, "risk": 0.5},
+            "false_equivalence_rate": 0.9,
+            "near_miss_separation_rate": 0.1,
+        },
+    }
+    path = plot_replay_failure_audit(payload, tmp_path / "audit_populated.png")
+    assert path.is_file() and path.stat().st_size > 0

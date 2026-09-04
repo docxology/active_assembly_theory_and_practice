@@ -233,3 +233,144 @@ def test_seeded_random_grid_rows_are_seed_deterministic() -> None:
         if row["policy"] == "seeded_random" and row["horizon"] == 2
     ]
     assert seeded_first == seeded_second
+
+
+def test_validator_rejects_structural_drift(payload: dict[str, Any]) -> None:
+    """Each fail-closed validator branch rejects its named mutation."""
+
+    def drop_calibration(p: dict[str, Any]) -> dict[str, Any]:
+        return {
+            key: value for key, value in p.items() if key != "calibration_stability"
+        }
+
+    cases: list[tuple[Any, str]] = [
+        (lambda p: "not-a-dict", "must be an object"),
+        (lambda p: {**p, "schema_version": "9.9"}, "schema version drift"),
+        (lambda p: {**p, "method": "other"}, "method mismatch"),
+        (lambda p: {**p, "status": "falsified"}, "unexpected evidence status"),
+        (lambda p: {**p, "fields": ["other"]}, "field list drift"),
+        (lambda p: {**p, "stopping_rule": "  "}, "stopping rule is missing"),
+        (
+            lambda p: {**p, "runtime_budget_seconds": 0.0},
+            "runtime budget must be positive",
+        ),
+        (lambda p: {**p, "input_hashes": None}, "input hashes are missing"),
+        (
+            lambda p: {
+                **p,
+                "input_hashes": {**p["input_hashes"], "src/sensing_stress.py": "short"},
+            },
+            "input hash missing or malformed",
+        ),
+        (lambda p: {**p, "upstream": None}, "upstream marker block"),
+        (drop_calibration, "calibration stability block"),
+        (lambda p: {**p, "initial_belief": []}, "initial belief"),
+        (lambda p: {**p, "initial_entropy": -1.0}, "initial entropy"),
+        (lambda p: {**p, "sensors": []}, "sensors are missing"),
+        (
+            lambda p: {**p, "grid": [*p["grid"], dict(p["grid"][0])]},
+            "duplicate grid cell",
+        ),
+        (
+            lambda p: {
+                **p,
+                "grid": [{**p["grid"][0], "policy": "mystery"}, *p["grid"][1:]],
+            },
+            "unknown grid policy",
+        ),
+        (
+            lambda p: {
+                **p,
+                "grid": [
+                    {key: value for key, value in row.items() if key != "objective"}
+                    for row in p["grid"]
+                ],
+            },
+            "grid key missing",
+        ),
+        (
+            lambda p: {
+                **p,
+                "grid": [
+                    {**row, "regret_vs_exact": -1.0}
+                    if row["policy"] != "exact_oracle"
+                    else row
+                    for row in p["grid"]
+                ],
+            },
+            "regret cannot be negative",
+        ),
+        (
+            lambda p: {
+                **p,
+                "grid": [
+                    {**row, "regret_vs_exact": 0.5}
+                    if row["policy"] == "exact_oracle"
+                    else row
+                    for row in p["grid"]
+                ],
+            },
+            "exact reference regret must be exactly zero",
+        ),
+        (
+            lambda p: {
+                **p,
+                "grid": [
+                    {**row, "uncertainty": "made_up"}
+                    if row["policy"] == "exact_oracle"
+                    else row
+                    for row in p["grid"]
+                ],
+            },
+            "uncertainty does not match",
+        ),
+        (
+            lambda p: {
+                **p,
+                "exact_reference_cross_check": [
+                    {**p["exact_reference_cross_check"][0], "match": False}
+                ],
+            },
+            "cross-check did not match",
+        ),
+        (
+            lambda p: {
+                **p,
+                "calibration_stability": {
+                    **p["calibration_stability"],
+                    "repetitions": 9,
+                },
+            },
+            "repetition count drifted",
+        ),
+        (
+            lambda p: {
+                **p,
+                "calibration_stability": {
+                    **p["calibration_stability"],
+                    "uncertainty": "cross_machine_law",
+                },
+            },
+            "not labeled machine-specific",
+        ),
+        (lambda p: {**p, "budget_value_curve": []}, "value curve is missing"),
+        (
+            lambda p: {
+                **p,
+                "budget_value_curve": [
+                    {**row, "upper_bound_information_gain": -5.0}
+                    for row in p["budget_value_curve"]
+                ],
+            },
+            "upper bound is below the achieved gain",
+        ),
+        (
+            lambda p: {**p, "grid_dimensions": {"rows": 1}},
+            "grid dimensions do not match",
+        ),
+    ]
+    for mutate, expected_detail in cases:
+        mutated = mutate(payload)
+        valid, detail = validate_sensing_stress_payload(mutated)
+        assert not valid
+        assert expected_detail in detail
