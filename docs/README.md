@@ -59,6 +59,15 @@ folder and the `manuscript/` sources are authored interfaces.
   multi-architecture adapter fixtures, and exact finite-horizon information
   frontier, each with a separate claim boundary.
 - `verification.md` lists the local and template-side gates and keeps the oracle count generated rather than hard-coded. It also defines the post-render PDF tag-tree audit and VeraPDF gate.
+- `replay_vm.md` defines the pinned, blue-backed Lima guest used for a
+  separately controlled same-host replay of the label-blind public bundle. It
+  is evidence of replay under a distinct guest control boundary, not
+  independent reimplementation or independent physical-machine replication.
+- `replay_operator_runbook.md` is the handoff for an operator who is not the
+  producer of the gold-label receipt: what the public bundle contains, what
+  must never be shared, and the offline replay procedure.
+- `AGENTS.md` is the agent-facing guide to this folder: how the documents
+  relate, the fail-closed status vocabulary, and the editing rules.
 
 The project emits the figure set declared by the source-bound registry under
 `output/figures/`; each has a
