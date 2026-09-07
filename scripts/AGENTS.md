@@ -1,31 +1,43 @@
 # `scripts/` — Agent Guide
 
-## Overview
+## Thin-Orchestrator Contract
 
-Thin orchestrators. Every command here delegates to `src/` modules; no
-scientific logic lives in `scripts/`. Run everything from the project root with
-`uv run`.
+Every file in this directory is a thin orchestrator only: path bootstrap
+(`PROJECT_ROOT = Path(__file__).resolve().parent.parent` inserted into
+`sys.path`), argparse/argument handling, and a single delegated call into a
+`src/` entrypoint. Scientific, data, plotting, and analysis logic must live in
+`src/`, where it is importable and covered by `tests/`. Generated artifacts
+land under `output/` and are disposable; build artifacts such as
+`__pycache__/` and `*.pyc` never belong in `scripts/` (gitignored).
 
-## File Organization
+## Inventory
 
-| Script | Purpose |
-| --- | --- |
-| `00_preflight.py` | Manuscript preflight via the template `infrastructure` package (exits `2` without a template checkout) |
-| `run_scientific_program.py` | Canonical scientific-program CLI (subcommands incl. `acquire-external`) |
-| `run_assembly_inference.py` | Decoding, typed observations, and Julia/RxInfer inference entry point |
-| `run_formal_verification.py` | Builds `formal/` and checks the correspondence fixture |
-| `run_replication.py` | Same-host replay of the label-blind public bundle |
-| `run_rxinfer_backend.py` | Direct Julia/RxInfer backend invocation |
-| `run_julia_tests.py` | Runs the native Julia package test suite |
-| `run_full_verification.sh` | End-to-end local verification sequence |
-| `validate_analysis_outputs.py` | Output artifact validation |
-| `validate_docx_render.py` | Post-render DOCX checks |
-| `validate_pdf_accessibility.py` | Post-render PDF tag-tree / accessibility audit |
-| `z_generate_manuscript_variables.py` | `{{TOKEN}}` hydration for `manuscript/` |
+| Script | Purpose | Delegates to |
+| --- | --- | --- |
+| `00_preflight.py` | Dependency/version preflight: imports capstone, pymdp, unicorn, validates the Julia lockfile, and prints versions (always exits `0`; no template checkout involved) | `src/rxinfer_bridge.py` |
+| `run_scientific_program.py` | Canonical scientific-program CLI with 37 subcommands (protocol/formal/benchmark receipts, external sources, VM replay, replication, figures, manuscript, receipts) | `src/scientific_protocol.py`, `src/formal_correspondence.py`, `src/theorem_phase.py`, `src/counterexample_search.py`, `src/quotient_classifier.py`, `src/intervention_analysis.py`, `src/sensor_costs.py`, `src/sensing_stress.py`, `src/compiler_transfer.py`, `src/artifact_contract.py`, `src/external_sources.py`, `src/external_corpus.py`, `src/external_labeling.py`, `src/replay_vm.py`, `src/replication.py` |
+| `run_assembly_inference.py` | End-to-end assembly observation and inference experiment (decode, typed observations, artifacts) | `src/experiments.py` (`run_experiment`) |
+| `run_formal_verification.py` | Builds `formal/` and writes the pinned Lean correspondence receipt | `src/formal_verification.py` (`write_formal_verification`) |
+| `run_full_verification.sh` | End-to-end local verification gate (pytest, ruff, mypy, formal, replication, RxInfer, manuscript, validators, qpdf, VeraPDF; `--julia` adds the Julia suite) | the other scripts in this directory |
+| `run_julia_tests.py` | Validates Julia/RxInfer pins and runs the native package test suite | `src/rxinfer_bridge.py` |
+| `run_replication.py` | Generates, verifies, or scores the frozen local replication bundle | `src/replication.py` |
+| `run_rxinfer_backend.py` | Runs the Julia/RxInfer backends on the trace bundle and plots diagnostics | `src/experiments.py`, `src/rxinfer_bridge.py`, `src/figures.py` |
+| `validate_analysis_outputs.py` | Regenerates manuscript variables and the source-bound validation report | `src/manuscript_variables.py`, `src/validation.py` |
+| `validate_docx_render.py` | Post-render DOCX structural receipt (fail-closed) | `src/docx_validation.py` |
+| `validate_pdf_accessibility.py` | Post-render PDF tag-tree / accessibility audit | `src/pdf_accessibility.py` |
+| `z_generate_manuscript_variables.py` | Generates manuscript variables and hydrates the `manuscript/` tree through the template renderer | `src/manuscript_variables.py` + template `infrastructure` package (re-exec) |
 
-## Conventions
+## Gotchas
 
-- Scripts import from `src/` only; they may not implement numerics.
-- Network-reaching commands must pass an explicit `--allow-network` flag; see
+- Run everything from the project root via `uv run python scripts/<name>.py`;
+  each script bootstraps `PROJECT_ROOT` itself.
+- `00_preflight.py` is a dependency/version preflight only. It never checks
+  out or validates a template and does not use exit code `2`.
+- Network-reaching subcommands (`acquire-external`, `vm-create`,
+  `vm-provision`) require an explicit `--allow-network` flag; see
   [`../configs/AGENTS.md`](../configs/AGENTS.md).
-- Generated artifacts land under `output/` and are disposable.
+- Figure-producing scripts set `MPLBACKEND=Agg` for deterministic output.
+- `run_full_verification.sh` expects `qpdf` and `verapdf` on `PATH` for its
+  PDF steps.
+- `z_generate_manuscript_variables.py` requires a template checkout; set
+  `TEMPLATE_REPO_ROOT` when it is not the configured sibling.
