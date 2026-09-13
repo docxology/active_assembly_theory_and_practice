@@ -57,7 +57,7 @@ checks the artifacts that a normal test suite can miss:
   `scripts/validate_docx_render.py` and
   `output/data/docx_render_receipt.json`.
 
-Run the validator from the project checkout (`/Users/mini/Documents/GitHub/active_assembly_theory_and_practice`):
+Run the validator from the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
 
 ```bash
 uv run python scripts/validate_analysis_outputs.py

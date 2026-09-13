@@ -20,6 +20,12 @@ def main() -> int:
     # it regenerates the base trace, advanced evaluation, native RxInfer output,
     # figures, evidence ledgers, and the initial validation report together.
     generate_variables()
+    # This is the source-side regeneration gate: it runs before the sibling
+    # template render, so the optional DOCX lane must keep the documented
+    # pre-render deferral (docs/analysis_validation.md). An operator can force
+    # post-render strictness here by exporting ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0;
+    # the fail-closed post-render gate remains scripts/validate_docx_render.py.
+    os.environ.setdefault("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER", "1")
     report = write_validation_report()
     print("validation_passed:", report.summary["passed"])
     print("validation_failed:", report.summary["failed"])

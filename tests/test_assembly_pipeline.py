@@ -558,7 +558,15 @@ def test_reproducibility_manifest_records_current_artifact_hashes() -> None:
     assert (PROJECT_ROOT / "output/figures/artifact_hash_manifest.png").exists()
 
 
-def test_validation_report_checks_outputs_and_nonblank_figures() -> None:
+def test_validation_report_checks_outputs_and_nonblank_figures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The source-side report runs under the documented pre-render contract:
+    # the DOCX lane defers to the sibling template's post-render gate
+    # (docs/analysis_validation.md), so a stale or diagnosed DOCX receipt must
+    # not fail source validation here. The dedicated fail-closed post-render
+    # gate remains scripts/validate_docx_render.py.
+    monkeypatch.setenv("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER", "1")
     generate_variables()
     report = write_validation_report()
 

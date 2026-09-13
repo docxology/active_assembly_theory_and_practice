@@ -188,12 +188,15 @@ it is not an incidental side effect of rendering.
 
 A receipt produced by `write-replay-receipt` remains
 `submitted_pending_verification`; protected ingestion requires a separately
-controlled-run attestation before it can emit
-`independent_replay_observed`. The current checked-in evidence includes that
-endpoint for a same-host separately controlled guest, with the protected score
-retained in `output/data/independent_replay_receipt.json`. This is controlled
-replay of the frozen interface, not independent reimplementation or an
-independent physical-machine result.
+controlled-run attestation before it can emit `independent_replay_observed`.
+The current checked-in endpoint is `not_yet_observed` (see
+`output/data/replication_manifest.json`): the retained same-host guest receipt
+at `output/replication/replay_receipt_same_host.json` is still
+`submitted_pending_verification`, and no separately operated receipt has been
+ingested into `output/data/independent_replay_receipt.json`. When that endpoint
+is eventually observed, it will still be controlled replay of the frozen
+interface, not independent reimplementation or an independent physical-machine
+result.
 
 The public operator surface is intentionally usable without the owner-side
 gold directory: `verify-public`, `replay --offline`, and `run-model` read only

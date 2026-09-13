@@ -32,7 +32,7 @@ general endorsement of the whole demonstrator.
 | The accepted external label denominator and held-out split topology are inspectable without presenting them as model performance. | Generated role counts by project, project/revision allocation, direct split labels, explicit exclusions, and a source-bound caption/figure registry row. | `output/figures/external_label_coverage.png`, `output/data/figure_registry.json` | This is a deterministic provenance census; an empty split cell means no accepted row in that cell, not a zero-valued accuracy estimate, and excluded rows remain outside the accepted denominator. |
 | Sensing policies have auditable deterministic cost vectors, optional local calibration, and exact finite-space certificates. | Eight-component cost receipts, warm-up/trial/timing-overhead records, calibration regression diagnostics, exhaustive dynamic programming, and tolerance/regret fields. | `output/data/sensor_cost_receipt.json` | Optimality is scoped to the frozen finite benchmark; local calibration is machine-specific and does not imply a universal information-per-cost law. |
 | The local replication interface separates public inputs from gold labels and verifies hashes before scoring. | CLI generator/verify/score commands, public/gold manifests, protocol and toolchain hashes, and no-network replay contract. | `output/data/replication_manifest.json`, `output/replication/public/public_manifest.json`, `output/replication/private/gold_labels.json` | This is a frozen replay interface; the observed same-host controlled replay is recorded separately and is not independent implementation or a completed public challenge. |
-| The frozen replay bundle can accept a separately operated submission without allowing a local rerun to self-promote. | Public protocol/toolchain/instruction files, public bundle digest, protected receipt schema, exact identifier and prediction hashes, protected gold scoring, and explicit separate-control attestation. | `output/replication/public/`, `src/replication.py`, `output/data/independent_replay_receipt.json` | The current endpoint is `independent_replay_observed` for a same-host separately controlled guest; this is not independent physical-machine replication or independent reimplementation. |
+| The frozen replay bundle can accept a separately operated submission without allowing a local rerun to self-promote. | Public protocol/toolchain/instruction files, public bundle digest, protected receipt schema, exact identifier and prediction hashes, protected gold scoring, and explicit separate-control attestation. | `output/replication/public/`, `src/replication.py`, `output/data/replication_manifest.json`, `output/replication/replay_receipt_same_host.json` | The current endpoint is `not_yet_observed`: a same-host guest receipt remains `submitted_pending_verification`, and no separately operated receipt has been ingested. Protected ingestion requires an explicit separate-control attestation before it can emit `independent_replay_observed`; this is not independent physical-machine replication or independent reimplementation. |
 | The theorem phase preserves both checked fragments and counterexamples under fail-closed promotion. | Lean theorem receipt, finite computational validation, automatically generated single-intervention counterexample, and explicit status taxonomy. | `output/data/theorem_or_countertheorem.json` | No broad theorem is claimed; unresolved scope and assumptions remain first-class. |
 | A finite label-blind sensor family admits an exact bounded information-per-cost dynamic-programming analysis. | Model-derived sensor likelihoods, exhaustive positive-probability outcome branches, memoized policy counts, and deterministic frontier receipt. | `output/data/active_information_frontier.json` | Costs are proxy units and the horizon/sensor family is finite; this is not a measured cost law, infinite-horizon optimum, autonomous sensing result, or general theorem. |
 | The finite quotient benchmark has an auditable intervention-power curve and minimum separating sets. | Exact enumeration of all non-empty subsets of the four declared interventions, pairwise outcome matrix, singleton negative-control analysis, and regenerated digest. | `output/data/intervention_power.json`, `output/figures/intervention_power.png` | This is a finite combinatorial diagnostic; it is not semantic identifiability, intervention completeness, or a universal separation law. |
@@ -48,12 +48,17 @@ figure nonblankness, fixed-parameter adequacy freshness, artifact-hash freshness
 and manuscript-token closure.
 
 The combined DOCX and tagged PDF are delivery artifacts rather than scientific
-claims. The DOCX receipt at `output/data/docx_render_receipt.json` establishes
-OOXML integrity, source/hydration lineage, and substantive figure/caption
-parity (with validator-produced summaries checked independently); the PDF
-accessibility report separately establishes the configured tag-tree and
-PDF/UA checks. Neither format receipt is evidence of semantic generalization
-or peer-review-level scholarship.
+claims. When it passes, the DOCX receipt at `output/data/docx_render_receipt.json`
+establishes OOXML integrity, source/hydration lineage, and substantive
+figure/caption parity (with validator-produced summaries checked
+independently); the PDF accessibility report separately establishes the
+configured tag-tree and PDF/UA checks. Both receipts are fail-closed gates:
+the current checked-in DOCX receipt reports the documented
+cover-embedding mismatch (media parity 64/65) rather than a passing receipt,
+and the manuscript carries `DOCX_RENDER_STATUS: invalid` until the sibling
+template's combined-DOCX renderer embeds the configured cover. Neither format
+receipt is evidence of semantic generalization or peer-review-level
+scholarship.
 
 The visual atlas adds a parallel claim-control surface. `output/data/figure_registry.json`
 binds each of the 64 substantive visuals to producer code, source-artifact

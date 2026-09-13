@@ -94,6 +94,8 @@ def plot_observation_pipeline(
     category consumed by the inference model.
     """
 
+    if not observations:
+        raise ValueError("observations must not be empty")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     # Deterministic observation_id -> category map (first occurrence wins). The
     # map is a contract, not a plotting convenience: an ID cannot silently
@@ -197,6 +199,10 @@ def plot_posterior_beliefs(
 ) -> Path:
     """Plot posterior beliefs over latent program states."""
 
+    if not inference.posterior_by_step:
+        raise ValueError("posterior_by_step must not be empty")
+    if len(model.hidden_state_labels) != len(inference.posterior_by_step[0]):
+        raise ValueError("hidden_state_labels must match the posterior dimension")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     matrix = np.array(inference.posterior_by_step, dtype=float)
     x = np.arange(matrix.shape[0])
@@ -7381,6 +7387,39 @@ def _caption_context(output_dir: Path) -> dict[str, str]:
     return context
 
 
+def _png_qa_core(path: Path) -> dict[str, Any]:
+    """Single blank-figure oracle shared by the legacy and contract registries."""
+
+    if not path.is_file():
+        return {
+            "status": "missing",
+            "bytes": 0,
+            "sha256": None,
+            "pixel_variance": 0.0,
+            "native_width_px": None,
+            "native_height_px": None,
+        }
+    try:
+        image = np.asarray(plt.imread(path), dtype=float)
+        variance = float(np.var(image))
+        width = int(image.shape[1]) if image.ndim >= 2 else None
+        height = int(image.shape[0]) if image.ndim >= 2 else None
+    except (OSError, SyntaxError, ValueError):
+        variance = 0.0
+        width = None
+        height = None
+    return {
+        "status": "programmatic_nonblank"
+        if path.stat().st_size > 0 and variance > 0.00001
+        else "failed",
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "pixel_variance": variance,
+        "native_width_px": width,
+        "native_height_px": height,
+    }
+
+
 def _figure_registry_rows(
     output_dir: Path, context: dict[str, str]
 ) -> list[dict[str, Any]]:
@@ -7601,23 +7640,13 @@ def _figure_registry_rows(
                 "output/data/sensing_stress.json",
                 "output/data/active_information_frontier.json",
             ]
-        visual_qa: dict[str, Any]
-        if path.is_file():
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
-            variance = float(np.var(plt.imread(path)))
-            visual_qa = {
-                "status": "programmatic_nonblank" if variance > 0.00001 else "failed",
-                "bytes": path.stat().st_size,
-                "sha256": digest,
-                "pixel_variance": variance,
-            }
-        else:
-            visual_qa = {
-                "status": "missing",
-                "bytes": 0,
-                "sha256": None,
-                "pixel_variance": 0.0,
-            }
+        core_qa = _png_qa_core(path)
+        visual_qa = {
+            "status": core_qa["status"],
+            "bytes": core_qa["bytes"],
+            "sha256": core_qa["sha256"],
+            "pixel_variance": core_qa["pixel_variance"],
+        }
         population_text = population.get(stem, "labelled toy corpus fixtures")
         statistics_text = statistics.get(
             stem, "Descriptive plot generated from the canonical analysis artifacts."

@@ -220,7 +220,36 @@ def _check(name: str, condition: bool, detail: str) -> ValidationCheck:
     return ValidationCheck(name=name, passed=bool(condition), detail=detail)
 
 
+TRACE_CHECK_NAMES = (
+    "trace_required_keys",
+    "trace_schema_version",
+    "trace_binary_hash",
+    "trace_instruction_observation_alignment",
+    "trace_required_package_provenance",
+    "trace_optional_roadmap_provenance",
+    "trace_basic_block_coverage",
+    "trace_observation_semantics",
+    "trace_typed_observation_alignment",
+    "trace_dynamic_register_contract",
+    "trace_symbolic_facts_contract",
+)
+
+
 def _trace_checks(trace_path: Path) -> list[ValidationCheck]:
+    """Fail closed with explicit rows when the trace bundle is absent/unreadable."""
+
+    if not trace_path.exists():
+        return [
+            _check(name, False, "missing trace_bundle.json")
+            for name in TRACE_CHECK_NAMES
+        ]
+    try:
+        return _trace_checks_payload(trace_path)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError) as exc:
+        return [_check(name, False, str(exc)) for name in TRACE_CHECK_NAMES]
+
+
+def _trace_checks_payload(trace_path: Path) -> list[ValidationCheck]:
     payload = _load_json(trace_path)
     required = {
         "schema_version",
@@ -992,11 +1021,34 @@ def _cover_image_checks(project_root: Path) -> list[ValidationCheck]:
 
 
 def _rxinfer_checks(trace_path: Path, rxinfer_dir: Path) -> list[ValidationCheck]:
-    records = load_free_energy_records(rxinfer_dir / "free_energy_trace.jsonl")
-    diagnostics = _load_json(rxinfer_dir / "diagnostics.json")
-    posteriors = _load_json(rxinfer_dir / "posteriors.json")
-    model_config = _load_json(rxinfer_dir / "model_config.json")
-    expected_data_hash = file_sha256(trace_path)
+    required_paths = (
+        rxinfer_dir / "free_energy_trace.jsonl",
+        rxinfer_dir / "diagnostics.json",
+        rxinfer_dir / "posteriors.json",
+        rxinfer_dir / "model_config.json",
+        rxinfer_dir / "stdout.log",
+        rxinfer_dir / "stderr.log",
+    )
+    if not all(path.exists() for path in required_paths):
+        missing = [path.name for path in required_paths if not path.exists()]
+        return [
+            _check("rxinfer_free_energy_records", False, f"missing={missing}"),
+            _check("rxinfer_diagnostics_consistent", False, f"missing={missing}"),
+            _check("rxinfer_companion_artifacts", False, f"missing={missing}"),
+        ]
+    try:
+        records = load_free_energy_records(rxinfer_dir / "free_energy_trace.jsonl")
+        diagnostics = _load_json(rxinfer_dir / "diagnostics.json")
+        posteriors = _load_json(rxinfer_dir / "posteriors.json")
+        model_config = _load_json(rxinfer_dir / "model_config.json")
+        expected_data_hash = file_sha256(trace_path)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        detail = str(exc)
+        return [
+            _check("rxinfer_free_energy_records", False, detail),
+            _check("rxinfer_diagnostics_consistent", False, detail),
+            _check("rxinfer_companion_artifacts", False, detail),
+        ]
     checks: list[ValidationCheck] = []
     try:
         validate_free_energy_records(records, expected_data_hash=expected_data_hash)
@@ -1137,7 +1189,11 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
         if not path.exists():
             checks.append(_check(f"figure_{path.stem}", False, "missing"))
             continue
-        image = np.asarray(mpimg.imread(path), dtype=float)
+        try:
+            image = np.asarray(mpimg.imread(path), dtype=float)
+        except (OSError, SyntaxError, ValueError) as exc:
+            checks.append(_check(f"figure_{path.stem}", False, f"unreadable: {exc}"))
+            continue
         checks.append(
             _check(
                 f"figure_{path.stem}",
@@ -1315,7 +1371,34 @@ def _figure_registry_checks(output_dir: Path) -> list[ValidationCheck]:
     ]
 
 
+SCHOLARSHIP_CHECK_NAMES = (
+    "scholarship_bibliography_coverage",
+    "scholarship_citation_closure",
+    "scholarship_claim_boundaries",
+    "scholarship_evidence_partition",
+    "scholarship_manuscript_usage",
+    "scholarship_source_quality",
+)
+
+
 def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
+    """Fail closed with explicit rows when the citation surface is unreadable."""
+
+    references_path = project_root / "manuscript" / "references.bib"
+    manuscript_paths = sorted((project_root / "manuscript").glob("*.md"))
+    if not references_path.exists() or not manuscript_paths:
+        detail = (
+            f"missing references.bib={not references_path.exists()} "
+            f"manuscript_files={len(manuscript_paths)}"
+        )
+        return [_check(name, False, detail) for name in SCHOLARSHIP_CHECK_NAMES]
+    try:
+        return _scholarship_checks_payload(project_root)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError) as exc:
+        return [_check(name, False, str(exc)) for name in SCHOLARSHIP_CHECK_NAMES]
+
+
+def _scholarship_checks_payload(project_root: Path) -> list[ValidationCheck]:
     references = (project_root / "manuscript" / "references.bib").read_text(
         encoding="utf-8"
     )
@@ -3014,11 +3097,11 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     checks.extend(_theorem_countertheorem_checks(project_root))
     checks.extend(_counterexample_search_checks(project_root))
     checks.extend(_sensing_stress_checks(project_root))
+    checks.extend(_documentation_checks(project_root))
+    checks.extend(_build_provenance_checks(project_root))
     checks.extend(
         _claim_register_checks(project_root, {check.name for check in checks})
     )
-    checks.extend(_documentation_checks(project_root))
-    checks.extend(_build_provenance_checks(project_root))
     passed = sum(check.passed for check in checks)
     failed = len(checks) - passed
     report_path = output_dir / "data" / "validation_report.json"

@@ -1646,6 +1646,18 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
         float(permutation.get("balanced_accuracy", float("nan")))
     ):
         return False, "quotient classifier label-permutation control is missing"
+    permutation_balanced_accuracy = float(permutation["balanced_accuracy"])
+    if permutation_balanced_accuracy >= 0.5:
+        return (
+            False,
+            "quotient classifier label-permutation control is not below chance",
+        )
+    for name in (*MODEL_FAMILIES, "surface_baseline"):
+        if permutation_balanced_accuracy >= float(models[name]["balanced_accuracy"]):
+            return (
+                False,
+                f"quotient classifier label-permutation control matches or beats {name}",
+            )
     comparisons = payload.get("model_comparisons")
     if not isinstance(comparisons, dict) or set(MODEL_FAMILIES) - set(comparisons):
         return False, "quotient classifier comparison ledger is missing"

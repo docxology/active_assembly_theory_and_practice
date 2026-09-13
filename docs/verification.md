@@ -1,6 +1,6 @@
 # Verification
 
-Run from the project checkout (`/Users/mini/Documents/GitHub/active_assembly_theory_and_practice`):
+Run from the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
 
 ```bash
 uv run pytest tests \
@@ -64,7 +64,7 @@ Run the Julia integration gate:
 uv run python scripts/run_julia_tests.py
 ```
 
-Render from `/Users/mini/Documents/GitHub/template`:
+Render from `/Volumes/external_drive/Git/template`:
 
 ```bash
 uv run python -m infrastructure.orchestration link-projects --dry-run
@@ -95,13 +95,13 @@ Post-render sanity checks:
 
 ```bash
 rg -n "\\{\\{[A-Z0-9_]+\\}\\}" \
-  /Users/mini/Documents/GitHub/active_assembly_theory_and_practice/output/manuscript
+  /Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice/output/manuscript
 ```
 
 Artifact freshness sanity check:
 
 ```bash
-cd /Users/mini/Documents/GitHub/active_assembly_theory_and_practice
+cd /Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice
 uv run python - <<'PY'
 from src.reproducibility import verify_reproducibility_manifest
 

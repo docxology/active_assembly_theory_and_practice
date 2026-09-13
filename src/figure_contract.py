@@ -27,7 +27,6 @@ from typing import Any, Iterable, Mapping
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-import numpy as np
 
 from .artifact_contract import write_json_artifact, write_json_atomic
 from .figures import (
@@ -35,6 +34,7 @@ from .figures import (
     FIGURE_CITATIONS,
     _caption_context,
     _figure_registry_rows,
+    _png_qa_core,
     write_figure_captions,
 )
 from .visual_atlas import NARRATIVE_FIGURE_IDS, write_visual_atlas_figures
@@ -671,30 +671,15 @@ def _visual_qa(path: Path, vector_dir: Path) -> dict[str, Any]:
             "vector_svg": False,
             "vector_pdf": False,
         }
-    try:
-        image = np.asarray(mpimg.imread(path), dtype=float)
-        variance = float(np.var(image))
-    except (OSError, SyntaxError, ValueError):
-        variance = 0.0
+    core = _png_qa_core(path)
     svg_path = vector_dir / f"{path.stem}.svg"
     pdf_path = vector_dir / f"{path.stem}.pdf"
     svg_ok = svg_path.is_file() and b"<svg" in svg_path.read_bytes()[:2048].lower()
     pdf_ok = pdf_path.is_file() and pdf_path.read_bytes()[:4] == b"%PDF"
     return {
-        "status": "programmatic_nonblank"
-        if path.stat().st_size > 0 and variance > 0.00001
-        else "failed",
-        "bytes": path.stat().st_size,
-        "sha256": _sha256(path),
-        "pixel_variance": variance,
+        **core,
         "vector_svg": svg_ok,
         "vector_pdf": pdf_ok,
-        "native_width_px": int(image.shape[1])
-        if "image" in locals() and image.ndim >= 2
-        else None,
-        "native_height_px": int(image.shape[0])
-        if "image" in locals() and image.ndim >= 2
-        else None,
     }
 
 

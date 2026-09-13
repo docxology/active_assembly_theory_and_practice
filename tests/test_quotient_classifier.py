@@ -244,6 +244,17 @@ def test_classifier_receipt_validation_rejects_core_drift() -> None:
         assert validate_quotient_classifier_payload(corrupted)[0] is False
 
 
+def test_classifier_label_permutation_control_drift_fails_closed() -> None:
+    """A permutation control at or above chance must fail the receipt gate."""
+
+    payload = quotient_classifier_payload()
+    corrupted = copy.deepcopy(payload)
+    corrupted["negative_controls"]["label_permutation"]["balanced_accuracy"] = 0.9
+    valid, detail = validate_quotient_classifier_payload(corrupted)
+    assert valid is False
+    assert "not below chance" in detail
+
+
 def test_classifier_payload_recomputes_full_portfolio_when_cache_is_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -258,4 +269,12 @@ def test_classifier_payload_recomputes_full_portfolio_when_cache_is_disabled(
     assert payload["status"] == "validated_bounded"
     assert len(payload["surface_baseline_comparisons"]) == len(MODEL_FAMILIES)
     assert payload["neural_gradient_check"]["passed"] is True
-    assert payload["negative_controls"]["label_permutation"]["rows"] > 0
+    permutation = payload["negative_controls"]["label_permutation"]
+    assert permutation["rows"] > 0
+    # The label-permutation negative control must lose: at or below chance and
+    # strictly below every co-primary model and the surface baseline.
+    permutation_balanced_accuracy = permutation["balanced_accuracy"]
+    assert permutation_balanced_accuracy < 0.5
+    for name in (*MODEL_FAMILIES, "surface_baseline"):
+        model_balanced_accuracy = payload["models"][name]["balanced_accuracy"]
+        assert permutation_balanced_accuracy < model_balanced_accuracy, name

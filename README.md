@@ -88,7 +88,7 @@ general sensing law.
 
 ## Run
 
-From the project checkout (`/Users/mini/Documents/GitHub/active_assembly_theory_and_practice`):
+From the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
 
 ```bash
 uv run python scripts/run_assembly_inference.py
@@ -163,7 +163,7 @@ uv run python scripts/validate_pdf_accessibility.py
 Render through the sibling template engine:
 
 ```bash
-cd /Users/mini/Documents/GitHub/template
+cd /Volumes/external_drive/Git/template
 uv run python -m infrastructure.orchestration link-projects --dry-run
 uv run python -m infrastructure.orchestration link-projects
 uv run python scripts/pipeline/stage_03_render.py \
