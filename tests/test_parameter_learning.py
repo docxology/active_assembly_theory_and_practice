@@ -46,6 +46,10 @@ def test_parameter_learning_payload_is_complete_and_leakage_safe() -> None:
     valid, detail = validate_parameter_learning_payload(payload)
     assert valid, detail
     assert payload["phase_labels_used_for_fit"] is False
+    # MIN-07: the failing-surface status must stay visible in the receipt; a
+    # regression flipping it to a passing status must fail this suite.
+    assert payload["status"] == "underpowered"
+    assert payload["underpowered_cases"]
     summary = cast(dict[str, object], payload["summary"])
     rows = cast(list[dict[str, object]], payload["per_fixture"])
     assert summary["leakage_free"] is True

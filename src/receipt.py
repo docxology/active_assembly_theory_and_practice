@@ -9,6 +9,8 @@ can attach to their domain payloads and validators can check consistently.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from pathlib import Path
 import re
 from typing import Any, Iterable
 
@@ -164,10 +166,55 @@ def validate_receipt_envelope(
     return True, "ok"
 
 
+def promote_evidence_summary(root: Path) -> dict[str, Any]:
+    """Summarize the promotion-tranche receipt statuses without executing anything.
+
+    Read-only projection of the evidence surfaces the promotion pipeline
+    depends on.  Imports are deferred: this module is imported by nearly every
+    producer, and the evidence constants live in modules that import it back.
+    """
+
+    from .external_labeling import LABEL_CONTRACT_ARTIFACT
+    from .external_sources import (
+        EXTERNAL_ACQUISITION_ARTIFACT,
+        EXTERNAL_CAPABILITY_ARTIFACT,
+        EXTERNAL_RECEIPT_ARTIFACT,
+        EXTERNAL_STATIC_RECEIPT_ARTIFACT,
+    )
+    from .replication import INDEPENDENT_REPLAY_ARTIFACT, REPLICATION_ARTIFACT
+
+    status_paths = {
+        "P13_external_validation": root / EXTERNAL_RECEIPT_ARTIFACT,
+        "P13_source_bound_labels": root / LABEL_CONTRACT_ARTIFACT,
+        "P13_static_only": root / EXTERNAL_STATIC_RECEIPT_ARTIFACT,
+        "P13_capabilities": root / EXTERNAL_CAPABILITY_ARTIFACT,
+        "P13_acquisition": root / EXTERNAL_ACQUISITION_ARTIFACT,
+        "P15_local_replay_harness": root / REPLICATION_ARTIFACT,
+        "P15_independent_replay": root / INDEPENDENT_REPLAY_ARTIFACT,
+    }
+    rows: dict[str, object] = {}
+    for name, path in status_paths.items():
+        if not path.is_file():
+            rows[name] = {"status": "not_yet_observed", "path": str(path)}
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            rows[name] = {"status": "failed", "path": str(path), "detail": str(exc)}
+            continue
+        rows[name] = {
+            "status": payload.get("status", "not_yet_observed"),
+            "endpoint_status": payload.get("endpoint_status"),
+            "path": str(path),
+        }
+    return {"status": "read_only_summary", "surfaces": rows}
+
+
 __all__ = [
     "EVIDENCE_STATUSES",
     "RECEIPT_SCHEMA_VERSION",
     "ReceiptEnvelope",
     "build_receipt_envelope",
+    "promote_evidence_summary",
     "validate_receipt_envelope",
 ]

@@ -87,16 +87,16 @@ The project follows the template code-project pattern:
     generated Lean fixture with kernel-checked state invariants. The `formal/`
     tree is a declared normalized fragment, not complete x86 semantics or a
     proof of the Python/Capstone/Unicorn path.
-29. `src/multi_arch.py` runs real Capstone and Unicorn adapters for one
+30. `src/multi_arch.py` runs real Capstone and Unicorn adapters for one
     transparent numeric operation on x86-64, AArch64, and RISC-V64. Its
     receipt is an adapter benchmark with explicit cross-ISA non-claims.
-30. `src.information_policy.py` projects the label-blind factorized model into
+31. `src.information_policy.py` projects the label-blind factorized model into
     finite sensor channels and solves a bounded information-per-cost policy
     problem exactly by dynamic programming. `src.sensor_costs` records an
     auditable deterministic cost vector for each action and, when requested,
     overhead-corrected local timing calibration; cross-machine timing and
     universal cost laws remain out of scope.
-31. `src.external_sources.py` accepts only a pinned, license-cleared manifest,
+32. `src.external_sources.py` accepts only a pinned, license-cleared manifest,
     acquires archives through the explicit network-enabled command, compiles
     locally in static-only mode, hashes source/object/disassembly products, and
     never executes emitted external binaries. `src.external_corpus.py` keeps
@@ -105,14 +105,14 @@ The project follows the template code-project pattern:
     private gold labels, hashes the public protocol/toolchain/instructions,
     exposes offline replay, and requires an explicit separate-control
     attestation before protected ingestion can promote a replay receipt.
-32. `src.intervention_analysis.py` computes the exact finite intervention-power
+33. `src.intervention_analysis.py` computes the exact finite intervention-power
     matrix from the source-bound quotient outcomes, enumerating every non-empty
     subset and retaining the minimum separating sets and one-state negative
     control. It never derives labels from model predictions.
-33. `src/parameter_learning.py` retains deterministic reference, uniform, and
+34. `src/parameter_learning.py` retains deterministic reference, uniform, and
     three seeded-random starts for each holdout so initialization sensitivity is
     visible in the receipt and figure rather than hidden by selecting one fit.
-34. `src.advanced_inference.py` is the thin orchestrator that composes the above
+35. `src.advanced_inference.py` is the thin orchestrator that composes the above
     and writes `temporal_inference.json`, `phase_segments.json`,
     `active_selection.json`, `evaluation_report.json`, `cfg_evidence.json`,
     `memory_evidence.json`, `held_out_model.json`, `generative_adequacy.json`,
@@ -125,17 +125,17 @@ The project follows the template code-project pattern:
     discipline as the trace surface. See
     `docs/evaluation.md`.
 
-35. `src.visual_atlas.py` produces the nine narrative visuals from live
+36. `src.visual_atlas.py` produces the nine narrative visuals from live
     receipts, while `src/figure_contract.py` unifies all 64 substantive figure
     specifications, source hashes, captions, alternatives, long descriptions,
     vector companions, and the offline semantic atlas. Legacy plotting callers
     remain compatible through `FIGURE_CAPTIONS` and the existing path tokens.
-36. `src.manuscript_variables.py` projects canonical figure metadata into the
+37. `src.manuscript_variables.py` projects canonical figure metadata into the
     template variable surface. Embedded figures use registry-backed caption and
     path tokens; unembedded figures are marked explicitly as atlas-only so the
     variable audit does not confuse a complete metadata surface with an unused
     scientific value.
-37. `scripts/run_scientific_program.py` exposes `generate-figures`,
+38. `scripts/run_scientific_program.py` exposes `generate-figures`,
     `audit-figures`, and `render-manuscript` as thin orchestration entry points.
     The sibling template remains the renderer of record for DOCX, PDF, HTML,
     and slides.

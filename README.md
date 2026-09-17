@@ -111,10 +111,6 @@ uv run python scripts/run_scientific_program.py validate-external
 
 uv run python scripts/run_scientific_program.py generate-public
 
-uv run python scripts/run_scientific_program.py replay --offline
-
-uv run python scripts/run_scientific_program.py verify-public
-
 # Acquisition is the only network-enabled command and is always explicit.
 uv run python scripts/run_scientific_program.py acquire-external \
   --manifest configs/external_sources.yaml \
@@ -180,112 +176,21 @@ changes, rerun project-side hydration before rendering again.
 
 ## Outputs
 
-- `output/data/disassembly_trace.json`
-- `output/data/emulation_trace.json`
-- `output/data/inference_result.json`
+Generated artifacts live under `output/`. The authoritative enumerations are
+the reproducibility manifest (`output/data/reproducibility_manifest.json`,
+with SHA-256 and byte-size rows for every project-owned artifact) and the
+figure registry (`output/data/figure_registry.json`, 64 figures with
+generators, inputs, statistics, claims, alt text, long descriptions, and the
+machine visual-QA receipt). `output/figures/README.md` is the generated
+caption ledger for every figure. Representative paths:
+
 - `output/data/trace_bundle.json`
-- `output/data/symbolic_execution.json`
-- `output/figures/trace_refinement.png`
-- `output/data/cfg_evidence.json`
-- `output/data/memory_evidence.json`
-- `output/data/held_out_model.json`
-- `output/data/generative_adequacy.json`
-- `output/data/typed_observations.json`
-- `output/data/factorized_observation_model.json`
-- `output/data/corpus_coverage.json`
-- `output/data/action_sensing.json`
-- `output/data/parameter_learning.json`
-- `output/data/scientific_program.json`
-- `output/data/quotient_invariance_protocol.json`
 - `output/data/representation_invariance_benchmark.json`
-- `output/data/intervention_power.json`
-- `output/data/formal_verification.json`
-- `output/data/cross_architecture_fixtures.json`
-- `output/data/active_information_frontier.json`
-- `output/data/quotient_classifier.json`
-- `output/data/formal_trace_correspondence.json`
-- `output/data/compiler_transfer.json`
-- `output/data/sensor_cost_receipt.json`
 - `output/data/replication_manifest.json`
-- `output/data/theorem_or_countertheorem.json`
-- `output/data/counterexample_search.json`
-- `output/data/sensing_stress.json`
-- `output/docx/active_assembly_theory_and_practice_combined.docx`
-- `output/data/docx_render_receipt.json`
-- `output/data/scholarship_sources.json`
-- `output/data/claim_register.json`
-- `output/data/reproducibility_manifest.json`
 - `output/data/validation_report.json`
-- `output/data/manuscript_variables.json`
-- `output/rxinfer/free_energy_trace.jsonl`
-- `output/rxinfer/posteriors.json`
-- `output/rxinfer/diagnostics.json`
-- `output/rxinfer/model_config.json`
-- `output/rxinfer_categorical/categorical_free_energy_trace.jsonl`
-- `output/rxinfer_categorical/categorical_posteriors.json`
-- `output/rxinfer_categorical/categorical_diagnostics.json`
-- `output/rxinfer_categorical/categorical_model_config.json`
-- `output/figures/observation_pipeline.png`
-- `output/figures/posterior_beliefs.png`
-- `output/figures/package_provenance.png`
-- `output/figures/trace_feature_matrix.png`
-- `output/figures/scholarship_source_roles.png`
-- `output/figures/rxinfer_free_energy.png`
-- `output/figures/inference_diagnostics.png`
-- `output/figures/scholarship_evidence_matrix.png`
-- `output/figures/claim_evidence_map.png`
-- `output/figures/artifact_hash_manifest.png`
 - `output/figures/temporal_beliefs_x86_accumulator.png`
-- `output/figures/temporal_beliefs_x86_bitwise.png`
-- `output/figures/temporal_beliefs_x86_guard.png`
-- `output/figures/temporal_beliefs_x86_long_accumulator.png`
-- `output/figures/temporal_beliefs_x86_memory.png`
-- `output/figures/temporal_beliefs_x86_guard_taken.png`
-- `output/figures/model_comparison.png`
-- `output/figures/active_efe.png`
-- `output/figures/assembly_cfg.png`
-- `output/figures/assembly_memory_timeline.png`
-- `output/figures/rxinfer_categorical_free_energy.png`
-- `output/figures/calibration_curve.png`
-- `output/figures/confusion_matrix.png`
-- `output/figures/ambiguity_ablation.png`
-- `output/figures/segmentation_ribbons.png`
-- `output/figures/corpus_stability.png`
-- `output/figures/phase_recovery.png`
-- `output/figures/decoder_calibration.png`
-- `output/figures/generative_model.png`
-- `output/figures/observation_informativeness.png`
-- `output/figures/model_evidence.png`
-- `output/figures/transition_ablation.png`
-- `output/figures/validation_summary.png`
-- `output/figures/generative_adequacy.png`
-- `output/figures/typed_observation_matrix.png`
-- `output/figures/factorized_observation_comparison.png`
-- `output/figures/corpus_coverage.png`
-- `output/figures/action_sensing.png`
-- `output/figures/parameter_learning.png`
-- `output/figures/intervention_power.png`
-- `output/figures/cross_architecture_benchmark.png`
-- `output/figures/formal_verification_receipt.png`
-- `output/figures/active_information_frontier.png`
-- `output/figures/quotient_classifier.png`
-- `output/figures/compiler_transfer.png`
-- `output/figures/formal_correspondence.png`
-- `output/figures/artifact_receipt_closure.png`
-- `output/figures/sensor_costs.png`
-- `output/figures/replication_manifest.png`
-- `output/figures/counterexample_search.png`
-- `output/figures/sensing_stress.png`
-- `output/figures/external_label_coverage.png`
-- `output/figures/README.md` (generated caption ledger for every figure)
-- `output/data/figure_registry.json` (generator, inputs, statistics, claims,
-  alt text, long descriptions, and machine visual-QA receipt)
-- `output/figures/figure_registry.json` (template-renderer boundary projection;
-  validation requires exact labels, filenames, row count, and alt text)
-- `output/data/manuscript_variable_registry.json` (typed values, formatting,
-  consumers, input hashes, and template-hydration contract)
-- `output/data/build_provenance.json` (target/template revisions and lineage)
-- `manuscript/assets/active_assembly_cover.png` (config-driven paper cover asset)
+- `output/rxinfer/free_energy_trace.jsonl`
+- `output/docx/active_assembly_theory_and_practice_combined.docx`
 
 ## Reproducibility notes
 

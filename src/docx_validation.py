@@ -18,7 +18,7 @@ from pathlib import Path
 import re
 from typing import Any
 import zipfile
-from xml.etree import ElementTree
+from defusedxml import ElementTree
 
 import yaml
 

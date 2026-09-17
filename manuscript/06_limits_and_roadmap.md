@@ -20,7 +20,8 @@ central simulation intervals, for an observed coverage fraction of
 `{{GENERATIVE_ADEQUACY_INSIDE_FRACTION}}`. These are descriptive diagnostics
 of the declared `A/B/D` model, not posterior uncertainty intervals or evidence
 of population-level fit [@gelman2013bda]. The complete per-fixture record is
-available in `{{GENERATIVE_ADEQUACY_ARTIFACT}}`.
+available in `{{GENERATIVE_ADEQUACY_ARTIFACT}}` and visualized in
+[@fig:generative-adequacy].
 This fixed-parameter categorical phase-HMM does not establish learned semantic
 representations or external validity.
 
@@ -161,7 +162,8 @@ Benchmark receipt `{{REPRESENTATION_BENCHMARK_ARTIFACT}}`: `{{REPRESENTATION_BEN
 families/pairs; primary consistency/separation `{{REPRESENTATION_BENCHMARK_EQUIVALENCE_CONSISTENCY}}`/`{{REPRESENTATION_BENCHMARK_NEAR_MISS_SEPARATION}}`;
 `{{REPRESENTATION_BENCHMARK_SURFACE_BLIND_NEAR_MISS_COUNT}}` surface-blind controls; negative-control separation
 `{{REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_SEPARATION}}` (`{{REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_UNSEPARATED_COUNT}}` unresolved).
-The accompanying benchmark plot reports the same endpoints with descriptive
+The accompanying benchmark plot ([@fig:representation-invariance-benchmark])
+reports the same endpoints with descriptive
 Wilson intervals whose unit is the source-program family. The intervals make the
 small number of independent families visible; they are not posterior or
 population uncertainty, and the negative-control panel is an intervention
@@ -176,19 +178,19 @@ promotion state remains deliberately asymmetric:
 
 | Phase | Earned local evidence | What remains unearned |
 | --- | --- | --- |
-| P3 quotient benchmark | 64-family source-disjoint quotient labels, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent implementation and any claim of semantic discovery |
+| P3 quotient benchmark | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family source-disjoint quotient labels, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent implementation and any claim of semantic discovery |
 | P4 formal correspondence | explicit 16-register/width-aware Python state, real Capstone/Unicorn step comparison, and a separately kernel-checked Lean fragment | broad Lean/Python correspondence theorem for the full declared user-mode subset |
 | P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
 | P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |
-| P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, replay metadata, and an observed same-host controlled guest run | independent implementation, independent physical/CI replay, and external scientific review |
+| P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, replay metadata, and recorded replay status `{{INDEPENDENT_REPLAY_STATUS}}` | independent implementation, independent physical/CI replay, and external scientific review |
 | P8 theorem phase | proved small algebraic theorem group, automatically generated bounded counterexample, and a smallest-first exhaustive counterexample-search receipt over declared candidates | broad trace theorem, transfer guarantee, or field-changing general result |
 | P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
-| P12 scaled transfer/quotient | 64-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
-| P13 licensed external validation | ten pinned rows across five projects and two revisions, static-only acquisition/compiler path, Capstone decoding, 100 source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
+| P12 scaled transfer/quotient | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
+| P13 licensed external validation | `{{EXTERNAL_STATIC_ROW_COUNT}}` pinned rows across `{{EXTERNAL_LABEL_PROJECT_COUNT}}` projects and two revisions per project, static-only acquisition/compiler path, Capstone decoding, `{{EXTERNAL_LABEL_ROW_COUNT}}` source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
 | P14 measured policy robustness | deterministic/calibrated cost receipts, finite oracle certificate, stress-grid policy regret and budget-value gaps, and repeated local calibration-stability rows | universal cost law or non-oracle near-optimality claim beyond the declared grid |
-| P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; the observed same-host guest is not independent reimplementation |
+| P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; controlled replay of the frozen interface is not independent reimplementation |
 | P16 promotion hardening | theorem/countertheorem status map, source-bound claim/figure/scholarship closure, and accessible regeneration path | publication or award-level claim absent independent scientific review |
 | P17 protocol/artifact closure | protocol-v2 envelope on the project-owned JSON surface, atomic producer writes, receipt audit, and source-bound manuscript/document closure | semantic identifiability, external validity, independent replication, or theorem promotion |
 

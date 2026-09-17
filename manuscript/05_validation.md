@@ -5,14 +5,17 @@ to `{{SCHOLARSHIP_SOURCE_LEDGER}}`. Each source is assigned a project role and
 a claim boundary, so software-package documentation, peer-reviewed active
 inference theory, and optional binary-analysis adapters do not collapse into a
 single undifferentiated support claim.
+The role partition is shown in [@fig:scholarship-source-roles].
 
 The project also writes a claim register with `{{CLAIM_COUNT}}` bounded claims
 to `{{CLAIM_REGISTER}}`; `{{VALIDATED_CLAIM_COUNT}}` are linked to sources,
-generated artifacts, validation checks, and explicit boundary text.
+generated artifacts, validation checks, and explicit boundary text. The linked
+evidence matrix and claim-to-evidence map are shown in
+[@fig:scholarship-evidence-matrix] and [@fig:claim-evidence-map].
 The generated artifact surface is separately recorded in
 `{{REPRODUCIBILITY_MANIFEST}}`, which tracks
 `{{REPRODUCIBILITY_ARTIFACT_COUNT}}` analysis artifacts by file size and
-SHA-256 digest.
+SHA-256 digest; the manifest is visualized in [@fig:artifact-hash-manifest].
 
 The sibling docxology/template renderer is also configured to emit a standard
 combined DOCX at `{{DOCX_RENDER_ARTIFACT}}`. The current source-bound interface
@@ -49,7 +52,8 @@ the reproducibility manifest. The current receipt layer is schema
 `{{ARTIFACT_RECEIPT_ERROR_COUNT}}` envelope errors. The audit command is
 `{{ARTIFACT_RECEIPT_AUDIT_COMMAND}}`. Domain schema versions remain intact;
 the receipt layer adds protocol, producer, input, toolchain, limitation, and
-status lineage. This design follows provenance and research-object packaging
+status lineage, visualized in [@fig:artifact-receipt-closure]. This design
+follows provenance and research-object packaging
 practice [@w3cprov2013;@rocrate2023;@sandve2013repro], while preserving the
 important distinction between local reproducibility and independent replication
 [@acm2020artifact].
@@ -59,7 +63,8 @@ important distinction between local reproducibility and independent replication
 The analysis validator reports `{{VALIDATION_PASS_COUNT}}` passing checks out
 of `{{VALIDATION_TOTAL_COUNT}}`, with `{{VALIDATION_FAIL_COUNT}}` failures and
 `all_passed = {{VALIDATION_ALL_PASSED}}`. The report is written to
-`{{VALIDATION_REPORT}}`. It checks trace schema fields, sample hashes, required
+`{{VALIDATION_REPORT}}` and summarized in [@fig:validation-summary]. It checks
+trace schema fields, sample hashes, required
 package provenance, trace observation semantics, dynamic-register trace shape,
 RxInfer free-energy finiteness, RxInfer companion artifact consistency,
 categorical-companion model identity, memory-operand to dynamic-event joins,
@@ -99,8 +104,8 @@ The new source-bound artifact family is:
 | formal correspondence | real Capstone decode, bounded Unicorn trace, Python reference step alignment, modeled flags, and Lean prerequisite | declared transparent subset only; no complete x86-64 theorem |
 | compiler transfer | exact local target command, source/object/disassembly hashes, Capstone decode, no object execution, explicit unavailable cells | capability receipt only; no compiler-generalization or application claim |
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |
-| external static corpus | ten pinned source rows, archive/license digests, static compilation, disassembly hashes, Capstone coverage, and explicit failed rows | static coverage and lineage only; no application effectiveness |
-| source-bound label contract | 100 accepted rows across five projects and two revisions: 40 lexical-equivalence witnesses, 40 contract-directed near misses, and 20 identity negative controls; base/pair source, object, and disassembly hashes; project-held-out test split | source-contract and static provenance evidence only; lexical comments are not universal equivalence proofs, near misses are not executed behavioral labels, and no application claim follows |
+| external static corpus | `{{EXTERNAL_STATIC_ROW_COUNT}}` pinned source rows, archive/license digests, static compilation, disassembly hashes, Capstone coverage, and explicit failed rows | static coverage and lineage only; no application effectiveness |
+| source-bound label contract | `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows across `{{EXTERNAL_LABEL_PROJECT_COUNT}}` projects and two revisions per project: `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical-equivalence witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` contract-directed near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity negative controls; base/pair source, object, and disassembly hashes; project-held-out test split | source-contract and static provenance evidence only; lexical comments are not universal equivalence proofs, near misses are not executed behavioral labels, and no application claim follows |
 | replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | frozen interface and local replay contract; no independent implementation claim |
 | replay ingestion | protected scoring boundary, explicit separate-control attestation, mismatch retention, and source-bound receipt hashes | `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`; observed controlled replay does not imply independent physical-machine replication or independent reimplementation |
 | theorem phase | checked Lean theorem list plus generated bounded counterexample | fail-closed; unresolved claims remain unresolved |

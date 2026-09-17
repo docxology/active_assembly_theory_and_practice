@@ -278,3 +278,46 @@ def test_classifier_payload_recomputes_full_portfolio_when_cache_is_disabled(
     for name in (*MODEL_FAMILIES, "surface_baseline"):
         model_balanced_accuracy = payload["models"][name]["balanced_accuracy"]
         assert permutation_balanced_accuracy < model_balanced_accuracy, name
+
+
+def test_payload_reports_pilot_receipt_for_pilot_scale_corpus(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MIN-07: a sub-promotion corpus must drive the underpowered branch."""
+
+    real_specs = quotient_module._family_specs()
+    pilot_specs = real_specs[:16]
+    monkeypatch.setattr(quotient_module, "_family_specs", lambda: pilot_specs)
+    monkeypatch.setattr(
+        quotient_module, "_cached_quotient_classifier_payload", lambda: None
+    )
+    quotient_module._dataset.cache_clear()
+    try:
+        payload = quotient_module.quotient_classifier_payload()
+    finally:
+        quotient_module._dataset.cache_clear()
+
+    assert payload["family_count"] == 16
+    assert payload["status"] == "underpowered"
+    assert payload["endpoint_status"] == "pilot_receipt"
+    assert payload["underpowered_cases"]
+    assert (
+        "Promotion target requires at least 64 independent families"
+        in payload["underpowered_cases"][0]
+    )
+
+
+def test_validator_accepts_underpowered_status_on_pilot_summary() -> None:
+    """MIN-07: the receipt validator must accept the declared pilot status."""
+
+    payload = quotient_classifier_payload()
+    summary = copy.deepcopy(payload)
+    summary["status"] = "underpowered"
+    summary["endpoint_status"] = "pilot_receipt"
+    summary["family_count"] = 48
+    summary["row_count"] = 48 * 64
+    summary["underpowered_cases"] = [
+        "Promotion target requires at least 64 independent families, "
+        "64 rows per family, and 16 held-out families."
+    ]
+    assert validate_quotient_classifier_payload(summary) == (True, "ok")

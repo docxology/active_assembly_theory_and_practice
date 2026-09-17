@@ -86,14 +86,16 @@ frontier as a general law.
 
 The replication boundary follows the same logic. The public bundle is label-blind,
 hash-bound, and replayable without network access; its protected scorer can compare
-predictions without distributing the gold labels. The current receipt records a
-same-host separately controlled guest replay, which demonstrates that the frozen
-public interface crossed a distinct control boundary. It is not an independent
-physical-machine run, independent reimplementation, or independent scientific
-review. The protected score is also poor, so the replay provides reproducibility
-evidence and a negative model result rather than external confirmation of the
-inference claim. Keeping these evidence states separate prevents an engineering
-rerun from being mistaken for scientific generalization.
+predictions without distributing the gold labels. No independent replay has been
+observed yet: the recorded status is `{{INDEPENDENT_REPLAY_STATUS}}` in the
+`{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` control scope, while the replay interface
+and the protected-scoring endpoint remain frozen and ready. A recorded controlled
+replay would demonstrate that the frozen public interface crossed a distinct
+control boundary; it would not be an independent physical-machine run, an
+independent reimplementation, or independent scientific review, and it would
+provide no external confirmation of the inference claim. Keeping these evidence
+states separate prevents an engineering rerun from being mistaken for scientific
+generalization.
 
 ## What the visual atlas adds to the scientific argument
 

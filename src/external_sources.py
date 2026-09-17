@@ -32,7 +32,12 @@ import yaml
 
 from .artifact_contract import write_json_artifact
 from .compiler_transfer import _decode_bytes, _extract_text_bytes
-from .external_corpus import LABEL_CONTRACT_PATH, label_contract_summary
+from .external_corpus import (
+    LABEL_CONTRACT_PATH,
+    label_contract_summary,
+    load_label_contracts,
+    validate_label_contracts,
+)
 from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
@@ -268,6 +273,28 @@ def validate_external_manifest(payload: object) -> tuple[bool, str]:
     except ValueError as exc:
         return False, str(exc)
     return True, f"sources={len(cast(list[object], payload['sources']))}"
+
+
+def prepare_external_summary(root: Path) -> tuple[dict[str, Any], bool]:
+    """Validate the pinned manifest and label contracts without executing anything.
+
+    Returns the read-only summary payload and whether both validation
+    surfaces passed, which maps directly onto the CLI exit code.
+    """
+
+    manifest = load_external_manifest(root / EXTERNAL_MANIFEST_PATH)
+    contracts = load_label_contracts(root / LABEL_CONTRACT_PATH)
+    manifest_valid, manifest_detail = validate_external_manifest(manifest)
+    contracts_valid, contracts_detail = validate_label_contracts(contracts)
+    payload = {
+        "status": "validated" if manifest_valid and contracts_valid else "failed",
+        "manifest": manifest_detail,
+        "label_contracts": contracts_detail,
+        "label_summary": label_contract_summary(root),
+        "network_used": False,
+        "execution_performed": False,
+    }
+    return payload, manifest_valid and contracts_valid
 
 
 def _sha256_path(path: Path) -> str:

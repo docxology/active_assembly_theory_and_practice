@@ -18,25 +18,14 @@ from src.artifact_contract import (  # noqa: E402
     validate_data_artifact_surface,
 )
 from src.external_sources import (  # noqa: E402
-    EXTERNAL_CAPABILITY_ARTIFACT,
-    EXTERNAL_ACQUISITION_ARTIFACT,
     EXTERNAL_MANIFEST_PATH,
-    EXTERNAL_STATIC_RECEIPT_ARTIFACT,
-    load_external_manifest,
-    validate_external_manifest,
+    prepare_external_summary,
     write_compiler_capabilities,
     write_external_static_validation,
     write_external_acquisition_payload,
     write_external_source_validation_payload,
 )
-from src.external_corpus import (  # noqa: E402
-    LABEL_CONTRACT_PATH,
-    label_contract_summary,
-    load_label_contracts,
-    validate_label_contracts,
-)
 from src.external_labeling import (  # noqa: E402
-    LABEL_CONTRACT_ARTIFACT,
     write_external_label_contract,
 )
 from src.counterexample_search import write_counterexample_search  # noqa: E402
@@ -53,8 +42,8 @@ from src.replay_vm import (  # noqa: E402
     vm_paths,
     write_vm_manifest,
 )
+from src.receipt import promote_evidence_summary  # noqa: E402
 from src.replication import (  # noqa: E402
-    INDEPENDENT_REPLAY_ARTIFACT,
     GOLD_LABELS,
     PUBLIC_MANIFEST,
     _public_bundle_digest,
@@ -208,7 +197,13 @@ def main() -> int:
     )
     score.add_argument("--predictions", type=Path, required=True)
     score.add_argument("--gold-path", type=Path)
-    subparsers.add_parser("verify-separation", help="alias for verify-public")
+    subparsers.add_parser(
+        "verify-separation",
+        help=(
+            "verify the public replay bundle, upgrading to the stronger "
+            "public/private separation check when gold labels are present"
+        ),
+    )
     run_model = subparsers.add_parser(
         "run-model", help="run a deterministic label-blind model on public inputs"
     )
@@ -292,23 +287,9 @@ def main() -> int:
     elif command == "probe-capabilities":
         print(write_compiler_capabilities(root))
     elif command == "prepare-external":
-        manifest = load_external_manifest(root / EXTERNAL_MANIFEST_PATH)
-        contracts = load_label_contracts(root / LABEL_CONTRACT_PATH)
-        manifest_valid, manifest_detail = validate_external_manifest(manifest)
-        contracts_valid, contracts_detail = validate_label_contracts(contracts)
-        _write_json(
-            {
-                "status": "validated"
-                if manifest_valid and contracts_valid
-                else "failed",
-                "manifest": manifest_detail,
-                "label_contracts": contracts_detail,
-                "label_summary": label_contract_summary(root),
-                "network_used": False,
-                "execution_performed": False,
-            }
-        )
-        return 0 if manifest_valid and contracts_valid else 1
+        summary, ok = prepare_external_summary(root)
+        _write_json(summary)
+        return 0 if ok else 1
     elif command == "validate-external":
         capability_path = write_compiler_capabilities(root)
         label_path = write_external_label_contract(root)
@@ -320,32 +301,7 @@ def main() -> int:
         print(external_path)
         return 0
     elif command == "promote-evidence":
-        status_paths = {
-            "P13_external_validation": root
-            / "output/data/external_source_validation.json",
-            "P13_source_bound_labels": root / LABEL_CONTRACT_ARTIFACT,
-            "P13_static_only": root / EXTERNAL_STATIC_RECEIPT_ARTIFACT,
-            "P13_capabilities": root / EXTERNAL_CAPABILITY_ARTIFACT,
-            "P13_acquisition": root / EXTERNAL_ACQUISITION_ARTIFACT,
-            "P15_local_replay_harness": root / "output/data/replication_manifest.json",
-            "P15_independent_replay": root / INDEPENDENT_REPLAY_ARTIFACT,
-        }
-        rows: dict[str, object] = {}
-        for name, path in status_paths.items():
-            if not path.is_file():
-                rows[name] = {"status": "not_yet_observed", "path": str(path)}
-                continue
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                rows[name] = {"status": "failed", "path": str(path), "detail": str(exc)}
-                continue
-            rows[name] = {
-                "status": payload.get("status", "not_yet_observed"),
-                "endpoint_status": payload.get("endpoint_status"),
-                "path": str(path),
-            }
-        _write_json({"status": "read_only_summary", "surfaces": rows})
+        _write_json(promote_evidence_summary(root))
         return 0
     elif command == "generate-figures":
         from src.advanced_figures import write_advanced_figures

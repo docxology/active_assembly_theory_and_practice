@@ -4410,6 +4410,10 @@ _COUNTEREXAMPLE_STATUS_COLORS = {
     "falsified_by_counterexample": PALETTE[1],
     "holds_in_searched_domain": PALETTE[2],
 }
+_COUNTEREXAMPLE_STATUS_HATCHES = {
+    "falsified_by_counterexample": "//",
+    "holds_in_searched_domain": "",
+}
 
 
 def plot_counterexample_search(payload: dict[str, object], output_path: Path) -> Path:
@@ -4421,6 +4425,8 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
     ids: list[str] = []
     sizes: list[float] = []
     colors: list[str] = []
+    hatches: list[str] = []
+    edgecolors: list[str] = []
     witness_sizes: list[int | None] = []
     for raw_row in candidates:
         if not isinstance(raw_row, dict):
@@ -4445,13 +4451,26 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
         ids.append(str(raw_row["property_id"]))
         sizes.append(float(domain_size))
         colors.append(_COUNTEREXAMPLE_STATUS_COLORS[status])
+        hatches.append(_COUNTEREXAMPLE_STATUS_HATCHES[status])
+        edgecolors.append(
+            INK if status == "falsified_by_counterexample" else "white"
+        )
         witness_sizes.append(
             witness_size if status == "falsified_by_counterexample" else None
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(8.6, 4.6))
     y = np.arange(len(ids), dtype=float)
-    ax.barh(y, sizes, color=colors, edgecolor="white", linewidth=0.8, zorder=3)
+    ax.barh(
+        y,
+        sizes,
+        color=colors,
+        edgecolor=edgecolors,
+        linewidth=0.8,
+        zorder=3,
+    )
+    for patch, hatch in zip(ax.patches, hatches, strict=True):
+        patch.set_hatch(hatch)
     ax.set_yticks(y, ids)
     ax.invert_yaxis()
     if max(sizes) >= 100 * max(min(sizes), 1.0):
@@ -4479,7 +4498,7 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
     ax.text(
         0.0,
         AXIS_SUBTITLE_Y,
-        "Every falsified witness is re-verified by an independent second interpretation.",
+        "Every falsified witness is re-verified by an independent second interpretation. Hatch marks falsified bars; solid bars hold within the searched domain.",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
@@ -4487,8 +4506,20 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
         color=MUTED,
     )
     handles = [
-        Rectangle((0, 0), 1, 1, color=color, label=label.replace("_", " "))
-        for label, color in _COUNTEREXAMPLE_STATUS_COLORS.items()
+        Rectangle(
+            (0, 0),
+            1,
+            1,
+            facecolor=_COUNTEREXAMPLE_STATUS_COLORS[label],
+            hatch=hatch,
+            edgecolor=INK if hatch else "white",
+            label=(
+                f"{label.replace('_', ' ')} ({hatch} hatch)"
+                if hatch
+                else label.replace("_", " ")
+            ),
+        )
+        for label, hatch in _COUNTEREXAMPLE_STATUS_HATCHES.items()
     ]
     ax.legend(handles=handles, frameon=False, fontsize=8, loc="lower right")
     ax.text(
@@ -6804,6 +6835,253 @@ FIGURE_CAPTIONS.update(
 )
 
 
+# Descriptive alternative text for the legacy (``src.figures``) figures. The
+# nine narrative figures keep their bespoke alternatives in
+# ``src.figure_contract``; every legacy row must carry a real content alt
+# (subject, panels, encodings, statuses) instead of reusing the caption's
+# first sentence. Validation enforces the 45-word ceiling.
+FIGURE_ALT_TEXTS: dict[str, str] = {
+    "generative_model": (
+        "Schematic graph of hidden phases linked by transition B and emitting "
+        "observations through likelihood A, with policy scoring and next-observation "
+        "selection shown on the right."
+    ),
+    "observation_informativeness": (
+        "Horizontal bars of realized information gain by decoded-instruction category, "
+        "sorted descending and colored by the phase receiving the largest posterior "
+        "contribution."
+    ),
+    "model_evidence": (
+        "Bars of pooled log marginal likelihood for the temporal HMM, "
+        "identity-transition, and memoryless models, with the largest-value model "
+        "highlighted."
+    ),
+    "transition_ablation": (
+        "Line plot of temporal-decoder accuracy across the transition-blend grid with "
+        "memoryless and identity reference lines and the marked accuracy peak."
+    ),
+    "generative_adequacy": (
+        "Per-fixture diamonds for observed transition rate and recovery accuracy "
+        "against circles with central 95% simulation intervals from the fixed HMM."
+    ),
+    "observation_pipeline": (
+        "Card grid of decoded instruction addresses, mnemonics, and categorical "
+        "channels; solid borders mark addresses observed during bounded Unicorn "
+        "execution."
+    ),
+    "assembly_cfg": (
+        "Control-flow graph of the x86_guard fixture with fall-through and "
+        "taken-branch edges, Unicorn-observed blocks outlined, and a dashed external "
+        "target node."
+    ),
+    "assembly_memory_timeline": (
+        "Two panels: instructions containing memory operands, and Unicorn memory-hook "
+        "events listing access type, triggering instruction, address, and value."
+    ),
+    "posterior_beliefs": (
+        "Line chart of normalized memoryless posterior beliefs over the latent program "
+        "phases at each decoded observation step."
+    ),
+    "package_provenance": (
+        "Availability chart with filled circles and labels for found adapters, x "
+        "markers for missing packages, and required or optional status beside each "
+        "row."
+    ),
+    "trace_feature_matrix": (
+        "Two panels: binary flags for execution, immediate, and accumulator operands, "
+        "beside a table of step, observation ID, category code, and semantic labels."
+    ),
+    "rxinfer_free_energy": (
+        "Point plot of Bethe Free Energy at each Julia/RxInfer backend iteration for "
+        "the Gaussian event-code model."
+    ),
+    "rxinfer_categorical_free_energy": (
+        "Point plot of Bethe Free Energy at each RxInfer categorical phase-HMM backend "
+        "iteration, with the recorded final trajectory and delta annotated."
+    ),
+    "inference_diagnostics": (
+        "Two stacked traces on separate axes: the pymdp comparison variational "
+        "diagnostic above and the native RxInfer Bethe Free Energy below."
+    ),
+    "scholarship_source_roles": (
+        "Bars counting curated scholarship sources by type, separating peer-reviewed "
+        "theory, binary-analysis context, software, documentation, and roadmap "
+        "references."
+    ),
+    "scholarship_evidence_matrix": (
+        "Matrix of scholarship-source counts crossed by project stage and evidence "
+        "tier, with roadmap and context rows kept outside the executed evidence "
+        "surface."
+    ),
+    "claim_evidence_map": (
+        "Coverage map of vertically separated markers counting linked source keys, "
+        "generated artifacts, and validation checks for each bounded claim."
+    ),
+    "artifact_hash_manifest": (
+        "Bars of reproducibility-manifest coverage by artifact class; height is "
+        "tracked size in KiB and annotations give the file counts."
+    ),
+    "validation_summary": (
+        "Checklist of generated validation checks across trace, lineage, inference, "
+        "figure, scholarship, manuscript, provenance, and reproducibility oracles."
+    ),
+    "temporal_beliefs_x86_accumulator": (
+        "Heatmap of forward-filter posteriors over authored phases for each "
+        "observation step in the x86_accumulator fixture, with printed probabilities."
+    ),
+    "temporal_beliefs_x86_bitwise": (
+        "Heatmap of forward-filter posteriors over authored phases for each "
+        "observation step in the x86_bitwise fixture, with printed probabilities."
+    ),
+    "temporal_beliefs_x86_guard": (
+        "Heatmap of forward-filter posteriors over authored phases for each "
+        "observation step in the x86_guard fixture, with printed probabilities."
+    ),
+    "temporal_beliefs_x86_long_accumulator": (
+        "Heatmap of forward-filter posteriors over authored phases for the longer "
+        "x86_long_accumulator fixture, with printed probabilities."
+    ),
+    "temporal_beliefs_x86_memory": (
+        "Heatmap of forward-filter posteriors over authored phases for the "
+        "x86_memory fixture, which adds bounded stack-memory operands."
+    ),
+    "temporal_beliefs_x86_guard_taken": (
+        "Heatmap of forward-filter posteriors for the x86_guard_taken fixture, with "
+        "one statically decoded step outside the bounded dynamic path."
+    ),
+    "corpus_coverage": (
+        "Two panels: decoded span versus executed path length per fixture, and flags "
+        "for memory operands, alternate paths, repeated phases, and branch edges."
+    ),
+    "action_sensing": (
+        "Two panels: mean actions used before the confidence threshold with failures "
+        "retained at budget, and mean final posterior confidence by policy."
+    ),
+    "parameter_learning": (
+        "Three panels: held-out accuracy by fitting strategy, training log-evidence "
+        "convergence, and five-initialization spread with holdout dots and mean bars."
+    ),
+    "model_comparison": (
+        "Two panels: fixture-level accuracy for identity-transition, memoryless, and "
+        "temporal decoders, and pooled per-step accuracy with descriptive Wilson "
+        "intervals."
+    ),
+    "active_efe": (
+        "Two panels: decoded-category EFE scores with predictive information "
+        "contributions in nats, and posterior entropy on a separate axis."
+    ),
+    "calibration_curve": (
+        "Reliability diagram plotting mean posterior confidence against observed "
+        "accuracy per bin with 95% Wilson whiskers, bin denominators, and a diagonal "
+        "reference."
+    ),
+    "confusion_matrix": (
+        "Pooled phase-decoding confusion matrix with per-cell integer counts and row "
+        "percentages; diagonal cells are correct recoveries."
+    ),
+    "ambiguity_ablation": (
+        "Three linked panels: decoder accuracy across the likelihood blend, pooled "
+        "boundary F1 for temporal and memoryless segmentation, and fixtures reaching "
+        "the threshold sooner."
+    ),
+    "segmentation_ribbons": (
+        "Per-fixture ribbon pairs contrasting authored phase sequences with decoded "
+        "segmentations; displaced color transitions mark boundary disagreements."
+    ),
+    "corpus_stability": (
+        "Bars of pooled temporal accuracy on the full corpus and each "
+        "leave-one-fixture-out removal, with identity-reference and chance-floor "
+        "lines."
+    ),
+    "phase_recovery": (
+        "Grouped bars of recall and F1 per authored phase label, ordered by F1, with "
+        "the hardest phase hatched and macro F1 stated in the subtitle."
+    ),
+    "decoder_calibration": (
+        "Two panels of expected calibration error and Brier score for memoryless, "
+        "temporal, and identity-transition decoders; lower is better."
+    ),
+    "typed_observation_matrix": (
+        "Categorical table of the canonical fixture's instruction family, operands, "
+        "register sets, flag effects, memory mode, branch class, and dynamic status."
+    ),
+    "factorized_observation_comparison": (
+        "Three panels: held-out accuracy per fixture, one typed field family removed "
+        "at a time, and memory-addressing metadata masked under the missing-field "
+        "policy."
+    ),
+    "representation_invariance_benchmark": (
+        "Bars of final-RAX consistency and near-miss separation over source-program "
+        "families with descriptive 95% Wilson whiskers and unresolved near-miss "
+        "counts."
+    ),
+    "intervention_power": (
+        "Two panels: every intervention subset as points with the exact min-max "
+        "envelope by cardinality, and singleton interventions resolved separately."
+    ),
+    "trace_refinement": (
+        "Two panels: overlaid post-instruction RAX values from transfer functions and "
+        "Unicorn per executed step, and EFLAGS bit agreement counts."
+    ),
+    "cross_architecture_benchmark": (
+        "Two panels: decoded and executed instruction counts, and resulting "
+        "accumulator values for x86-64, AArch64, and RISC-V64 fixtures."
+    ),
+    "formal_verification_receipt": (
+        "Marker list of kernel-checked Lean theorems for the Word64 accumulator "
+        "fragment, including modular transfer functions and a near-miss counterexample."
+    ),
+    "active_information_frontier": (
+        "Lines of expected information gain in nats versus sensing horizon under four "
+        "cost weights, each point from exhaustive dynamic programming."
+    ),
+    "quotient_classifier": (
+        "Three panels: balanced accuracy and macro-F1 with clustered intervals, paired "
+        "baseline deltas with bootstrap intervals, and Brier score with ten-bin ECE "
+        "points."
+    ),
+    "compiler_transfer": (
+        "Status matrix of compiled-and-disassembled capability by source, "
+        "architecture, and optimization, with check marks, explicit dashes, and a "
+        "validated-row count panel."
+    ),
+    "formal_correspondence": (
+        "Two panels: per-fixture step-agreement marks for addresses, state, flags, and "
+        "terminal output, beside reference-step workload counts."
+    ),
+    "sensor_costs": (
+        "Two panels: eight deterministic cost-vector components as exact labels, and "
+        "wall-clock medians with min-max whiskers over calibration repetitions."
+    ),
+    "replication_manifest": (
+        "Provenance-boundary diagram enclosing gold-label rows in a protected owner "
+        "boundary while label-blind public rows, predictions, and hash-bound receipts "
+        "flow locally."
+    ),
+    "external_source_provenance": (
+        "Two panels: the pinned, opt-in, static-only acquisition path, and the five "
+        "promotion gates with the current receipt status of each."
+    ),
+    "external_label_coverage": (
+        "Two panels: equivalence witnesses, near misses, and identity controls by "
+        "project, beside the frozen train, development, and held-out allocation."
+    ),
+    "artifact_receipt_closure": (
+        "Flow diagram binding the protocol to producers, payloads, validation, and the "
+        "document boundary, with milestone status bars and receipt-error counts."
+    ),
+    "counterexample_search": (
+        "Horizontal bars of enumerated-domain size per candidate theorem; hatched bars "
+        "were falsified with witness ranks, solid bars held across every enumerated "
+        "input."
+    ),
+    "sensing_stress": (
+        "Two panels: policy maximum regret across the horizon, budget, and cost-weight "
+        "grid, and the budget-constrained value curve with the exact bound."
+    ),
+}
+
+
 FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "generative_model": ("friston2017activeinference", "parr2022activeinference"),
     "observation_informativeness": ("friston2017activeinference",),
@@ -7516,6 +7794,7 @@ def _figure_registry_rows(
         target = target_by_filename.get(filename)
         caption = raw_caption.format(**context)
         first_sentence = caption.split(".", 1)[0].strip() + "."
+        alt_text = FIGURE_ALT_TEXTS.get(stem, first_sentence)
         generator = target.generated_by if target else "src.figures"
         claims = (
             list(target.claim_ids)
@@ -7663,7 +7942,7 @@ def _figure_registry_rows(
                 "statistics": statistics_text,
                 "citation_keys": citation_keys,
                 "caption": caption,
-                "alt_text": first_sentence,
+                "alt_text": alt_text,
                 "long_description": (
                     f"{caption} Population: {population_text}. Statistics: {statistics_text}. "
                     f"Inputs: {', '.join(sorted(set(input_artifacts)))}. "

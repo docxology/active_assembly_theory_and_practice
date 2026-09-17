@@ -39,9 +39,14 @@ From the configured sibling template checkout (`/Volumes/external_drive/Git/temp
 ```bash
 uv run python -m infrastructure.orchestration link-projects --dry-run
 uv run python -m infrastructure.orchestration link-projects
-uv run python scripts/pipeline/stage_03_render.py --project working/active_assembly_theory_and_practice
+uv run python scripts/pipeline/stage_03_render.py \
+  --project working/active_assembly_theory_and_practice \
+  --skip-manuscript-hydration
 ```
 
 The project-side manuscript generator honors `TEMPLATE_REPO_ROOT`; set it when
 the template checkout is not the configured sibling. It fails if hydration
 omits a source section or leaves a `{{TOKEN}}` unresolved.
+
+Always render with `--skip-manuscript-hydration`; the README records the
+hydration rule (project-side hydration is authoritative).

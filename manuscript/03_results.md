@@ -3,12 +3,14 @@
 The canonical fixture produces `{{INSTRUCTION_COUNT}}` decoded instructions and a
 bounded Unicorn trace with final `RAX = {{FINAL_RAX}}`. The inference stream
 contains `{{FREE_ENERGY_STEPS}}` finite pymdp comparison diagnostics, one per
-observation. The native RxInfer run records `{{RXINFER_FREE_ENERGY_COUNT}}`
+observation, shown in [@fig:inference-diagnostics]. The native RxInfer run records
 finite Bethe Free Energy values with final value
 `{{RXINFER_FINAL_FREE_ENERGY}}` on Julia `{{JULIA_VERSION}}` and RxInfer
-`{{RXINFER_VERSION}}`. The final most likely pymdp latent class is
+`{{RXINFER_VERSION}}`, as shown in [@fig:rxinfer-free-energy]. The final most
+likely pymdp latent class is
 `{{FINAL_STATE}}`, reflecting the terminal observation history rather than an
-externally asserted semantic label.
+externally asserted semantic label; the posterior beliefs are shown in
+[@fig:posterior-beliefs].
 
 The native package also executes the categorical phase-HMM companion
 `{{RXINFER_CATEGORICAL_MODEL_NAME}}`, recording `{{RXINFER_CATEGORICAL_FREE_ENERGY_COUNT}}`
@@ -118,8 +120,9 @@ generalization diagnostic. The
 accuracy metric is discriminative rather than green-by-construction: a
 shuffled-label control scores `{{SHUFFLE_CONTROL_ACCURACY}}` and a uniform-belief
 control `{{UNIFORM_CONTROL_ACCURACY}}`, both near chance. Per-fixture accuracy,
-calibration, free-energy convergence, and the full `{{DECODER_COUNT}}`-decoder comparison
-are written to the evaluation report and recomputed from disk by the validation
+calibration, free-energy convergence, and the full
+`{{DECODER_COUNT}}`-decoder comparison ([@fig:model-comparison]) are written to
+the evaluation report and recomputed from disk by the validation
 gate. The Wilson intervals are descriptive per-step intervals, not independent
 fixture-level or population-level uncertainty estimates: steps within each
 fixture are dependent and the corpus contains only hand-authored toy programs.
@@ -184,7 +187,8 @@ reports observation-level structure rather than phase-label recovery. The
 receipt's selection ledger records training-evidence decisions only; it does
 not turn a favorable predictive interval into evidence of semantic adequacy. If
 the ordered model remains initialization-sensitive, that instability is
-retained as a negative result.
+retained as a negative result. These fit diagnostics are visualized in
+[@fig:parameter-learning].
 
 ![{{FIGURE_PARAMETER_LEARNING_CAPTION}}]({{FIGURE_PARAMETER_LEARNING_PATH}}){#fig:parameter-learning width=100%}
 
@@ -277,7 +281,8 @@ temporal model is neither the most accurate nor the best calibrated.
 
 ![{{FIGURE_CONFUSION_MATRIX_CAPTION}}]({{FIGURE_CONFUSION_MATRIX_PATH}}){#fig:confusion-matrix width=78%}
 
-The decoding results above are classification metrics. A complementary,
+The decoding results above are classification metrics, summarized as a pooled
+confusion matrix in [@fig:confusion-matrix]. A complementary,
 principled *generative* comparison — the log marginal likelihood of the observed
 traces under each model ([@def:model-evidence]; [@fig:model-evidence]) — shows
 `{{BEST_MODEL}}` is the best *explainer* of the data: its pooled evidence
@@ -377,7 +382,8 @@ recovery limitation that the manuscript cites qualitatively: the `setup` and
 `{{REPRESENTATION_F1}}`, while the `exit` phase (F1 `{{EXIT_F1}}`) and — hardest
 of all — the `guard_check` phase (F1 `{{GUARD_F1}}`) are
 observation-underdetermined. The macro F1 is `{{PHASE_MACRO_F1}}` and the hardest
-phase to recover is `{{HARDEST_PHASE}}`. These are forward-filter decoding limits
+phase to recover is `{{HARDEST_PHASE}}`; the per-phase profile is shown in
+[@fig:phase-recovery]. These are forward-filter decoding limits
 of the demonstrator, not claims about a complete binary-analysis system.
 
 Likelihood information is uneven ([@fig:observation-informativeness]):
@@ -397,7 +403,7 @@ the remaining corpus: the pooled temporal accuracy ranges from
 `{{CORPUS_TEMPORAL_MIN}}` to `{{CORPUS_TEMPORAL_MAX}}` (span
 `{{CORPUS_TEMPORAL_SPAN}}`), stays above the pooled static (identity-transition) accuracy
 under every single-fixture removal, and remains well above the `{{CHANCE_ACCURACY}}`
-chance floor.
+chance floor. The leave-one-out sweep is visualized in [@fig:corpus-stability].
 This makes the small-corpus fragility explicit rather than hidden: the headline
 temporal result is not the artifact of any one fixture, and the span quantifies
 how much a single fixture moves the estimate.
@@ -434,7 +440,8 @@ The action experiment is leakage-free by construction and by artifact check
 (`{{ACTION_SENSING_LEAKAGE_FREE}}`): each fitted field model excludes the
 displayed fixture, and predictive ranking receives no realized field value.
 The complete policy records and revealed values are available in
-`{{ACTION_SENSING_ARTIFACT}}`.
+`{{ACTION_SENSING_ARTIFACT}}`; the policy comparison is visualized in
+[@fig:action-sensing].
 
 ![{{FIGURE_ACTION_SENSING_CAPTION}}]({{FIGURE_ACTION_SENSING_PATH}}){#fig:action-sensing width=95%}
 
@@ -448,8 +455,8 @@ held-out split. The interpretable classifier reaches balanced accuracy
 `{{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}}` and macro-F1
 `{{QUOTIENT_CLASSIFIER_INTERPRETABLE_MACRO_F1}}`; the temporal probabilistic
 classifier reaches `{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}}` and
-`{{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}}`; the fixed neural sequence model
-reaches `{{QUOTIENT_CLASSIFIER_NEURAL_BALANCED_ACCURACY}}` and
+`{{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}}`; the fixed one-layer tanh recurrent
+classifier reaches `{{QUOTIENT_CLASSIFIER_NEURAL_BALANCED_ACCURACY}}` and
 `{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}}`; and the typed-trace surface baseline reaches
 `{{QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY}}` and
 `{{QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1}}`. Clustered intervals, Brier/ECE,
@@ -461,8 +468,8 @@ comparison rows under one Holm family. With
 `{{QUOTIENT_CLASSIFIER_HELD_OUT_FAMILY_COUNT}}` held-out families and development scores
 that need not track test scores, these results do not establish superiority or
 learned semantics. They establish a reproducible, label-source-controlled
-endpoint with visible negative evidence, including a neural model that does not
-recover the endpoint reliably.
+endpoint with visible negative evidence, including a recurrent classifier that
+does not recover the endpoint reliably.
 
 The intervention-power analysis is a separate identifiability diagnostic rather
 than another model score. Exact enumeration of
@@ -496,7 +503,8 @@ The external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it records
 `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,
 `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}` labelable examples, and a
 static-only receipt with `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` validated rows
-of `{{EXTERNAL_STATIC_ROW_COUNT}}`. The separate source-bound label receipt is
+of `{{EXTERNAL_STATIC_ROW_COUNT}}`; the provenance chain is visualized in
+[@fig:external-source-provenance]. The separate source-bound label receipt is
 `{{EXTERNAL_LABEL_STATUS}}` with `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows
 (`{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical-equivalence witnesses,
 `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` contract-directed near misses, and
@@ -544,20 +552,22 @@ replace the deterministic cost vector or imply a cross-machine speed law.
 The replication bundle has `{{REPLICATION_PUBLIC_COUNT}}` public rows and
 `{{REPLICATION_GOLD_COUNT}}` separated gold rows, with label separation
 `{{REPLICATION_LABEL_SEPARATED}}`. The current public harness is frozen and
-no-network. A separately controlled replay is recorded as
-`{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
-scope, using `{{INDEPENDENT_REPLAY_ROW_COUNT}}` rows (`{{INDEPENDENT_REPLAY_POSITIVE_ROW_COUNT}}`
-positive/equivalence rows and `{{INDEPENDENT_REPLAY_NEGATIVE_ROW_COUNT}}`
-negative/near-miss rows): balanced accuracy is
-`{{INDEPENDENT_REPLAY_BALANCED_ACCURACY}}`, macro-F1 is
-`{{INDEPENDENT_REPLAY_MACRO_F1}}`, Brier score is
-`{{INDEPENDENT_REPLAY_BRIER}}`, and expected calibration error is
-`{{INDEPENDENT_REPLAY_ECE}}`. The same protected score reports a
-false-equivalence rate of `{{INDEPENDENT_REPLAY_FALSE_EQUIVALENCE_RATE}}` and
-near-miss separation of `{{INDEPENDENT_REPLAY_NEAR_MISS_SEPARATION}}`. These
-are the results of one protected replay of the configured deterministic model,
-not a new scientific sample; the poor discrimination is retained as a negative
-replay result. A changed protocol/source hash invalidates the receipt,
+no-network. No independent replay has been observed: the recorded replay status
+is `{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
+control scope. The replay interface and the protected-scoring endpoint are
+frozen and ready; a prior same-host receipt records the status
+submitted_pending_verification, and no protected score exists to interpret.
+When an independent receipt is ingested, the protected score is computed over
+the frozen interface and reported with `{{INDEPENDENT_REPLAY_ROW_COUNT}}` rows
+(`{{INDEPENDENT_REPLAY_POSITIVE_ROW_COUNT}}` positive/equivalence rows and
+`{{INDEPENDENT_REPLAY_NEGATIVE_ROW_COUNT}}` negative/near-miss rows), balanced
+accuracy `{{INDEPENDENT_REPLAY_BALANCED_ACCURACY}}`, macro-F1
+`{{INDEPENDENT_REPLAY_MACRO_F1}}`, Brier score `{{INDEPENDENT_REPLAY_BRIER}}`,
+expected calibration error `{{INDEPENDENT_REPLAY_ECE}}`, false-equivalence rate
+`{{INDEPENDENT_REPLAY_FALSE_EQUIVALENCE_RATE}}`, and near-miss separation
+`{{INDEPENDENT_REPLAY_NEAR_MISS_SEPARATION}}`; such a score would be the result
+of one protected replay of the configured deterministic model, not a new
+scientific sample. A changed protocol/source hash invalidates the receipt,
 preserving the distinction between rerunning the same code, controlled replay,
 and independently implementing the method.
 
@@ -582,7 +592,8 @@ x86-64 claim is promoted.
 
 ![{{FIGURE_THEOREM_STATUS_MAP_CAPTION}}]({{FIGURE_THEOREM_STATUS_MAP_PATH}}){#fig:theorem-status-map width=100%}
 
-The status map is intentionally a promotion ledger rather than a list of
+The status map ([@fig:theorem-status-map]) is intentionally a promotion ledger
+rather than a list of
 aspirational theorem titles. A `proved` row is backed by the checked formal
 artifact and its assumptions; a computationally validated row is bounded by
 the enumerated state space; a falsified row retains its smallest counterexample;
@@ -610,7 +621,8 @@ and resolves `{{COUNTEREXAMPLE_SEARCH_HOLD_COUNT}}` as holding across every
 enumerated input. The first declared falsified candidate is
 `{{COUNTEREXAMPLE_SEARCH_EXAMPLE}}`. Both outcome kinds are retained as
 evidence: a falsified candidate narrows the plausible claim, while a holds
-result is valid only inside its declared search domain. The figure reports each
+result is valid only inside its declared search domain. The figure
+([@fig:counterexample-search]) reports each
 candidate's searched-domain size and outcome; domain sizes are exact
 enumeration counts, not samples, so no population uncertainty is claimed.
 
@@ -641,7 +653,7 @@ plotted as a gap and is never zero-filled. Separately, the local timing
 calibration is repeated and the receipt records the maximum relative
 coefficient drift `{{SENSING_STRESS_CALIBRATION_DRIFT}}` across runs; these
 timing rows are machine-specific measurements on the calibration host, not a
-cross-machine cost law.
+cross-machine cost law. The stress grid is visualized in [@fig:sensing-stress].
 
 ![{{FIGURE_SENSING_STRESS_CAPTION}}]({{FIGURE_SENSING_STRESS_PATH}}){#fig:sensing-stress width=100%}
 

@@ -19,11 +19,11 @@ document — never leave a claim standing that the pipeline does not produce.
 ```
 docs/
 ├── AGENTS.md                     this file
-├── README.md                     folder index (83 lines)
+├── README.md                     folder index
 ├── analysis_validation.md        generated-output validation oracle (104)
 ├── architecture.md               disassembly-to-inference pipeline (144)
 ├── assembly_packages.md          adapter provenance, trace schema, formal fragment (164)
-├── claim_map.md                  claims mapped to evidence and boundaries (65)
+├── claim_map.md                  claims mapped to evidence and boundaries
 ├── claim_register.md             generated claim-row contract (29)
 ├── evaluation.md                 decoders, metrics, negative controls, results (349)
 ├── replay_operator_runbook.md    handoff for a separately controlled replay (126)

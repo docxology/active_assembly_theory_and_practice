@@ -57,6 +57,10 @@ manuscript generation, and document rendering must remain offline. A local
 rerun cannot produce an independent-replay status; an external operator must
 submit a pending receipt with explicit separate-control attestation for the
 protected ingestion command.
+`scripts/run_replication.py score --predictions <file>` is the protected
+scoring mode: it validates the replication bundle and then scores a
+label-blind prediction file against the sealed gold labels, which remain
+private to this ingestion boundary.
 
 Run the Julia integration gate:
 
@@ -171,7 +175,7 @@ the source-family split and endpoint contract in
 `representation_invariance_benchmark.json`, the exact finite
 intervention-subset enumeration in `intervention_power.json` (including its
 one-state negative control and fail-closed promotion status),
-the protocol-v2 receipt envelope on every project-owned JSON artifact, and
+the protocol-v2 receipt envelope on every project-owned JSON artifact,
 and a **figure-set oracle** that requires the expected
 `output/figures/*.png` set to exist, be non-empty, and pass a pixel-variance check
 (so a blank or zero-byte PNG cannot satisfy the gate). The figure set includes the

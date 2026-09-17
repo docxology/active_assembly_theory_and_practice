@@ -40,7 +40,7 @@ evidence remain visibly unearned.
 | P4/P11 normalized formal correspondence | Closed bounded implementation tranche | `validated_bounded`; no complete x86-64 theorem | `output/data/formal_trace_correspondence.json`, `output/data/formal_verification.json` |
 | P5/P12 compiler, architecture, and transfer surface | Closed local capability tranche | Bounded transfer evidence; external/general transfer unearned | `output/data/compiler_transfer.json`, `output/data/cross_architecture_fixtures.json` |
 | P6/P14 active sensing and cost accounting | Closed finite measured-cost tranche with a stress-grid robustness receipt | `validated_bounded`; no universal information-per-cost law | `output/data/sensor_cost_receipt.json`, `output/data/active_information_frontier.json`, `output/data/sensing_stress.json` |
-| P7/P15 public replay interface | Closed local harness and same-host controlled guest run | Replay observed under a distinct guest boundary; independent physical replay and independent reimplementation remain unearned | `output/data/replication_manifest.json`, `output/data/independent_replay_receipt.json` |
+| P7/P15 public replay interface | Closed local harness and recorded same-host guest run pending attestation and protected scoring | Guest run recorded, pending attestation and protected scoring; independent replay not yet observed; independent reimplementation remains unearned | `output/data/replication_manifest.json`, `output/replication/replay_receipt_same_host.json` (attestation/protected-scoring endpoint not yet produced) |
 | P8/P16 theorem and countertheorem phase | Closed fail-closed bounded phase with a smallest-first exhaustive counterexample-search receipt | Counterexample and unresolved candidates retained; no broad theorem | `output/data/theorem_or_countertheorem.json`, `output/data/counterexample_search.json` |
 | P9 intervention power | Closed finite diagnostic | Identifiability promotion blocked outside the declared finite catalog | `output/data/intervention_power.json` |
 | P10 initialization robustness | Closed finite robustness diagnostic | Stability promotion blocked by initialization sensitivity | `output/data/parameter_learning.json` |
@@ -163,13 +163,13 @@ The practical order is:
 
 1. Keep the minor maintenance loop green and refresh receipts after every
    source, protocol, or toolchain change.
-2. Run MED-01 through MED-04 in parallel only after the protocol, split, and
+2. Run MED-01 through MED-03 in parallel only after the protocol, split, and
    observation schemas are unchanged and sealed.
 3. Run MED-05 and MED-07 with controlled operators and retain every failure.
 4. Use MED-06 to expand only actually available capabilities; do not download
    or silently substitute an architecture or compiler to complete a matrix.
 5. Start MAJ-01, MAJ-02, and MAJ-03 only from frozen bundles and receipts.
-6. Use the results of MED-02, MED-08, and the major evidence tracks to decide
+6. Use the results of MED-02 and the major evidence tracks to decide
    whether MAJ-04–MAJ-07 is a theorem, a countertheorem, or an unresolved
    program.
 7. Run MAJ-08 only after the claim register, document package, and independent

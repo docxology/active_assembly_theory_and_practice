@@ -2,7 +2,7 @@ paper:
   title: "Active Assembly Theory and Practice"
   subtitle: "Assembly-Code Observations for Active Inference Demonstrations"
   version: "0.1.0"
-  date: ""
+  date: "2026-09-17"
   cover:
     image: "assets/active_assembly_cover.png"
     alt: "Abstract cover illustration linking x86 assembly instructions, a bounded control-flow graph, and probabilistic state trajectories for active-inference analysis."

@@ -18,8 +18,6 @@ dependencies = [
     "matplotlib>=3.7.0",
     "numpy>=1.24.0",
     "pypdf>=6.0,<7",
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
     "pyyaml>=6.0",
     "unicorn>=2.1,<3",
 ]
@@ -63,7 +61,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.10"
 files = ["src"]
 check_untyped_defs = true
 warn_unused_ignores = true
@@ -78,6 +76,8 @@ extend-per-file-ignores = { "scripts/*.py" = ["E402"] }
 module = [
     "capstone",
     "capstone.*",
+    "defusedxml",
+    "defusedxml.*",
     "pymdp",
     "pymdp.*",
     "unicorn",

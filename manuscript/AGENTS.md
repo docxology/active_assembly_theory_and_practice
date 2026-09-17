@@ -6,21 +6,21 @@
   `src/manuscript_variables.py`.
 - Figures must live under `output/figures/` and be referenced as
   `../output/figures/<name>.png` after token hydration.
-- Every figure must carry a generated caption in `output/figures/README.md`
-  (`FIGURE_CAPTIONS` in `src/figures.py`). Add a `{{NEW_FIGURE}}` token and a
-  manifest target whenever a new figure is introduced.
-- The current figure tokens include `{{TEMPORAL_BELIEFS_FIGURE}}`,
-  `{{MODEL_COMPARISON_FIGURE}}`, `{{ACTIVE_EFE_FIGURE}}`, and
-  `{{GENERATIVE_ADEQUACY_FIGURE}}`, plus the typed observation tokens
-  `{{TYPED_OBSERVATION_MATRIX_FIGURE}}` and
-  `{{FACTORIZED_OBSERVATION_COMPARISON_FIGURE}}`, the expanded-corpus tokens
-  `{{TEMPORAL_BELIEFS_MEMORY_FIGURE}}`,
-  `{{TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE}}`, and
-  `{{CORPUS_COVERAGE_FIGURE}}`, `{{ACTION_SENSING_FIGURE}}`, and
-  `{{PARAMETER_LEARNING_FIGURE}}`, and
-  `{{REPRESENTATION_BENCHMARK_FIGURE}}`, `{{INTERVENTION_POWER_FIGURE}}`, and
-  `{{TRACE_REFINEMENT_FIGURE}}`, and `{{EXTERNAL_LABEL_COVERAGE_FIGURE}}`; every generated manuscript figure token
-  must appear in source so the `manuscript_source_surface` check stays green.
+- Every figure must carry a generated caption from the figure registry
+  (`FIGURE_CAPTIONS` in `src/figures.py`). Add a registry entry whenever a new
+  figure is introduced.
+- Figures are embedded in the sections as
+  `![{{FIGURE_<ID>_CAPTION}}]({{FIGURE_<ID>_PATH}}){#fig:<id> ...}`. Each
+  registry figure generates the `{{FIGURE_<ID>_CAPTION}}` and
+  `{{FIGURE_<ID>_PATH}}` tokens plus `{{FIGURE_<ID>_ALT_TEXT}}`,
+  `{{FIGURE_<ID>_LONG_DESCRIPTION}}`, `{{FIGURE_<ID>_SOURCE_NOTE}}`,
+  `{{FIGURE_<ID>_STATUS}}`, and the pdf/svg/atlas path variants
+  (`{{FIGURE_<ID>_PDF_PATH}}`, `{{FIGURE_<ID>_SVG_PATH}}`,
+  `{{FIGURE_<ID>_ATLAS_PATH}}`).
+- Every `#fig:<id>` float must carry at least one in-text `[@fig:<id>]`
+  citation, and every cited label must match an existing float label; every
+  generated manuscript figure token must appear in source so the
+  `manuscript_source_surface` check stays green.
 - The long-horizon program section uses the generated tokens
   `{{SCIENTIFIC_PROGRAM_ARTIFACT}}`, `{{SCIENTIFIC_PROGRAM_MILESTONE_COUNT}}`,
   `{{SCIENTIFIC_PROGRAM_IMPLEMENTED_COUNT}}`,

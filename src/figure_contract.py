@@ -490,22 +490,55 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
     elif stem == "replay_failure_audit":
         external = replay.get("external_receipt", {})
         score = replay.get("protected_score", {})
-        caption = (
-            f"The controlled replay audit follows {score.get('rows', 'not observed')} label-blind rows through a "
-            f"{external.get('control_scope', 'not observed')} with network disabled and protected gold-label scoring. "
-            f"The protected result is balanced accuracy {_format_number(score.get('balanced_accuracy'))}, macro-F1 "
-            f"{_format_number(score.get('macro_f1'))}, Brier {_format_number(score.get('brier_score'))}, and ECE "
-            f"{_format_number(score.get('expected_calibration_error'))}; the confusion panel shows the model's "
-            "equivalence prediction for both classes. The reliability and selective-risk panels are single-run "
-            "audit diagnostics, not population estimates. The receipt confirms a separately controlled guest run, "
-            "not an independent physical-machine replication or independent reimplementation. The poor result is "
-            "retained as a reproducibility and failure-boundary result rather than replaced by a favorable rerun."
+        score_observed = any(
+            isinstance(score.get(key), (int, float))
+            and not isinstance(score.get(key), bool)
+            for key in (
+                "balanced_accuracy",
+                "macro_f1",
+                "brier_score",
+                "expected_calibration_error",
+            )
         )
-        alt = "Public/private replay boundary and protected confusion, calibration, and selective-risk panels showing chance discrimination in the controlled guest run."
-        long = (
-            caption
-            + " Public rows cross the guest boundary without labels, predictions return with stable identifiers, and scoring occurs only at the protected owner-side boundary. The flow does not imply that the guest saw the gold labels. The negative confusion pattern is the central result: all positive rows are accepted but near misses are not separated. Calibration metrics are shown with their actual direction and units. Because there is one controlled replay receipt, no independent-sample uncertainty is attached to the result."
-        )
+        if score_observed:
+            caption = (
+                f"The controlled replay audit follows {score.get('rows', 'not observed')} label-blind rows through a "
+                f"{external.get('control_scope', 'not observed')} with network disabled and protected gold-label scoring. "
+                f"The protected result is balanced accuracy {_format_number(score.get('balanced_accuracy'))}, macro-F1 "
+                f"{_format_number(score.get('macro_f1'))}, Brier {_format_number(score.get('brier_score'))}, and ECE "
+                f"{_format_number(score.get('expected_calibration_error'))}; the confusion panel shows the model's "
+                "equivalence prediction for both classes. The reliability and selective-risk panels are single-run "
+                "audit diagnostics, not population estimates. The receipt confirms a separately controlled guest run, "
+                "not an independent physical-machine replication or independent reimplementation. The poor result is "
+                "retained as a reproducibility and failure-boundary result rather than replaced by a favorable rerun."
+            )
+            alt = "Public/private replay boundary and protected confusion, calibration, and selective-risk panels showing chance discrimination in the controlled guest run."
+            long = (
+                caption
+                + " Public rows cross the guest boundary without labels, predictions return with stable identifiers, and scoring occurs only at the protected owner-side boundary. The flow does not imply that the guest saw the gold labels. The negative confusion pattern is the central result: all positive rows are accepted but near misses are not separated. Calibration metrics are shown with their actual direction and units. Because there is one controlled replay receipt, no independent-sample uncertainty is attached to the result."
+            )
+        else:
+            caption = (
+                "The controlled replay audit is defined over the frozen public replay bundle: label-blind rows "
+                "cross a no-network guest boundary, predictions return through identifier validation, and "
+                "protected gold-label scoring remains on the owner side. No independently replayed receipt has "
+                "been ingested; protected counts, balanced accuracy, macro-F1, Brier, and ECE are not observed. "
+                "The confusion, reliability, and selective-risk panels therefore carry explicit not-observed "
+                "statuses rather than measured values, and no substitute score, rerun, or expected value is "
+                "imputed. When a receipt is ingested, this caption will report the protected result and retain "
+                "it whether favorable or poor; a poor result is kept as a reproducibility and failure-boundary "
+                "record rather than replaced by a favorable rerun. The audited boundary is a same-host "
+                "controlled guest run, not an independent physical-machine replication or independent "
+                "reimplementation."
+            )
+            alt = (
+                "Public/private replay boundary diagram with confusion, reliability, and selective-risk "
+                "panels marked not observed; no independently replayed receipt has been ingested."
+            )
+            long = (
+                caption
+                + " Public rows cross the guest boundary without labels, predictions return with stable identifiers, and scoring occurs only at the protected owner-side boundary. The flow does not imply that the guest saw the gold labels. Until a receipt is ingested, every protected quantity remains an explicit not-observed status and the pending verification state is preserved rather than replaced by a placeholder value."
+            )
     elif stem == "policy_certificate_frontier":
         frontier_rows = frontier.get("frontier", [])
         certs = sensor.get("policy_certificates", [])
@@ -659,6 +692,63 @@ def _metadata_for(stem: str) -> tuple[str, str, str, str, str, str, str]:
         ),
     }
     return rows[stem]
+
+
+# Verified manuscript placements for legacy receipt figures. Rows outside this
+# map keep the long-standing heuristic placement in ``build_figure_specs``.
+_LEGACY_SECTION_OVERRIDES: dict[str, str] = {
+    "rxinfer_free_energy": "Results",
+    "posterior_beliefs": "Results",
+    "inference_diagnostics": "Results",
+    "parameter_learning": "Results",
+    "calibration_curve": "Results",
+    "decoder_calibration": "Results",
+    "confusion_matrix": "Results",
+    "model_evidence": "Results",
+    "ambiguity_ablation": "Results",
+    "segmentation_ribbons": "Results",
+    "transition_ablation": "Results",
+    "observation_informativeness": "Results",
+    "phase_recovery": "Results",
+    "corpus_stability": "Results",
+    "active_efe": "Results",
+    "action_sensing": "Results",
+    "counterexample_search": "Results",
+    "sensing_stress": "Results",
+    "generative_adequacy": "Results",
+    "quotient_classifier": "Methodology",
+    "compiler_transfer": "Methodology",
+    "formal_correspondence": "Methodology",
+    "sensor_costs": "Methodology",
+    "replication_manifest": "Methodology",
+    "artifact_receipt_closure": "Validation",
+}
+
+# Evidence-status overrides for legacy rows whose receipts carry resampled or
+# interval-bearing uncertainty; the legacy default remains "descriptive".
+_EVIDENCE_STATUS_OVERRIDES: dict[str, str] = {
+    "quotient_classifier": "inferential",
+    "model_comparison": "inferential",
+    "calibration_curve": "inferential",
+    # Family-level descriptive 95% Wilson whiskers are plotted in the
+    # representation-invariance pilot (src.figures), so it carries intervals.
+    "representation_invariance_benchmark": "inferential",
+}
+
+# Concrete uncertainty descriptions mirroring each caption's interval type.
+_UNCERTAINTY_OVERRIDES: dict[str, str] = {
+    "calibration_curve": (
+        "95% Wilson intervals around per-bin hit counts (descriptive, fixture corpus)"
+    ),
+    "generative_adequacy": (
+        "central 95% simulation intervals from the fixed-parameter HMM "
+        "(descriptive model checking)"
+    ),
+    "model_comparison": (
+        "descriptive Wilson intervals around pooled hit counts at the declared "
+        "confidence level"
+    ),
+}
 
 
 def _visual_qa(path: Path, vector_dir: Path) -> dict[str, Any]:
@@ -815,7 +905,7 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
         else:
             row = legacy_rows[stem]
             generator = "src.figures"
-            section = (
+            section = _LEGACY_SECTION_OVERRIDES.get(stem) or (
                 "Methodology"
                 if stem
                 not in {
@@ -849,7 +939,7 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
             title = stem.replace("_", " ").title()
             subtitle = f"Receipt-backed {stem.replace('_', ' ')} visual; see the generated caption for population and evidence limits."
             chart_family = "diagnostic or audit visual"
-            evidence_status = "descriptive"
+            evidence_status = _EVIDENCE_STATUS_OVERRIDES.get(stem, "descriptive")
             artifacts = _base_artifacts(stem)
             caption = str(row["caption"])
             if len(caption.split()) < 120:
@@ -884,7 +974,11 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
             hierarchy = "as declared by the source receipt; instruction steps are not independent unless explicitly stated"
             split = "as declared by the source receipt; unavailable when not applicable"
             metrics = str(row.get("statistics", "descriptive receipt-backed values"))
-            uncertainty = "as stated by the source receipt; deterministic visuals do not receive invented intervals"
+            uncertainty = _UNCERTAINTY_OVERRIDES.get(
+                stem,
+                "as stated by the source receipt; deterministic visuals do not "
+                "receive invented intervals",
+            )
             missing_semantics = "Unavailable and unsupported cells remain labelled; no unavailable evidence is plotted as zero."
         png_path = root / "output" / "figures" / f"{stem}.png"
         svg_path = root / "output" / "figures" / "vector" / f"{stem}.svg"

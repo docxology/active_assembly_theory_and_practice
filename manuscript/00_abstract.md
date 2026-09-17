@@ -20,7 +20,8 @@ contains `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` source families and
 `{{QUOTIENT_CLASSIFIER_ROW_COUNT}}` rows, with
 `{{QUOTIENT_CLASSIFIER_HELD_OUT_FAMILY_COUNT}}` families held out from model fitting.
 The co-primary portfolio includes an interpretable classifier, a temporal
-probabilistic model, a deterministic recurrent classifier, and surface baselines;
+probabilistic model, a fixed one-layer tanh recurrent classifier, and surface
+baselines;
 the temporal endpoint reaches balanced accuracy
 `{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}}` and macro-F1
 `{{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}}` on this frozen bounded benchmark.

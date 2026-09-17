@@ -13,7 +13,8 @@ These evidence streams are joined into trace schema `{{TRACE_SCHEMA_VERSION}}`
 with sample hash `{{BINARY_SHA256}}`. The bundle records
 `{{AVAILABLE_PACKAGE_COUNT}}` available package adapters out of
 `{{TOTAL_PACKAGE_COUNT}}` total adapter slots, including unavailable optional
-packages as explicit provenance rather than silent assumptions.
+packages as explicit provenance rather than silent assumptions; the package
+provenance is visualized in [@fig:package-provenance].
 
 The feature layer maps instruction mnemonics into `{{OBSERVATION_CATEGORY_COUNT}}`
 observation categories:
@@ -23,6 +24,8 @@ matrix over `{{HIDDEN_STATE_COUNT}}` latent program-state classes: setup, accumu
 representation transform, guard check, and exit. The posterior update uses
 pymdp's softmax routine over log prior and log likelihood terms, producing one
 belief vector and one comparison free-energy diagnostic per observation step.
+The end-to-end observation pipeline is visualized in [@fig:observation-pipeline],
+and the typed trace feature matrix in [@fig:trace-feature-matrix].
 
 ## Assembly evidence and notation {#sec:assembly-evidence}
 
@@ -77,7 +80,8 @@ by the inference model.
 
 ![{{FIGURE_ASSEMBLY_STATE_PLATE_CAPTION}}]({{FIGURE_ASSEMBLY_STATE_PLATE_PATH}}){#fig:assembly-state-plate width=100%}
 
-The state plate is the visual companion to [@lst:assembly_fixture]. It is
+The state plate ([@fig:assembly-state-plate]) is the visual companion to
+[@lst:assembly_fixture]. It is
 generated from the same listing and correspondence receipts, but it keeps the
 evidence types visually separate: bytes and decoded operands are static
 observations, register and program-counter snapshots are bounded dynamic
@@ -321,13 +325,15 @@ particular operation: carry (`CF`), zero (`ZF`), sign (`SF`), and overflow
 {{SYMBOLIC_STEPWISE_FLAG_COMPARISON_COUNT}} defined bit comparisons. An
 undefined or preserved flag is not silently treated as a match. These are
 trace-refinement checks for a declared subset, not a proof of the complete
-x86-64 transition relation [@intel_sdm;@dasgupta2019x86semantics].
+x86-64 transition relation [@intel_sdm;@dasgupta2019x86semantics]. The stepwise
+refinements are visualized in [@fig:trace-refinement].
 
 ![{{FIGURE_TRACE_REFINEMENT_CAPTION}}]({{FIGURE_TRACE_REFINEMENT_PATH}}){#fig:trace-refinement width=96%}
 
 ![{{FIGURE_SEMANTIC_COVERAGE_MATRIX_CAPTION}}]({{FIGURE_SEMANTIC_COVERAGE_MATRIX_PATH}}){#fig:semantic-coverage-matrix width=100%}
 
-The coverage matrix should be interpreted as a scope ledger. A check mark in
+The coverage matrix ([@fig:semantic-coverage-matrix]) should be interpreted as a
+scope ledger. A check mark in
 the Lean column is evidence about the checked formal fragment; a Capstone or
 Unicorn mark is evidence about the corresponding adapter call on the recorded
 fixture. These marks are not interchangeable and do not aggregate into a
@@ -363,7 +369,8 @@ P\equiv_{64}Q\quad\Longleftrightarrow\quad
 \forall q\in\mathbb{W}_{64},\;\operatorname{run}(P,q)=\operatorname{run}(Q,q).
 $$ {#eq:formal-observational-equivalence}
 
-The checked receipt is `{{FORMAL_VERIFICATION_ARTIFACT}}`: Lean toolchain
+The checked receipt is `{{FORMAL_VERIFICATION_ARTIFACT}}`, visualized in
+[@fig:formal-verification-receipt]: Lean toolchain
 `{{FORMAL_TOOLCHAIN}}` builds `{{FORMAL_THEOREM_COUNT}}` named theorems and
 reports status `{{FORMAL_VERIFICATION_STATUS}}`. The current theorem manifest
 proves two `inc` operations equal one addition by two, proves that `nop` is
@@ -396,7 +403,8 @@ The receipt `{{CROSS_ARCHITECTURE_ARTIFACT}}` records the bytes, decoder
 mnemonics, API provenance, bounded instruction count, and outcome for all
 `{{CROSS_ARCHITECTURE_COUNT}}` architectures. All bounded executions passed
 (`{{CROSS_ARCHITECTURE_ALL_PASSED}}`) and the common numeric result is
-`{{CROSS_ARCHITECTURE_RESULT}}`.
+`{{CROSS_ARCHITECTURE_RESULT}}`; the benchmark is visualized in
+[@fig:cross-architecture-benchmark].
 
 The adapter contract is intentionally weaker than semantic equivalence. It
 does not compare flags, exception behavior, calling conventions, memory
@@ -502,7 +510,8 @@ equals the bounded Unicorn register state plus the decoded displacement. It
 does not perform alias analysis, recover heap objects, or infer memory meaning
 from an address alone.
 
-The current provenance artifact is {{MEMORY_EVIDENCE_ARTIFACT}}. It contains
+The current provenance artifact is {{MEMORY_EVIDENCE_ARTIFACT}}, visualized in
+[@fig:assembly-memory-timeline]. It contains
 {{MEMORY_STATIC_INSTRUCTION_COUNT}} static memory instructions and
 {{MEMORY_DYNAMIC_EVENT_COUNT}} dynamic events: {{MEMORY_WRITE_COUNT}} write and
 {{MEMORY_READ_COUNT}} read event(s) at {{MEMORY_DISTINCT_ADDRESS_COUNT}}
@@ -528,7 +537,8 @@ also runs a validated, namespaced categorical companion,
 fixed left-to-right latent phases. Its diagnostics are written to
 `{{RXINFER_CATEGORICAL_ARTIFACT}}` and contain
 `{{RXINFER_CATEGORICAL_FREE_ENERGY_COUNT}}` finite values, with final value
-`{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`. The Gaussian and categorical
+`{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`; its convergence is shown in
+[@fig:rxinfer-categorical-free-energy]. The Gaussian and categorical
 free-energy values are not compared on an absolute scale: they are distinct
 factor graphs with different variational objectives.
 
@@ -698,8 +708,11 @@ temporal forward update reduces exactly to the per-step memoryless posterior
 
 ![{{FIGURE_TEMPORAL_BELIEFS_X86_ACCUMULATOR_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_ACCUMULATOR_PATH}}){#fig:temporal-beliefs-x86-accumulator width=90%}
 
-The companion heatmaps below expose the same filtering contract across the
-labelled fixtures. They are supporting diagnostics rather than additional
+The companion heatmaps in [@fig:temporal-beliefs-x86-accumulator],
+[@fig:temporal-beliefs-x86-bitwise], [@fig:temporal-beliefs-x86-guard],
+[@fig:temporal-beliefs-x86-long-accumulator], [@fig:temporal-beliefs-x86-memory],
+and [@fig:temporal-beliefs-x86-guard-taken] expose the same filtering contract
+across the labelled fixtures. They are supporting diagnostics rather than additional
 independent experiments: row labels are observation IDs, colors are posterior
 probabilities, and the hand-authored phase labels are not discovered from the
 bytes. The final two panels make the expanded design explicit: one includes
@@ -818,7 +831,8 @@ continuous sensing, or operational acquisition time.
 The source-bound artifact is `{{ACTIVE_INFORMATION_ARTIFACT}}`, with
 `{{ACTIVE_INFORMATION_SENSOR_COUNT}}` sensors and
 `{{ACTIVE_INFORMATION_FRONTIER_ROW_COUNT}}` frontier rows. Exact branch
-enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`. That information
+enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`; the frontier is
+visualized in [@fig:active-information-frontier]. That information
 frontier uses model-derived unit costs and is therefore a
 mechanism result, not a wall-clock law. The measured-cost receipt in
 Section @sec:measured-sensing is a separate, deterministic/calibrated layer;
@@ -829,7 +843,8 @@ the finite declared family.
 
 ![{{FIGURE_POLICY_CERTIFICATE_FRONTIER_CAPTION}}]({{FIGURE_POLICY_CERTIFICATE_FRONTIER_PATH}}){#fig:policy-certificate-frontier width=100%}
 
-The certificate frontier makes the cost model auditable at the same time as
+The certificate frontier ([@fig:policy-certificate-frontier]) makes the cost
+model auditable at the same time as
 it makes the optimization boundary visible. Exact dynamic programming supplies
 the finite oracle and its regret/optimality gap; any timing overlay is a local
 calibration with its own machine receipt. The visual must therefore be read as
@@ -1047,7 +1062,8 @@ The receipt `{{FORMAL_CORRESPONDENCE_ARTIFACT}}` covers
 `{{FORMAL_CORRESPONDENCE_FIXTURE_COUNT}}` fixtures under
 `{{FORMAL_CORRESPONDENCE_INTERVENTION_COUNT}}` declared interventions each,
 with `{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` reference step rows. Its status is
-`{{FORMAL_CORRESPONDENCE_STATUS}}`. The comparison is all-step and fail-closed:
+`{{FORMAL_CORRESPONDENCE_STATUS}}`, and the comparison is visualized in
+[@fig:formal-correspondence]. The comparison is all-step and fail-closed:
 an unsupported row, environment error, or mismatch cannot be converted into a
 terminal-only success. The Lean prerequisite is reported separately in
 `{{FORMAL_VERIFICATION_ARTIFACT}}`; a generated Lean bridge now serializes one
@@ -1082,8 +1098,9 @@ architecture. This is the correct interpretation of the compiler matrix in
 The separate licensed-source receipt is `{{EXTERNAL_SOURCE_ARTIFACT}}` with
 status `{{EXTERNAL_SOURCE_STATUS}}`, `{{EXTERNAL_SOURCE_PROJECT_COUNT}}`
 manifested projects, and `{{EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT}}`
-labelable examples. The pinned manifest records ten source rows spanning five
-projects and two revisions per project. Static coverage and source-bound
+labelable examples. The pinned manifest records `{{EXTERNAL_STATIC_ROW_COUNT}}`
+source rows spanning `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` projects and two
+revisions per project. Static coverage and source-bound
 labels are separate evidence surfaces. The static receipt
 `{{EXTERNAL_STATIC_ARTIFACT}}` is `{{EXTERNAL_STATIC_STATUS}}`: it retains
 `{{EXTERNAL_STATIC_VALIDATED_COUNT}}` successfully compiled-and-decoded rows
@@ -1134,7 +1151,8 @@ equivalence label.
 
 ![{{FIGURE_STATISTICAL_HIERARCHY_CAPTION}}]({{FIGURE_STATISTICAL_HIERARCHY_PATH}}){#fig:statistical-hierarchy width=100%}
 
-The hierarchy is the reason the analysis reports family-level uncertainty.
+The hierarchy ([@fig:statistical-hierarchy]) is the reason the analysis reports
+family-level uncertainty.
 Transformations, interventions, traces, and instruction steps are useful
 observations, but they share source lineage and cannot be treated as a flat
 independent sample. Fixing the family split before fitting also prevents the
@@ -1154,7 +1172,9 @@ catalog, not a bisimulation relation preserved by every transition
 [@sangiorgi2011bisimulation].
 
 The classifier receipt is `{{QUOTIENT_CLASSIFIER_ARTIFACT}}` with status
-`{{QUOTIENT_CLASSIFIER_STATUS}}`. It uses `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` families and
+`{{QUOTIENT_CLASSIFIER_STATUS}}`; its held-out portfolio comparison is visualized
+in [@fig:quotient-classifier]. It uses `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`
+families and
 `{{QUOTIENT_CLASSIFIER_ROW_COUNT}}` pair rows, split into
 `{{QUOTIENT_CLASSIFIER_TRAINING_FAMILY_COUNT}}` training,
 `{{QUOTIENT_CLASSIFIER_DEVELOPMENT_FAMILY_COUNT}}` development, and
@@ -1162,7 +1182,7 @@ The classifier receipt is `{{QUOTIENT_CLASSIFIER_ARTIFACT}}` with status
 occurs in more than one partition. The calibrated interpretable model is a
 regularized binary logistic classifier over typed trace summaries; the temporal
 model is a class-conditional first-order Markov likelihood over typed token
-sequences; and the neural model is a fixed one-layer NumPy tanh recurrent
+sequences; and the recurrent model is a fixed one-layer NumPy tanh recurrent
 network. The three are co-primary. A typed-trace summary is retained as the
 historical surface comparator, and six additional raw surface baselines are fit
 independently from training-only vocabularies: opcode histograms, hashed byte
@@ -1205,7 +1225,7 @@ are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_TEMPORAL_MACRO_F1}} for the temporal model,
 {{QUOTIENT_CLASSIFIER_NEURAL_BALANCED_ACCURACY}} /
-{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}} for the neural model, and
+{{QUOTIENT_CLASSIFIER_NEURAL_MACRO_F1}} for the recurrent model, and
 {{QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1}} for the surface baseline. These
 numbers are reported as a portfolio: overlapping clustered intervals,
@@ -1220,7 +1240,8 @@ no post-hoc baseline winner is promoted.
 
 ![{{FIGURE_QUOTIENT_CONSTRUCTION_CAPTION}}]({{FIGURE_QUOTIENT_CONSTRUCTION_PATH}}){#fig:quotient-construction width=100%}
 
-The construction diagram separates three operations that are often conflated:
+The construction diagram ([@fig:quotient-construction]) separates three
+operations that are often conflated:
 declaring a source-level pair role, applying the finite intervention catalog,
 and assigning an observational label from the resulting normalized traces.
 Only the last operation supplies the classifier target. The relation is useful
@@ -1254,6 +1275,7 @@ sets. A subset is *fully separating* only when both quantities equal one. The
 producer enumerates all `{{INTERVENTION_POWER_SUBSET_COUNT}}` non-empty subsets
 over `{{INTERVENTION_POWER_PAIR_COUNT}}` pair outcomes, retains the tied
 minimum separating sets, and keeps the one-state negative control visible. The
+subset enumeration is visualized in [@fig:intervention-power]. The
 receipt is `{{INTERVENTION_POWER_ARTIFACT}}`; its minimum fully separating
 cardinality is `{{INTERVENTION_POWER_MINIMAL_CARDINALITY}}` with
 `{{INTERVENTION_POWER_MINIMAL_SET_COUNT}}` tied set(s). Under the deliberately
@@ -1330,12 +1352,11 @@ and offline instructions are part of the hashed public bundle
 (`{{REPLICATION_PUBLIC_BUNDLE_SHA256}}`). Replay is local and no-network; the
 protected receipt separately records the current endpoint as
 `{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
-scope. The observed run uses `{{INDEPENDENT_REPLAY_MODEL}}` over
+scope. When a replay is recorded, it uses `{{INDEPENDENT_REPLAY_MODEL}}` over
 `{{INDEPENDENT_REPLAY_ROW_COUNT}}` protected-score rows, with
 `{{INDEPENDENT_REPLAY_NETWORK_DISABLED}}` recorded for the network-disabled
-boundary; it is evidence about replay of the frozen interface, not an
-independent physical-machine run or an independent reimplementation.
-
+boundary; replay of the frozen interface is evidence about the frozen interface,
+not an independent physical-machine run or an independent reimplementation.
 The separation contract is stronger than omitting a visible `label` key. Public
 record identifiers are derived only from public sequence/features, and the
 validator rejects any forbidden family, split, variant, or quotient field in
@@ -1354,10 +1375,13 @@ in [@fig:replication-manifest].
 
 ![{{FIGURE_REPLAY_FAILURE_AUDIT_CAPTION}}]({{FIGURE_REPLAY_FAILURE_AUDIT_PATH}}){#fig:replay-failure-audit width=100%}
 
-The controlled replay audit is included because a reproducibility package must
-make failure inspectable. The protected score is a single replay of a frozen
-interface; its chance-level discrimination is not converted into a favorable
-claim by changing the model, labels, or endpoint. The guest boundary confirms
-the separation procedure used for this run, while the protected scoring boundary
-confirms where labels were available. This is controlled replay evidence, not
-independent physical replication or independent reimplementation.
+The controlled replay audit ([@fig:replay-failure-audit]) is included because a
+reproducibility package must make failure inspectable. When an independent
+receipt is ingested, the protected score is computed once over the frozen
+interface, and the audit retains whatever discrimination it shows as a bounded
+endpoint rather than converting it into a favorable claim by changing the model,
+labels, or endpoint. The guest boundary attests to the separately controlled-run
+procedure required for ingestion, while the protected scoring boundary confirms
+where labels were available. The recorded replay status is
+`{{INDEPENDENT_REPLAY_STATUS}}`; controlled replay evidence is not independent
+physical replication or independent reimplementation.
