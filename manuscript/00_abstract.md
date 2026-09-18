@@ -15,6 +15,14 @@ bounded Unicorn traces, and a Lean formal fragment are compared only over the
 declared user-mode integer subset; this is a checked boundary, not complete x86-64
 semantics.
 
+A temporal corpus of `{{TEMPORAL_FIXTURE_COUNT}}` transparent x86-64 fixtures
+with a frozen `{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out family
+split supports the decoding comparison. At the authored informative likelihood
+the memoryless per-step decoder outperforms the temporal filter; the temporal
+advantage appears only under synthetic observation ambiguity, and the designed
+`lea`-category ambiguity of the optimization-rewrite fixture is retained as a
+measured hard case rather than resolved away.
+
 The empirical program has two linked surfaces. First, a frozen quotient benchmark
 contains `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` source families and
 `{{QUOTIENT_CLASSIFIER_ROW_COUNT}}` rows, with

@@ -258,23 +258,26 @@ def test_memory_evidence_figure_written_nonempty(tmp_path) -> None:
 def test_corpus_coverage_records_memory_and_alternate_path_variation() -> None:
     payload = corpus_coverage_payload_current()
     summary = payload["summary"]
-    assert payload["schema_version"] == "1.0.0"
-    assert summary["fixture_count"] == 6
-    assert summary["memory_fixture_count"] == 1
+    assert payload["schema_version"] == "1.1.0"
+    assert summary["fixture_count"] == 10
+    assert summary["total_static_instruction_count"] == 56
+    assert summary["total_executed_instruction_count"] == 55
+    assert summary["memory_fixture_count"] == 2
     assert summary["alternate_path_fixture_count"] == 1
-    assert summary["repeated_phase_fixture_count"] == 4
+    assert summary["repeated_phase_fixture_count"] == 8
     assert summary["unique_instruction_family_count"] == 5
-    assert summary["unique_memory_mode_count"] == 1
-    assert summary["unique_branch_target_class_count"] == 2
+    assert summary["unique_memory_mode_count"] == 2
+    assert summary["unique_branch_target_class_count"] == 3
+    assert summary["total_phase_run_count"] == 43
 
 
 def test_action_sensing_payload_is_held_out_and_policy_complete() -> None:
     payload = action_sensing_payload_current()
     assert payload["schema_version"] == "1.0.0"
-    assert payload["summary"]["fixture_count"] == 6
+    assert payload["summary"]["fixture_count"] == 10
     assert payload["summary"]["leakage_free"] is True
     assert set(payload["policies"]) == {"active", "fixed", "random", "oracle"}
-    assert payload["summary"]["action_pool_changes_evidence"] is True
+    assert payload["summary"]["action_pool_changes_evidence"] is False
 
 
 def test_action_sensing_figure_written_nonempty(tmp_path) -> None:

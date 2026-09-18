@@ -13,6 +13,9 @@ import src.scientific_protocol as scientific_protocol_module
 import src.theorem_phase as theorem_module
 
 from src.compiler_transfer import (
+    CLANG_FIXTURE_FAMILIES,
+    CLANG_OPTIMIZATIONS,
+    COMPILER_TRANSFER_SCHEMA_VERSION,
     _compile_one,
     _decode_bytes,
     _extract_text_bytes,
@@ -213,19 +216,213 @@ def test_formal_correspondence_validator_covers_structural_failures() -> None:
         mutation(candidate)
         assert not validate_formal_correspondence_payload(candidate)[0]
 
+_COMPILER_PAYLOAD_CACHE: dict[str, dict[str, Any]] = {}
+
+
+def _compiler_payload() -> dict[str, Any]:
+    """Generate the heavy compiler matrix once per test session."""
+
+    if "payload" not in _COMPILER_PAYLOAD_CACHE:
+        _COMPILER_PAYLOAD_CACHE["payload"] = compiler_transfer_payload()
+    return _COMPILER_PAYLOAD_CACHE["payload"]
+
 
 def test_compiler_transfer_records_unavailable_targets_without_fallback() -> None:
-    payload = compiler_transfer_payload()
+    payload = _compiler_payload()
     valid, detail = validate_compiler_transfer_payload(payload)
     assert valid, detail
+    assert payload["schema_version"] == COMPILER_TRANSFER_SCHEMA_VERSION
     assert payload["execution_performed"] is False
     assert any(row["status"] == "unavailable" for row in payload["rows"])
     assert any(row["status"] == "validated_static_object" for row in payload["rows"])
     assert payload["capability_summary"]["source_family_count"] >= 6
-    assert set(payload["capability_summary"]["optimization_levels_validated"]) == {
-        "-O0",
-        "-O2",
+    clang_levels = {
+        row["optimization"]
+        for row in payload["rows"]
+        if row["compiler"] == "clang"
+        and row["status"] == "validated_static_object"
     }
+    assert clang_levels == set(CLANG_OPTIMIZATIONS)
+
+
+def test_compiler_transfer_validated_rows_carry_four_hashes_and_counts() -> None:
+    payload = _compiler_payload()
+    validated = [
+        row for row in payload["rows"]
+        if row["status"] == "validated_static_object"
+    ]
+    assert validated
+    for row in validated:
+        for field in (
+            "source_sha256",
+            "object_sha256",
+            "text_sha256",
+            "disassembly_sha256",
+        ):
+            assert isinstance(row[field], str) and len(row[field]) == 64
+        assert isinstance(row["decoded_instruction_count"], int)
+        assert row["decoded_instruction_count"] > 0
+    broken = deepcopy(payload)
+    broken["rows"][0].pop("object_sha256")
+    assert not validate_compiler_transfer_payload(broken)[0]
+
+
+def test_compiler_transfer_unavailable_rows_carry_reason_and_requested_triple() -> (
+    None
+):
+    payload = _compiler_payload()
+    unavailable = [
+        (index, row)
+        for index, row in enumerate(payload["rows"])
+        if row["status"] == "unavailable"
+    ]
+    assert unavailable
+    for _, row in unavailable:
+        assert row["reason"]
+        assert row["requested_triple"] == row["target_triple"]
+    index, row = next(
+        (index, row)
+        for index, row in unavailable
+        if row["requested_triple"] != "x86_64-apple-darwin"
+    )
+    broken = deepcopy(payload)
+    broken["rows"][index]["reason"] = ""
+    assert not validate_compiler_transfer_payload(broken)[0]
+    broken = deepcopy(payload)
+    broken["rows"][index]["requested_triple"] = "x86_64-apple-darwin"
+    assert not validate_compiler_transfer_payload(broken)[0]
+    assert row["target_triple"] == row["requested_triple"]
+
+
+def test_compiler_transfer_matrix_is_availability_aware() -> None:
+    payload = _compiler_payload()
+    probes = {record["compiler"]: record for record in payload["toolchain_probes"]}
+    rows = payload["rows"]
+    assert probes["nasm"]["available"] is True
+    nasm_rows = [row for row in rows if row["compiler"] == "nasm"]
+    assert nasm_rows
+    assert all(
+        row["status"] == "validated_static_object" for row in nasm_rows
+    )
+    assert probes["rustc"]["available"] is True
+    rustc_host_rows = [
+        row
+        for row in rows
+        if row["compiler"] == "rustc" and row["target_id"] == "aarch64"
+    ]
+    assert rustc_host_rows
+    assert all(
+        row["status"] == "validated_static_object" for row in rustc_host_rows
+    )
+    rustc_cross_rows = [
+        row
+        for row in rows
+        if row["compiler"] == "rustc" and row["target_id"] == "x86_64"
+    ]
+    assert rustc_cross_rows
+    assert all(
+        row["status"] == "unavailable"
+        and row["reason"] == "compiler_target_unavailable_or_compile_failed"
+        and row["requested_triple"] == "x86_64-apple-darwin"
+        for row in rustc_cross_rows
+    )
+    riscv_rows = [
+        row
+        for row in rows
+        if row["compiler"] == "clang" and row["target_id"] == "riscv64"
+    ]
+    assert riscv_rows
+    assert all(
+        row["status"] == "unavailable"
+        and row["reason"] == "compiler_target_unavailable_or_compile_failed"
+        and row["requested_triple"] == "riscv64-unknown-elf"
+        for row in riscv_rows
+    )
+    absent_rows = [
+        row for row in rows if row["compiler"] in {"go", "zig"}
+    ]
+    assert absent_rows
+    for row in absent_rows:
+        assert row["status"] == "unavailable"
+        assert row["reason"] in {
+            "toolchain_not_installed",
+            "fixture_source_not_embedded",
+        }
+        assert row["requested_triple"]
+
+
+def test_compiler_transfer_records_elf_and_macho_object_formats() -> None:
+    payload = _compiler_payload()
+    assert {row["object_format"] for row in payload["rows"]} == {"macho", "elf"}
+    validated_formats = {
+        row["object_format"]
+        for row in payload["rows"]
+        if row["status"] == "validated_static_object"
+    }
+    assert validated_formats == {"macho", "elf"}
+    assert payload["capability_summary"]["object_formats_validated"] == sorted(
+        validated_formats
+    )
+    elf_rows = [row for row in payload["rows"] if row["object_format"] == "elf"]
+    macho_rows = [
+        row for row in payload["rows"] if row["object_format"] == "macho"
+    ]
+    assert elf_rows and macho_rows
+    assert all(
+        row["requested_triple"].endswith("-linux-gnu")
+        or row["requested_triple"].endswith("-unknown-elf")
+        for row in elf_rows
+    )
+    assert any(
+        row["requested_triple"].endswith("-linux-gnu")
+        and row["status"] == "validated_static_object"
+        for row in elf_rows
+    )
+    assert all(row["requested_triple"].endswith("-darwin") for row in macho_rows)
+
+
+def test_compiler_transfer_labels_gcc_probe_as_clang_alias() -> None:
+    payload = _compiler_payload()
+    gcc_probes = [
+        record
+        for record in payload["toolchain_probes"]
+        if record["compiler"] == "gcc"
+    ]
+    assert len(gcc_probes) == 1
+    gcc = gcc_probes[0]
+    assert gcc["role"] == "probe_only"
+    assert gcc["gcc_clang_alias"] is True
+    assert "clang" in gcc["alias_label"].lower()
+    assert "clang" in str(gcc["version"]).lower()
+    assert payload["capability_summary"]["gcc_clang_alias"] is True
+    assert all(row["compiler"] != "gcc" for row in payload["rows"])
+
+
+def test_compiler_transfer_validator_fails_closed_on_matrix_drift() -> None:
+    payload = _compiler_payload()
+    mutations: list[Callable[[dict[str, Any]], None]] = [
+        lambda candidate: candidate["rows"].pop(),
+        lambda candidate: candidate["rows"][0].__setitem__("optimization", "-O4"),
+        lambda candidate: candidate["rows"][0].__setitem__("object_format", "coff"),
+        lambda candidate: candidate["rows"][0].__setitem__(
+            "requested_triple", "definitely-not-the-frozen-triple"
+        ),
+        lambda candidate: candidate["rows"][0].__setitem__(
+            "decoded_instruction_count", 0
+        ),
+        lambda candidate: candidate["capability_summary"].__setitem__(
+            "compilers_validated", []
+        ),
+        lambda candidate: candidate["capability_summary"].__setitem__(
+            "object_formats_validated", ["macho"]
+        ),
+        lambda candidate: candidate.__setitem__("schema_version", "2.0.0"),
+        lambda candidate: candidate.__setitem__("execution_performed", True),
+    ]
+    for mutation in mutations:
+        candidate = deepcopy(payload)
+        mutation(candidate)
+        assert not validate_compiler_transfer_payload(candidate)[0]
 
 
 def test_sensor_costs_have_vectors_and_finite_oracle_certificates() -> None:
@@ -440,14 +637,32 @@ def test_compiler_helpers_decode_both_supported_static_formats_and_fail_closed()
         _decode_bytes(b"\x90", "riscv64")
     with pytest.raises(ValueError, match="decoded zero"):
         _decode_bytes(b"\x0f", "x86_64")
+    with pytest.raises(ValueError, match="unknown target id"):
+        _compile_one(
+            "clang",
+            "invalid_target_fixture",
+            "int f(void) { return 1; }\n",
+            "definitely-not-a-real-target",
+            "-O0",
+        )
+    with pytest.raises(ValueError, match="unsupported optimization level"):
+        _compile_one(
+            "clang",
+            "straight_line_arithmetic",
+            CLANG_FIXTURE_FAMILIES["straight_line_arithmetic"],
+            "x86_64",
+            "-O9",
+        )
     unavailable = _compile_one(
-        "invalid_target_fixture",
-        "int f(void) { return 1; }\n",
-        "invalid",
-        "definitely-not-a-real-target",
+        "clang",
+        "riscv64_unavailable_fixture",
+        CLANG_FIXTURE_FAMILIES["straight_line_arithmetic"],
+        "riscv64",
+        "-O0",
     )
     assert unavailable["status"] == "unavailable"
     assert unavailable["execution_performed"] is False
+    assert unavailable["requested_triple"] == "riscv64-unknown-elf"
 
 
 def test_protocol_validator_rejects_each_core_contract_drift() -> None:

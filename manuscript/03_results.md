@@ -134,7 +134,7 @@ experiment with an explicit exclusion boundary. For each fixture, the smoothed
 categorical HMM estimates its emission matrix A, transition matrix B, and
 initial prior D from the other {{CORPUS_FIXTURE_COUNT}} - 1 fixtures only.
 The excluded fixture is then decoded without any parameter update. Across the
-six held-out runs, mean temporal accuracy is {{HELD_OUT_MEAN_ACCURACY}}
+{{TEMPORAL_FIXTURE_COUNT}} held-out runs, mean temporal accuracy is {{HELD_OUT_MEAN_ACCURACY}}
 (range {{HELD_OUT_ACCURACY_MIN}}--{{HELD_OUT_ACCURACY_MAX}}) versus
 {{HELD_OUT_FIXED_ACCURACY}} for the fixed full-corpus reference. The lower
 held-out score is not a failure of the code; it is evidence that the tiny
@@ -383,7 +383,11 @@ recovery limitation that the manuscript cites qualitatively: the `setup` and
 of all — the `guard_check` phase (F1 `{{GUARD_F1}}`) are
 observation-underdetermined. The macro F1 is `{{PHASE_MACRO_F1}}` and the hardest
 phase to recover is `{{HARDEST_PHASE}}`; the per-phase profile is shown in
-[@fig:phase-recovery]. These are forward-filter decoding limits
+[@fig:phase-recovery]. The retained hard case is by design: in the
+optimization-rewrite fixture the `lea` rewrite shares the residual `other`
+observation category with unrelated instructions while its latent phase is
+accumulator update, so belief mass splits on that step and the designed
+ambiguity survives decoding. These are forward-filter decoding limits
 of the demonstrator, not claims about a complete binary-analysis system.
 
 Likelihood information is uneven ([@fig:observation-informativeness]):
@@ -428,7 +432,7 @@ from `{{EVALUATION_REPORT_ARTIFACT}}` before template hydration.
 
 The action-conditioned experiment changes the evidence contract in a bounded
 way: the policy chooses a typed field query before the held-out field value is
-revealed. Across the six fixture holdouts, the active policy uses a mean of
+revealed. Across the {{TEMPORAL_FIXTURE_COUNT}} fixture holdouts, the active policy uses a mean of
 `{{ACTION_SENSING_ACTIVE_MEAN_ACTIONS}}` actions under the common censored
 budget, compared with `{{ACTION_SENSING_FIXED_MEAN_ACTIONS}}` for source-order
 fixed sensing. The active-minus-fixed contrast is
@@ -471,6 +475,62 @@ learned semantics. They establish a reproducible, label-source-controlled
 endpoint with visible negative evidence, including a recurrent classifier that
 does not recover the endpoint reliably.
 
+The portfolio's robustness diagnostics are development-only and fail closed.
+Hyperparameters are selected on the development families only
+(`test_rows_used = 0`): the logistic comparator selects L2 penalty 0.001 and
+learning rate 0.2, while every recurrent-option combination scores exactly 0.5
+on development, so the recurrent tie is resolved to hidden size 8 and 4 epochs
+by the frozen lexicographic first-maximum rule. Five deterministic seeds
+(11, 23, 47, 89, 131) are rerun for each stochastic family; the recorded
+seed ranges are point-identical for the interpretable model and flat at
+chance for the recurrent model, and they are reported separately from the
+source-family bootstrap intervals. Platt calibration is fitted on the
+development split and reported alongside the primary metrics — the uncalibrated
+balanced accuracy and macro-F1 remain primary and the calibrated metrics gate
+no claim. The family-shuffle control, which permutes each held-out family's
+own label vector before refitting, reaches balanced accuracy 0.597, strictly
+below the temporal model (`{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}}`)
+and the interpretable model
+(`{{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}}`); the recurrent
+model is excluded from that comparison because 0.500 is chance level and
+provides no signal to lose against, an exclusion the receipt declares rather
+than hides. The bounded metadata probe — refitting each co-primary model on
+encoding/opcode-surface information only — yields held-out margin differences
+of +0.004 (interpretable) and +0.024 (temporal), both within the frozen
+0.05 practical comparison margin, under the receipt's stated boundary:
+bounded probe only; no architecture-metadata claim. Of 1,280 cross-split
+family pairs, 128 are flagged as near-duplicates and all 128 are declared
+frozen near-duplicate template siblings (undeclared flags fail closed), and
+the cross-encoding consistency contract holds for 61 of 64 families. These
+diagnostics qualify the endpoint; none of them licenses a superiority,
+metadata-leakage, or semantic-discovery claim.
+
+The real transfer and correspondence results are similarly bounded. The
+Python/Capstone/Unicorn receipt reports status
+`{{FORMAL_CORRESPONDENCE_STATUS}}` for
+`{{FORMAL_CORRESPONDENCE_FIXTURE_COUNT}}` transparent fixtures and
+`{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` compared reference steps. The compiler
+receipt records a `{{COMPILER_TRANSFER_ROW_COUNT}}`-cell source-by-optimization
+matrix over the compilers `{{COMPILER_TRANSFER_COMPILERS}}` and the object
+formats `{{COMPILER_TRANSFER_OBJECT_FORMATS}}`: `{{COMPILER_TRANSFER_VALIDATED_COUNT}}`
+cells are validated static objects (clang, nasm, and rustc), while
+`{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` cells are explicitly unavailable —
+36 with `compiler_target_unavailable_or_compile_failed` (including every
+clang RISC-V target probe and all go/zig cells) and 20 with
+`fixture_source_not_embedded` — and validated
+architecture labels are limited to `{{COMPILER_TRANSFER_ARCHITECTURES}}`.
+Because emitted objects were not executed and the separate licensed-source
+receipt is `{{EXTERNAL_SOURCE_STATUS}}`, no cross-compiler, application, or
+compiler-correctness claim follows. The figures make those boundaries visible
+rather than collapsing unavailable capability into a zero.
+
+The generated Lean bridge is the formal counterpart: it covers
+`{{LEAN_BRIDGE_FIXTURE_COUNT}}` transparent fixtures with
+`{{LEAN_BRIDGE_THEOREM_COUNT}}` generated machine-state theorems, all
+kernel-checked (`{{LEAN_BRIDGE_KERNEL_CHECKED}}`), and the axiom report is
+clean (`{{FORMAL_AXIOM_REPORT_CLEAN}}`); this is a checked bounded-state
+foundation, not a correspondence theorem for the full pipeline.
+
 The intervention-power analysis is a separate identifiability diagnostic rather
 than another model score. Exact enumeration of
 `{{INTERVENTION_POWER_SUBSET_COUNT}}` non-empty subsets over
@@ -484,20 +544,6 @@ matrix, not evidence that the intervention catalog is complete or that semantic
 identifiability holds outside the benchmark. The source-bound receipt is
 `{{INTERVENTION_POWER_ARTIFACT}}` and the subset curve is shown in
 [@fig:intervention-power].
-
-The real transfer and correspondence results are similarly bounded. The
-Python/Capstone/Unicorn receipt reports status
-`{{FORMAL_CORRESPONDENCE_STATUS}}` for
-`{{FORMAL_CORRESPONDENCE_FIXTURE_COUNT}}` transparent fixtures and
-`{{FORMAL_CORRESPONDENCE_STEP_COUNT}}` compared reference steps. The compiler
-receipt validates `{{COMPILER_TRANSFER_VALIDATED_COUNT}}` source-by-optimization
-static rows and retains `{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` unavailable
-rows; validated
-architecture labels are limited to `{{COMPILER_TRANSFER_ARCHITECTURES}}`.
-Because emitted objects were not executed and the separate licensed-source
-receipt is `{{EXTERNAL_SOURCE_STATUS}}`, no cross-compiler, application, or
-compiler-correctness claim follows. The figures make those boundaries visible
-rather than collapsing unavailable capability into a zero.
 
 The external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it records
 `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` manifested projects,

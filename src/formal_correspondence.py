@@ -37,14 +37,23 @@ from .disassembly import (
 )
 from .emulation import STACK_OFFSET, emulate_x86_64
 from .artifact_contract import write_json_artifact
-from .formal_verification import formal_verification_payload
-from .lean_bridge import BRIDGE_CODE, BRIDGE_EXPECTED_RAX, BRIDGE_INITIAL_RAX
+from .formal_verification import FORMAL_THEOREMS, formal_verification_payload
+from .lean_bridge import (
+    BRIDGE_CODE,
+    BRIDGE_EXPECTED_RAX,
+    BRIDGE_FIXTURES,
+    BRIDGE_INITIAL_RAX,
+)
 from .provenance import generator_revision, sha256_path, toolchain_versions
-from .receipt import build_receipt_envelope, validate_receipt_envelope
+from .receipt import (
+    RECEIPT_SCHEMA_VERSION,
+    build_receipt_envelope,
+    validate_receipt_envelope,
+)
 from .scientific_protocol import SUPPORTED_X86_USER_MODE, scientific_protocol_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FORMAL_CORRESPONDENCE_SCHEMA_VERSION = "2.0.0"
+FORMAL_CORRESPONDENCE_SCHEMA_VERSION = "2.1.0"
 FORMAL_CORRESPONDENCE_ARTIFACT = "output/data/formal_trace_correspondence.json"
 
 U64_MASK = (1 << 64) - 1
@@ -1290,6 +1299,17 @@ def formal_correspondence_payload(project_root: Path = PROJECT_ROOT) -> dict[str
             == BRIDGE_EXPECTED_RAX,
         }
     )
+    lean_bridge_status = [
+        {
+            "bridge_id": str(row["bridge_id"]),
+            "theorem_count": len(row["theorems"]),
+            "kernel_checked": row.get("kernel_checked") is True,
+            "trace_matches_lean_expected": (
+                row.get("trace_matches_lean_expected") is True
+            ),
+        }
+        for row in cast(list[dict[str, Any]], bridge.get("fixtures", []))
+    ]
     protocol = scientific_protocol_payload()
     source_paths = (
         Path(__file__),
@@ -1329,6 +1349,9 @@ def formal_correspondence_payload(project_root: Path = PROJECT_ROOT) -> dict[str
     return {
         **envelope,
         "artifact": FORMAL_CORRESPONDENCE_ARTIFACT,
+        # Domain payload version, layered above the shared receipt envelope
+        # (``receipt_schema_version`` carries the provenance contract version).
+        "schema_version": FORMAL_CORRESPONDENCE_SCHEMA_VERSION,
         "scope": "declared transparent x86-64 fixture subset; not complete x86-64 semantics",
         "architecture": "x86_64",
         "supported_instruction_subset": list(SUPPORTED_X86_USER_MODE),
@@ -1353,8 +1376,12 @@ def formal_correspondence_payload(project_root: Path = PROJECT_ROOT) -> dict[str
             "status": formal.get("endpoint_status", formal.get("status")),
             "toolchain": formal.get("toolchain"),
             "theorems": formal.get("theorems"),
+            "axiom_report_clean": bool(
+                cast(dict[str, Any], formal["axiom_report"])["clean"]
+            ),
             "proof_boundary": "Lean prerequisite; Python/Unicorn rows remain computational cross-checks",
         },
+        "lean_bridge_status": lean_bridge_status,
         "cross_language_bridge": bridge,
         "fixture_count": len(SAMPLE_PROGRAMS),
         "intervention_count": len(interventions),
@@ -1372,8 +1399,10 @@ def validate_formal_correspondence_payload(payload: object) -> tuple[bool, str]:
     if payload.get("schema_version") != FORMAL_CORRESPONDENCE_SCHEMA_VERSION:
         return False, "formal correspondence schema mismatch"
     protocol = scientific_protocol_payload()
+    envelope_view = dict(payload)
+    envelope_view["schema_version"] = RECEIPT_SCHEMA_VERSION
     receipt_valid, receipt_detail = validate_receipt_envelope(
-        payload, expected_protocol=protocol
+        envelope_view, expected_protocol=protocol
     )
     if not receipt_valid:
         return False, f"formal correspondence receipt: {receipt_detail}"
@@ -1387,6 +1416,47 @@ def validate_formal_correspondence_payload(payload: object) -> tuple[bool, str]:
         or bridge.get("trace_matches_lean_expected") is not True
     ):
         return False, "Python reference trace does not match the generated Lean bridge"
+    fixtures = bridge.get("fixtures")
+    if not isinstance(fixtures, list) or len(fixtures) != len(BRIDGE_FIXTURES):
+        return False, "generated Lean bridge fixtures are missing"
+    for fixture, declared in zip(fixtures, BRIDGE_FIXTURES):
+        if not isinstance(fixture, dict):
+            return False, "generated Lean bridge fixture is not an object"
+        if fixture.get("bridge_id") != declared["bridge_id"]:
+            return False, f"generated Lean bridge fixture drift at {declared['bridge_id']}"
+        if list(fixture.get("theorems", [])) != list(declared["theorems"]):
+            return False, (
+                f"generated Lean bridge theorem manifest drift at {declared['bridge_id']}"
+            )
+    lean_status = payload.get("lean_bridge_status")
+    if not isinstance(lean_status, list) or not lean_status:
+        return False, "Lean bridge status rows are missing"
+    seen_bridge_ids: set[str] = set()
+    for row in lean_status:
+        if not isinstance(row, dict):
+            return False, "Lean bridge status row is not an object"
+        bridge_id = row.get("bridge_id")
+        if not isinstance(bridge_id, str) or not bridge_id:
+            return False, "Lean bridge status row has no bridge id"
+        if bridge_id in seen_bridge_ids:
+            return False, f"Lean bridge status duplicates bridge id {bridge_id}"
+        seen_bridge_ids.add(bridge_id)
+        if row.get("kernel_checked") is not True:
+            return False, f"Lean bridge {bridge_id} is not kernel checked"
+        if row.get("trace_matches_lean_expected") is not True:
+            return False, (
+                f"Lean bridge {bridge_id} trace does not match its Lean expected state"
+            )
+        theorem_count = row.get("theorem_count")
+        if not isinstance(theorem_count, int) or theorem_count <= 0:
+            return False, f"Lean bridge {bridge_id} has no kernel-checked theorems"
+    lean_prerequisite = payload.get("lean_prerequisite")
+    if not isinstance(lean_prerequisite, dict):
+        return False, "Lean prerequisite block is missing"
+    if lean_prerequisite.get("axiom_report_clean") is not True:
+        return False, "Lean prerequisite contains unfinished proofs or escape hatches"
+    if lean_prerequisite.get("theorems") != list(FORMAL_THEOREMS):
+        return False, "Lean prerequisite theorem manifest drift"
     if (
         not isinstance(payload.get("supported_instruction_subset"), list)
         or not payload["supported_instruction_subset"]

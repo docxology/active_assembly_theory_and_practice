@@ -2,7 +2,9 @@
 
 Committed snapshot of 12 generated PNG figures. Every file here has a
 same-named counterpart in the untracked `output/figures/` directory, which is
-where the figure producers actually write. No module reads from this folder.
+where the figure producers actually write. No module reads from this folder:
+this committed snapshot is documentation-only, and `output/figures/` is the
+canonical surface that producers, validators, and the manuscript consume.
 
 ## Contents
 

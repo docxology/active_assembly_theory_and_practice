@@ -27,21 +27,26 @@ representations or external validity.
 
 ![{{FIGURE_GENERATIVE_ADEQUACY_CAPTION}}]({{FIGURE_GENERATIVE_ADEQUACY_PATH}}){#fig:generative-adequacy width=96%}
 
-Several limitations remain substantive. The corpus contains six transparent
-x86-64 programs, so complete fixtures rather than independent instruction steps
-are the meaningful sampling units. The coverage inventory records one bounded
-stack-memory fixture, repeated authored phases, and one taken-branch path that
-leaves a statically decoded instruction unexecuted; these additions improve
-design variation but do not create independent binary samples. The labels cover
-only five broad phases and are assigned from the known fixture construction. The observation map collapses
+Several limitations remain substantive. The corpus contains
+`{{TEMPORAL_FIXTURE_COUNT}}` transparent x86-64 programs — the original six
+register-only programs plus four designed fixtures (in-span call/`ret`
+roundtrip, not-taken guard pairs, stack-local state, and the add/inc/lea
+optimization-rewrite motif) — so complete fixtures rather than independent
+instruction steps are the meaningful sampling units. The coverage inventory
+records one bounded stack-memory fixture, repeated authored phases, and one
+taken-branch path that leaves a statically decoded instruction unexecuted;
+the temporal family split (`{{TEMPORAL_SPLIT_SUMMARY}}`
+training/development/held_out) was frozen before scoring, but these additions
+improve design variation without creating independent binary samples. The
+labels cover only five broad phases and are assigned from the known fixture
+construction. The observation map collapses
 flags, effective-address details, calling conventions, indirect targets, and
 unsupported effects. The bounded symbolic interpreter therefore explains only
 the documented transfer-function subset; agreement with Unicorn on those
 fixtures is a cross-check, not a complete-ISA certification.
-
 The supervised leave-one-fixture-out fit is a useful leakage diagnostic because
 the excluded fixture does not contribute to its fitted tensors. It is not
-unsupervised phase discovery, and six held-out evaluations cannot establish
+unsupervised phase discovery, and {{TEMPORAL_FIXTURE_COUNT}} held-out evaluations cannot establish
 generalization to arbitrary binaries. The likelihood and transition ablations
 are controlled interventions on the declared model matrices. They explain the
 mechanism by which temporal structure matters under ambiguity; they do not
@@ -76,6 +81,23 @@ instruction and contain no memory operand, so the new fields are not yet
 independent sources of variation. The typed model is a supervised composite
 likelihood diagnostic, not a semantic representation, and the hierarchical
 score is not assumed to be a normalized joint probability.
+
+The quotient robustness machinery narrows what the co-primary portfolio can
+claim, and its own boundaries stay visible. Hyperparameter selection and Platt
+calibration are development-only; the uncalibrated metrics remain primary and
+the calibrated metrics gate no claim. The recurrent comparator scores exactly
+chance on development for every option combination and is excluded from the
+family-shuffle comparison for that declared reason, so the shuffle result
+(balanced accuracy 0.597 against 0.775 temporal and 0.671 interpretable)
+compares only models that are demonstrably above chance. The metadata probe's
+held-out margins (+0.004 interpretable, +0.024 temporal) sit inside the frozen
+practical comparison margin under the boundary
+bounded probe only; no architecture-metadata claim. The 128 flagged
+near-duplicate cross-split pairs are all declared frozen template siblings,
+and the cross-encoding contract covers 61 of 64 families. None of these
+diagnostics promotes a superiority, metadata-leakage, or semantic-discovery
+claim; they quantify where the endpoint could be attacked and record that the
+attacks did not break it inside the declared benchmark.
 
 The active layer has the same requirement, and the first action-conditioned
 tranche now makes that boundary explicit. `action_sensing.json` chooses typed
@@ -213,6 +235,17 @@ identity. The sensing-stress receipt (`{{SENSING_STRESS_ARTIFACT}}`) scores
 policy controls against exact references on a declared grid and repeats the
 local timing calibration; its regret and drift rows are machine-bounded
 diagnostics, not cross-machine laws.
+
+A new preparation-audit receipt (`external_corpus_preparation_audit.json`)
+validates the eight
+external-corpus preparation steps — manifest parsing, archive digest
+verification, archive-safety rehearsal, license checking, static compilation,
+build reproducibility, label-contract conformance, and exclusion accounting —
+as a rehearsal-only preparation path. It is not an efficacy claim: nothing is
+executed, P13 remains underpowered, and promotion of the external-validation
+phase still requires MAJ-01, an independently replayed acquisition/build
+recipe. The MED-05 separately controlled replay boundary is unchanged and
+remains locally blocked by design (`blocked_external`).
 
 Application-facing promotion remains closed: the licensed-source receipt is
 `{{EXTERNAL_SOURCE_STATUS}}` with `{{EXTERNAL_SOURCE_PROJECT_COUNT}}` project

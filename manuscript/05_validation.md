@@ -72,7 +72,16 @@ data-hash consistency, reproducibility-manifest hashes and byte sizes, figure
 nonblankness, source-ledger bibliography coverage, manuscript citation usage,
 citation closure, source-shape quality, source-stage and evidence-tier
 partitioning, claim-register links, fixed-parameter generative adequacy, and
-cautious claim-boundary language.
+cautious claim-boundary language. The newer check families added with the
+landed tranches are contract-plus-freshness pairs for the compiler matrix
+(`compiler_transfer_contract`/`compiler_transfer_freshness`), the quotient
+classifier and its invariance protocol
+(`quotient_classifier_contract`/`quotient_classifier_freshness` and
+`quotient_invariance_contract`/`quotient_invariance_freshness`, which together
+pin the development-only hyperparameter selection, deterministic-start ledger,
+family-shuffle control, bounded metadata probe, near-duplicate declarations,
+and cross-encoding consistency), and the external preparation audit
+(`external_preparation_audit_contract`/`external_preparation_audit_freshness`).
 
 ![{{FIGURE_VALIDATION_SUMMARY_CAPTION}}]({{FIGURE_VALIDATION_SUMMARY_PATH}}){#fig:validation-summary width=96%}
 
@@ -100,7 +109,7 @@ The new source-bound artifact family is:
 
 | Surface | Contract that is actually checked | Promotion boundary |
 | --- | --- | --- |
-| quotient classifier | protocol hash, label-blind features, disjoint training/development/held-out families, finite metrics and clustered intervals | bounded endpoint only; no semantic-discovery or superiority claim without the preregistered margin and independent replay |
+| quotient classifier | protocol hash, label-blind features, disjoint training/development/held-out families, finite metrics and clustered intervals; development-only hyperparameter selection, five-start ledger, family-shuffle and bounded metadata-probe controls, declared near-duplicate siblings, and cross-encoding consistency | bounded endpoint only; no semantic-discovery or superiority claim without the preregistered margin and independent replay |
 | formal correspondence | real Capstone decode, bounded Unicorn trace, Python reference step alignment, modeled flags, and Lean prerequisite | declared transparent subset only; no complete x86-64 theorem |
 | compiler transfer | exact local target command, source/object/disassembly hashes, Capstone decode, no object execution, explicit unavailable cells | capability receipt only; no compiler-generalization or application claim |
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |
@@ -109,6 +118,7 @@ The new source-bound artifact family is:
 | replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | frozen interface and local replay contract; no independent implementation claim |
 | replay ingestion | protected scoring boundary, explicit separate-control attestation, mismatch retention, and source-bound receipt hashes | `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`; observed controlled replay does not imply independent physical-machine replication or independent reimplementation |
 | theorem phase | checked Lean theorem list plus generated bounded counterexample | fail-closed; unresolved claims remain unresolved |
+| external preparation audit | eight preparation steps (manifest parse, archive digest verify, archive-safety rehearsal, license check, static compile, build reproducibility, label contract, exclusion accounting) each validated without execution or network use | rehearsal-only preparation path; not an efficacy claim; promotion requires MAJ-01 independent replay of the acquisition/build recipe |
 
 The registry and figure validator apply the same source-bound rule to the
 visualization suite. A caption is not accepted merely because it exists: its

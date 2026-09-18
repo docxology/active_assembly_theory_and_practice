@@ -261,8 +261,8 @@ and $U_k$ is the number of typed instruction families. The coverage artifact
 is `{{CORPUS_COVERAGE_ARTIFACT}}`; [@fig:corpus-coverage] visualizes the
 quantitative $N_k/E_k$ distinction and the categorical design flags. The
 artifact is a promotion gate for fixture diversity, not a semantic score: it
-cannot show that a field is intrinsic to program meaning or that six toy
-programs represent arbitrary binaries.
+cannot show that a field is intrinsic to program meaning or that
+`{{TEMPORAL_FIXTURE_COUNT}}` toy programs represent arbitrary binaries.
 
 ![{{FIGURE_CORPUS_COVERAGE_CAPTION}}]({{FIGURE_CORPUS_COVERAGE_PATH}}){#fig:corpus-coverage width=100%}
 
@@ -715,9 +715,28 @@ and [@fig:temporal-beliefs-x86-guard-taken] expose the same filtering contract
 across the labelled fixtures. They are supporting diagnostics rather than additional
 independent experiments: row labels are observation IDs, colors are posterior
 probabilities, and the hand-authored phase labels are not discovered from the
-bytes. The final two panels make the expanded design explicit: one includes
-bounded stack-memory operands, and the other includes a taken branch whose
-static fall-through instruction is not executed.
+bytes. Four further panels make the expanded fixture design explicit: the
+call/ret panel ([@fig:temporal-beliefs-x86-call-return]) shows an in-span call
+and `ret` roundtrip whose return address is pushed and popped inside the
+decoded span; the not-taken-guard panel ([@fig:temporal-beliefs-x86-branch-not-taken])
+holds the guard phase across consecutive comparisons whose conditional branches
+are statically decoded but not taken; the stack-local panel
+([@fig:temporal-beliefs-x86-stack-local]) interleaves accumulator arithmetic
+with bounded stack-local state in repeated phase runs; and the
+optimization-rewrite panel ([@fig:temporal-beliefs-x86-optimization-rewrite])
+holds the add/inc/lea optimization-sensitive motif, in which the `lea` rewrite
+lands in the residual `other` observation category even though its latent phase
+is accumulator update — a designed ambiguity retained as data, not smoothed
+away. The earlier two expanded panels retain a bounded stack-memory operand and
+a taken branch whose static fall-through instruction is not executed.
+
+![{{FIGURE_TEMPORAL_BELIEFS_X86_CALL_RETURN_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_CALL_RETURN_PATH}}){#fig:temporal-beliefs-x86-call-return width=90%}
+
+![{{FIGURE_TEMPORAL_BELIEFS_X86_BRANCH_NOT_TAKEN_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_BRANCH_NOT_TAKEN_PATH}}){#fig:temporal-beliefs-x86-branch-not-taken width=90%}
+
+![{{FIGURE_TEMPORAL_BELIEFS_X86_STACK_LOCAL_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_STACK_LOCAL_PATH}}){#fig:temporal-beliefs-x86-stack-local width=90%}
+
+![{{FIGURE_TEMPORAL_BELIEFS_X86_OPTIMIZATION_REWRITE_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_OPTIMIZATION_REWRITE_PATH}}){#fig:temporal-beliefs-x86-optimization-rewrite width=90%}
 
 ![{{FIGURE_TEMPORAL_BELIEFS_X86_BITWISE_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_BITWISE_PATH}}){#fig:temporal-beliefs-x86-bitwise width=90%}
 
@@ -851,7 +870,7 @@ calibration with its own machine receipt. The visual must therefore be read as
 two linked coordinate systems, not as a universal exchange rate between
 information and hardware time.
 
-A labelled corpus of `{{CORPUS_FIXTURE_COUNT}}` transparent byte fixtures, each
+A labelled corpus of `{{TEMPORAL_FIXTURE_COUNT}}` transparent byte fixtures, each
 carrying a hand-authored ground-truth phase sequence aligned to its decoded
 instructions, supports the project's first quantitative evaluation: decoding
 accuracy, calibration, a free-energy convergence summary, and an
@@ -873,7 +892,19 @@ more reliably than a Wald approximation for small denominators
 [@brown2001binomial]. This choice does not remove the dependence among steps
 or broaden the corpus into a population sample.
 
-## Source-bound open-roadmap protocol {#sec:open-roadmap-protocol}
+The corpus expands the original six register-only programs with four designed
+fixtures: an in-span call/`ret` roundtrip (the call pushes a return address
+inside the decoded span and the `ret` pads it back), a not-taken guard pair
+(two conditional branches whose guards both fall through, so every statically
+decoded instruction executes), a stack-local fixture (a push/pop pair keeps
+bounded scratch state below the stack pointer while accumulator arithmetic
+continues), and an optimization-rewrite fixture (the add/immediate, `inc`, and
+`lea` rewrite motif in which `add` and `inc` share one arithmetic observation
+category and the `lea` rewrite lands in the residual `other` category despite
+its accumulator-update latent phase). The temporal family split
+(`{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out) was frozen in the
+protocol before any scoring under protocol v2.1, with each fixture assigned
+wholesale to exactly one partition and no family overlap.
 
 The expanded experiments are governed by one versioned protocol rather than by
 independently edited scripts. The protocol receipt is
@@ -1068,11 +1099,17 @@ an unsupported row, environment error, or mismatch cannot be converted into a
 terminal-only success. The Lean prerequisite is reported separately in
 `{{FORMAL_VERIFICATION_ARTIFACT}}`; a generated Lean bridge now serializes one
 shared bounded state with all 16 general-purpose registers, `RIP`, modeled flag
-definedness, memory and stack bounds, step index, and running status. Its
-kernel-checked fixture invariants cover the 64-bit `RAX` increment, preservation
-of the other registers and carry flag, step advancement, and bound
-preservation. A compiled Lean theorem is not silently promoted to a proof of
-the Python lifter, the Capstone/Unicorn path, or the complete x86-64 ISA.
+definedness, memory and stack bounds, step index, and running status. The
+bridge covers `{{LEAN_BRIDGE_FIXTURE_COUNT}}` transparent fixtures with
+`{{LEAN_BRIDGE_THEOREM_COUNT}}` generated machine-state theorems, all
+kernel-checked (`{{LEAN_BRIDGE_KERNEL_CHECKED}}`) under the
+`{{FORMAL_TOOLCHAIN}}` toolchain, alongside `{{FORMAL_THEOREM_COUNT}}` formal
+theorems with an axiom report that is clean
+(`{{FORMAL_AXIOM_REPORT_CLEAN}}`). The kernel-checked fixture invariants cover
+the 64-bit `RAX` increment, preservation of the other registers and carry
+flag, step advancement, and bound preservation. A compiled Lean theorem is not
+silently promoted to a proof of the Python lifter, the Capstone/Unicorn path,
+or the complete x86-64 ISA.
 
 ![{{FIGURE_FORMAL_CORRESPONDENCE_CAPTION}}]({{FIGURE_FORMAL_CORRESPONDENCE_PATH}}){#fig:formal-correspondence width=100%}
 
@@ -1085,10 +1122,13 @@ compiler-driver and target-selection interface used for this acquisition
 compiler-correctness claim; translation validation is the relevant precedent
 for treating each produced translation as an individually checkable artifact
 [@necula2000translationvalidation]. The current receipt is
-`{{COMPILER_TRANSFER_ARTIFACT}}` and records
-`{{COMPILER_TRANSFER_VALIDATED_COUNT}}` validated static objects across the
-architectures `{{COMPILER_TRANSFER_ARCHITECTURES}}` and
-`{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` explicit unavailable rows. The
+`{{COMPILER_TRANSFER_ARTIFACT}}`: a `{{COMPILER_TRANSFER_ROW_COUNT}}`-cell
+matrix over the compilers `{{COMPILER_TRANSFER_COMPILERS}}`, the object
+formats `{{COMPILER_TRANSFER_OBJECT_FORMATS}}`, and the architectures
+`{{COMPILER_TRANSFER_ARCHITECTURES}}`, of which
+`{{COMPILER_TRANSFER_VALIDATED_COUNT}}` cells are validated static objects and
+`{{COMPILER_TRANSFER_UNAVAILABLE_COUNT}}` are explicit unavailable rows
+retaining their compiler diagnostics. The
 separate licensed-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`; it therefore
 cannot support an application-facing effectiveness claim. A target absent from
 the local compiler is a missing capability, not evidence about that

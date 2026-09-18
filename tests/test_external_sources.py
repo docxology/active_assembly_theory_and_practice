@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from hashlib import sha256
 import io
 import json
@@ -15,6 +16,7 @@ import src.external_sources as external_module
 
 from src.external_sources import (
     ExternalSourceSpec,
+    _EXTERNAL_AUDIT_STEPS,
     _safe_extract,
     _spec_from_row,
     _validate_build_command,
@@ -28,13 +30,17 @@ from src.external_sources import (
     static_compile_external_source,
     validate_external_acquisition_freshness,
     validate_external_acquisition_payload,
-    write_external_source_validation_payload,
+    external_corpus_preparation_audit_payload,
+    validate_external_corpus_preparation_audit_payload,
+    write_external_corpus_preparation_audit,
     write_external_acquisition_payload,
+    write_external_source_validation_payload,
     validate_compiler_capabilities_payload,
     validate_external_manifest,
     validate_external_static_validation_payload,
     validate_external_source_validation_payload,
     write_compiler_capabilities,
+    write_external_static_validation,
 )
 
 
@@ -1348,3 +1354,264 @@ def test_external_receipt_validators_reject_numeric_gate_and_status_drift(
     )
     with pytest.raises(ValueError, match="receipt"):
         write_external_source_validation_payload(tmp_path)
+
+
+def _audit_fixture(tmp_path: Path) -> dict[str, object]:
+    """Pin a one-row manifest and a matching offline extraction cache."""
+
+    archive = _archive_bytes()
+    row = _valid_row()
+    row["license_file_sha256"] = sha256(b"BSD-3-Clause\n").hexdigest()
+    row["source_archive_sha256"] = sha256(archive).hexdigest()
+    configs = tmp_path / "configs"
+    configs.mkdir(parents=True)
+    (configs / "external_sources.yaml").write_text(
+        "schema_version: '2.0.0'\n"
+        "manifest_id: test\n"
+        "network_policy: explicit_acquisition_only\n"
+        "static_only: true\n"
+        "sources:\n"
+        "  - "
+        + "\n    ".join(
+            f"{key}: {json.dumps(value)}"
+            for key, value in row.items()
+            if key != "build_command"
+        )
+        + "\n    build_command: [clang, -c, fixture.c]\n",
+        encoding="utf-8",
+    )
+    (configs / "external_label_contracts.yaml").write_text(
+        "schema_version: '1.0.0'\ncontracts: []\n",
+        encoding="utf-8",
+    )
+    destination = tmp_path / "output" / "external_sources"
+    destination.mkdir(parents=True)
+    (destination / f"{row['source_id']}-{row['revision']}.archive").write_bytes(
+        archive
+    )
+    extraction = destination / str(row["source_id"])
+    extraction.mkdir()
+    (extraction / "LICENSE").write_bytes(b"BSD-3-Clause\n")
+    (extraction / "fixture.c").write_text(
+        "unsigned long fixture(unsigned long x) { return x + 1; }\n",
+        encoding="utf-8",
+    )
+    return row
+
+
+def _audit_step_index(payload: object) -> dict[str, dict[str, object]]:
+    return {
+        str(step["step_id"]): step
+        for step in payload["steps"]
+        if isinstance(step, dict)
+    }
+
+
+def test_preparation_audit_full_pass_is_offline_static_and_valid(
+    tmp_path: Path,
+) -> None:
+    if shutil.which("clang") is None:
+        pytest.skip("clang unavailable")
+    _audit_fixture(tmp_path)
+    assert write_external_static_validation(tmp_path).is_file()
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+    assert payload["status"] == "validated"
+    assert payload["network_used"] is False
+    assert payload["execution_performed"] is False
+    assert payload["static_only"] is True
+    assert payload["promotion_requires"] == "MAJ-01_independent_replay"
+    assert [step["step_id"] for step in payload["steps"]] == list(
+        _EXTERNAL_AUDIT_STEPS
+    )
+    assert all(step["status"] == "validated" for step in payload["steps"])
+    static_step = _audit_step_index(payload)["static_compile"]
+    assert static_step["rows"][0]["object_sha256"]
+    repro_step = _audit_step_index(payload)["build_reproducibility"]
+    assert repro_step["rows"][0]["status"] == "validated"
+    path = write_external_corpus_preparation_audit(tmp_path)
+    disk = json.loads(path.read_text(encoding="utf-8"))
+    valid, detail = validate_external_corpus_preparation_audit_payload(disk)
+    assert valid, detail
+
+
+def test_preparation_audit_fails_closed_on_bad_manifest(tmp_path: Path) -> None:
+    _audit_fixture(tmp_path)
+    (tmp_path / "configs" / "external_sources.yaml").write_text(
+        "schema_version: '9.9.9'\n", encoding="utf-8"
+    )
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+    assert payload["status"] == "failed"
+    index = _audit_step_index(payload)
+    assert index["manifest_parse"]["status"] == "failed"
+    assert index["manifest_parse"]["rows"][0]["reason"] != ""
+    for step_id in (
+        "archive_digest_verify",
+        "license_check",
+        "static_compile",
+        "build_reproducibility",
+    ):
+        assert index[step_id]["status"] == "blocked_external"
+        assert index[step_id]["rows"][0]["reason"].startswith(
+            "upstream_step_failed:manifest_parse"
+        )
+    # Independent steps still rehearse and the accounting union records the
+    # failures instead of dropping them.
+    assert index["archive_safety_rehearsal"]["status"] == "validated"
+    assert index["exclusion_accounting"]["status"] == "validated"
+    assert index["exclusion_accounting"]["evidence"]["total"] > 0
+
+
+def test_preparation_audit_records_archive_digest_mismatch(
+    tmp_path: Path,
+) -> None:
+    _audit_fixture(tmp_path)
+    archive_path = next(
+        (tmp_path / "output" / "external_sources").glob("*.archive")
+    )
+    archive_path.write_bytes(b"tampered-bytes")
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    step = _audit_step_index(payload)["archive_digest_verify"]
+    assert step["status"] == "failed"
+    assert step["rows"][0]["status"] == "failed"
+    assert step["rows"][0]["reason"] == "cached_source_archive_digest_mismatch"
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+
+
+def test_preparation_audit_records_missing_and_changed_license(
+    tmp_path: Path,
+) -> None:
+    _audit_fixture(tmp_path)
+    license_path = (
+        tmp_path / "output" / "external_sources" / "project_a" / "LICENSE"
+    )
+    license_path.write_bytes(b"MIT\n")
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    step = _audit_step_index(payload)["license_check"]
+    assert step["status"] == "failed"
+    assert step["rows"][0]["reason"] == "license_file_hash_mismatch_or_missing"
+    license_path.unlink()
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    step = _audit_step_index(payload)["license_check"]
+    assert step["status"] == "failed"
+    assert step["rows"][0]["license_file_sha256"] is None
+
+
+def test_preparation_audit_marks_compiler_absence_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _audit_fixture(tmp_path)
+    monkeypatch.setattr(external_module.shutil, "which", lambda _: None)
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    index = _audit_step_index(payload)
+    assert index["static_compile"]["status"] == "unavailable"
+    assert index["static_compile"]["rows"][0]["reason"] == "compiler_unavailable"
+    assert index["build_reproducibility"]["status"] == "unavailable"
+    assert payload["status"] == "failed"
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+
+
+def test_preparation_audit_detects_tampered_static_receipt(
+    tmp_path: Path,
+) -> None:
+    if shutil.which("clang") is None:
+        pytest.skip("clang unavailable")
+    _audit_fixture(tmp_path)
+    static_path = write_external_static_validation(tmp_path)
+    stored = json.loads(static_path.read_text(encoding="utf-8"))
+    stored["rows"][0]["object_sha256"] = "f" * 64
+    static_path.write_text(json.dumps(stored), encoding="utf-8")
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    step = _audit_step_index(payload)["build_reproducibility"]
+    assert step["status"] == "failed"
+    assert step["rows"][0]["reason"] == "static_receipt_drift:object_sha256"
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+
+
+def test_preparation_audit_validator_matrix_is_fail_closed(
+    tmp_path: Path,
+) -> None:
+    _audit_fixture(tmp_path)
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    assert valid, detail
+
+    reordered = deepcopy(payload)
+    reordered["steps"] = reordered["steps"][1:] + reordered["steps"][:1]
+    assert validate_external_corpus_preparation_audit_payload(reordered)[0] is False
+
+    missing_step = deepcopy(payload)
+    missing_step["steps"] = missing_step["steps"][:-1]
+    assert validate_external_corpus_preparation_audit_payload(missing_step)[0] is False
+
+    bad_status = deepcopy(payload)
+    bad_status["steps"][0]["status"] = "underpowered"
+    assert validate_external_corpus_preparation_audit_payload(bad_status)[0] is False
+
+    bad_network = deepcopy(payload)
+    bad_network["network_used"] = True
+    assert validate_external_corpus_preparation_audit_payload(bad_network)[0] is False
+
+    bad_step_boundary = deepcopy(payload)
+    bad_step_boundary["steps"][0]["static_only"] = False
+    assert validate_external_corpus_preparation_audit_payload(bad_step_boundary)[
+        0
+    ] is False
+
+    bad_row = deepcopy(payload)
+    bad_row["steps"][0]["rows"][0]["execution_performed"] = True
+    assert validate_external_corpus_preparation_audit_payload(bad_row)[0] is False
+
+    bad_schema = deepcopy(payload)
+    bad_schema["schema_version"] = "9.9.9"
+    assert validate_external_corpus_preparation_audit_payload(bad_schema)[0] is False
+
+    bad_artifact = deepcopy(payload)
+    bad_artifact["artifact"] = "output/data/other.json"
+    assert validate_external_corpus_preparation_audit_payload(bad_artifact)[0] is False
+
+    top_efficacy = deepcopy(payload)
+    top_efficacy["accuracy"] = 0.9
+    assert (
+        validate_external_corpus_preparation_audit_payload(top_efficacy)[0] is False
+    )
+
+    nested_efficacy = deepcopy(payload)
+    nested_efficacy["steps"][0]["evidence"]["effectiveness"] = 1
+    assert (
+        validate_external_corpus_preparation_audit_payload(nested_efficacy)[0]
+        is False
+    )
+
+
+def test_preparation_audit_no_efficacy_invariant(tmp_path: Path) -> None:
+    _audit_fixture(tmp_path)
+    payload = external_corpus_preparation_audit_payload(tmp_path)
+    tokens = ("accuracy", "score", "effect", "efficacy")
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                assert not any(
+                    token in str(key).lower() for token in tokens
+                ), f"efficacy key leaked: {key}"
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(payload)
+    assert payload["execution_performed"] is False
+    assert payload["network_used"] is False
+    for step in payload["steps"]:
+        assert step["execution_performed"] is False
+        assert step["network_used"] is False
+        for row in step["rows"]:
+            assert row["execution_performed"] is False
+            assert row["network_used"] is False

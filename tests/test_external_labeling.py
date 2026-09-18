@@ -13,7 +13,10 @@ import pytest
 import yaml
 
 import src.external_labeling as labeling
-from src.external_corpus import validate_label_contracts
+from src.external_corpus import (
+    exclusion_accounting_summary,
+    validate_label_contracts,
+)
 from src.external_sources import _spec_from_row
 from src.external_labeling import (
     external_label_contract_freshness,
@@ -782,3 +785,62 @@ def test_label_payload_helper_and_prepare_failure_boundary(
         compile_flags=[],
     )
     assert prepared["status"] == "failed"
+
+
+def test_exclusion_accounting_aggregates_step_reason_role_counts() -> None:
+    rows = [
+        {
+            "source_id": "fixture-a",
+            "role": "all",
+            "transformation_id": "source_lookup",
+            "status": "excluded",
+            "reason": "source_unavailable",
+        },
+        {
+            "source_id": "fixture-a",
+            "role": "equivalent",
+            "status": "excluded",
+            "reason": "pair_static_validation:compile_failed",
+        },
+        {
+            "source_id": "fixture-a",
+            "role": "equivalent",
+            "status": "excluded",
+            "reason": "pair_static_validation:compile_failed",
+        },
+        {
+            "step": "archive_digest_verify",
+            "role": "all",
+            "reason": "cached_source_archive_digest_mismatch",
+        },
+    ]
+    summary = exclusion_accounting_summary(rows)
+    assert summary["total"] == 4
+    # Label-contract exclusions carry no step and default to label_contract.
+    assert summary["by_step"] == {
+        "archive_digest_verify": 1,
+        "label_contract": 3,
+    }
+    assert summary["by_reason"]["pair_static_validation:compile_failed"] == 2
+    assert summary["by_role"] == {"all": 2, "equivalent": 2}
+    assert {
+        "step": "label_contract",
+        "reason": "source_unavailable",
+        "role": "all",
+        "count": 1,
+    } in summary["groups"]
+    assert {
+        "step": "archive_digest_verify",
+        "reason": "cached_source_archive_digest_mismatch",
+        "role": "all",
+        "count": 1,
+    } in summary["groups"]
+    # An empty exclusion set is recorded explicitly, never dropped.
+    assert exclusion_accounting_summary([]) == {
+        "total": 0,
+        "by_step": {},
+        "by_reason": {},
+        "by_role": {},
+        "groups": [],
+    }
+    assert exclusion_accounting_summary(None)["total"] == 0

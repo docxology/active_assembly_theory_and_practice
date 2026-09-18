@@ -335,6 +335,16 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
+        path="output/data/external_corpus_preparation_audit.json",
+        artifact_type="external_corpus_preparation_audit",
+        generated_by="src.external_sources.write_external_corpus_preparation_audit",
+        claim_ids=("CLM-036", "CLM-038"),
+        validation_checks=(
+            "external_preparation_audit_contract",
+            "external_preparation_audit_freshness",
+        ),
+    ),
+    ArtifactManifestTarget(
         path="output/data/independent_replay_receipt.json",
         artifact_type="independent_replay_receipt",
         generated_by="src.replication.ingest_independent_replay",

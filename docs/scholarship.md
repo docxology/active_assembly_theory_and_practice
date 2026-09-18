@@ -35,6 +35,16 @@ claim appear stronger.
 | Clustered uncertainty and multiplicity | Cameron--Gelbach--Miller (2008), MIT Press; Holm (1979), JSTOR record | Added to bind the source-family bootstrap and Holm-adjusted comparison family; neither source supplies population validity for this finite fixture benchmark. |
 | Behavioral equivalence and information gain | Sangiorgi (2011), Cambridge University Press; Lindley (1956), Project Euclid | Added to distinguish the finite observation quotient from bisimulation and to ground the model-derived expected-information objective without implying a universal sensing law. |
 
+## 2026-09-17 claim and citation audit
+
+On 2026-09-17, a full closure audit recorded 47/47 ledger keys cited 1:1 with
+`manuscript/references.bib`, and 40/40 claim-register entries validated and
+spot-checked against their receipts. The only known open gap is the absence of
+dedicated `nasm_manual` and rustc manual citations (flagged by the
+compiler-transfer figure sources); whether to add them is the manuscript
+agent's decision. This audit introduced no new claim and changed no claim
+boundary.
+
 ## Source Roles
 
 - Free Energy Principle and active inference theory: Friston 2009 and Friston

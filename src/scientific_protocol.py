@@ -18,8 +18,8 @@ from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import EVIDENCE_STATUSES, RECEIPT_SCHEMA_VERSION
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROTOCOL_SCHEMA_VERSION = "2.0.0"
-PROTOCOL_ID = "active-assembly-open-roadmap-v2"
+PROTOCOL_SCHEMA_VERSION = "2.1.0"
+PROTOCOL_ID = "active-assembly-open-roadmap-v2-2026-09-17"
 PROTOCOL_ARTIFACT = "output/data/research_protocol.json"
 
 MODEL_FAMILIES = (
@@ -103,6 +103,50 @@ def _canonical_hash(payload: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _temporal_corpus_split_block() -> dict[str, Any]:
+    """Build the frozen temporal-corpus split receipt for protocol 2.1.0.
+
+    The corpus module is the single source of truth for the fixture-to-family
+    and family-to-split tables; this block freezes them into the protocol
+    together with the corpus-bytes sha256 of every fixture at freeze time.
+    The import is local to avoid widening the protocol module's import graph
+    (the corpus pulls in Capstone and Unicorn) while keeping the values
+    source-bound rather than hand-copied.
+    """
+
+    from .corpus import (
+        SPLITS,
+        build_corpus,
+        fixture_family,
+        fixture_split,
+    )
+
+    fixtures = build_corpus()
+    return {
+        "sampling_unit": "source_program_family",
+        "splits": list(SPLITS),
+        "fixture_families": {
+            fixture.name: fixture_family(fixture.name) for fixture in fixtures
+        },
+        "family_split_assignment": {
+            fixture_family(fixture.name): fixture_split(fixture.name)
+            for fixture in fixtures
+        },
+        "fixture_split": {
+            fixture.name: fixture_split(fixture.name) for fixture in fixtures
+        },
+        "fixture_bytes_sha256": {
+            fixture.name: hashlib.sha256(fixture.code).hexdigest()
+            for fixture in fixtures
+        },
+        "frozen_before_scoring": True,
+        "holdout_scoring": (
+            "leave_one_fixture_out_over_complete_fixtures"
+        ),
+    }
+
+
+
 def build_scientific_protocol() -> ScientificProtocol:
     """Build the frozen protocol used by all v2 research producers."""
 
@@ -167,6 +211,7 @@ def build_scientific_protocol() -> ScientificProtocol:
             "minimum_near_miss_controls_per_family": 4,
             "real_program_minimum_projects": 5,
             "real_program_minimum_labelable_examples": 100,
+            "temporal_corpus_split": _temporal_corpus_split_block(),
         },
         model_contract={
             "families": list(MODEL_FAMILIES),

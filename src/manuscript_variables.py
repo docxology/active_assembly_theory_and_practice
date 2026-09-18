@@ -287,6 +287,35 @@ def generate_variables() -> dict[str, str]:
         str(label).replace("_", " ")
         for label in first_fixture_evaluation["temporal_labels"]
     )
+    lean_bridge_status_rows = [
+        row
+        for row in formal_correspondence_report.get("lean_bridge_status", [])
+        if isinstance(row, dict)
+    ]
+    lean_bridge_theorem_total = sum(
+        int(row["theorem_count"])
+        for row in lean_bridge_status_rows
+        if isinstance(row.get("theorem_count"), int)
+    )
+    formal_axiom_report_clean = (
+        "true"
+        if (formal_verification_report.get("lean_prerequisite") or {}).get(
+            "axiom_report_clean"
+        )
+        is True
+        or (formal_correspondence_report.get("lean_prerequisite") or {}).get(
+            "axiom_report_clean"
+        )
+        is True
+        or (formal_verification_report.get("axiom_report") or {}).get("clean") is True
+        else "false"
+    )
+    lean_bridge_kernel_checked = (
+        "true"
+        if lean_bridge_status_rows
+        and all(row.get("kernel_checked") is True for row in lean_bridge_status_rows)
+        else "false"
+    )
     rxinfer_result = run_rxinfer_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
@@ -408,6 +437,18 @@ def generate_variables() -> dict[str, str]:
         "TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE": (
             f"../{advanced_figure_paths['temporal_beliefs_x86_guard_taken']}"
         ),
+        "TEMPORAL_BELIEFS_CALL_RETURN_FIGURE": (
+            f"../{advanced_figure_paths['temporal_beliefs_x86_call_return']}"
+        ),
+        "TEMPORAL_BELIEFS_BRANCH_NOT_TAKEN_FIGURE": (
+            f"../{advanced_figure_paths['temporal_beliefs_x86_branch_not_taken']}"
+        ),
+        "TEMPORAL_BELIEFS_STACK_LOCAL_FIGURE": (
+            f"../{advanced_figure_paths['temporal_beliefs_x86_stack_local']}"
+        ),
+        "TEMPORAL_BELIEFS_OPTIMIZATION_REWRITE_FIGURE": (
+            f"../{advanced_figure_paths['temporal_beliefs_x86_optimization_rewrite']}"
+        ),
         "FINAL_RAX": str(result.trace.final_rax),
         "FINAL_STATE": result.inference.final_state.replace("_", " "),
         "FREE_ENERGY_STEPS": str(len(result.inference.free_energy_by_step)),
@@ -498,6 +539,20 @@ def generate_variables() -> dict[str, str]:
         ),
         "CORPUS_UNIQUE_BRANCH_CLASS_COUNT": str(
             corpus_coverage_summary["unique_branch_target_class_count"]
+        ),
+        "TEMPORAL_FIXTURE_COUNT": str(
+            corpus_coverage_summary.get("fixture_count", 0)
+        ),
+        "TEMPORAL_SPLIT_SUMMARY": "{}/{}/{}".format(
+            corpus_coverage_report.get("frozen_split", {}).get(
+                "families_per_split", {}
+            ).get("training", 0),
+            corpus_coverage_report.get("frozen_split", {}).get(
+                "families_per_split", {}
+            ).get("development", 0),
+            corpus_coverage_report.get("frozen_split", {}).get(
+                "families_per_split", {}
+            ).get("held_out", 0),
         ),
         "ACTION_SENSING_ARTIFACT": f"../{advanced_paths['action_sensing']}",
         "ACTION_SENSING_ACTIVE_MEAN_ACTIONS": f"{action_sensing_summary['mean_actions_used']['active']:.3f}",
@@ -672,6 +727,10 @@ def generate_variables() -> dict[str, str]:
                 for row in formal_correspondence_report["step_rows"]
             )
         ),
+        "LEAN_BRIDGE_FIXTURE_COUNT": str(len(lean_bridge_status_rows)),
+        "LEAN_BRIDGE_THEOREM_COUNT": str(lean_bridge_theorem_total),
+        "LEAN_BRIDGE_KERNEL_CHECKED": lean_bridge_kernel_checked,
+        "FORMAL_AXIOM_REPORT_CLEAN": formal_axiom_report_clean,
         "COMPILER_TRANSFER_ARTIFACT": f"../{advanced_paths['compiler_transfer']}",
         "COMPILER_TRANSFER_VALIDATED_COUNT": str(
             compiler_transfer_report["capability_summary"]["validated_static_objects"]
@@ -681,6 +740,23 @@ def generate_variables() -> dict[str, str]:
         ),
         "COMPILER_TRANSFER_ARCHITECTURES": ", ".join(
             compiler_transfer_report["capability_summary"]["architectures_validated"]
+        ),
+        "COMPILER_TRANSFER_COMPILERS": ", ".join(
+            str(item)
+            for item in _mapping_or_empty(
+                compiler_transfer_report.get("capability_summary")
+            ).get("compilers_validated", [])
+        ),
+        "COMPILER_TRANSFER_OBJECT_FORMATS": ", ".join(
+            str(item)
+            for item in _mapping_or_empty(
+                compiler_transfer_report.get("capability_summary")
+            ).get("object_formats_validated", [])
+        ),
+        "COMPILER_TRANSFER_ROW_COUNT": str(
+            _mapping_or_empty(
+                compiler_transfer_report.get("capability_summary")
+            ).get("row_count", 0)
         ),
         "EXTERNAL_SOURCE_ARTIFACT": f"../{advanced_paths['external_source_validation']}",
         "EXTERNAL_SOURCE_STATUS": str(external_source_report["status"]),

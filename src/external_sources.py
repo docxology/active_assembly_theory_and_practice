@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -34,6 +35,7 @@ from .artifact_contract import write_json_artifact
 from .compiler_transfer import _decode_bytes, _extract_text_bytes
 from .external_corpus import (
     LABEL_CONTRACT_PATH,
+    exclusion_accounting_summary,
     label_contract_summary,
     load_label_contracts,
     validate_label_contracts,
@@ -49,6 +51,9 @@ EXTERNAL_RECEIPT_ARTIFACT = "output/data/external_source_validation.json"
 EXTERNAL_STATIC_RECEIPT_ARTIFACT = "output/data/external_static_validation.json"
 EXTERNAL_CAPABILITY_ARTIFACT = "output/data/external_capabilities.json"
 EXTERNAL_ACQUISITION_ARTIFACT = "output/data/external_acquisition.json"
+EXTERNAL_PREPARATION_AUDIT_ARTIFACT = (
+    "output/data/external_corpus_preparation_audit.json"
+)
 EXTERNAL_LABEL_CONTRACT_PATH = "configs/external_label_contracts.yaml"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -1340,7 +1345,744 @@ def write_external_source_validation_payload(project_root: Path = PROJECT_ROOT) 
     return path
 
 
+
+# Ordered preparation steps rehearsed by the consolidated audit.  The order
+# is contractual: validators reject membership or ordering drift so a
+# partially recorded audit can never look complete.
+_EXTERNAL_AUDIT_STEPS: tuple[str, ...] = (
+    "manifest_parse",
+    "archive_digest_verify",
+    "archive_safety_rehearsal",
+    "license_check",
+    "static_compile",
+    "build_reproducibility",
+    "label_contract",
+    "exclusion_accounting",
+)
+_EXTERNAL_AUDIT_STEP_STATUSES = frozenset(
+    {"validated", "blocked_external", "unavailable", "failed"}
+)
+_EXTERNAL_AUDIT_ROW_STATUSES = frozenset(
+    {"validated", "blocked_external", "unavailable", "failed", "unsupported"}
+)
+# The audit rehearses preparation only.  Keys matching these tokens are
+# efficacy vocabulary and are rejected outright by the payload validator.
+_EFFICACY_KEY_TOKENS = ("accuracy", "score", "effect", "efficacy")
+
+
+def _audit_row(
+    subject: str,
+    status: str,
+    reason: str,
+    **extra: object,
+) -> dict[str, object]:
+    """Build one boundary-safe audit evidence row."""
+
+    row: dict[str, object] = {
+        "subject": subject,
+        "status": status,
+        "reason": reason,
+        "network_used": False,
+        "execution_performed": False,
+        "static_only": True,
+    }
+    row.update(extra)
+    return row
+
+
+def _audit_step(
+    step_id: str,
+    status: str,
+    rows: list[dict[str, object]],
+    evidence: dict[str, object],
+) -> dict[str, object]:
+    """Build one ordered audit step with explicit boundary fields."""
+
+    return {
+        "step_id": step_id,
+        "status": status,
+        "rows": rows,
+        "evidence": evidence,
+        "network_used": False,
+        "execution_performed": False,
+        "static_only": True,
+    }
+
+
+def _archive_safety_rehearsal_rows() -> list[dict[str, object]]:
+    """Feed deterministic synthetic hostile archives through _safe_extract.
+
+    The rehearsal writes throwaway tar archives into a private temporary
+    directory: one member escaping the extraction root and one symbolic-link
+    member.  Both must be rejected; neither is ever extracted into the
+    project cache and no network is involved.
+    """
+
+    member_content = b"unsigned long rehearsal_member(void) { return 0; }\n"
+    rows: list[dict[str, object]] = []
+    with tempfile.TemporaryDirectory(prefix="external-preparation-audit-") as directory:
+        root = Path(directory)
+        traversal_archive = root / "synthetic_traversal.tar"
+        with tarfile.open(traversal_archive, "w") as handle:
+            info = tarfile.TarInfo("../escape.c")
+            info.size = len(member_content)
+            handle.addfile(info, io.BytesIO(member_content))
+        link_archive = root / "synthetic_link.tar"
+        with tarfile.open(link_archive, "w") as handle:
+            info = tarfile.TarInfo("link.c")
+            info.type = tarfile.SYMTYPE
+            info.linkname = "outside.c"
+            handle.addfile(info)
+        for subject, archive in (
+            ("synthetic_path_traversal_archive", traversal_archive),
+            ("synthetic_symbolic_link_archive", link_archive),
+        ):
+            attempt = root / f"attempt-{archive.stem}"
+            attempt.mkdir()
+            try:
+                _safe_extract(archive, attempt)
+            except ValueError as exc:
+                rows.append(_audit_row(subject, "validated", str(exc)))
+            else:
+                rows.append(
+                    _audit_row(
+                        subject,
+                        "failed",
+                        "hostile_archive_member_was_not_rejected",
+                    )
+                )
+    return rows
+
+
+def _static_audit_row(row: dict[str, object]) -> dict[str, object]:
+    """Summarize one recomputed static row into a boundary-safe audit row."""
+
+    extra = {
+        key: row[key]
+        for key in (
+            "project_id",
+            "revision_label",
+            "object_sha256",
+            "disassembly_sha256",
+            "text_sha256",
+            "decoded_instruction_count",
+        )
+        if key in row
+    }
+    return _audit_row(
+        str(row.get("source_id", "unknown")),
+        str(row.get("status", "failed")),
+        str(row.get("reason", "")),
+        **extra,
+    )
+
+
+def _audit_step_status(rows: list[dict[str, object]]) -> str:
+    """Fold row statuses into the fail-closed step status."""
+
+    statuses = {str(row.get("status")) for row in rows}
+    if rows and statuses == {"validated"}:
+        return "validated"
+    if "failed" in statuses or "unsupported" in statuses:
+        return "failed"
+    if statuses == {"unavailable"} or not rows:
+        return "unavailable"
+    return "blocked_external"
+
+
+def external_corpus_preparation_audit_payload(
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, object]:
+    """Compose the rehearsal-only external preparation audit receipt.
+
+    Every step runs offline from the on-disk pinned cache and stays inside
+    the static-only boundary: no URL is touched, ``--allow-network`` is not a
+    parameter, and no emitted object is ever executed.  The audit rehearses
+    the preparation path and records every failure with a reason; its rows
+    are not an efficacy claim and P13 remains underpowered until MAJ-01
+    independently replays the acquisition/build recipe.
+    """
+
+    protocol = scientific_protocol_payload()
+    destination = project_root / "output" / "external_sources"
+    steps: list[dict[str, object]] = []
+    failure_rows: list[dict[str, object]] = []
+
+    def _record(
+        step_id: str,
+        status: str,
+        rows: list[dict[str, object]],
+        evidence: dict[str, object],
+    ) -> None:
+        steps.append(_audit_step(step_id, status, rows, evidence))
+        for row in rows:
+            if row.get("status") not in (None, "validated"):
+                failure_rows.append(
+                    {
+                        "step": step_id,
+                        "reason": str(row.get("reason") or "unspecified"),
+                        "role": str(row.get("role") or "all"),
+                    }
+                )
+
+    def _blocked(step_id: str, upstream: str) -> None:
+        detail = f"upstream_step_failed:{upstream}"
+        _record(
+            step_id,
+            "blocked_external",
+            [_audit_row(step_id, "blocked_external", detail)],
+            {"upstream_step": upstream, "detail": detail},
+        )
+
+    # Step 1: manifest parse verdict.
+    manifest_path = project_root / EXTERNAL_MANIFEST_PATH
+    manifest: dict[str, Any] | None = None
+    manifest_detail = ""
+    manifest_rows: list[dict[str, object]] = []
+    if not manifest_path.is_file():
+        manifest_detail = "pinned_external_manifest_is_missing"
+        manifest_rows.append(
+            _audit_row(EXTERNAL_MANIFEST_PATH, "failed", manifest_detail)
+        )
+    else:
+        try:
+            manifest = load_external_manifest(manifest_path)
+            manifest_valid, manifest_detail = validate_external_manifest(manifest)
+            manifest_rows.append(
+                _audit_row(
+                    EXTERNAL_MANIFEST_PATH,
+                    "validated" if manifest_valid else "failed",
+                    "" if manifest_valid else manifest_detail,
+                    manifest_id=str(manifest.get("manifest_id", "")),
+                    source_count=len(cast(list[object], manifest.get("sources", []))),
+                )
+            )
+        except (OSError, ValueError) as exc:
+            manifest_detail = f"manifest_parse_failed:{exc}"
+            manifest_rows.append(
+                _audit_row(EXTERNAL_MANIFEST_PATH, "failed", manifest_detail)
+            )
+    manifest_status = str(manifest_rows[0]["status"])
+    _record(
+        "manifest_parse",
+        manifest_status,
+        manifest_rows,
+        {"manifest_path": EXTERNAL_MANIFEST_PATH, "detail": manifest_detail},
+    )
+
+    specs: list[ExternalSourceSpec] = []
+    if manifest is not None and manifest_status == "validated":
+        specs = [
+            _spec_from_row(row, index)
+            for index, row in enumerate(
+                cast(list[dict[str, object]], manifest["sources"])
+            )
+        ]
+
+    # Step 2: offline archive digest verification over the cache.
+    if not specs:
+        _blocked("archive_digest_verify", "manifest_parse")
+    else:
+        digest_rows: list[dict[str, object]] = []
+        for spec in specs:
+            archive_path = destination / f"{spec.source_id}-{spec.revision}.archive"
+            if not archive_path.is_file():
+                digest_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "blocked_external",
+                        "cached_archive_absent_offline",
+                        expected_archive_sha256=spec.source_archive_sha256,
+                    )
+                )
+                continue
+            try:
+                cached_digest = _sha256_path(archive_path)
+            except OSError as exc:
+                digest_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "failed",
+                        f"cached_archive_unreadable:{exc}",
+                        expected_archive_sha256=spec.source_archive_sha256,
+                    )
+                )
+                continue
+            if cached_digest != spec.source_archive_sha256:
+                digest_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "failed",
+                        "cached_source_archive_digest_mismatch",
+                        expected_archive_sha256=spec.source_archive_sha256,
+                        archive_sha256=cached_digest,
+                    )
+                )
+                continue
+            digest_rows.append(
+                _audit_row(
+                    spec.source_id,
+                    "validated",
+                    "",
+                    expected_archive_sha256=spec.source_archive_sha256,
+                    archive_sha256=cached_digest,
+                )
+            )
+        _record(
+            "archive_digest_verify",
+            _audit_step_status(digest_rows),
+            digest_rows,
+            {
+                "archive_cache_root": "output/external_sources",
+                "row_count": len(digest_rows),
+                "verified_row_count": sum(
+                    1 for row in digest_rows if row["status"] == "validated"
+                ),
+            },
+        )
+
+    # Step 3: archive-safety rehearsal on synthetic hostile archives.
+    rehearsal_rows = _archive_safety_rehearsal_rows()
+    _record(
+        "archive_safety_rehearsal",
+        _audit_step_status(rehearsal_rows),
+        rehearsal_rows,
+        {
+            "detail": (
+                "Synthetic path-traversal and symbolic-link members were "
+                "rejected by _safe_extract inside a temporary directory."
+            ),
+            "rejection_count": sum(
+                1 for row in rehearsal_rows if row["status"] == "validated"
+            ),
+        },
+    )
+
+    # Step 4: offline license re-verification over the extraction cache.
+    if not specs:
+        _blocked("license_check", "manifest_parse")
+    else:
+        license_rows: list[dict[str, object]] = []
+        for spec in specs:
+            extraction = destination / spec.source_id
+            license_path = extraction / spec.license_file
+            if not extraction.is_dir():
+                license_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "blocked_external",
+                        "source_extraction_absent_offline",
+                    )
+                )
+                continue
+            license_digest = (
+                _sha256_path(license_path) if license_path.is_file() else None
+            )
+            if license_digest == spec.license_file_sha256:
+                license_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "validated",
+                        "",
+                        license_file_sha256=license_digest,
+                    )
+                )
+            else:
+                license_rows.append(
+                    _audit_row(
+                        spec.source_id,
+                        "failed",
+                        "license_file_hash_mismatch_or_missing",
+                        license_file_sha256=license_digest,
+                        expected_license_file_sha256=spec.license_file_sha256,
+                    )
+                )
+        _record(
+            "license_check",
+            _audit_step_status(license_rows),
+            license_rows,
+            {
+                "row_count": len(license_rows),
+                "verified_row_count": sum(
+                    1 for row in license_rows if row["status"] == "validated"
+                ),
+            },
+        )
+
+    # Step 5: static-only recompilation of the cached sources.
+    recompute_rows: list[dict[str, object]] = []
+    if not specs:
+        _blocked("static_compile", "manifest_parse")
+    else:
+        try:
+            recompute = validate_external_static_sources(project_root)
+            recompute_rows = [
+                _static_audit_row(row)
+                for row in cast(list[dict[str, object]], recompute.get("rows", []))
+            ]
+            _record(
+                "static_compile",
+                _audit_step_status(recompute_rows),
+                recompute_rows,
+                {
+                    "recomputed_status": str(recompute.get("status", "failed")),
+                    "row_count": len(recompute_rows),
+                    "validated_row_count": sum(
+                        1 for row in recompute_rows if row["status"] == "validated"
+                    ),
+                },
+            )
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+            _record(
+                "static_compile",
+                "failed",
+                [
+                    _audit_row(
+                        "static_compile", "failed", f"static_recompute_failed:{exc}"
+                    )
+                ],
+                {"detail": f"static_recompute_failed:{exc}"},
+            )
+
+    # Step 6: diff recomputed object/disassembly hashes against the stored
+    # static receipt.  No object is executed; only digests are compared.
+    if not specs:
+        _blocked("build_reproducibility", "manifest_parse")
+    else:
+        stored_rows = _load_static_rows(project_root)
+        if not stored_rows:
+            _record(
+                "build_reproducibility",
+                "unavailable",
+                [
+                    _audit_row(
+                        "build_reproducibility",
+                        "unavailable",
+                        "stored_static_receipt_missing_or_empty",
+                    )
+                ],
+                {"stored_artifact": EXTERNAL_STATIC_RECEIPT_ARTIFACT},
+            )
+        else:
+            stored_by_id = {
+                str(row.get("source_id")): row
+                for row in stored_rows
+                if isinstance(row, dict)
+            }
+            repro_rows: list[dict[str, object]] = []
+            compared_fields = (
+                "status",
+                "reason",
+                "object_sha256",
+                "disassembly_sha256",
+                "text_sha256",
+                "decoded_instruction_count",
+            )
+            for row in recompute_rows:
+                subject = str(row.get("subject", "unknown"))
+                stored_row = stored_by_id.pop(subject, None)
+                if stored_row is None:
+                    repro_rows.append(
+                        _audit_row(
+                            subject,
+                            "failed",
+                            "row_missing_from_stored_static_receipt",
+                        )
+                    )
+                    continue
+                drift = [
+                    field
+                    for field in compared_fields
+                    if (row.get(field) or "") != (stored_row.get(field) or "")
+                ]
+                if drift:
+                    repro_rows.append(
+                        _audit_row(
+                            subject,
+                            "failed",
+                            "static_receipt_drift:" + ",".join(drift),
+                        )
+                    )
+                else:
+                    repro_rows.append(_audit_row(subject, "validated", ""))
+            for leftover in sorted(stored_by_id):
+                repro_rows.append(
+                    _audit_row(
+                        leftover,
+                        "failed",
+                        "stored_row_without_recompute",
+                    )
+                )
+            _record(
+                "build_reproducibility",
+                _audit_step_status(repro_rows),
+                repro_rows,
+                {
+                    "stored_artifact": EXTERNAL_STATIC_RECEIPT_ARTIFACT,
+                    "compared_fields": list(compared_fields),
+                    "row_count": len(repro_rows),
+                    "reproduced_row_count": sum(
+                        1 for row in repro_rows if row["status"] == "validated"
+                    ),
+                },
+            )
+
+    # Step 7: label-contract verification (corpus module only; the labeling
+    # module imports this package back, so it is never imported here).
+    contracts: dict[str, Any] | None = None
+    contracts_detail = ""
+    contract_summary: dict[str, object] | None = None
+    label_evidence: dict[str, object] = {
+        "contract_path": LABEL_CONTRACT_PATH,
+    }
+    label_rows: list[dict[str, object]] = []
+    try:
+        contracts = load_label_contracts(project_root / LABEL_CONTRACT_PATH)
+        contracts_valid, contracts_detail = validate_label_contracts(contracts)
+        if contracts_valid:
+            contract_summary = label_contract_summary(project_root)
+    except (OSError, ValueError) as exc:
+        contracts_valid, contracts_detail = False, f"label_contract_load_failed:{exc}"
+    label_rows.append(
+        _audit_row(
+            LABEL_CONTRACT_PATH,
+            "validated" if contracts_valid else "failed",
+            "" if contracts_valid else contracts_detail,
+        )
+    )
+    if contract_summary is not None:
+        label_evidence.update(
+            {
+                "summary_status": str(contract_summary.get("status", "unknown")),
+                "contract_count": contract_summary.get("contract_count", 0),
+                "labelable_example_count": contract_summary.get(
+                    "labelable_example_count", 0
+                ),
+                "project_count": contract_summary.get("project_count", 0),
+                "test_row_count": contract_summary.get("test_row_count", 0),
+                "project_held_out_test": contract_summary.get(
+                    "project_held_out_test", False
+                ),
+                "minimum_labelable_examples": contract_summary.get(
+                    "minimum_labelable_examples", 0
+                ),
+                "roles": contract_summary.get("roles", {}),
+            }
+        )
+    else:
+        label_evidence["detail"] = contracts_detail
+    _record(
+        "label_contract",
+        "validated" if contracts_valid else "failed",
+        label_rows,
+        label_evidence,
+    )
+
+    # Step 8: aggregated exclusion accounting.  The union of label-contract
+    # exclusions and every failure discovered by the steps above is grouped
+    # by step/reason/role; nothing is dropped silently.
+    union: list[dict[str, object]] = []
+    if contracts is not None:
+        union.extend(
+            cast(list[dict[str, object]], contracts.get("exclusions", []))
+        )
+    union.extend(failure_rows)
+    accounting = exclusion_accounting_summary(union)
+    accounting_groups = cast(list[dict[str, object]], accounting["groups"])
+    if accounting_groups:
+        accounting_rows = [
+            _audit_row(
+                f"{group['step']}:{group['role']}",
+                "validated",
+                str(group["reason"]),
+                step=str(group["step"]),
+                role=str(group["role"]),
+                count=group["count"],
+            )
+            for group in accounting_groups
+        ]
+    else:
+        accounting_rows = [
+            _audit_row(
+                "exclusion_accounting",
+                "validated",
+                "no_exclusions_or_failures_recorded",
+            )
+        ]
+    _record(
+        "exclusion_accounting",
+        "validated",
+        accounting_rows,
+        {
+            "total": accounting["total"],
+            "by_step": accounting["by_step"],
+            "by_reason": accounting["by_reason"],
+            "by_role": accounting["by_role"],
+        },
+    )
+
+    overall = (
+        "validated"
+        if all(step["status"] == "validated" for step in steps)
+        else "failed"
+    )
+    input_hashes: dict[str, str] = {}
+    for relative in (EXTERNAL_MANIFEST_PATH, LABEL_CONTRACT_PATH, "src/external_sources.py"):
+        candidate = project_root / relative
+        if candidate.is_file():
+            input_hashes[relative] = _sha256_path(candidate)
+    envelope = build_receipt_envelope(
+        protocol=protocol,
+        generator_revision=generator_revision(Path(__file__)),
+        input_hashes=input_hashes,
+        toolchain_versions=toolchain_versions(("pyyaml",)),
+        status=overall,
+        limitations=(
+            "This receipt is a rehearsal of the external preparation path only; its rows are not an efficacy claim.",
+            "Every step runs offline from the on-disk pinned cache; no URL is retried and no object is executed.",
+            "P13 remains underpowered: this audit does not create labels or application evidence.",
+        ),
+        unsupported_cases=(
+            "Arbitrary external binaries are never executed; hostile archive members are rejected, not repaired.",
+        ),
+        underpowered_cases=(
+            "Promotion requires MAJ-01: an independent replay of the acquisition/build recipe.",
+        ),
+    )
+    return {
+        **envelope,
+        "schema_version": EXTERNAL_MANIFEST_SCHEMA_VERSION,
+        "artifact": EXTERNAL_PREPARATION_AUDIT_ARTIFACT,
+        "manifest_id": str(manifest.get("manifest_id", "")) if manifest else "",
+        "steps": steps,
+        "network_used": False,
+        "execution_performed": False,
+        "static_only": True,
+        "audit_scope": "rehearsal_only_preparation_path",
+        "promotion_requires": "MAJ-01_independent_replay",
+    }
+
+
+def validate_external_corpus_preparation_audit_payload(
+    payload: object,
+) -> tuple[bool, str]:
+    """Validate the preparation-audit receipt, boundary, and no-efficacy rule."""
+
+    if not isinstance(payload, dict):
+        return False, "external preparation audit must be an object"
+    protocol = scientific_protocol_payload()
+    valid, detail = validate_receipt_envelope(payload, expected_protocol=protocol)
+    if not valid:
+        return False, f"external preparation audit: {detail}"
+    if payload.get("schema_version") != EXTERNAL_MANIFEST_SCHEMA_VERSION:
+        return False, "external preparation audit schema mismatch"
+    if payload.get("artifact") != EXTERNAL_PREPARATION_AUDIT_ARTIFACT:
+        return False, "external preparation audit artifact drift"
+    for field, expected in (
+        ("network_used", False),
+        ("execution_performed", False),
+        ("static_only", True),
+    ):
+        if payload.get(field) is not expected:
+            return False, f"external preparation audit boundary field {field} drifted"
+    if not isinstance(payload.get("manifest_id"), str):
+        return False, "external preparation audit manifest_id must be a string"
+    steps = payload.get("steps")
+    if not isinstance(steps, list):
+        return False, "external preparation audit steps must be a list"
+    step_ids: list[str] = []
+    for step in steps:
+        if not isinstance(step, dict):
+            return False, "external preparation audit step is not an object"
+        step_ids.append(str(step.get("step_id", "")))
+    if step_ids != list(_EXTERNAL_AUDIT_STEPS):
+        return False, "external preparation audit step order or membership drift"
+    for step in steps:
+        assert isinstance(step, dict)
+        if step.get("status") not in _EXTERNAL_AUDIT_STEP_STATUSES:
+            return False, f"external preparation audit step {step.get('step_id')} has an unknown status"
+        for field, expected in (
+            ("network_used", False),
+            ("execution_performed", False),
+            ("static_only", True),
+        ):
+            if step.get(field) is not expected:
+                return (
+                    False,
+                    f"external preparation audit step {step.get('step_id')} boundary field {field} drifted",
+                )
+        rows = step.get("rows")
+        if not isinstance(rows, list):
+            return False, f"external preparation audit step {step.get('step_id')} rows must be a list"
+        if not isinstance(step.get("evidence"), dict):
+            return False, f"external preparation audit step {step.get('step_id')} evidence must be an object"
+        for row in rows:
+            if not isinstance(row, dict):
+                return False, f"external preparation audit step {step.get('step_id')} row is not an object"
+            status = row.get("status")
+            if status is not None and status not in _EXTERNAL_AUDIT_ROW_STATUSES:
+                return False, f"external preparation audit step {step.get('step_id')} row has an unknown status"
+            for field, expected in (
+                ("network_used", False),
+                ("execution_performed", False),
+                ("static_only", True),
+            ):
+                if row.get(field) is not expected:
+                    return (
+                        False,
+                        f"external preparation audit row boundary field {field} drifted",
+                    )
+
+    def _contains_efficacy_key(node: object) -> bool:
+        if isinstance(node, dict):
+            return any(
+                any(token in str(key).lower() for token in _EFFICACY_KEY_TOKENS)
+                or _contains_efficacy_key(value)
+                for key, value in node.items()
+            )
+        if isinstance(node, list):
+            return any(_contains_efficacy_key(item) for item in node)
+        return False
+
+    if _contains_efficacy_key(payload):
+        return False, "external preparation audit contains an efficacy field"
+    return True, f"steps={len(steps)}"
+
+
+def write_external_corpus_preparation_audit(
+    project_root: Path = PROJECT_ROOT,
+) -> Path:
+    """Write the offline, static-only preparation audit receipt atomically."""
+
+    payload = external_corpus_preparation_audit_payload(project_root)
+    valid, detail = validate_external_corpus_preparation_audit_payload(payload)
+    if not valid:
+        raise ValueError(detail)
+    path = project_root / EXTERNAL_PREPARATION_AUDIT_ARTIFACT
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_json_artifact(
+        path,
+        payload,
+        project_root=project_root,
+        producer_path=Path(__file__),
+        status=str(payload["status"]),
+        limitations=tuple(
+            str(item) for item in cast(list[object], payload["limitations"])
+        ),
+        unsupported_cases=tuple(
+            str(item) for item in cast(list[object], payload["unsupported_cases"])
+        ),
+        underpowered_cases=tuple(
+            str(item) for item in cast(list[object], payload["underpowered_cases"])
+        ),
+    )
+    return path
+
 __all__ = [
+    "EXTERNAL_PREPARATION_AUDIT_ARTIFACT",
+    "external_corpus_preparation_audit_payload",
+    "validate_external_corpus_preparation_audit_payload",
+    "write_external_corpus_preparation_audit",
     "EXTERNAL_MANIFEST_PATH",
     "EXTERNAL_MANIFEST_SCHEMA_VERSION",
     "EXTERNAL_RECEIPT_ARTIFACT",

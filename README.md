@@ -109,6 +109,8 @@ uv run python scripts/run_scientific_program.py prepare-external
 
 uv run python scripts/run_scientific_program.py validate-external
 
+uv run python scripts/run_scientific_program.py audit-external-preparation
+
 uv run python scripts/run_scientific_program.py generate-public
 
 # Acquisition is the only network-enabled command and is always explicit.

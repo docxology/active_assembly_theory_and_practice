@@ -53,8 +53,8 @@ def test_parameter_learning_payload_is_complete_and_leakage_safe() -> None:
     summary = cast(dict[str, object], payload["summary"])
     rows = cast(list[dict[str, object]], payload["per_fixture"])
     assert summary["leakage_free"] is True
-    assert summary["fixture_count"] == 6
-    assert summary["multi_start_count"] == 30
+    assert summary["fixture_count"] == 10
+    assert summary["multi_start_count"] == 50
     assert set(summary["multi_start_initializations"]) == {
         "reference",
         "uniform",

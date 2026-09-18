@@ -17,11 +17,15 @@ Phase labelling convention (deterministic, hand-authored):
 
 The corpus deliberately contains more than one evidence regime.  In addition
 to register-only straight-line programs, it includes a bounded stack-memory
-fixture and a branch-taken companion to the external-target guard fixture.
-These additions are still transparent toy programs, but they make the Phase A
-typed-observation evaluation test memory addressing, repeated phases, and
-dynamic/static path differences instead of merely counting near-duplicate
-register instructions.
+fixture, a branch-taken companion to the external-target guard fixture, and a
+MED-01 temporal expansion: a call/return fixture whose landing pad ``ret``
+executes inside the bounded harness, a double not-taken guard fixture, a
+repeated-phase stack-local fixture, and an optimization-rewrite fixture whose
+``add``/``inc``/``lea`` motifs intentionally collapse onto few observation
+categories.  These additions are still transparent toy programs, but they make
+the Phase A typed-observation evaluation test memory addressing, repeated
+phases, and dynamic/static path differences instead of merely counting
+near-duplicate register instructions.
 
 All byte fixtures are real machine code: they are decoded with Capstone via
 :func:`disassembly.disassemble_bytes` and executed with Unicorn via
@@ -148,7 +152,135 @@ def build_corpus() -> tuple[CorpusFixture, ...]:
         ),
     )
 
-    return (accumulator, bitwise, guard, long_accumulator, memory, guard_taken)
+    # x86_call_return (MED-01 temporal expansion).  Real call/ret within the
+    # bounded harness: the ``call`` at offset 6 pushes return address
+    # base+0x100b, execution lands on the ``ret`` pad, and the ``ret`` pops
+    # that in-span address so control returns to the ``pop``.  The ``jmp``
+    # then transfers to base + len(code), the bounded emulator's stop
+    # address, so the harness terminates cleanly.  Verified with real
+    # Capstone decode and Unicorn execution: all six decoded instructions
+    # execute and the stack pointer is restored.  Metadata note: the bounded
+    # harness (emulation.emulate_x86_64) permits ``ret`` only when the popped
+    # return address stays inside the mapped code window; a ``ret`` whose
+    # target is not a valid in-span address is an explicit unsupported case,
+    # never a silently dropped or mocked fixture.
+    #
+    # mov eax,1; push rax; call +3; pop rax; jmp +1; ret
+    # -> setup, setup, guard_check, setup, guard_check, exit.  ``call`` and
+    # ``ret`` carry the control-transfer latent phase (guard_check); the
+    # ``pop`` reloads saved state (setup); the final ``ret`` is the exit.
+    # Both the setup phase (load_immediate vs other categories) and the
+    # guard_check phase (control_transfer here, comparison elsewhere) are
+    # observationally ambiguous by design -- ambiguity is data.
+    call_return = CorpusFixture(
+        name="x86_call_return",
+        code=bytes.fromhex("b801000000 50 e803000000 58 eb01 c3".replace(" ", "")),
+        phase_labels=(
+            "setup",
+            "setup",
+            "guard_check",
+            "setup",
+            "guard_check",
+            "exit",
+        ),
+    )
+
+    # x86_branch_not_taken (MED-01 temporal expansion).  Companion to
+    # x86_guard: two guard phases whose conditional branches both fall
+    # through.  eax=3 is neither > 5 nor < 2, so both ``jg`` and ``jl`` are
+    # not taken and every statically decoded instruction executes; both jump
+    # targets are in-span instruction boundaries (the second is the stop
+    # address itself).
+    #
+    # mov eax,3; cmp eax,5; jg +3; add eax,1; cmp eax,2; jl +3; sub eax,1
+    # -> setup, guard, guard, acc, guard, guard, exit
+    branch_not_taken = CorpusFixture(
+        name="x86_branch_not_taken",
+        code=bytes.fromhex(
+            "b803000000 83f805 7f03 83c001 83f802 7c03 83e801".replace(" ", "")
+        ),
+        phase_labels=(
+            "setup",
+            "guard_check",
+            "guard_check",
+            "accumulator_update",
+            "guard_check",
+            "guard_check",
+            "exit",
+        ),
+    )
+
+    # x86_stack_local (MED-01 temporal expansion).  Bounded stack-local
+    # state: the ``push`` writes a scratch slot below rsp and the ``pop``
+    # reads it back into a non-accumulator register, so accumulator
+    # arithmetic interleaves with real stack memory effects.  The setup and
+    # accumulator_update phases each recur in separate contiguous runs,
+    # which makes the temporal model's state persistence observable.
+    #
+    # mov eax,7; push rax; mov ecx,3; add eax,3; sub eax,2; pop rcx;
+    # shl eax,1; add eax,2; sub eax,8
+    # -> setup x3, acc x2, setup, transform, acc, exit
+    stack_local = CorpusFixture(
+        name="x86_stack_local",
+        code=bytes.fromhex(
+            "b807000000 50 b903000000 83c003 83e802 59 d1e0 83c002 83e808".replace(
+                " ", ""
+            )
+        ),
+        phase_labels=(
+            "setup",
+            "setup",
+            "setup",
+            "accumulator_update",
+            "accumulator_update",
+            "setup",
+            "representation_transform",
+            "accumulator_update",
+            "exit",
+        ),
+    )
+
+    # x86_optimization_rewrite (MED-01 temporal expansion).  One program
+    # holding the classic optimization-sensitive motif pair: ``add eax,1`` vs
+    # ``inc eax`` and the ``lea eax,[rax+1]`` rewrite, in distinct phases.
+    # ``add`` and ``inc`` share the arithmetic_update observation category
+    # while differing in flag effects, and ``lea`` lands in the residual
+    # ``other`` category even though its latent phase is accumulator_update
+    # -- exactly the ambiguity-as-data regime MED-01 requires.
+    #
+    # mov eax,1; add eax,1; inc eax; lea eax,[rax+1]; shl eax,1;
+    # add eax,1; inc eax; sub eax,5
+    # -> setup, acc x3, transform, acc x2, exit
+    optimization_rewrite = CorpusFixture(
+        name="x86_optimization_rewrite",
+        code=bytes.fromhex(
+            "b801000000 83c001 ffc0 8d4001 d1e0 83c001 ffc0 83e805".replace(" ", "")
+        ),
+        phase_labels=(
+            "setup",
+            "accumulator_update",
+            "accumulator_update",
+            "accumulator_update",
+            "representation_transform",
+            "accumulator_update",
+            "accumulator_update",
+            "exit",
+        ),
+    )
+
+    return (
+        accumulator,
+        bitwise,
+        guard,
+        long_accumulator,
+        memory,
+        guard_taken,
+        call_return,
+        branch_not_taken,
+        stack_local,
+        optimization_rewrite,
+    )
+
 
 
 def fixture_observation_ids(fixture: CorpusFixture) -> tuple[int, ...]:
@@ -166,3 +298,62 @@ def fixture_observation_ids(fixture: CorpusFixture) -> tuple[int, ...]:
     trace = emulate_x86_64(fixture.code)
     observations = encode_observations(instructions, trace)
     return tuple(int(observation.observation_id) for observation in observations)
+
+
+SPLITS = ("training", "development", "held_out")
+
+# Frozen family-level split for the temporal corpus (MED-01, protocol 2.1.0).
+# Grouping policy: one family per fixture -- the family id is the fixture
+# name -- which is the declared grouping and gives maximal family
+# disjointness.  The assignment is frozen before any temporal-track scoring
+# producer runs; holdout scoring for the temporal track remains
+# leave-one-fixture-out over complete fixtures.
+#
+# Justification: the training split keeps the register-arithmetic programs and
+# the two new mechanics-teaching fixtures (call/return control flow and the
+# optimization-rewrite motifs) so both models observe the full observation
+# vocabulary before tuning.  The development split keeps the longer program
+# and the memory fixture for hyperparameter and calibration decisions only.
+# The held_out split keeps every control-flow-sensitive fixture --
+# x86_guard, x86_guard_taken, x86_branch_not_taken -- plus the stack-local
+# fixture, so the branch-behaviour regimes that motivate the dynamic/static
+# distinction are never used for fitting or tuning.
+CORPUS_FAMILY_SPLIT: dict[str, str] = {
+    "x86_accumulator": "training",
+    "x86_bitwise": "training",
+    "x86_call_return": "training",
+    "x86_optimization_rewrite": "training",
+    "x86_long_accumulator": "development",
+    "x86_memory": "development",
+    "x86_guard": "held_out",
+    "x86_guard_taken": "held_out",
+    "x86_branch_not_taken": "held_out",
+    "x86_stack_local": "held_out",
+}
+
+
+def corpus_family_split() -> dict[str, str]:
+    """Return the frozen fixture-to-split map (defensive copy)."""
+
+    return dict(CORPUS_FAMILY_SPLIT)
+
+
+def fixture_family(fixture_name: str) -> str:
+    """Return the frozen family id for one fixture.
+
+    The declared grouping is one family per fixture, so the family id is the
+    fixture name itself.
+    """
+
+    if fixture_name not in CORPUS_FAMILY_SPLIT:
+        raise KeyError(f"unknown fixture family: {fixture_name}")
+    return fixture_name
+
+
+def fixture_split(fixture_name: str) -> str:
+    """Return the frozen split assignment for one fixture."""
+
+    try:
+        return CORPUS_FAMILY_SPLIT[fixture_name]
+    except KeyError as exc:
+        raise KeyError(f"unknown fixture split: {fixture_name}") from exc

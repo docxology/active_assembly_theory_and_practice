@@ -178,6 +178,7 @@ def promote_evidence_summary(root: Path) -> dict[str, Any]:
     from .external_sources import (
         EXTERNAL_ACQUISITION_ARTIFACT,
         EXTERNAL_CAPABILITY_ARTIFACT,
+        EXTERNAL_PREPARATION_AUDIT_ARTIFACT,
         EXTERNAL_RECEIPT_ARTIFACT,
         EXTERNAL_STATIC_RECEIPT_ARTIFACT,
     )
@@ -189,6 +190,7 @@ def promote_evidence_summary(root: Path) -> dict[str, Any]:
         "P13_static_only": root / EXTERNAL_STATIC_RECEIPT_ARTIFACT,
         "P13_capabilities": root / EXTERNAL_CAPABILITY_ARTIFACT,
         "P13_acquisition": root / EXTERNAL_ACQUISITION_ARTIFACT,
+        "P13_preparation_audit": root / EXTERNAL_PREPARATION_AUDIT_ARTIFACT,
         "P15_local_replay_harness": root / REPLICATION_ARTIFACT,
         "P15_independent_replay": root / INDEPENDENT_REPLAY_ARTIFACT,
     }

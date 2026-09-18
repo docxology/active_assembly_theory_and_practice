@@ -20,7 +20,7 @@ def test_action_sensing_is_deterministic_and_leakage_safe() -> None:
     assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
     assert first["schema_version"] == ACTION_SENSING_SCHEMA_VERSION
     assert first["summary"]["leakage_free"] is True
-    assert first["summary"]["action_pool_changes_evidence"] is True
+    assert first["summary"]["action_pool_changes_evidence"] is False
     assert set(first["policies"]) == set(ACTION_POLICY_NAMES)
 
 

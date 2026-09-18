@@ -20,7 +20,11 @@ from .artifact_contract import write_json_artifact
 from .provenance import generator_revision, toolchain_versions
 from .receipt import build_receipt_envelope, validate_receipt_envelope
 from .scientific_protocol import scientific_protocol_payload
-from .lean_bridge import BRIDGE_MACHINE_STATE_THEOREMS, run_generated_lean_fixture
+from .lean_bridge import (
+    BRIDGE_FIXTURE_THEOREMS,
+    BRIDGE_MACHINE_STATE_THEOREMS,
+    run_generated_lean_fixture,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FORMAL_PROJECT_DIR = PROJECT_ROOT / "formal"
@@ -39,8 +43,47 @@ FORMAL_THEOREMS = (
     "ActiveAssembly.unsupported_is_explicit",
     "ActiveAssembly.explicit_unsupported_is_not_supported",
     "ActiveAssembly.declared_opcode_has_decidable_status",
+    # MED-02 expansion: exact flag definedness on the bounded machine state.
+    "ActiveAssembly.arithmetic_flags_fully_defined",
+    "ActiveAssembly.logic_flags_af_undefined",
+    "ActiveAssembly.logic_flags_cf_defined_and_clear",
+    "ActiveAssembly.add64N_flags",
+    "ActiveAssembly.sub64N_flags",
+    "ActiveAssembly.cmp64N_preserves_registers_and_memory",
+    "ActiveAssembly.sub64N_result_val",
+    "ActiveAssembly.word64n_add_sub_inverse_val",
+    "ActiveAssembly.word64n_add_sub_inverse",
+    "ActiveAssembly.add_sub_inverse_gprs",
+    "ActiveAssembly.add_sub_inverse",
+    "ActiveAssembly.cmp_matches_sub_flags",
+    "ActiveAssembly.arithmetic_flags_defined_after_add_sub",
+    "ActiveAssembly.flag_definedness_logic_ops",
+    # Width-aware move semantics.
+    "ActiveAssembly.movLowN_val",
+    "ActiveAssembly.mov8N_val",
+    "ActiveAssembly.mov16N_val",
+    "ActiveAssembly.mov8N_preserves_upper_bits",
+    "ActiveAssembly.mov16N_preserves_upper_bits",
+    "ActiveAssembly.movzx32N_zero_extension",
+    "ActiveAssembly.movsx32N_sign_extension",
+    "ActiveAssembly.movzx32_to_64_zero_extension",
+    # Bounded little-endian stack: push/pop.
+    "ActiveAssembly.readLittleEndianN_congr",
+    "ActiveAssembly.mulAddMod256_pow2",
+    "ActiveAssembly.read_write_little_endian_roundtrip",
+    "ActiveAssembly.push64N_out_of_bounds_is_explicit",
+    "ActiveAssembly.pop64N_out_of_bounds_is_explicit",
+    "ActiveAssembly.push64N_pop64N_roundtrip",
+    "ActiveAssembly.push_pop_roundtrip",
+    # Conditional branches over the definedness map.
+    "ActiveAssembly.jcc_zero_flag_branch_distinct",
+    "ActiveAssembly.jcc_undefined_flag_is_exceptional",
+    "ActiveAssembly.jcc_e_taken_sets_rip",
+    "ActiveAssembly.jcc_e_not_taken_sets_rip",
+    "ActiveAssembly.jcc_taken_vs_not_taken_distinct",
     "ActiveAssembly.generated_trace_matches",
     *BRIDGE_MACHINE_STATE_THEOREMS,
+    *BRIDGE_FIXTURE_THEOREMS,
 )
 
 
@@ -185,6 +228,14 @@ def formal_verification_payload(project_root: Path = PROJECT_ROOT) -> dict[str, 
                 "add immediate",
                 "sub immediate",
                 "inc",
+                "cmp (exact sub flags with no writeback)",
+                "and/or/xor logic flags with AF undefined-on-logic",
+                "width-aware moves (8/16-bit preserve upper bits, 32-bit "
+                "zero-extends, movzx/movsx extension)",
+                "push/pop over the bounded little-endian stack window with "
+                "explicit boundExceeded failure",
+                "jcc conditional branches over the flag definedness map with "
+                "fail-closed exceptional status on undefined flag reads",
                 "width-aware register writes",
                 "explicit flag definedness and carry preservation",
                 "bounded memory-state fields",

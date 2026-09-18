@@ -22,6 +22,7 @@ from src.external_sources import (  # noqa: E402
     prepare_external_summary,
     write_compiler_capabilities,
     write_external_static_validation,
+    write_external_corpus_preparation_audit,
     write_external_acquisition_payload,
     write_external_source_validation_payload,
 )
@@ -98,6 +99,13 @@ def main() -> int:
     )
     subparsers.add_parser(
         "prepare-external", help="validate pinned manifest and label-contract inputs"
+    )
+    subparsers.add_parser(
+        "audit-external-preparation",
+        help=(
+            "write the offline, rehearsal-only external preparation audit "
+            "receipt (no network, no execution)"
+        ),
     )
     subparsers.add_parser(
         "validate-external",
@@ -299,6 +307,10 @@ def main() -> int:
         print(label_path)
         print(static_path)
         print(external_path)
+    elif command == "audit-external-preparation":
+        # Offline by construction: the writer accepts no network flag and
+        # never touches a URL; it only rehearses the on-disk cache.
+        print(write_external_corpus_preparation_audit(root))
         return 0
     elif command == "promote-evidence":
         _write_json(promote_evidence_summary(root))
@@ -469,6 +481,7 @@ def main() -> int:
             write_external_label_contract(root),
             write_external_static_validation(root),
             write_external_source_validation_payload(root),
+            write_external_corpus_preparation_audit(root),
             write_replication_bundle(root),
         ]
         for path in paths:

@@ -81,6 +81,28 @@ surfaces, not unstarted roadmap tasks:
 - the MED-04 active-sensing stress-grid receipt with exact dynamic-programming
   references, fixed-seed policy rollouts, repeated calibration-stability rows,
   and budget-constrained value gaps.
+- the MED-01 longer transparent corpus with repeated authored phases,
+  taken/not-taken branch paths, bounded memory operands, and family-level
+  splits frozen before scoring under protocol schema 2.1.0
+  (`output/data/corpus_coverage.json`);
+- the MED-02 broader declared-subset semantics expansion covering width
+  updates, `INC`/`DEC` carry preservation, `ADC`/`SBB` carry consumption,
+  memory and stack bounds, branch outcomes, serialization, and unsupported
+  instructions across the Python, Capstone, Unicorn, and Lean fixtures
+  (`output/data/formal_trace_correspondence.json`);
+- the MED-03 robust classifier portfolio refit with multiple deterministic
+  starts, family-clustered statistics, calibration, selective risk, label
+  permutation, family-shuffle and compiler/architecture leakage attacks, and
+  near-duplicate checks (`output/data/quotient_classifier.json`);
+- the MED-06 capability-controlled transfer expansion probing locally
+  available compilers, target triples, optimization levels, decoders, and
+  object formats with explicit unavailable-target rows
+  (`output/data/compiler_transfer.json`); and
+- the MED-07 offline external corpus preparation audit receipt rehearsing
+  pinned manifest parsing, license-file checks, archive safety, static-only
+  compilation, build reproducibility, source contracts, and exclusion
+  accounting (`output/data/external_corpus_preparation_audit.json`, produced
+  by `audit-external-preparation`).
 
 These items should receive regression coverage and freshness audits. They should
 not reappear in future documentation as “to do,” “next tranche,” or “not yet
@@ -132,12 +154,13 @@ scientifically material, and a manuscript boundary statement.
 
 | ID | Deliverable | Dependencies and acceptance evidence | Promotion effect |
 | --- | --- | --- | --- |
-| MED-01 | Longer transparent corpus | Add longer programs with repeated phases, ambiguous observations, taken/not-taken branches, bounded memory, stack-local state, calls/returns, and optimization-sensitive rewrites. Freeze family-level splits before scoring; retain all exclusions. | May improve mechanism-level inference evidence; cannot establish external validity. |
-| MED-02 | Broader declared-subset semantics | Extend the normalized IR and Lean/Python fixtures for the highest-value supported instruction families, including exact flag definedness and memory effects. Compare Python, Capstone, Unicorn, and Lean field by field; preserve unsupported outcomes. | May strengthen P11 to a larger bounded fragment; no complete-ISA claim. |
-| MED-03 | Robust classifier portfolio | Refit all co-primary models over the expanded corpus using development-only selection, multiple deterministic starts, family-clustered bootstrap, calibration, selective risk, label permutation, family-shuffle, compiler/architecture leakage attacks, and near-duplicate checks. | May support a stronger bounded benchmark result; no semantic-identifiability claim without the major gate. |
 | MED-05 | Separately controlled replay | Run the public bundle on a separately controlled CI worker or machine, disable network access, return the signed/hash-bound receipt and predictions, and ingest them through the protected scorer. | Can change P15 from local/guest evidence to observed external replay, but not to independent reimplementation. |
-| MED-06 | Capability-controlled transfer expansion | Probe locally available compilers, target triples, optimization levels, decoders, and object formats. Add only rows with complete source/object/disassembly provenance; leave unavailable targets explicit. | May enlarge bounded P5/P12 coverage; cannot turn capability coverage into behavioral transfer. |
-| MED-07 | External corpus preparation audit | Rehearse pinned manifest parsing, license-file checks, archive safety, static-only compilation, build reproducibility, source contracts, and exclusion accounting without using the rows as an efficacy claim. | Reduces P13 operational risk; promotion still requires the major external gate. |
+
+Note: MED-05 is the only open Medium item and is locally blocked by design.
+It requires a separately operated machine or CI worker; the roadmap forbids
+inferring an independent replay from a local rerun. The replay receipt
+remains `submitted_pending_verification` with `independent_replay`
+`not_yet_observed` until an external operator returns a receipt.
 
 ### Major: promotion-gated research programs
 
@@ -163,16 +186,15 @@ The practical order is:
 
 1. Keep the minor maintenance loop green and refresh receipts after every
    source, protocol, or toolchain change.
-2. Run MED-01 through MED-03 in parallel only after the protocol, split, and
-   observation schemas are unchanged and sealed.
-3. Run MED-05 and MED-07 with controlled operators and retain every failure.
-4. Use MED-06 to expand only actually available capabilities; do not download
-   or silently substitute an architecture or compiler to complete a matrix.
-5. Start MAJ-01, MAJ-02, and MAJ-03 only from frozen bundles and receipts.
-6. Use the results of MED-02 and the major evidence tracks to decide
-   whether MAJ-04–MAJ-07 is a theorem, a countertheorem, or an unresolved
-   program.
-7. Run MAJ-08 only after the claim register, document package, and independent
+2. The Medium tier is closed except for MED-05, which is locally blocked: it
+   must be run by a separately operated machine or CI worker with network
+   access disabled, and a local rerun must never be inferred as an
+   independent replay.
+3. Start MAJ-01, MAJ-02, and MAJ-03 only from frozen bundles and receipts.
+4. Use the completed MED-02 declared-subset expansion and the major evidence
+   tracks to decide whether MAJ-04–MAJ-07 is a theorem, a countertheorem, or
+   an unresolved program.
+5. Run MAJ-08 only after the claim register, document package, and independent
    evidence boundaries have been reviewed.
 
 No major item should change the endpoint after looking at held-out predictions.

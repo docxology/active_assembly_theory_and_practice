@@ -392,12 +392,19 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
                 "external binaries require unsafe execution to obtain the claimed result",
             ),
             current_result=(
-                "Implemented local tranche: compiler capabilities, source-family hashes, "
-                "target triples, disassembly hashes, and static emitted objects are recorded; "
-                "available x86-64 and AArch64 rows are validated and unavailable RISC-V64 rows "
-                "remain explicit. The receipt does not establish compiler/source/architecture "
-                "transfer accuracy or external validity, and no arbitrary external binary is "
-                "executed."
+                "The compiler transfer capability receipt freezes a matrix over five "
+                "toolchains, ten source families, thirteen target triples, Mach-O and ELF "
+                "object formats, and per-compiler optimization vocabularies (Clang -O0..-Oz, "
+                "NASM unoptimized, rustc opt-level 0/1/2/3/s/z, Zig "
+                "Debug/ReleaseSafe/ReleaseFast/ReleaseSmall declared). On the recorded machine "
+                "128 of 184 cells validated: Apple Clang 21 across x86_64/aarch64 Mach-O and "
+                "x86_64-unknown-linux-gnu/aarch64-unknown-linux-gnu ELF, NASM 3.02 in macho64 "
+                "and elf64, and rustc 1.95 as a no_std staticlib on the host aarch64 target. "
+                "Every non-validated cell is an explicit unavailable row carrying the requested "
+                "triple and a reason (RISC-V unsupported by the local Clang, the "
+                "x86_64-apple-darwin rustc standard library not installed, and go/zig declared "
+                "but not compiled); no toolchain, target, or architecture was downloaded or "
+                "substituted, and no emitted object was ever executed."
             ),
         ),
         ScientificMilestone(

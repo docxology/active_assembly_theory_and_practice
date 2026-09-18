@@ -12,10 +12,18 @@ from __future__ import annotations
 from collections import Counter
 from typing import TypedDict
 
-from .corpus import CorpusFixture, build_corpus
+from .corpus import (
+    SPLITS,
+    CorpusFixture,
+    build_corpus,
+    corpus_family_split,
+    fixture_family,
+    fixture_split,
+)
 from .disassembly import disassemble_bytes
 from .emulation import emulate_x86_64
 from .factorized_model import build_typed_observation_corpus
+from .scientific_protocol import PROTOCOL_ID
 from .typed_observations import (
     TYPED_OBSERVATION_FIELDS,
     TypedObservation,
@@ -23,7 +31,7 @@ from .typed_observations import (
 )
 
 
-CORPUS_COVERAGE_SCHEMA_VERSION = "1.0.0"
+CORPUS_COVERAGE_SCHEMA_VERSION = "1.1.0"
 
 
 class CorpusCoverageRow(TypedDict):
@@ -44,6 +52,8 @@ class CorpusCoverageRow(TypedDict):
     has_alternate_dynamic_path: bool
     phase_counts: dict[str, int]
     typed_field_cardinality: dict[str, int]
+    family: str
+    split: str
 
 
 def _phase_run_count(labels: tuple[str, ...]) -> int:
@@ -103,6 +113,27 @@ def _fixture_row(
             field: len({typed_field_value(row, field) for row in typed_rows})
             for field in TYPED_OBSERVATION_FIELDS
         },
+        "family": fixture_family(fixture.name),
+        "split": fixture_split(fixture.name),
+    }
+
+
+def _frozen_split_summary() -> dict[str, object]:
+    """Build the frozen family-level split receipt from the corpus constants."""
+
+    assignment: dict[str, str] = {}
+    for family in {fixture_family(fixture.name) for fixture in build_corpus()}:
+        assignment[family] = fixture_split(family)
+    families_per_split = {
+        split: sum(1 for value in assignment.values() if value == split)
+        for split in SPLITS
+    }
+    return {
+        "unit": "source_program_family",
+        "frozen_before_scoring": True,
+        "assignment": assignment,
+        "families_per_split": families_per_split,
+        "protocol_ref": PROTOCOL_ID,
     }
 
 
@@ -161,6 +192,7 @@ def corpus_coverage_payload(
             "branch_target_classes": unique_branch_classes,
         },
         "per_fixture": rows,
+        "frozen_split": _frozen_split_summary(),
         "interpretation": (
             "Coverage variation is a fixture-design diagnostic. It supports a "
             "more informative Phase A stress test but is not independent binary "
@@ -189,12 +221,19 @@ def validate_corpus_coverage_payload(payload: dict[str, object]) -> tuple[bool, 
         "instruction_families",
         "has_memory_variation",
         "has_alternate_dynamic_path",
+        "family",
+        "split",
     }
     if any(
         not isinstance(row, dict) or not required_row_fields.issubset(row)
         for row in rows
     ):
         return False, "coverage row fields incomplete"
+    for row in rows:
+        if not isinstance(row.get("family"), str) or not row["family"]:
+            return False, "coverage row family missing"
+        if not isinstance(row.get("split"), str) or row["split"] not in SPLITS:
+            return False, "coverage row split invalid"
     if int(summary.get("fixture_count", 0)) != len(rows):
         return False, "fixture count does not match rows"
     if int(summary.get("memory_fixture_count", -1)) != sum(
@@ -205,4 +244,42 @@ def validate_corpus_coverage_payload(payload: dict[str, object]) -> tuple[bool, 
         bool(row["has_alternate_dynamic_path"]) for row in rows
     ):
         return False, "alternate-path count does not match rows"
+    frozen_split = payload.get("frozen_split")
+    if not isinstance(frozen_split, dict):
+        return False, "frozen split receipt missing"
+    if frozen_split.get("unit") != "source_program_family":
+        return False, "frozen split sampling unit drift"
+    if frozen_split.get("frozen_before_scoring") is not True:
+        return False, "frozen split must be frozen before scoring"
+    assignment = frozen_split.get("assignment")
+    if not isinstance(assignment, dict):
+        return False, "frozen split assignment missing"
+    families_per_split = frozen_split.get("families_per_split")
+    if not isinstance(families_per_split, dict):
+        return False, "frozen split family counts missing"
+    # Recompute the frozen split from the corpus constants; a payload whose
+    # assignment drifts from the frozen constant fails closed.
+    expected_assignment: dict[str, str] = {}
+    for fixture in build_corpus():
+        expected_assignment[fixture_family(fixture.name)] = fixture_split(
+            fixture.name
+        )
+    if assignment != expected_assignment:
+        return False, "frozen split assignment does not match the frozen constant"
+    row_family_splits: dict[str, str] = {}
+    for row in rows:
+        family = row["family"]
+        if family in row_family_splits and row_family_splits[family] != row["split"]:
+            return False, "family ids are not disjoint across splits"
+        row_family_splits[family] = row["split"]
+    if row_family_splits != expected_assignment:
+        return False, "row family/split pairs do not match the frozen constant"
+    for split in SPLITS:
+        expected_count = sum(
+            1 for value in expected_assignment.values() if value == split
+        )
+        if int(families_per_split.get(split, -1)) != expected_count:
+            return False, "frozen split family counts do not match the assignment"
+    if frozen_split.get("protocol_ref") != PROTOCOL_ID:
+        return False, "frozen split protocol reference drift"
     return True, f"fixtures={len(rows)}"

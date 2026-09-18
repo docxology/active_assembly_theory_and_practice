@@ -123,6 +123,12 @@ extension tranche:
   exact dynamic-programming references, fixed-seed policy rollouts, repeated
   local calibration-stability rows, and budget-constrained value gaps.
 
+The active protocol is `output/data/research_protocol.json` at schema 2.1.0
+(`active-assembly-open-roadmap-v2-2026-09-17`), which freezes the
+temporal-corpus split. All receipts rebind on regeneration: a protocol
+revision deliberately invalidates previously generated receipts rather than
+being silently absorbed by them.
+
 These receipts are bounded implementation and computational-evidence surfaces,
 not independent replication, external-validity, or broad-theorem certificates.
 
@@ -168,7 +174,14 @@ dropped from the denominator. Regenerate it with:
 ```bash
 uv run python scripts/run_scientific_program.py label-external
 uv run python scripts/run_scientific_program.py validate-external
-```
+uv run python scripts/run_scientific_program.py audit-external-preparation
+
+`audit-external-preparation` is offline by construction: it rehearses the
+pinned manifest parsing, license-file checks, archive safety, static-only
+compilation, build reproducibility, source contracts, and exclusion accounting
+against the on-disk cache and writes
+`output/data/external_corpus_preparation_audit.json`. It reduces P13
+operational risk without using any row as an efficacy claim.
 
 The generated `external_label_coverage.png` is a provenance census of those
 accepted contracts: its role bars and project/revision split matrix are derived
@@ -224,6 +237,17 @@ bridge constants. The integration gate resolves the exact Julia executable,
 checks its reported version, and then runs the real Julia package tests. This
 prevents a compatible-but-different local environment from silently replacing
 the environment that produced the manuscript's native free-energy values.
+
+The developer envelope extends beyond the pinned scientific toolchain. The
+compiler-transfer receipt records the expanded local toolchain surface:
+Apple clang 21 as the validated static compiler, `nasm` 3.02 and `rustc` 1.95
+as recorded local toolchains (the `rustc` `x86_64-apple-darwin` standard
+library is absent and is recorded as unavailable, never silently substituted),
+`go` 1.27.1 and `zig` 0.16.0 declared but not compiled, and an `objdump`
+wrapper used for disassembly provenance. The scientific pins are unchanged:
+Julia 1.12.7, RxInfer 5.4.0, and Lean v4.28.0. These recorded versions
+describe the developer envelope; they are not independent-replay or
+behavioral-validity evidence.
 
 The producer order is material: regenerate source-bound data first, then
 figures and figure metadata, then manuscript variables and hydration, then

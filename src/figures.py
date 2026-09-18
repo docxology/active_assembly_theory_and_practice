@@ -4741,11 +4741,12 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1,
+        2,
         3,
-        figsize=(12.5, 6.2),
+        figsize=(12.5, 10.6),
         gridspec_kw={"width_ratios": (1.15, 1.15, 0.95)},
     )
+    axes = np.asarray(axes).ravel()
     # Panel A: co-primary endpoint estimates.  Two marks per model preserve
     # the portfolio view while making the interval and the model identity
     # legible in grayscale.
@@ -4919,6 +4920,224 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
                 )
             elif isinstance(coverage, (int, float)):
                 coverage_lines.append(f"{labels[name]}: cov {coverage:.2f}, risk n/a")
+    # Panel D: family-shuffle negative control beside the co-primary models.
+    # The control is additive evidence only; it gates rather than grants a claim.
+    negative_controls = payload.get("negative_controls")
+    negative_controls = negative_controls if isinstance(negative_controls, dict) else {}
+    family_shuffle = negative_controls.get("family_shuffle")
+    family_shuffle_metrics = (
+        family_shuffle.get("metrics") if isinstance(family_shuffle, dict) else None
+    )
+    raw_control_accuracy = (
+        family_shuffle_metrics.get("balanced_accuracy")
+        if isinstance(family_shuffle_metrics, dict)
+        else None
+    )
+    control_accuracy = (
+        float(raw_control_accuracy)
+        if isinstance(raw_control_accuracy, (int, float))
+        and not isinstance(raw_control_accuracy, bool)
+        else None
+    )
+    control_y = np.arange(len(names), dtype=float)
+    model_accuracies = [metric(name, "balanced_accuracy") for name in names]
+    axes[3].barh(
+        control_y,
+        model_accuracies,
+        height=0.55,
+        color=PALETTE[0],
+        edgecolor=INK,
+        linewidth=0.45,
+        zorder=3,
+        label="co-primary held-out",
+    )
+    if control_accuracy is not None:
+        axes[3].axvline(
+            control_accuracy,
+            color=PALETTE[4],
+            linestyle="--",
+            linewidth=1.3,
+            zorder=4,
+            label="family-shuffle control",
+        )
+        axes[3].text(
+            control_accuracy + 0.015,
+            len(names) - 0.55,
+            f"control {control_accuracy:.2f}",
+            rotation=90,
+            va="top",
+            fontsize=6.8,
+            color=INK,
+        )
+    else:
+        axes[3].text(
+            0.5,
+            0.5,
+            "family-shuffle control: not observed in receipt",
+            transform=axes[3].transAxes,
+            ha="center",
+            va="center",
+            fontsize=7.2,
+            color=MUTED,
+        )
+    axes[3].axvline(0.5, color=MUTED, linestyle=":", linewidth=0.8)
+    axes[3].set_yticks(control_y, [labels[name] for name in names])
+    axes[3].invert_yaxis()
+    axes[3].set_xlim(0.0, 1.05)
+    axes[3].set_xlabel("Balanced accuracy")
+    axes[3].set_title(
+        "Family-shuffle control vs co-primary models",
+        fontsize=10,
+        pad=AXIS_TITLE_PAD,
+    )
+    axes[3].legend(frameon=False, fontsize=7.0, loc="lower right")
+
+    # Panel E: Platt-scaled calibration before/after per model, reported
+    # alongside the primary uncalibrated endpoints (uncalibrated stays primary).
+    def numeric_or_none(value: object) -> float | None:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+        return None
+
+    calibration_keys = (
+        ("ece_before", "ECE before", PALETTE[0]),
+        ("ece_after", "ECE after", PALETTE[1]),
+        ("brier_before", "Brier before", PALETTE[2]),
+        ("brier_after", "Brier after", PALETTE[3]),
+    )
+    calibration_groups = []
+    for name in names:
+        calibration = cast(dict[str, object], models[name]).get("calibration")
+        calibration_groups.append(
+            calibration if isinstance(calibration, dict) else None
+        )
+    if all(group is None for group in calibration_groups):
+        axes[4].text(
+            0.5,
+            0.5,
+            "calibration receipt not observed",
+            transform=axes[4].transAxes,
+            ha="center",
+            va="center",
+            fontsize=7.2,
+            color=MUTED,
+        )
+    else:
+        group_x = np.arange(len(names), dtype=float)
+        bar_width = 0.19
+        for key_index, (key, key_label, key_color) in enumerate(calibration_keys):
+            bar_positions = group_x + (key_index - 1.5) * bar_width
+            bar_values: list[float] = []
+            for group in calibration_groups:
+                value = group.get(key) if isinstance(group, dict) else None
+                numeric = numeric_or_none(value)
+                bar_values.append(numeric if numeric is not None else 0.0)
+            axes[4].bar(
+                bar_positions,
+                bar_values,
+                width=bar_width,
+                color=key_color,
+                edgecolor=INK,
+                linewidth=0.4,
+                label=key_label,
+                zorder=3,
+            )
+    axes[4].set_xticks(np.arange(len(names), dtype=float), [labels[name] for name in names])
+    axes[4].set_ylabel("Lower is better")
+    axes[4].set_ylim(0.0, 1.0)
+    axes[4].set_title(
+        "Platt calibration before/after (uncalibrated primary)",
+        fontsize=10,
+        pad=AXIS_TITLE_PAD,
+    )
+    if not all(group is None for group in calibration_groups):
+        axes[4].legend(frameon=False, fontsize=6.6, loc="upper right", ncol=2)
+
+    # Panel F: bounded label-blind leakage probe against full held-out scores.
+    leakage_attacks = payload.get("leakage_attacks")
+    leakage_attacks = leakage_attacks if isinstance(leakage_attacks, dict) else {}
+
+    def numeric_list(value: object) -> list[float] | None:
+        if not isinstance(value, list) or not value:
+            return None
+        if all(
+            isinstance(item, (int, float)) and not isinstance(item, bool)
+            for item in value
+        ):
+            return [float(item) for item in value]
+        return None
+
+    held_out_scores = numeric_list(leakage_attacks.get("held_out_scores"))
+    label_blind_scores = numeric_list(
+        leakage_attacks.get("label_blind_full_held_out_scores")
+    )
+    probe_margins = numeric_list(leakage_attacks.get("probe_margin_differences"))
+    if probe_margins is None:
+        axes[5].text(
+            0.5,
+            0.5,
+            "leakage probe: not observed in receipt",
+            transform=axes[5].transAxes,
+            ha="center",
+            va="center",
+            fontsize=7.2,
+            color=MUTED,
+        )
+    else:
+        margin_positions = np.arange(len(probe_margins), dtype=float)
+        axes[5].axhline(
+            0.05, color=PALETTE[4], linestyle="--", linewidth=1.0, zorder=2
+        )
+        axes[5].axhline(
+            -0.05, color=PALETTE[4], linestyle="--", linewidth=1.0, zorder=2
+        )
+        axes[5].scatter(
+            margin_positions,
+            probe_margins,
+            s=26,
+            color=PALETTE[0],
+            edgecolor=INK,
+            linewidth=0.45,
+            zorder=3,
+        )
+        max_margin = max(abs(value) for value in probe_margins)
+        axes[5].text(
+            0.02,
+            0.97,
+            f"max |margin| {max_margin:.3f} vs 0.05",
+            transform=axes[5].transAxes,
+            va="top",
+            fontsize=7.2,
+            color=INK,
+        )
+        if held_out_scores is not None and label_blind_scores is not None:
+            axes[5].text(
+                0.02,
+                0.86,
+                f"mean held-out {float(np.mean(held_out_scores)):.3f}; "
+                f"mean full label-blind {float(np.mean(label_blind_scores)):.3f}",
+                transform=axes[5].transAxes,
+                va="top",
+                fontsize=6.6,
+                color=MUTED,
+            )
+    axes[5].set_xlabel("Probe example index")
+    axes[5].set_ylabel("Margin difference")
+    axes[5].set_title(
+        "Leakage probe vs full held-out scores (0.05 margin)",
+        fontsize=10,
+        pad=AXIS_TITLE_PAD,
+    )
+    axes[5].text(
+        0.0,
+        AXIS_SUBTITLE_Y,
+        "bounded probe only; no architecture-metadata claim",
+        transform=axes[5].transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=7.2,
+        color=MUTED,
+    )
     for ax in axes:
         _style_axes(ax, grid_axis="x")
     fig.suptitle(
@@ -4930,7 +5149,7 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     )
     fig.text(
         0.70,
-        0.185,
+        0.052,
         "Point estimates; no clustered CI supplied for Brier/ECE.",
         ha="left",
         va="bottom",
@@ -4939,7 +5158,7 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     )
     fig.text(
         0.70,
-        0.145,
+        0.034,
         "Selective coverage/risk (receipt threshold): "
         + "; ".join(
             line.replace(": cov ", " ").replace(", risk ", "/")
@@ -4952,14 +5171,14 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     )
     fig.text(
         0.08,
-        0.01,
+        0.012,
         "Labels come from the declared intervention relation; typed features omit family, transformation, bytes, and target labels. No post-hoc winner is selected.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.30, top=0.79, wspace=0.45)
+    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.08, top=0.93, hspace=0.52, wspace=0.45)
     return _save_figure(fig, output_path)
 
 
@@ -4988,19 +5207,61 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
     configurations = sorted(
         {
             (
+                str(row.get("compiler", "not_observed")),
                 str(row.get("target_id", "not_observed")),
+                str(row.get("object_format", "not_observed")),
                 str(row.get("optimization", "not_observed")),
             )
             for row in normalized
         }
     )
+    capability = payload.get("capability_summary")
+    capability = capability if isinstance(capability, dict) else {}
+    raw_validated_compilers = capability.get("compilers_validated", [])
+    validated_compilers = (
+        {str(item) for item in raw_validated_compilers}
+        if isinstance(raw_validated_compilers, list)
+        else set()
+    )
+    validated_configs = {
+        (
+            str(row.get("compiler")),
+            str(row.get("target_id")),
+            str(row.get("object_format")),
+            str(row.get("optimization")),
+        )
+        for row in normalized
+        if row.get("status") == "validated_static_object"
+    }
+    # Wide multi-toolchain matrices stay legible by plotting only the validated
+    # toolchains' columns; every source-family row is kept in the receipt-driven
+    # table and every non-validated cell remains an explicit receipt row.
+    plotted_configurations = configurations
+    table_note = ""
+    if len(configurations) > 24:
+        keep_compilers = validated_compilers | {
+            config[0] for config in validated_configs
+        }
+        all_compilers = {config[0] for config in configurations}
+        if keep_compilers and keep_compilers < all_compilers:
+            plotted_configurations = [
+                config for config in configurations if config[0] in keep_compilers
+            ]
+            table_note = (
+                " Status columns are limited to the validated toolchains for legibility; "
+                "every requested cell, including non-validated toolchains, remains an "
+                "explicit row in the receipt."
+            )
     config_labels = [
-        f"{target}\n{optimization}" for target, optimization in configurations
+        f"{compiler}\n{target}/{object_format}\n{optimization}"
+        for compiler, target, object_format, optimization in plotted_configurations
     ]
     by_key = {
         (
             str(row.get("source_id")),
+            str(row.get("compiler")),
             str(row.get("target_id")),
+            str(row.get("object_format")),
             str(row.get("optimization")),
         ): row
         for row in normalized
@@ -5036,16 +5297,15 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
     )
     axes[0].axis("off")
     axes[0].set_title(
-        "Capability status by source × target × optimization",
+        "Capability status by source × compiler × target/format × optimization",
         loc="left",
-        fontsize=10,
         pad=AXIS_TITLE_PAD,
     )
     table_values: list[list[str]] = []
     for source_id in source_ids:
         cells: list[str] = []
-        for target_id, optimization in configurations:
-            row = by_key.get((source_id, target_id, optimization))
+        for compiler, target_id, object_format, optimization in plotted_configurations:
+            row = by_key.get((source_id, compiler, target_id, object_format, optimization))
             status = str(row.get("status", "not_observed")) if row else "not_observed"
             cells.append(status_text.get(status, status.upper()))
         table_values.append(cells)
@@ -5058,8 +5318,7 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
         rowLoc="left",
         bbox=(0.0, 0.10, 1.0, 0.78),
     )
-    table.auto_set_font_size(False)
-    table.set_fontsize(6.8)
+    table.set_fontsize(max(3.0, min(6.8, 150.0 / max(1, len(plotted_configurations)))))
     table.scale(1.0, 1.55)
     for (row_index, col_index), cell in table.get_celld().items():
         cell.set_edgecolor(GRID)
@@ -5071,16 +5330,18 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
             cell.set_facecolor(LIGHT)
             cell.get_text().set_fontweight("bold")
         else:
-            source_id = source_ids[row_index - 1]
-            target_id, optimization = configurations[col_index]
-            row = by_key.get((source_id, target_id, optimization))
+            compiler, target_id, object_format, optimization = plotted_configurations[
+                col_index
+            ]
+            row = by_key.get((source_id, compiler, target_id, object_format, optimization))
             status = str(row.get("status", "not_observed")) if row else "not_observed"
             cell.set_facecolor(status_color.get(status, "white"))
             cell.set_hatch(status_hatch.get(status, "///"))
     axes[0].text(
         0.0,
         0.03,
-        "Text and hatching carry status; unavailable/failed/unsupported cells are not zero performance.",
+        "Text and hatching carry status; unavailable/failed/unsupported cells are not zero performance."
+        + table_note,
         transform=axes[0].transAxes,
         ha="left",
         va="bottom",
@@ -5091,10 +5352,10 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
     valid_rows = [
         row for row in normalized if row.get("status") == "validated_static_object"
     ]
-    x = np.arange(len(configurations), dtype=float)
+    x = np.arange(len(plotted_configurations), dtype=float)
     for source_index, source_id in enumerate(source_ids):
-        for config_index, (target_id, optimization) in enumerate(configurations):
-            row = by_key.get((source_id, target_id, optimization))
+        for config_index, config in enumerate(plotted_configurations):
+            row = by_key.get((source_id, *config))
             if row is None or row.get("status") != "validated_static_object":
                 continue
             count_value = row.get("decoded_instruction_count")
@@ -6363,6 +6624,58 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "posterior over {hidden_state_count} hand-authored phases after one decoded observation; the "
         "taken branch leaves one statically decoded instruction outside the bounded dynamic path."
     ),
+    "temporal_beliefs_x86_call_return": (
+        "Temporal forward-filter beliefs for the x86_call_return fixture. Each row is a normalized "
+        "posterior over {hidden_state_count} hand-authored phases after one decoded observation; "
+        "the heatmap is a compact view of filtering uncertainty, not a discovered control-flow "
+        "graph. The fixture runs a real call/ret stack roundtrip inside the bounded harness: the "
+        "call pushes an in-span return address, the ret pad pops it back so control returns to the "
+        "pop that reloads saved state, and the final ret is the exit. The call and ret instructions "
+        "carry the control-transfer latent phase, so the guard_check column responds on steps that "
+        "the surface observation vocabulary alone would not explain. The population is one "
+        "transparent fixture and its six decoded instructions; phase labels are demonstrator "
+        "evidence, so the figure supports temporal-filtering diagnostics only and makes no "
+        "learned-semantics claim."
+    ),
+    "temporal_beliefs_x86_branch_not_taken": (
+        "Temporal forward-filter beliefs for the x86_branch_not_taken fixture. Each row is a "
+        "normalized posterior over {hidden_state_count} hand-authored phases after one decoded "
+        "observation. Both guard phases in this fixture fall through: the accumulator value is "
+        "neither greater than the first bound nor less than the second, so the jg and jl "
+        "conditional branches are not taken and every statically decoded instruction executes. "
+        "The heatmap shows the filter holding the guard_check phase across two consecutive "
+        "comparison steps on each side of the accumulator update, making guarded-but-untaken "
+        "control flow visible as belief mass rather than as an executed jump. The population is "
+        "one transparent fixture and its seven decoded instructions; phase labels are "
+        "demonstrator evidence, so the figure supports temporal-filtering diagnostics only and "
+        "makes no learned-semantics claim."
+    ),
+    "temporal_beliefs_x86_stack_local": (
+        "Temporal forward-filter beliefs for the x86_stack_local fixture. Each row is a normalized "
+        "posterior over {hidden_state_count} hand-authored phases after one decoded observation; "
+        "observation IDs are row labels and are not numeric magnitudes. The fixture keeps bounded "
+        "stack-local state: the push writes a scratch slot below the stack pointer and the pop "
+        "reads it back into a non-accumulator register, so accumulator arithmetic interleaves "
+        "with real stack-memory effects. The setup and accumulator_update phases each recur in "
+        "separate contiguous runs, which makes the temporal model's state persistence observable "
+        "as repeated belief columns rather than a single sweep. The population is one transparent "
+        "fixture and its nine decoded instructions; phase labels are demonstrator evidence, so "
+        "the figure supports temporal-filtering diagnostics only and makes no learned-semantics "
+        "claim."
+    ),
+    "temporal_beliefs_x86_optimization_rewrite": (
+        "Temporal forward-filter beliefs for the x86_optimization_rewrite fixture. Each row is a "
+        "normalized posterior over {hidden_state_count} hand-authored phases after one decoded "
+        "observation. The fixture holds the classic optimization-sensitive motif pair: the "
+        "add-with-immediate and inc instructions share one arithmetic observation category while "
+        "differing in flag effects, and the lea rewrite lands in the residual other category even "
+        "though its latent phase is accumulator_update -- exactly the ambiguity-as-data regime "
+        "the corpus is designed to expose. The heatmap therefore shows belief mass splitting "
+        "between the accumulator_update column and the residual category on the lea step. The "
+        "population is one transparent fixture and its eight decoded instructions; phase labels "
+        "are demonstrator evidence, so the figure supports temporal-filtering diagnostics only "
+        "and makes no learned-semantics claim."
+    ),
     "corpus_coverage": (
         "Transparent fixture-design coverage across the {fixture_count}-fixture corpus. The left panel "
         "separates static decoded span from bounded executed path length; the right panel records the "
@@ -6535,17 +6848,23 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "transparent benchmark. The left panel reports balanced accuracy and macro-F1 with clustered 95% "
         "percentile intervals over held-out source families for the calibrated interpretable, temporal "
         "probabilistic, neural sequence, and surface-baseline models; the right panel reports Brier score "
-        "and ten-bin expected calibration error. The benchmark contains {quotient_family_count} families, "
-        "{quotient_row_count} pair rows, and a three-way training/development/held-out split. Six additional "
-        "byte/opcode/mnemonic/structure baselines and source-family-paired Holm comparisons are retained in the receipt. Labels are "
-        "generated from the declared terminal-observation relation and are not supplied as model features; "
-        "these results are bounded endpoint evidence, not complete semantic equivalence or application performance."
+        "and ten-bin expected calibration error. Receipt-supplied companion panels show the family-shuffle "
+        "negative control beside the co-primary models, Platt-scaled calibration before and after scaling "
+        "alongside the primary uncalibrated results, and the bounded label-blind leakage probe with its "
+        "0.05 margin annotation -- bounded probe only; no architecture-metadata claim. Model selection uses "
+        "development families only, and the additive negative controls gate no claim. The benchmark contains "
+        "{quotient_family_count} families, {quotient_row_count} pair rows, and a three-way "
+        "training/development/held-out split. Labels are generated from the declared terminal-observation "
+        "relation and are not supplied as model features; these results are bounded endpoint evidence, not "
+        "complete semantic equivalence or application performance."
     ),
     "compiler_transfer": (
         "Compiler/source/architecture capability receipt for {compiler_validated_count} locally compiled and "
-        "statically disassembled objects. A check mark means the exact Clang target command produced an object "
-        "whose text bytes were decoded by Capstone; a dash means the requested target was unavailable or failed "
-        "and was retained as an explicit missing cell. The matrix includes {compiler_architecture_count} validated "
+        "statically disassembled objects across the recorded multi-toolchain matrix of compilers, target "
+        "triples, Mach-O and ELF object formats, and per-compiler optimization vocabularies. A check mark "
+        "means the exact compiler command produced an object whose text bytes were decoded by Capstone; a "
+        "dash means the requested compiler/target/format/optimization cell was unavailable or failed and was "
+        "retained as an explicit missing cell. The matrix includes {compiler_architecture_count} validated "
         "architecture target(s) and {compiler_unavailable_count} unavailable row(s); the line panel counts "
         "validated source-family-by-optimization rows. No emitted object was executed, "
         "so the figure supports capability and provenance claims only, not compiler correctness or semantic transfer."
@@ -6737,29 +7056,41 @@ FIGURE_CAPTIONS.update(
         "quotient_classifier": (
             "Co-primary binary classification of the declared finite quotient relation under "
             "source-family holdout. The left panel shows balanced accuracy and macro-F1 as "
-            "model-specific dot-and-interval estimates; the middle panel shows paired model-minus-"
+            "model-specific dot-and-interval estimates; the second panel shows paired model-minus-"
             "surface-baseline deltas with source-family-clustered 95% bootstrap intervals; and the "
-            "right panel shows Brier score and ten-bin expected calibration error as point diagnostics, "
-            "with selective coverage and risk reported below. The benchmark contains "
-            "{quotient_family_count} families, {quotient_row_count} pair rows, and fixed "
-            "training/development/held-out family partitions. Primary intervals use source-family "
-            "clusters; Brier/ECE have no clustered interval in the current receipt. Positive deltas "
-            "do not by themselves authorize a superiority claim, and no post-hoc model winner is "
-            "selected. This is bounded endpoint evidence, not unrestricted semantic equivalence or "
-            "application performance."
+            "third panel shows Brier score and ten-bin expected calibration error as point "
+            "diagnostics, with selective coverage and risk reported below. Receipt-supplied "
+            "companion panels show the family-shuffle negative control beside the co-primary "
+            "models, Platt-scaled calibration error and Brier score before and after scaling "
+            "alongside the primary uncalibrated results, and the bounded label-blind leakage probe "
+            "against full held-out scores with its 0.05 margin annotation -- bounded probe only; "
+            "no architecture-metadata claim. The benchmark contains {quotient_family_count} "
+            "families, {quotient_row_count} pair rows, and fixed training/development/held-out "
+            "family partitions; model selection uses development families only. Primary intervals "
+            "use source-family clusters; Brier/ECE have no clustered interval in the current "
+            "receipt; Platt-scaled values are reported alongside and the uncalibrated scores remain "
+            "primary; and the additive family-shuffle and label-permutation negative controls gate "
+            "no claim. Positive deltas do not by themselves authorize a superiority claim, and no "
+            "post-hoc model winner is selected. This is bounded endpoint evidence, not "
+            "unrestricted semantic equivalence or application performance."
         ),
         "compiler_transfer": (
             "Compiler/source/architecture capability receipt for {compiler_validated_count} locally "
-            "compiled and statically disassembled objects. The left panel is a status matrix: a "
-            "check mark means the exact compiler command produced an object whose text bytes decoded "
-            "with Capstone, while a dash denotes an unavailable or failed capability retained as an "
-            "explicit missing state rather than a zero score. The matrix includes "
-            "{compiler_architecture_count} validated architecture target(s) and "
-            "{compiler_unavailable_count} unavailable row(s); the right panel counts validated "
-            "source-by-optimization rows. Counts are deterministic provenance diagnostics with no "
-            "population uncertainty. No emitted object was executed, so the visual supports local "
-            "capability and provenance claims only, not compiler correctness, behavioral transfer, "
-            "or architecture-general performance."
+            "compiled and statically disassembled objects across the recorded multi-toolchain "
+            "matrix of compilers, target triples, Mach-O and ELF object formats, and per-compiler "
+            "optimization vocabularies. The left panel is a receipt-driven status table that keeps "
+            "every source-family row and, for legibility, plots the validated toolchains' "
+            "configurations when the full matrix is too wide: a check mark means the exact "
+            "compiler command produced an object whose text bytes decoded with Capstone, while a "
+            "dash denotes an unavailable or failed capability retained as an explicit missing "
+            "state rather than a zero score, and every non-validated cell remains an explicit "
+            "unavailable row in the receipt. The matrix includes {compiler_architecture_count} "
+            "validated architecture target(s) and {compiler_unavailable_count} unavailable row(s); "
+            "the right panel counts validated source-by-optimization rows. Counts are "
+            "deterministic provenance diagnostics with no population uncertainty. No emitted "
+            "object was executed, so the visual supports local capability and provenance claims "
+            "only, not compiler correctness, behavioral transfer, or architecture-general "
+            "performance."
         ),
         "sensor_costs": (
             "Two-layer sensing-cost receipt for the finite active-sensing benchmark. The left panel "
@@ -6949,6 +7280,22 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
         "Heatmap of forward-filter posteriors for the x86_guard_taken fixture, with "
         "one statically decoded step outside the bounded dynamic path."
     ),
+    "temporal_beliefs_x86_call_return": (
+        "Heatmap of forward-filter posteriors for the x86_call_return fixture's call/ret stack "
+        "roundtrip, with printed posterior probabilities."
+    ),
+    "temporal_beliefs_x86_branch_not_taken": (
+        "Heatmap of forward-filter posteriors for the x86_branch_not_taken fixture, whose two "
+        "conditional guards both fall through."
+    ),
+    "temporal_beliefs_x86_stack_local": (
+        "Heatmap of forward-filter posteriors for the x86_stack_local fixture, which interleaves "
+        "accumulator arithmetic with bounded stack-memory effects."
+    ),
+    "temporal_beliefs_x86_optimization_rewrite": (
+        "Heatmap of forward-filter posteriors for the x86_optimization_rewrite fixture's add, "
+        "inc, and lea optimization motif phases."
+    ),
     "corpus_coverage": (
         "Two panels: decoded span versus executed path length per fixture, and flags "
         "for memory operands, alternate paths, repeated phases, and branch edges."
@@ -7036,13 +7383,13 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
         "cost weights, each point from exhaustive dynamic programming."
     ),
     "quotient_classifier": (
-        "Three panels: balanced accuracy and macro-F1 with clustered intervals, paired "
-        "baseline deltas with bootstrap intervals, and Brier score with ten-bin ECE "
-        "points."
+        "Six panels: co-primary accuracy and F1 intervals, paired baseline deltas, Brier and "
+        "ECE points, family-shuffle control bars, Platt calibration before and after scaling, "
+        "and leakage-probe margins against the 0.05 margin."
     ),
     "compiler_transfer": (
-        "Status matrix of compiled-and-disassembled capability by source, "
-        "architecture, and optimization, with check marks, explicit dashes, and a "
+        "Status table of compiled-and-disassembled capability by source, compiler, target, "
+        "object format, and optimization, with check marks, explicit dashes, and a "
         "validated-row count panel."
     ),
     "formal_correspondence": (
@@ -7152,6 +7499,26 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
         "unicorn",
     ),
     "corpus_coverage": ("capstone", "unicorn", "rabiner1989tutorial"),
+    "temporal_beliefs_x86_call_return": (
+        "friston2017activeinference",
+        "capstone",
+        "unicorn",
+    ),
+    "temporal_beliefs_x86_branch_not_taken": (
+        "friston2017activeinference",
+        "capstone",
+        "unicorn",
+    ),
+    "temporal_beliefs_x86_stack_local": (
+        "friston2017activeinference",
+        "capstone",
+        "unicorn",
+    ),
+    "temporal_beliefs_x86_optimization_rewrite": (
+        "friston2017activeinference",
+        "capstone",
+        "unicorn",
+    ),
     "action_sensing": (
         "friston2017activeinference",
         "parr2022activeinference",
@@ -7196,6 +7563,7 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "compiler_transfer": (
         "capstone",
         "clang_users_manual",
+        "nasm",
         "llvm_objdump",
         "intel_sdm",
         "necula2000translationvalidation",
@@ -7737,6 +8105,10 @@ def _figure_registry_rows(
         "active_information_frontier": "exact finite-horizon dynamic-programming analysis of the declared label-blind sensor channels",
         "quotient_classifier": "source-family-disjoint transparent quotient-pair benchmark with three co-primary NumPy model families",
         "compiler_transfer": "repository-owned portable C sources compiled locally and statically decoded by target capability",
+        "temporal_beliefs_x86_call_return": "one transparent x86_call_return fixture decoded with Capstone and bounded with Unicorn",
+        "temporal_beliefs_x86_branch_not_taken": "one transparent x86_branch_not_taken fixture decoded with Capstone and bounded with Unicorn",
+        "temporal_beliefs_x86_stack_local": "one transparent x86_stack_local fixture decoded with Capstone and bounded with Unicorn",
+        "temporal_beliefs_x86_optimization_rewrite": "one transparent x86_optimization_rewrite fixture decoded with Capstone and bounded with Unicorn",
         "formal_correspondence": "transparent x86-64 fixtures compared step-by-step between the Python reference and bounded Unicorn",
         "sensor_costs": "finite typed-field sensor actions with deterministic vectors and local timing calibration",
         "replication_manifest": "frozen local public/gold/prediction/receipt bundle",
@@ -7777,6 +8149,10 @@ def _figure_registry_rows(
         "active_information_frontier": "Expected information gain by horizon and cost weight from exact branch enumeration; coincident curves are explicitly marked when the finite contract yields the same frontier; the plotted action cost is a unit model-channel quantity, not wall-clock time.",
         "quotient_classifier": "Balanced accuracy and macro-F1 use source-family-clustered percentile intervals; Brier score and ten-bin ECE use held-out probabilities; paired baseline comparisons use source-family bootstrap and Holm adjustment.",
         "compiler_transfer": "Validated/unavailable status is a capability receipt; decoded instruction counts are static coverage diagnostics without execution.",
+        "temporal_beliefs_x86_call_return": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",
+        "temporal_beliefs_x86_branch_not_taken": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",
+        "temporal_beliefs_x86_stack_local": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",
+        "temporal_beliefs_x86_optimization_rewrite": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",
         "formal_correspondence": "All-step match status and reference-step counts are deterministic fixture checks, with a generated Lean boundary fixture; no population uncertainty is claimed.",
         "sensor_costs": "Deterministic vector counts are primary; local timing medians span five repetition values with IQR, p95, overhead correction, and regression residuals; policy certificates compare exact dynamic-program, fixed, greedy, seeded-random, and abstaining objectives.",
         "replication_manifest": "Public and gold counts plus protocol/hash separation are deterministic provenance checks for the local harness. A separately controlled replay receipt, when present, is reported as a distinct bounded result and does not imply an independent physical-machine replication or independent reimplementation.",

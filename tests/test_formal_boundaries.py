@@ -708,3 +708,90 @@ def test_step_result_type_is_preserved_for_successful_boundary_steps() -> None:
     assert isinstance(result, StepResult)
     assert result.status == "ok"
     assert result.unsupported_reason is None
+
+
+# ---------------------------------------------------------------------------
+# MED-02 expansion families: logic-op flag definedness, cmp/add flag
+# exactness, movzx zero-extension.  (push/pop stack bounds, call/ret and the
+# jcc undefined-flag raise paths are locked by the test groups above; the
+# reference semantics they pin is unchanged by the Lean expansion.)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("code", ["21 d8", "09 d8", "31 d8", "85 c0"])
+def test_logic_ops_mark_af_undefined_and_clear_cf_and_of(code: str) -> None:
+    """and/or/xor/test with eax, ebx: AF undefined, CF and OF defined-cleared.
+
+    rax = 0xF0F0F0F0, rbx = 0x0F0F0F0F: and/test -> 0, or/xor -> 0xFFFFFFFF.
+    ZF/SF/PF follow the (masked) result; parity of the low byte is even in
+    both cases (0x00 and 0xFF each have an even number of set bits).
+    """
+    state = _state(rax=0xF0F0F0F0, registers={"rax": 0xF0F0F0F0, "rbx": 0x0F0F0F0F})
+    _run_one(code, state)
+    assert state.flags_defined["AF"] is False
+    assert state.flags_defined["CF"] is True
+    assert _get_flag(state, "CF") is False
+    assert state.flags_defined["OF"] is True
+    assert _get_flag(state, "OF") is False
+    op_result = 0 if code in ("21 d8", "85 c0") else 0xFFFFFFFF
+    assert _get_flag(state, "ZF") is (op_result == 0)
+    assert _get_flag(state, "SF") is bool(op_result & (1 << 31))
+    assert _get_flag(state, "PF") is True
+    if code == "85 c0":
+        # test: no writeback
+        assert state.registers["rax"] == 0xF0F0F0F0
+    else:
+        assert state.registers["rax"] == op_result
+
+
+def test_read_of_af_after_logic_op_fails_closed() -> None:
+    state = _state(rax=1, registers={"rax": 1, "rbx": 1})
+    _run_one("31 d8", state)  # xor eax, ebx
+    with pytest.raises(ValueError, match="undefined flag AF"):
+        _get_flag(state, "AF")
+
+
+def test_cmp_sets_exact_arithmetic_flags_without_writeback() -> None:
+    """cmp eax, ebx with eax=3, rbx=5 mirrors the Lean subFlagsN outcome.
+
+    result = 0xFFFFFFFE: CF=1 (3 < 5), AF=1 (3 < 5 in the low nibble),
+    ZF=0, SF=1 (bit 31 set), PF=0 (low byte 0xFE has seven set bits),
+    OF=0 (-3 fits int32), and eax is untouched.
+    """
+    state = _state(rax=3, registers={"rax": 3, "rbx": 5})
+    _run_one("39 d8", state)
+    assert _get_flag(state, "CF") is True
+    assert _get_flag(state, "AF") is True
+    assert _get_flag(state, "ZF") is False
+    assert _get_flag(state, "SF") is True
+    assert _get_flag(state, "PF") is False
+    assert _get_flag(state, "OF") is False
+    assert state.registers["rax"] == 3
+
+
+def test_add_sets_exact_arithmetic_flags_all_defined() -> None:
+    """add eax, ebx with eax=0xFFFFFFFF, rbx=2: result 1.
+
+    CF=1 (carry out), AF=1 (0xF + 2 > 0xF), ZF=0, SF=0, PF=0 (low byte
+    0x01 has one set bit), OF=0 (-1 + 2 = 1 fits int32); every modeled flag
+    is defined, matching the Lean addFlagsN definedness map.
+    """
+    state = _state(rax=0xFFFFFFFF, registers={"rax": 0xFFFFFFFF, "rbx": 2})
+    _run_one("01 d8", state)
+    assert state.registers["rax"] == 1
+    assert _get_flag(state, "CF") is True
+    assert _get_flag(state, "AF") is True
+    assert _get_flag(state, "ZF") is False
+    assert _get_flag(state, "SF") is False
+    assert _get_flag(state, "PF") is False
+    assert _get_flag(state, "OF") is False
+    assert all(state.flags_defined[flag] for flag in MODELED_FLAGS)
+
+
+def test_movzx_eax_ax_zero_extends_full_register() -> None:
+    """movzx eax, ax with rax = 0x112233445566BEEF: rax becomes 0xBEEF."""
+    state = _state(rax=0x112233445566BEEF, registers={"rax": 0x112233445566BEEF})
+    _run_one("0f b7 c0", state)
+    assert state.registers["rax"] == 0xBEEF
+    # flags are untouched by mov
+    assert state.eflags == 2

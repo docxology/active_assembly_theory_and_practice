@@ -42,13 +42,16 @@ allows stronger evidence to be added without silently changing the endpoint or
 claim boundary.
 
 The experiment remains intentionally bounded. The canonical Active Inference
-fixture uses hand-authored phase states and fixed likelihoods; the larger quotient
-benchmark is still synthetic and its observations are dependent within traces; the
-external track provides source contracts and static coverage rather than behavioral
-labels; and the formal layer covers a declared subset rather than the complete
-architecture. These constraints are part of the result: the package makes the
-assumptions, failure states, and missing evidence inspectable instead of averaging
-them away.
+fixture uses hand-authored phase states and fixed likelihoods; the temporal
+corpus grows to `{{TEMPORAL_FIXTURE_COUNT}}` transparent fixtures under a
+frozen `{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out family split
+but remains hand-labelled;
+the larger quotient benchmark is still synthetic and its observations are
+dependent within traces; the external track provides source contracts and
+static coverage rather than behavioral labels; and the formal layer covers a
+declared subset rather than the complete architecture. These constraints are
+part of the result: the package makes the assumptions, failure states, and
+missing evidence inspectable instead of averaging them away.
 
 ## Evidence map and contribution boundary
 

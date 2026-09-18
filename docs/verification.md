@@ -24,6 +24,7 @@ uv run python scripts/run_scientific_program.py audit-artifacts
 uv run python scripts/run_scientific_program.py probe-capabilities
 uv run python scripts/run_scientific_program.py prepare-external
 uv run python scripts/run_scientific_program.py validate-external
+uv run python scripts/run_scientific_program.py audit-external-preparation
 uv run python scripts/run_scientific_program.py generate-public
 uv run python scripts/run_scientific_program.py replay --offline
 uv run python scripts/run_scientific_program.py verify-public
@@ -61,6 +62,12 @@ protected ingestion command.
 scoring mode: it validates the replication bundle and then scores a
 label-blind prediction file against the sealed gold labels, which remain
 private to this ingestion boundary.
+
+The active research protocol is `output/data/research_protocol.json` at
+schema 2.1.0 (`active-assembly-open-roadmap-v2-2026-09-17`), which freezes the
+temporal-corpus split. All protocol-bound receipts rebind on regeneration: a
+protocol revision deliberately invalidates previously generated receipts
+rather than being silently absorbed by them.
 
 Run the Julia integration gate:
 
@@ -114,6 +121,18 @@ print(errors)
 raise SystemExit(bool(errors))
 PY
 ```
+
+Claim-map drift guard:
+
+```bash
+uv run python scripts/check_claim_map.py
+```
+
+The guard parses the `CLM-xxx` identifier column of `docs/claim_map.md` and
+asserts set equality (in both directions) with the claim IDs in
+`output/data/claim_register.json`; a claim added, removed, renamed, or
+duplicated on either surface exits 1. It is a documentation-closure check on
+top of the claim-register closure oracle, not a scientific validity gate.
 
 PDF accessibility checks for the rendered manuscript:
 

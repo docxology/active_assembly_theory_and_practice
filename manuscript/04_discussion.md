@@ -43,6 +43,25 @@ boundary-recovery result and the mechanism are registered as bounded claims
 advantage at an informative likelihood, a clear one under ambiguity, and every
 number recomputed by the validation oracle rather than asserted.
 
+The robustness machinery added around the quotient portfolio changes how the
+endpoint is defended, not what it claims. Hyperparameter selection is
+development-only, five deterministic starts are rerun and their seed ranges are
+recorded separately from the source-family clustered intervals, and Platt
+calibration is reported alongside — the uncalibrated balanced accuracy and
+macro-F1 stay primary and the calibrated metrics gate no claim. The
+family-shuffle control, the bounded metadata probe (held to its own boundary:
+bounded probe only; no architecture-metadata claim), the declared
+near-duplicate template siblings, and the cross-encoding consistency check all
+qualify the endpoint rather than strengthen it. No superiority claim is gated
+by any of this machinery: every practical-margin test fails closed, and the
+recurrent model's chance-level exclusion from the shuffle comparison is
+declared in the receipt rather than absorbed into a favorable summary. On the
+temporal side, the optimization-rewrite fixture plays the analogous negative
+role: its `lea` rewrite shares the residual `other` observation category while
+its latent phase is accumulator update, and that designed ambiguity is retained
+as measured evidence that the corpus can hold cases the decoder does not
+resolve.
+
 This is the intended relationship to the Free Energy Principle
 [@parr2022activeinference]: assembly traces become sensory evidence for a
 generative model whose beliefs are updated under an explicit variational
@@ -96,6 +115,18 @@ independent reimplementation, or independent scientific review, and it would
 provide no external confirmation of the inference claim. Keeping these evidence
 states separate prevents an engineering rerun from being mistaken for scientific
 generalization.
+
+The new preparation-audit receipt extends the same discipline to the
+external-corpus path without changing its claim boundary. Its eight steps —
+manifest parsing, archive digest verification, archive-safety rehearsal,
+license checking, static compilation, build reproducibility, label-contract
+conformance, and exclusion accounting — are validated as a rehearsal-only
+preparation path. The receipt is not an efficacy claim: it performs no
+execution, P13 licensed external validation remains underpowered, and
+promotion still requires MAJ-01, an independent replay of the
+acquisition/build recipe. The MED-05 separately controlled replay boundary is
+likewise unchanged and locally blocked by design (`blocked_external`); no
+local rerun, however complete, substitutes for it.
 
 ## What the visual atlas adds to the scientific argument
 

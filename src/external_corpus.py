@@ -9,6 +9,7 @@ not a zero-valued benchmark.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 import re
 from typing import Any, cast
@@ -245,6 +246,53 @@ def validate_label_contracts(payload: object) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def exclusion_accounting_summary(
+    rows: Iterable[Mapping[str, object]] | None,
+) -> dict[str, object]:
+    """Aggregate exclusion and failure rows by step, reason, and role.
+
+    Pure bookkeeping over caller-supplied rows so audit surfaces can union
+    label-contract exclusions with acquisition/static failures without
+    importing the labeling module (which imports this package back).
+    Label-contract exclusion rows carry no ``step`` and default to the
+    ``label_contract`` preparation step.  An empty input is valid evidence of
+    an unpopulated exclusion set, never a silently dropped accounting step.
+    """
+
+    normalized: list[dict[str, str]] = []
+    for row in rows if rows is not None else ():
+        if not isinstance(row, Mapping):
+            continue
+        normalized.append(
+            {
+                "step": str(row.get("step") or "label_contract"),
+                "reason": str(row.get("reason") or "unspecified"),
+                "role": str(row.get("role") or "all"),
+            }
+        )
+
+    def _counts(key: str) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for item in normalized:
+            counts[item[key]] = counts.get(item[key], 0) + 1
+        return dict(sorted(counts.items()))
+
+    groups: dict[tuple[str, str, str], int] = {}
+    for item in normalized:
+        key = (item["step"], item["reason"], item["role"])
+        groups[key] = groups.get(key, 0) + 1
+    return {
+        "total": len(normalized),
+        "by_step": _counts("step"),
+        "by_reason": _counts("reason"),
+        "by_role": _counts("role"),
+        "groups": [
+            {"step": step, "reason": reason, "role": role, "count": count}
+            for (step, reason, role), count in sorted(groups.items())
+        ],
+    }
+
+
 def label_contract_summary(project_root: Path = PROJECT_ROOT) -> dict[str, object]:
     """Return counts and promotion gates without inventing labels."""
 
@@ -340,6 +388,7 @@ __all__ = [
     "LABEL_CONTRACT_SCHEMA_VERSION",
     "LEGACY_LABEL_CONTRACT_SCHEMA_VERSION",
     "SUPPORTED_LABEL_CONTRACT_SCHEMA_VERSIONS",
+    "exclusion_accounting_summary",
     "label_contract_summary",
     "load_label_contracts",
     "validate_label_contracts",

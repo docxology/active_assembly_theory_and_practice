@@ -196,3 +196,18 @@ def test_data_surface_reports_missing_directory_and_malformed_json(
     diagnostics = validate_data_artifact_surface(tmp_path)
     assert len(diagnostics) == 1
     assert diagnostics[0]["path"] == "output/data/broken.json"
+
+
+def test_preparation_audit_filename_is_registered_on_the_data_surface(
+    tmp_path: Path,
+) -> None:
+    from src.artifact_contract import DATA_ARTIFACT_NAMES, _PRODUCER_MODULES
+
+    assert "external_corpus_preparation_audit.json" in DATA_ARTIFACT_NAMES
+    assert (
+        _PRODUCER_MODULES["external_corpus_preparation_audit.json"]
+        == "src/external_sources.py"
+    )
+    path = tmp_path / "output" / "data" / "external_corpus_preparation_audit.json"
+    write_json_artifact(path, {"status": "validated"}, project_root=tmp_path, status="validated")
+    assert validate_data_artifact_surface(tmp_path) == []

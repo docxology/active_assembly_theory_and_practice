@@ -44,7 +44,7 @@ def generatedMachineInitial : MachineStateN :=
     stackLower := 1048576
     stackUpper := 1056768
     memoryLower := 4096
-    memoryUpper := 8192
+    memoryUpper := 2097152
     stepIndex := 0
     status := MachineStatusN.running }
 
@@ -80,5 +80,437 @@ theorem generated_machine_state_preserves_bounds :
     generatedMachineAfterInc.stackLower = generatedMachineInitial.stackLower ∧
     generatedMachineAfterInc.stackUpper = generatedMachineInitial.stackUpper := by
   simp [generatedMachineAfterInc, incStateN, generatedMachineInitial]
+
+
+/-! ### Bridge fixture ``push_pop``
+
+Byte code ``50 5b`` executed by both the Lean machine
+transformers (over the modeled prefix of 2
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprPushPop (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 1234605616436508552
+  | 1 => word64n 257
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 1073152
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgePushPopInitial : MachineStateN :=
+  { gprs := bridgeGprPushPop
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgePushPopFinal : MachineStateN :=
+  runN [.push raxIndexN, .pop rbxIndexN] bridgePushPopInitial
+
+theorem bridge_push_pop_rsp_restored :
+    bridgePushPopFinal.gprs rspIndexN = word64n 1052672 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_push_pop_rbx_loaded :
+    bridgePushPopFinal.gprs rbxIndexN = word64n 1234605616436508552 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_push_pop_other_registers_preserved :
+    ∀ index : Fin 16, index ≠ rspIndexN → index ≠ rbxIndexN →
+      bridgePushPopFinal.gprs index = bridgePushPopInitial.gprs index := by
+  intro i h1 h2
+  show (if i = rspIndexN then
+      word64n (((pushInBoundsN bridgePushPopInitial raxIndexN 1052664).gprs rspIndexN).val + 8)
+    else if i = rbxIndexN then
+      word64n (readLittleEndianN 8 1052664
+        (pushInBoundsN bridgePushPopInitial raxIndexN 1052664).memory)
+    else (pushInBoundsN bridgePushPopInitial raxIndexN 1052664).gprs i)
+    = bridgePushPopInitial.gprs i
+  rw [if_neg h1, if_neg h2]
+  show (if i = rspIndexN then word64n 1052664 else bridgePushPopInitial.gprs i)
+    = bridgePushPopInitial.gprs i
+  rw [if_neg h1]
+
+theorem bridge_push_pop_memory_little_endian :
+    bridgePushPopFinal.memory 1052664 = 136
+    ∧ bridgePushPopFinal.memory 1052665 = 119
+    ∧ bridgePushPopFinal.memory 1052666 = 102
+    ∧ bridgePushPopFinal.memory 1052667 = 85
+    ∧ bridgePushPopFinal.memory 1052668 = 68
+    ∧ bridgePushPopFinal.memory 1052669 = 51
+    ∧ bridgePushPopFinal.memory 1052670 = 34
+    ∧ bridgePushPopFinal.memory 1052671 = 17 := by
+  decide
+
+theorem bridge_push_pop_flags_preserved :
+    bridgePushPopFinal.flags.cf = false ∧
+    bridgePushPopFinal.flags.pf = false ∧
+    bridgePushPopFinal.flags.af = false ∧
+    bridgePushPopFinal.flags.zf = false ∧
+    bridgePushPopFinal.flags.sf = false ∧
+    bridgePushPopFinal.flags.of = false ∧
+    bridgePushPopFinal.flags.defined cfBitN = true ∧
+    bridgePushPopFinal.flags.defined pfBitN = true ∧
+    bridgePushPopFinal.flags.defined afBitN = true ∧
+    bridgePushPopFinal.flags.defined zfBitN = true ∧
+    bridgePushPopFinal.flags.defined sfBitN = true ∧
+    bridgePushPopFinal.flags.defined ofBitN = true := by
+  decide
+
+theorem bridge_push_pop_status_running :
+    bridgePushPopFinal.status = MachineStatusN.running := by
+  decide
+
+
+/-! ### Bridge fixture ``cmp_jcc_taken``
+
+Byte code ``48 83 f8 05 7e 03 83 c0 01 83 e8 00`` executed by both the Lean machine
+transformers (over the modeled prefix of 2
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprCmpJccTaken (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 3
+  | 1 => word64n 0
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 0
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgeCmpJccTakenInitial : MachineStateN :=
+  { gprs := bridgeGprCmpJccTaken
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgeCmpJccTakenFinal : MachineStateN :=
+  runN [.cmp (word64n 5), .jcc JccConditionN.le 4105 4102] bridgeCmpJccTakenInitial
+
+theorem bridge_cmp_jcc_taken_branch_target :
+    bridgeCmpJccTakenFinal.rip = word64n 4105 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_cmp_jcc_taken_rax_boundary :
+    bridgeCmpJccTakenFinal.gprs raxIndexN = word64n 3 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_cmp_jcc_taken_flags_exact :
+    bridgeCmpJccTakenFinal.flags.cf = true
+    ∧ bridgeCmpJccTakenFinal.flags.pf = false
+    ∧ bridgeCmpJccTakenFinal.flags.af = true
+    ∧ bridgeCmpJccTakenFinal.flags.zf = false
+    ∧ bridgeCmpJccTakenFinal.flags.sf = true
+    ∧ bridgeCmpJccTakenFinal.flags.of = false ∧
+    bridgeCmpJccTakenFinal.flags.defined cfBitN = true
+    ∧ bridgeCmpJccTakenFinal.flags.defined pfBitN = true
+    ∧ bridgeCmpJccTakenFinal.flags.defined afBitN = true
+    ∧ bridgeCmpJccTakenFinal.flags.defined zfBitN = true
+    ∧ bridgeCmpJccTakenFinal.flags.defined sfBitN = true
+    ∧ bridgeCmpJccTakenFinal.flags.defined ofBitN = true := by
+  decide
+
+theorem bridge_cmp_jcc_taken_status_running :
+    bridgeCmpJccTakenFinal.status = MachineStatusN.running := by
+  decide
+
+
+/-! ### Bridge fixture ``cmp_jcc_not_taken``
+
+Byte code ``48 83 f8 05 7e 03 83 c0 01 83 e8 00`` executed by both the Lean machine
+transformers (over the modeled prefix of 2
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprCmpJccNotTaken (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 9
+  | 1 => word64n 0
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 0
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgeCmpJccNotTakenInitial : MachineStateN :=
+  { gprs := bridgeGprCmpJccNotTaken
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgeCmpJccNotTakenFinal : MachineStateN :=
+  runN [.cmp (word64n 5), .jcc JccConditionN.le 4105 4102] bridgeCmpJccNotTakenInitial
+
+theorem bridge_cmp_jcc_not_taken_fallthrough :
+    bridgeCmpJccNotTakenFinal.rip = word64n 4102 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_cmp_jcc_not_taken_rax_boundary :
+    bridgeCmpJccNotTakenFinal.gprs raxIndexN = word64n 9 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_cmp_jcc_not_taken_flags_exact :
+    bridgeCmpJccNotTakenFinal.flags.cf = false
+    ∧ bridgeCmpJccNotTakenFinal.flags.pf = false
+    ∧ bridgeCmpJccNotTakenFinal.flags.af = false
+    ∧ bridgeCmpJccNotTakenFinal.flags.zf = false
+    ∧ bridgeCmpJccNotTakenFinal.flags.sf = false
+    ∧ bridgeCmpJccNotTakenFinal.flags.of = false ∧
+    bridgeCmpJccNotTakenFinal.flags.defined cfBitN = true
+    ∧ bridgeCmpJccNotTakenFinal.flags.defined pfBitN = true
+    ∧ bridgeCmpJccNotTakenFinal.flags.defined afBitN = true
+    ∧ bridgeCmpJccNotTakenFinal.flags.defined zfBitN = true
+    ∧ bridgeCmpJccNotTakenFinal.flags.defined sfBitN = true
+    ∧ bridgeCmpJccNotTakenFinal.flags.defined ofBitN = true := by
+  decide
+
+theorem bridge_cmp_jcc_not_taken_status_running :
+    bridgeCmpJccNotTakenFinal.status = MachineStatusN.running := by
+  decide
+
+
+/-! ### Bridge fixture ``mov_width_32``
+
+Byte code ``b8 ef be 00 00`` executed by both the Lean machine
+transformers (over the modeled prefix of 1
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprMovWidth32 (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 1234605616436508552
+  | 1 => word64n 0
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 0
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgeMovWidth32Initial : MachineStateN :=
+  { gprs := bridgeGprMovWidth32
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgeMovWidth32Final : MachineStateN :=
+  runN [.movImm 32 48879] bridgeMovWidth32Initial
+
+theorem bridge_mov_width_32_zero_extends :
+    bridgeMovWidth32Final.gprs raxIndexN = word64n 48879 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_mov_width_32_flags_preserved :
+    bridgeMovWidth32Final.flags.cf = false ∧
+    bridgeMovWidth32Final.flags.pf = false ∧
+    bridgeMovWidth32Final.flags.af = false ∧
+    bridgeMovWidth32Final.flags.zf = false ∧
+    bridgeMovWidth32Final.flags.sf = false ∧
+    bridgeMovWidth32Final.flags.of = false ∧
+    bridgeMovWidth32Final.flags.defined cfBitN = true ∧
+    bridgeMovWidth32Final.flags.defined pfBitN = true ∧
+    bridgeMovWidth32Final.flags.defined afBitN = true ∧
+    bridgeMovWidth32Final.flags.defined zfBitN = true ∧
+    bridgeMovWidth32Final.flags.defined sfBitN = true ∧
+    bridgeMovWidth32Final.flags.defined ofBitN = true := by
+  decide
+
+
+/-! ### Bridge fixture ``mov_width_64``
+
+Byte code ``48 b8 ef be 00 00 00 00 00 00`` executed by both the Lean machine
+transformers (over the modeled prefix of 1
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprMovWidth64 (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 1234605616436508552
+  | 1 => word64n 0
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 0
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgeMovWidth64Initial : MachineStateN :=
+  { gprs := bridgeGprMovWidth64
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgeMovWidth64Final : MachineStateN :=
+  runN [.mov (word64 48879)] bridgeMovWidth64Initial
+
+theorem bridge_mov_width_64_full_replace :
+    bridgeMovWidth64Final.gprs raxIndexN = word64n 48879 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_mov_width_64_flags_preserved :
+    bridgeMovWidth64Final.flags.cf = false ∧
+    bridgeMovWidth64Final.flags.pf = false ∧
+    bridgeMovWidth64Final.flags.af = false ∧
+    bridgeMovWidth64Final.flags.zf = false ∧
+    bridgeMovWidth64Final.flags.sf = false ∧
+    bridgeMovWidth64Final.flags.of = false ∧
+    bridgeMovWidth64Final.flags.defined cfBitN = true ∧
+    bridgeMovWidth64Final.flags.defined pfBitN = true ∧
+    bridgeMovWidth64Final.flags.defined afBitN = true ∧
+    bridgeMovWidth64Final.flags.defined zfBitN = true ∧
+    bridgeMovWidth64Final.flags.defined sfBitN = true ∧
+    bridgeMovWidth64Final.flags.defined ofBitN = true := by
+  decide
+
+
+/-! ### Bridge fixture ``mov_width_16``
+
+Byte code ``66 b8 ef be`` executed by both the Lean machine
+transformers (over the modeled prefix of 1
+instruction(s)) and, from the Python side, a real Unicorn run plus the
+normalized reference interpreter. -/
+
+def bridgeGprMovWidth16 (index : Fin 16) : Word64N :=
+  match index.val with
+  | 0 => word64n 1234605616436508552
+  | 1 => word64n 0
+  | 2 => word64n 0
+  | 3 => word64n 0
+  | 4 => word64n 0
+  | 5 => word64n 0
+  | 6 => word64n 0
+  | 7 => word64n 1052672
+  | 8 => word64n 0
+  | 9 => word64n 0
+  | 10 => word64n 0
+  | 11 => word64n 0
+  | 12 => word64n 0
+  | 13 => word64n 0
+  | 14 => word64n 0
+  | 15 => word64n 0
+  | _ => word64n 0
+
+def bridgeMovWidth16Initial : MachineStateN :=
+  { gprs := bridgeGprMovWidth16
+    rip := word64n 4096
+    flags := FlagsN.mk false false false false false false (fun _ => true)
+    memory := fun _ => 0
+    stackLower := 1048576
+    stackUpper := 1056768
+    memoryLower := 4096
+    memoryUpper := 2097152
+    stepIndex := 0
+    status := MachineStatusN.running }
+
+def bridgeMovWidth16Final : MachineStateN :=
+  runN [.movImm 16 48879] bridgeMovWidth16Initial
+
+theorem bridge_mov_width_16_preserves_upper_bits :
+    bridgeMovWidth16Final.gprs raxIndexN = word64n 1234605616436526831 := by
+  apply Fin.ext
+  decide
+
+theorem bridge_mov_width_16_flags_preserved :
+    bridgeMovWidth16Final.flags.cf = false ∧
+    bridgeMovWidth16Final.flags.pf = false ∧
+    bridgeMovWidth16Final.flags.af = false ∧
+    bridgeMovWidth16Final.flags.zf = false ∧
+    bridgeMovWidth16Final.flags.sf = false ∧
+    bridgeMovWidth16Final.flags.of = false ∧
+    bridgeMovWidth16Final.flags.defined cfBitN = true ∧
+    bridgeMovWidth16Final.flags.defined pfBitN = true ∧
+    bridgeMovWidth16Final.flags.defined afBitN = true ∧
+    bridgeMovWidth16Final.flags.defined zfBitN = true ∧
+    bridgeMovWidth16Final.flags.defined sfBitN = true ∧
+    bridgeMovWidth16Final.flags.defined ofBitN = true := by
+  decide
 
 end ActiveAssembly

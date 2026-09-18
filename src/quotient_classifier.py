@@ -16,24 +16,32 @@ Three deliberately small CPU-runnable model families are evaluated together:
 
 The module is a bounded research endpoint, not a reverse-engineering system.
 Unsupported instructions and insufficient strata remain explicit in receipts.
+
+Schema 2.1 adds an additive diagnostic layer that gates no new claim: a sealed
+split manifest, development-only hyperparameter selection, deterministic
+multi-start selection, development-fit Platt calibration reported alongside the
+primary (uncalibrated) metrics, a family-shuffle negative control, a bounded
+encoding-metadata leakage probe, and a cross-split near-duplicate screen.
 """
 
-from __future__ import annotations
-
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+import hashlib
 import json
 from functools import lru_cache
 import math
 from pathlib import Path
-from typing import Any, Sequence
-
+from typing import Any, Callable, Sequence
 import numpy as np
 
 from .artifact_contract import write_json_artifact
 from .disassembly import disassemble_bytes
 from .emulation import emulate_x86_64
 from .provenance import generator_revision, sha256_path, toolchain_versions
-from .receipt import build_receipt_envelope, validate_receipt_envelope
+from .receipt import (
+    RECEIPT_SCHEMA_VERSION,
+    build_receipt_envelope,
+    validate_receipt_envelope,
+)
 from .scientific_protocol import (
     BOOTSTRAP_REPLICATES,
     CONFIDENCE_LEVEL,
@@ -51,7 +59,7 @@ from .typed_observations import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-QUOTIENT_CLASSIFIER_SCHEMA_VERSION = "2.0.0"
+QUOTIENT_CLASSIFIER_SCHEMA_VERSION = "2.1.0"
 QUOTIENT_CLASSIFIER_ARTIFACT = "output/data/quotient_classifier.json"
 # Keep the benchmark intervention catalog identical to protocol v2.  These
 # values deliberately include ordinary, zero, signed-boundary, and unsigned
@@ -74,6 +82,20 @@ RNN_LEARNING_RATE = 0.05
 LOGISTIC_EPOCHS = 80
 LOGISTIC_LEARNING_RATE = 0.08
 LOGISTIC_L2 = 0.01
+# Development-only selection grids.  The module constants above remain the
+# defaults for the historical comparator fits; the selected values are threaded
+# into the co-primary fits as explicit arguments.
+LOGISTIC_L2_GRID = (0.001, 0.01, 0.1)
+LOGISTIC_LEARNING_RATE_GRID = (0.05, 0.1, 0.2)
+RNN_HIDDEN_SIZE_GRID = (8, 16, 32)
+RNN_EPOCHS_GRID = (4, 8, 16)
+STARTS_SELECTION_RULE = "best_development_balanced_accuracy_tie_lowest_seed"
+HYPERPARAMETER_TIE_RULE = "lexicographic_option_order_first_maximum"
+PLATT_EPOCHS = 500
+PLATT_LEARNING_RATE = 0.05
+FAMILY_SHUFFLE_SEED = 20260821
+NEAR_DUPLICATE_THRESHOLD = 0.9
+SPLIT_NAMES = ("training", "development", "held_out")
 
 
 @dataclass(frozen=True)
@@ -527,7 +549,12 @@ def _sigmoid(values: np.ndarray) -> np.ndarray:
 
 
 def _fit_logistic(
-    x_train: np.ndarray, y_train: np.ndarray, *, seed: int
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    *,
+    seed: int,
+    l2: float = LOGISTIC_L2,
+    learning_rate: float = LOGISTIC_LEARNING_RATE,
 ) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
     mean = x_train.mean(axis=0)
     scale = x_train.std(axis=0)
@@ -539,10 +566,8 @@ def _fit_logistic(
     for _ in range(LOGISTIC_EPOCHS):
         probability = _sigmoid(x @ weights + bias)
         error = probability - y_train
-        weights -= LOGISTIC_LEARNING_RATE * (
-            (x.T @ error) / len(x) + LOGISTIC_L2 * weights
-        )
-        bias -= LOGISTIC_LEARNING_RATE * float(error.mean())
+        weights -= learning_rate * ((x.T @ error) / len(x) + l2 * weights)
+        bias -= learning_rate * float(error.mean())
     return weights, bias, mean, scale
 
 
@@ -611,16 +636,21 @@ def _rnn_forward(
 
 
 def _fit_rnn(
-    train_rows: Sequence[PairExample], vocabulary: dict[str, int], *, seed: int
+    train_rows: Sequence[PairExample],
+    vocabulary: dict[str, int],
+    *,
+    seed: int,
+    hidden_size: int = RNN_HIDDEN_SIZE,
+    epochs: int = RNN_EPOCHS,
+    learning_rate: float = RNN_LEARNING_RATE,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
     rng = np.random.default_rng(seed)
-    hidden_size = RNN_HIDDEN_SIZE
     vocab_size = len(vocabulary)
     wxh = rng.normal(0.0, 0.05, size=(hidden_size, vocab_size))
     whh = rng.normal(0.0, 0.05, size=(hidden_size, hidden_size))
     why = rng.normal(0.0, 0.05, size=hidden_size)
     by = 0.0
-    for _ in range(RNN_EPOCHS):
+    for _ in range(epochs):
         gradient_wxh = np.zeros_like(wxh)
         gradient_whh = np.zeros_like(whh)
         gradient_why = np.zeros_like(why)
@@ -639,11 +669,11 @@ def _fit_rnn(
                 gradient_whh += np.outer(dtanh, previous)
                 dh = whh.T @ dtanh
         scale = 1.0 / max(len(train_rows), 1)
-        wxh -= RNN_LEARNING_RATE * gradient_wxh * scale
-        whh -= RNN_LEARNING_RATE * gradient_whh * scale
-        why -= RNN_LEARNING_RATE * gradient_why * scale
-        by -= RNN_LEARNING_RATE * gradient_by * scale
-    return wxh, whh, why, by, float(RNN_HIDDEN_SIZE)
+        wxh -= learning_rate * gradient_wxh * scale
+        whh -= learning_rate * gradient_whh * scale
+        why -= learning_rate * gradient_why * scale
+        by -= learning_rate * gradient_by * scale
+    return wxh, whh, why, by, float(hidden_size)
 
 
 def _predict_rnn(
@@ -661,6 +691,547 @@ def _predict_rnn(
         ],
         dtype=float,
     )
+
+
+def _split_manifest_sha256(assignment: dict[str, str]) -> str:
+    """Hash the sealed split assignment over a canonical sorted serialization."""
+
+    canonical = "".join(
+        f"{family_id}\t{split}\n" for family_id, split in sorted(assignment.items())
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _split_manifest() -> dict[str, Any]:
+    """Seal the frozen family-to-split assignment exactly as _family_specs emits it."""
+
+    assignment = {family.family_id: family.split for family in _family_specs()}
+    family_ids_per_split = {
+        split: [
+            family_id
+            for family_id, assigned in assignment.items()
+            if assigned == split
+        ]
+        for split in SPLIT_NAMES
+    }
+    return {
+        "assignment": assignment,
+        "family_ids_per_split": family_ids_per_split,
+        "sha256": _split_manifest_sha256(assignment),
+        "canonicalization": (
+            "sha256 over 'family_id\\tsplit\\n' lines ordered by sorted family_id"
+        ),
+    }
+
+
+def _logit(probabilities: np.ndarray) -> np.ndarray:
+    clipped = np.clip(np.asarray(probabilities, dtype=float), 1e-12, 1.0 - 1e-12)
+    return np.log(clipped / (1.0 - clipped))
+
+
+def _fit_platt(
+    probabilities: np.ndarray, labels: np.ndarray
+) -> tuple[float, float]:
+    """Fit a deterministic 1-D Platt scaling on development log-odds.
+
+    Fixed-epoch gradient descent from the identity map; no randomness, so the
+    calibration parameters are a pure function of the development rows.
+    """
+
+    features = _logit(probabilities)
+    targets = np.asarray(labels, dtype=float)
+    a = 0.0
+    b = 0.0
+    for _ in range(PLATT_EPOCHS):
+        error = _sigmoid(a * features + b) - targets
+        a -= PLATT_LEARNING_RATE * float(np.mean(error * features))
+        b -= PLATT_LEARNING_RATE * float(np.mean(error))
+    return float(a), float(b)
+
+
+def _apply_platt(probabilities: np.ndarray, a: float, b: float) -> np.ndarray:
+    return _sigmoid(a * _logit(probabilities) + b)
+
+
+def _fit_with_starts(
+    fitter: Callable[[int], Any],
+    development_scorer: Callable[[Any], float],
+    *,
+    starts: tuple[int, ...] = SEEDS,
+) -> dict[str, Any]:
+    """Fit at every deterministic start and select on development rows only.
+
+    Selection rule: best development balanced accuracy; ties resolve to the
+    lowest seed because starts are iterated in ascending order and a strictly
+    greater score is required to replace the incumbent.
+    """
+
+    catalog = [int(seed) for seed in starts]
+    development_score_by_start: dict[str, float] = {}
+    selected_start: int | None = None
+    best = -1.0
+    for seed in catalog:
+        score = float(development_scorer(fitter(seed)))
+        development_score_by_start[str(seed)] = score
+        if selected_start is None or score > best:
+            selected_start = seed
+            best = score
+    return {
+        "catalog": catalog,
+        "selection_rule": STARTS_SELECTION_RULE,
+        "selected_start": selected_start,
+        "development_score_by_start": development_score_by_start,
+    }
+
+
+def _select_hyperparameters(
+    train_rows: Sequence[PairExample],
+    development_rows: Sequence[PairExample],
+    train_matrix: np.ndarray,
+    development_matrix: np.ndarray,
+    vocabulary: dict[str, int],
+) -> dict[str, Any]:
+    """Development-only hyperparameter selection; held-out rows are never an input.
+
+    Options are iterated in the declared grid order and a strictly greater
+    development balanced accuracy is required to replace the incumbent, so ties
+    resolve to the lexicographically first option.
+    """
+
+    train_labels = np.asarray([row.label for row in train_rows], dtype=float)
+    development_labels = np.asarray(
+        [row.label for row in development_rows], dtype=float
+    )
+    logistic_grid = {
+        "l2": list(LOGISTIC_L2_GRID),
+        "learning_rate": list(LOGISTIC_LEARNING_RATE_GRID),
+    }
+    rnn_grid = {
+        "hidden_size": list(RNN_HIDDEN_SIZE_GRID),
+        "epochs": list(RNN_EPOCHS_GRID),
+    }
+    logistic_scores: dict[str, float] = {}
+    logistic_selected: dict[str, float] | None = None
+    logistic_best = -1.0
+    for l2 in LOGISTIC_L2_GRID:
+        for learning_rate in LOGISTIC_LEARNING_RATE_GRID:
+            option = f"l2={l2}|learning_rate={learning_rate}"
+            model = _fit_logistic(
+                train_matrix,
+                train_labels,
+                seed=RNG_SEED,
+                l2=float(l2),
+                learning_rate=float(learning_rate),
+            )
+            score = float(
+                _metrics(
+                    development_labels,
+                    _predict_logistic(development_matrix, model),
+                    extended=False,
+                )["balanced_accuracy"]
+            )
+            logistic_scores[option] = score
+            if logistic_selected is None or score > logistic_best:
+                logistic_selected = {
+                    "l2": float(l2),
+                    "learning_rate": float(learning_rate),
+                }
+                logistic_best = score
+    rnn_scores: dict[str, float] = {}
+    rnn_selected: dict[str, int] | None = None
+    rnn_best = -1.0
+    for hidden_size in RNN_HIDDEN_SIZE_GRID:
+        for epochs in RNN_EPOCHS_GRID:
+            option = f"hidden_size={hidden_size}|epochs={epochs}"
+            model = _fit_rnn(
+                train_rows,
+                vocabulary,
+                seed=RNG_SEED,
+                hidden_size=int(hidden_size),
+                epochs=int(epochs),
+            )
+            score = float(
+                _metrics(
+                    development_labels,
+                    _predict_rnn(development_rows, vocabulary, model),
+                    extended=False,
+                )["balanced_accuracy"]
+            )
+            rnn_scores[option] = score
+            if rnn_selected is None or score > rnn_best:
+                rnn_selected = {
+                    "hidden_size": int(hidden_size),
+                    "epochs": int(epochs),
+                }
+                rnn_best = score
+    return {
+        "policy": "development_only_selection",
+        "fit_split": "development",
+        "test_rows_used": 0,
+        "tie_rule": HYPERPARAMETER_TIE_RULE,
+        "grid": {
+            "calibrated_interpretable": logistic_grid,
+            "temporal_probabilistic": [],
+            "neural_sequence": rnn_grid,
+        },
+        "scores_by_option": {
+            "calibrated_interpretable": logistic_scores,
+            "neural_sequence": rnn_scores,
+        },
+        "selected_per_model": {
+            "calibrated_interpretable": logistic_selected,
+            "temporal_probabilistic": None,
+            "neural_sequence": rnn_selected,
+        },
+        "closed_form_note": (
+            "temporal_probabilistic is a closed-form smoothed count estimator "
+            "with no tunable hyperparameters"
+        ),
+    }
+
+
+def _family_shuffle_control(
+    test_rows: Sequence[PairExample],
+    test_matrix: np.ndarray,
+    *,
+    seed: int = FAMILY_SHUFFLE_SEED,
+) -> dict[str, Any]:
+    """Break the family-to-label association inside held-out family blocks.
+
+    Within each held-out family block the block's own label vector is permuted
+    in place under the seeded generator, so labels never leave their family
+    while the family-identity-to-label association is destroyed.  The
+    interpretable model is refit on the scrambled assignment and scored
+    against the true held-out labels.  A model that only appears strong
+    through family leakage cannot survive this control.
+
+    A block-level family permutation (moving a whole family's label vector to
+    another family's rows) would be vacuous on this benchmark: every family
+    block carries the same alternating equivalent/near-miss pattern, and row
+    parity is recoverable from nop-padding features, so any block-preserving
+    relabeling leaves a learnable position-to-label rule.  Permuting labels
+    within each block removes exactly that channel.
+    """
+
+    family_ids = sorted({row.family_id for row in test_rows})
+    blocks = {
+        family: [
+            index for index, row in enumerate(test_rows) if row.family_id == family
+        ]
+        for family in family_ids
+    }
+    labels = np.asarray([row.label for row in test_rows], dtype=float)
+    rng = np.random.default_rng(seed)
+    shuffled_labels = labels.copy()
+    for family in family_ids:
+        block = blocks[family]
+        shuffled_labels[block] = rng.permutation(labels[block])
+    model = _fit_logistic(test_matrix, shuffled_labels, seed=seed)
+    predictions = _predict_logistic(test_matrix, model)
+    metrics = _metrics(labels, predictions, extended=False)
+    return {
+        "metrics": metrics,
+        "seed": int(seed),
+        "permuted_family_count": len(family_ids),
+        "description": (
+            "within each held-out family block the block's own label vector "
+            "is permuted in place (labels stay within their family) to "
+            "destroy the family-identity-to-label association; interpretable "
+            "model refit on the scrambled assignment and scored against true "
+            "held-out labels"
+        ),
+    }
+
+
+def _opcode_only_tokens(tokens: Sequence[str]) -> tuple[str, ...]:
+    """Reduce typed tokens to the instruction-family (opcode surface) field."""
+
+    index = TYPED_OBSERVATION_FIELDS.index("instruction_family")
+    return tuple(
+        token.split("|")[index] if "|" in token else token for token in tokens
+    )
+
+
+def _opcode_only_rows(
+    rows: Sequence[PairExample],
+) -> tuple[PairExample, ...]:
+    return tuple(
+        replace(
+            row,
+            reference_tokens=_opcode_only_tokens(row.reference_tokens),
+            variant_tokens=_opcode_only_tokens(row.variant_tokens),
+        )
+        for row in rows
+    )
+
+
+def _opcode_only_vocabulary(
+    rows: Sequence[PairExample],
+) -> dict[str, int]:
+    tokens = sorted(
+        {
+            token
+            for row in rows
+            for token in (
+                _opcode_only_tokens(row.reference_tokens)
+                + _opcode_only_tokens(row.variant_tokens)
+                + ("<REFERENCE>", "<VARIANT>")
+            )
+        }
+    )
+    return {token: index for index, token in enumerate(tokens)}
+
+
+def _leakage_probe_scores(
+    train_rows: Sequence[PairExample],
+    test_rows: Sequence[PairExample],
+    train_matrix: np.ndarray,
+    test_matrix: np.ndarray,
+    vocabulary: dict[str, int],
+    *,
+    rnn_hidden_size: int,
+    rnn_epochs: int,
+) -> dict[str, Any]:
+    """Bounded encoding/opcode-surface-only ablation for each co-primary model.
+
+    The probe is deliberately bounded: it refits each co-primary model on
+    opcode-surface information only (instruction-family fields and static
+    counters) and scores the ablated models against true held-out labels.  It
+    supports no architecture-metadata conclusion either way.
+    """
+
+    train_labels = np.asarray([row.label for row in train_rows], dtype=float)
+    test_labels = np.asarray([row.label for row in test_rows], dtype=float)
+    surface = _surface_indices()
+    opcode_train = _opcode_only_rows(train_rows)
+    opcode_test = _opcode_only_rows(test_rows)
+    opcode_vocabulary = _opcode_only_vocabulary([*train_rows, *test_rows])
+    held_out_scores: dict[str, float] = {}
+    logistic_model = _fit_logistic(
+        train_matrix[:, surface], train_labels, seed=RNG_SEED
+    )
+    held_out_scores["calibrated_interpretable"] = float(
+        _metrics(
+            test_labels,
+            _predict_logistic(test_matrix[:, surface], logistic_model),
+            extended=False,
+        )["balanced_accuracy"]
+    )
+    markov_model = _fit_markov(opcode_train, opcode_vocabulary)
+    held_out_scores["temporal_probabilistic"] = float(
+        _metrics(
+            test_labels,
+            _predict_markov(opcode_test, opcode_vocabulary, markov_model),
+            extended=False,
+        )["balanced_accuracy"]
+    )
+    rnn_model = _fit_rnn(
+        opcode_train,
+        opcode_vocabulary,
+        seed=RNG_SEED,
+        hidden_size=int(rnn_hidden_size),
+        epochs=int(rnn_epochs),
+    )
+    held_out_scores["neural_sequence"] = float(
+        _metrics(
+            test_labels,
+            _predict_rnn(opcode_test, opcode_vocabulary, rnn_model),
+            extended=False,
+        )["balanced_accuracy"]
+    )
+    return {
+        "held_out_scores": held_out_scores,
+        "feature_sets": {
+            "calibrated_interpretable": (
+                "typed-pair feature columns restricted to the encoding/opcode "
+                "surface indices (instruction-family and static executed counters)"
+            ),
+            "temporal_probabilistic": (
+                "typed tokens reduced to the instruction_family field only"
+            ),
+            "neural_sequence": (
+                "typed tokens reduced to the instruction_family field only"
+            ),
+        },
+    }
+
+
+def _cross_encoding_consistency(rows: Sequence[PairExample]) -> dict[str, Any]:
+    """Name the benchmark's existing cross-encoding consistency contract.
+
+    Equivalent-role rows pair distinct machine encodings of the same formal
+    transformation, and labels come from the declared output relation under
+    real bounded emulation.  Consistency therefore means the recorded label
+    assignment does not depend on which encoding was used: every equivalent
+    row is labeled 1 and every near-miss row 0, per family.
+    """
+
+    family_ids = sorted({row.family_id for row in rows})
+    consistent = 0
+    for family in family_ids:
+        members = [row for row in rows if row.family_id == family]
+        equivalent = [row for row in members if row.variant_role == "equivalent"]
+        near_miss = [row for row in members if row.variant_role == "near_miss"]
+        encodings_differ = any(
+            row.reference_code != row.variant_code for row in equivalent
+        )
+        labels_match_relation = all(row.label == 1 for row in equivalent) and all(
+            row.label == 0 for row in near_miss
+        )
+        if encodings_differ and labels_match_relation:
+            consistent += 1
+    return {
+        "check": "cross_encoding_label_consistency",
+        "description": (
+            "existing cross-encoding consistency contract: equivalent-role rows "
+            "pair distinct encodings of one formal transformation and labels "
+            "must equal the formal output relation regardless of encoding"
+        ),
+        "consistent_family_count": consistent,
+        "consistent_family_rate": float(consistent / len(family_ids))
+        if family_ids
+        else 0.0,
+        "family_count": len(family_ids),
+    }
+
+
+_NEAR_DUPLICATE_BASE_TEMPLATE_KEYS: dict[str, str] = {
+    "add_one": "arithmetic_immediate_adjust",
+    "add_two": "arithmetic_immediate_adjust",
+    "add_three": "arithmetic_immediate_adjust",
+    "add_four": "arithmetic_immediate_adjust",
+    "add_five": "arithmetic_immediate_adjust",
+    "sub_one": "arithmetic_immediate_adjust",
+    "sub_two": "arithmetic_immediate_adjust",
+    "sub_five": "arithmetic_immediate_adjust",
+    "dec_sub": "arithmetic_immediate_adjust",
+    "double_shift": "arithmetic_register_double",
+    "double_add": "arithmetic_register_double",
+    "zero_xor": "bitwise_zero_register",
+    "identity_nop": "identity_padding_only",
+    "copy_double": "copy_shift_double",
+    "mask_low": "bitwise_mask_immediate",
+    "compare_zero": "comparison_zero",
+}
+_NEAR_DUPLICATE_GENERATED_TEMPLATE_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("generated_add_", "arithmetic_immediate_adjust"),
+    ("generated_constant_", "data_transfer_immediate_mov"),
+    ("generated_mask_", "bitwise_mask_immediate"),
+    ("generated_compare_", "comparison_zero"),
+    ("generated_width_", "data_transfer_immediate_mov"),
+)
+
+
+def _near_duplicate_template_key(family_id: str) -> str:
+    """Return the frozen near-duplicate template key declared for one family.
+
+    Families outside the frozen manifest fall back to their own id, which can
+    never be declared as a template sibling: unknown families therefore fail
+    closed if they are flagged across splits.
+    """
+
+    for prefix, key in _NEAR_DUPLICATE_GENERATED_TEMPLATE_PREFIXES:
+        if family_id.startswith(prefix):
+            return key
+    return _NEAR_DUPLICATE_BASE_TEMPLATE_KEYS.get(family_id, family_id)
+
+
+def _near_duplicate_report(rows: Sequence[PairExample]) -> dict[str, Any]:
+    """Screen cross-split family pairs for near-duplicate leakage surfaces.
+
+    Two bounded similarity metrics are computed per cross-split family pair:
+    byte identity (Jaccard over the padded reference/variant code sets) and
+    typed-token Jaccard.  A pair is flagged when either exceeds the declared
+    threshold; flagged pairs are declared only when both families share the
+    same frozen near-duplicate template key, because the benchmark
+    deliberately repeats effect templates with different constants across
+    splits while keeping family identity split-disjoint.
+    """
+
+    by_family: dict[str, list[PairExample]] = {}
+    for row in rows:
+        by_family.setdefault(row.family_id, []).append(row)
+    family_ids = list(by_family)
+    code_sets = {
+        family_id: {
+            code
+            for row in by_family[family_id]
+            for code in (row.reference_code, row.variant_code)
+        }
+        for family_id in family_ids
+    }
+    token_sets = {
+        family_id: {
+            token
+            for row in by_family[family_id]
+            for token in (*row.reference_tokens, *row.variant_tokens)
+        }
+        for family_id in family_ids
+    }
+    flagged_pairs: list[dict[str, Any]] = []
+    max_similarity = 0.0
+    max_pair: dict[str, Any] | None = None
+    cross_split_pair_count = 0
+    for a_position, family_a in enumerate(family_ids):
+        for family_b in family_ids[a_position + 1 :]:
+            split_a = by_family[family_a][0].split
+            split_b = by_family[family_b][0].split
+            if split_a == split_b:
+                continue
+            cross_split_pair_count += 1
+            code_union = code_sets[family_a] | code_sets[family_b]
+            byte_identity = (
+                len(code_sets[family_a] & code_sets[family_b]) / len(code_union)
+                if code_union
+                else 0.0
+            )
+            token_union = token_sets[family_a] | token_sets[family_b]
+            token_jaccard = (
+                len(token_sets[family_a] & token_sets[family_b]) / len(token_union)
+                if token_union
+                else 0.0
+            )
+            similarity = max(byte_identity, token_jaccard)
+            if similarity > max_similarity:
+                max_similarity = similarity
+                max_pair = {"family_a": family_a, "family_b": family_b}
+            if similarity > NEAR_DUPLICATE_THRESHOLD:
+                key_a = _near_duplicate_template_key(family_a)
+                key_b = _near_duplicate_template_key(family_b)
+                flagged_pairs.append(
+                    {
+                        "family_a": family_a,
+                        "family_b": family_b,
+                        "split_a": split_a,
+                        "split_b": split_b,
+                        "byte_identity": float(byte_identity),
+                        "token_jaccard": float(token_jaccard),
+                        "similarity": float(similarity),
+                        "crosses_training_held_out": bool(
+                            {split_a, split_b} == {"training", "held_out"}
+                        ),
+                        "template_keys": [key_a, key_b],
+                        "declared": bool(key_a == key_b),
+                    }
+                )
+    return {
+        "metrics": ["byte_identity", "token_jaccard"],
+        "threshold": NEAR_DUPLICATE_THRESHOLD,
+        "comparison_unit": (
+            "cross-split family pairs over padded code sets and typed-token sets"
+        ),
+        "declaration_rule": (
+            "a flagged pair is declared iff both families share the same frozen "
+            "near-duplicate template key; undeclared flagged pairs fail closed"
+        ),
+        "cross_split_pair_count": cross_split_pair_count,
+        "flagged_pair_count": len(flagged_pairs),
+        "flagged_pairs": flagged_pairs,
+        "max_cross_split_similarity": float(max_similarity),
+        "max_cross_split_pair": max_pair,
+    }
+
+
 
 
 def _wilson_interval(successes: int, total: int) -> list[float]:
@@ -1238,8 +1809,42 @@ def quotient_classifier_payload() -> dict[str, Any]:
     )
     models: dict[str, dict[str, Any]] = {}
     test_probabilities: dict[str, np.ndarray] = {}
+    test_labels = np.asarray([row.label for row in test_rows], dtype=float)
 
-    logistic = _fit_logistic(train_matrix, train_labels, seed=RNG_SEED)
+    hyperparameter_selection = _select_hyperparameters(
+        train_rows,
+        development_rows,
+        train_matrix,
+        development_matrix,
+        vocabulary,
+    )
+    logistic_options = hyperparameter_selection["selected_per_model"][
+        "calibrated_interpretable"
+    ]
+    rnn_options = hyperparameter_selection["selected_per_model"]["neural_sequence"]
+
+    def logistic_fitter(seed: int) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
+        return _fit_logistic(
+            train_matrix,
+            train_labels,
+            seed=seed,
+            l2=float(logistic_options["l2"]),
+            learning_rate=float(logistic_options["learning_rate"]),
+        )
+
+    def logistic_development_score(
+        model: tuple[np.ndarray, float, np.ndarray, np.ndarray],
+    ) -> float:
+        return float(
+            _metrics(
+                development_labels,
+                _predict_logistic(development_matrix, model),
+                extended=False,
+            )["balanced_accuracy"]
+        )
+
+    logistic_starts = _fit_with_starts(logistic_fitter, logistic_development_score)
+    logistic = logistic_fitter(int(logistic_starts["selected_start"]))
     logistic_development = _predict_logistic(development_matrix, logistic)
     logistic_probabilities = _predict_logistic(test_matrix, logistic)
     test_probabilities["calibrated_interpretable"] = logistic_probabilities
@@ -1247,6 +1852,7 @@ def quotient_classifier_payload() -> dict[str, Any]:
         "calibrated_interpretable", test_rows, logistic_probabilities, seed=11
     )
     logistic_result["development"] = _metrics(development_labels, logistic_development)
+    logistic_result["starts"] = logistic_starts
     models["calibrated_interpretable"] = logistic_result
 
     markov = _fit_markov(train_rows, vocabulary)
@@ -1257,14 +1863,44 @@ def quotient_classifier_payload() -> dict[str, Any]:
         "temporal_probabilistic", test_rows, markov_probabilities, seed=23
     )
     markov_result["development"] = _metrics(development_labels, markov_development)
+    markov_result["starts"] = {
+        "catalog": [],
+        "selection_rule": "closed_form_single_deterministic_fit",
+        "selected_start": None,
+        "development_score_by_start": {},
+    }
     models["temporal_probabilistic"] = markov_result
 
-    rnn = _fit_rnn(train_rows, vocabulary, seed=47)
+    def rnn_fitter(
+        seed: int,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
+        return _fit_rnn(
+            train_rows,
+            vocabulary,
+            seed=seed,
+            hidden_size=int(rnn_options["hidden_size"]),
+            epochs=int(rnn_options["epochs"]),
+        )
+
+    def rnn_development_score(
+        model: tuple[np.ndarray, np.ndarray, np.ndarray, float, float],
+    ) -> float:
+        return float(
+            _metrics(
+                development_labels,
+                _predict_rnn(development_rows, vocabulary, model),
+                extended=False,
+            )["balanced_accuracy"]
+        )
+
+    rnn_starts = _fit_with_starts(rnn_fitter, rnn_development_score)
+    rnn = rnn_fitter(int(rnn_starts["selected_start"]))
     rnn_development = _predict_rnn(development_rows, vocabulary, rnn)
     rnn_probabilities = _predict_rnn(test_rows, vocabulary, rnn)
     test_probabilities["neural_sequence"] = rnn_probabilities
     rnn_result = _evaluate("neural_sequence", test_rows, rnn_probabilities, seed=47)
     rnn_result["development"] = _metrics(development_labels, rnn_development)
+    rnn_result["starts"] = rnn_starts
     models["neural_sequence"] = rnn_result
 
     surface = _surface_indices()
@@ -1318,12 +1954,98 @@ def quotient_classifier_payload() -> dict[str, Any]:
         train_labels,
         vocabulary,
     )
-    test_labels = np.asarray([row.label for row in test_rows], dtype=float)
     permutation_labels = np.random.default_rng(20260821).permutation(train_labels)
     permutation_model = _fit_logistic(train_matrix, permutation_labels, seed=20260821)
     permutation_metrics = _metrics(
         test_labels, _predict_logistic(test_matrix, permutation_model)
     )
+    development_probabilities = {
+        "calibrated_interpretable": logistic_development,
+        "temporal_probabilistic": markov_development,
+        "neural_sequence": rnn_development,
+    }
+    for name in MODEL_FAMILIES:
+        a, b = _fit_platt(development_probabilities[name], development_labels)
+        calibrated = _apply_platt(test_probabilities[name], a, b)
+        before = _metrics(test_labels, test_probabilities[name], extended=False)
+        after = _metrics(test_labels, calibrated, extended=False)
+        models[name]["calibration"] = {
+            "method": "platt_development",
+            "parameters": {"a": float(a), "b": float(b)},
+            "ece_before": float(before["expected_calibration_error"]),
+            "ece_after": float(after["expected_calibration_error"]),
+            "brier_before": float(before["brier_score"]),
+            "brier_after": float(after["brier_score"]),
+            "metrics_role": (
+                "uncalibrated balanced_accuracy and macro_f1 remain primary; "
+                "calibrated metrics are reported alongside and gate no claim"
+            ),
+        }
+
+    family_shuffle = _family_shuffle_control(test_rows, test_matrix)
+    control_balanced_accuracy = float(
+        family_shuffle["metrics"]["balanced_accuracy"]
+    )
+    comparator_models = [
+        name
+        for name in MODEL_FAMILIES
+        if float(models[name]["balanced_accuracy"]) > 0.5
+    ]
+    chance_level_models = [
+        name for name in MODEL_FAMILIES if name not in comparator_models
+    ]
+    # A chance-level co-primary model carries no signal for a control to lose
+    # against, so it is excluded from the comparison; an empty comparator set
+    # fails closed below.
+    family_shuffle_loses = bool(comparator_models) and all(
+        control_balanced_accuracy < float(models[name]["balanced_accuracy"])
+        for name in comparator_models
+    )
+    leakage_probe = _leakage_probe_scores(
+        train_rows,
+        test_rows,
+        train_matrix,
+        test_matrix,
+        vocabulary,
+        rnn_hidden_size=int(rnn_options["hidden_size"]),
+        rnn_epochs=int(rnn_options["epochs"]),
+    )
+    probe_margin_differences = {
+        name: float(leakage_probe["held_out_scores"][name])
+        - float(models[name]["balanced_accuracy"])
+        for name in MODEL_FAMILIES
+    }
+    metadata_only_beats = any(
+        difference > PRACTICAL_MARGIN + 1e-12
+        for difference in probe_margin_differences.values()
+    )
+    leakage_attacks = {
+        "probe": (
+            "bounded encoding/opcode-surface-only feature ablation: each "
+            "co-primary model refit on instruction-family (opcode surface) "
+            "information only and scored on true held-out labels"
+        ),
+        "feature_sets": leakage_probe["feature_sets"],
+        "held_out_scores": leakage_probe["held_out_scores"],
+        "label_blind_full_held_out_scores": {
+            name: float(models[name]["balanced_accuracy"])
+            for name in MODEL_FAMILIES
+        },
+        "probe_margin_differences": probe_margin_differences,
+        "beats_threshold": PRACTICAL_MARGIN,
+        "metadata_only_beats_label_blind": bool(metadata_only_beats),
+        "metadata_interpretation": (
+            "both probe and full models use label-blind features; a probe "
+            "difference within the declared practical comparison margin is "
+            "recorded but not interpreted as the metadata probe winning, and "
+            "no superiority claim is available to either side"
+        ),
+        "cross_encoding_consistency": _cross_encoding_consistency(rows),
+        "conclusion_bound": (
+            "bounded probe only; no architecture-metadata claim"
+        ),
+    }
+    near_duplicate_checks = _near_duplicate_report(rows)
 
     family_count = len({row.family_id for row in rows})
     test_family_count = len({row.family_id for row in test_rows})
@@ -1510,6 +2232,8 @@ def quotient_classifier_payload() -> dict[str, Any]:
                 & {row.family_id for row in test_rows}
             )
         ),
+        "split_manifest": _split_manifest(),
+        "hyperparameter_selection": hyperparameter_selection,
         "interventions": list(INTERVENTIONS),
         "feature_names": [
             f"pair_abs::{name}" if suffix == 0 else f"pair_sum::{name}"
@@ -1537,10 +2261,28 @@ def quotient_classifier_payload() -> dict[str, Any]:
             "superiority_claims_promoted": False,
         },
         "seed_sensitivity": seed_sensitivity,
+        "leakage_attacks": leakage_attacks,
+        "near_duplicate_checks": near_duplicate_checks,
         "neural_gradient_check": _rnn_gradient_check(train_rows[0], vocabulary),
         "negative_controls": {
             "label_permutation": permutation_metrics,
             "label_permutation_seed": 20260821,
+            "family_shuffle": {
+                "metrics": family_shuffle["metrics"],
+                "seed": family_shuffle["seed"],
+                "permuted_family_count": family_shuffle["permuted_family_count"],
+                "description": family_shuffle["description"],
+                "loses_to_all_co_primary": bool(family_shuffle_loses),
+                "compared_models": comparator_models,
+                "chance_level_comparison_excluded": chance_level_models,
+                "comparison_basis": (
+                    "family-shuffle held-out balanced_accuracy must sit strictly "
+                    "below every co-primary model that is itself above chance "
+                    "(balanced_accuracy > 0.5); a chance-level co-primary model "
+                    "provides no signal to lose against and is excluded, and an "
+                    "empty comparator set fails closed"
+                ),
+            },
             "surface_baseline": models["surface_baseline"],
         },
         "limitations": limitations,
@@ -1565,6 +2307,10 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
         "label_blind_features",
         "models",
         "split_overlap",
+        "split_manifest",
+        "hyperparameter_selection",
+        "leakage_attacks",
+        "near_duplicate_checks",
     )
     missing = [key for key in required if key not in payload]
     if missing:
@@ -1572,8 +2318,13 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
     if payload["schema_version"] != QUOTIENT_CLASSIFIER_SCHEMA_VERSION:
         return False, "quotient classifier schema mismatch"
     protocol = scientific_protocol_payload()
+    # The shared envelope contract pins the receipt layer, not the domain
+    # schema; validate against a view carrying the shared receipt version so
+    # the domain schema may advance independently (mirrors compiler_transfer).
+    envelope_view = dict(payload)
+    envelope_view["schema_version"] = RECEIPT_SCHEMA_VERSION
     receipt_valid, receipt_detail = validate_receipt_envelope(
-        payload, expected_protocol=protocol
+        envelope_view, expected_protocol=protocol
     )
     if not receipt_valid:
         return False, f"quotient classifier receipt: {receipt_detail}"
@@ -1607,6 +2358,37 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
         return False, "quotient classifier features are not label blind"
     if payload["split_overlap"] is not False:
         return False, "quotient classifier split overlap"
+    manifest = payload.get("split_manifest")
+    if not isinstance(manifest, dict):
+        return False, "quotient classifier split manifest is missing"
+    assignment = manifest.get("assignment")
+    if not isinstance(assignment, dict) or not assignment:
+        return False, "quotient classifier split assignment is missing"
+    if any(value not in SPLIT_NAMES for value in assignment.values()):
+        return False, "quotient classifier split assignment has an unknown split"
+    if manifest.get("sha256") != _split_manifest_sha256(assignment):
+        return False, "quotient classifier split manifest hash mismatch"
+    per_split = manifest.get("family_ids_per_split")
+    expected_per_split = {
+        split: sorted(
+            family_id
+            for family_id, value in assignment.items()
+            if value == split
+        )
+        for split in SPLIT_NAMES
+    }
+    if not isinstance(per_split, dict) or any(
+        sorted(per_split.get(split, [])) != expected
+        for split, expected in expected_per_split.items()
+    ):
+        return False, "quotient classifier split manifest per-split ledger drift"
+    for split, key in (
+        ("training", "training_family_count"),
+        ("development", "development_family_count"),
+        ("held_out", "held_out_family_count"),
+    ):
+        if len(expected_per_split[split]) != payload.get(key):
+            return False, f"quotient classifier split manifest {key} drift"
     if (
         not isinstance(payload["generator_revision"], str)
         or not isinstance(payload["input_hashes"], dict)
@@ -1626,6 +2408,136 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
                 return False, f"quotient classifier invalid {name}.{metric}"
             if not 0.0 <= float(value) <= 1.0:
                 return False, f"quotient classifier out-of-range {name}.{metric}"
+    for name in MODEL_FAMILIES:
+        row = models[name]
+        starts = row.get("starts")
+        if not isinstance(starts, dict) or not isinstance(
+            starts.get("selection_rule"), str
+        ) or not starts["selection_rule"]:
+            return False, f"quotient classifier start ledger is missing for {name}"
+        catalog = starts.get("catalog")
+        start_scores = starts.get("development_score_by_start")
+        if not isinstance(catalog, list) or not isinstance(start_scores, dict):
+            return False, f"quotient classifier start catalog is missing for {name}"
+        if catalog:
+            if starts.get("selected_start") not in catalog:
+                return (
+                    False,
+                    f"quotient classifier selected start is outside the catalog for {name}",
+                )
+            if sorted(start_scores) != sorted(str(seed) for seed in catalog):
+                return (
+                    False,
+                    f"quotient classifier start score ledger drift for {name}",
+                )
+            if any(
+                not isinstance(value, (int, float))
+                or not np.isfinite(float(value))
+                for value in start_scores.values()
+            ):
+                return (
+                    False,
+                    f"quotient classifier start scores are invalid for {name}",
+                )
+        elif starts.get("selected_start") is not None:
+            return (
+                False,
+                f"quotient classifier closed-form model records a selected start for {name}",
+            )
+        calibration = row.get("calibration")
+        if not isinstance(calibration, dict) or calibration.get(
+            "method"
+        ) != "platt_development":
+            return False, f"quotient classifier calibration record is missing for {name}"
+        parameters = calibration.get("parameters")
+        if not isinstance(parameters, dict) or any(
+            not isinstance(parameters.get(key), (int, float))
+            or not np.isfinite(float(parameters[key]))
+            for key in ("a", "b")
+        ):
+            return (
+                False,
+                f"quotient classifier calibration parameters are invalid for {name}",
+            )
+        for key in ("ece_before", "ece_after", "brier_before", "brier_after"):
+            value = calibration.get(key)
+            if (
+                not isinstance(value, (int, float))
+                or not np.isfinite(float(value))
+                or not 0.0 <= float(value) <= 1.0
+            ):
+                return (
+                    False,
+                    f"quotient classifier calibration {key} is invalid for {name}",
+                )
+        role = calibration.get("metrics_role")
+        if not isinstance(role, str) or "primary" not in role:
+            return (
+                False,
+                f"quotient classifier calibration primary-metrics statement is missing for {name}",
+            )
+    selection = payload.get("hyperparameter_selection")
+    if not isinstance(selection, dict):
+        return False, "quotient classifier hyperparameter selection is missing"
+    if selection.get("fit_split") != "development" or selection.get(
+        "test_rows_used"
+    ) != 0:
+        return False, "quotient classifier hyperparameter selection is not development-only"
+    grid = selection.get("grid")
+    if not isinstance(grid, dict):
+        return False, "quotient classifier hyperparameter grid is missing"
+    logistic_grid = grid.get("calibrated_interpretable")
+    rnn_grid = grid.get("neural_sequence")
+    if (
+        not isinstance(logistic_grid, dict)
+        or not isinstance(logistic_grid.get("l2"), list)
+        or not isinstance(logistic_grid.get("learning_rate"), list)
+    ):
+        return False, "quotient classifier logistic grid drift"
+    if (
+        not isinstance(rnn_grid, dict)
+        or not isinstance(rnn_grid.get("hidden_size"), list)
+        or not isinstance(rnn_grid.get("epochs"), list)
+    ):
+        return False, "quotient classifier RNN grid drift"
+    selected = selection.get("selected_per_model")
+    if not isinstance(selected, dict) or set(MODEL_FAMILIES) - set(selected):
+        return False, "quotient classifier hyperparameter selection ledger is incomplete"
+    logistic_selected = selected.get("calibrated_interpretable")
+    if (
+        not isinstance(logistic_selected, dict)
+        or logistic_selected.get("l2") not in logistic_grid["l2"]
+        or logistic_selected.get("learning_rate") not in logistic_grid["learning_rate"]
+    ):
+        return (
+            False,
+            "quotient classifier selected logistic options are outside the declared grid",
+        )
+    rnn_selected = selected.get("neural_sequence")
+    if (
+        not isinstance(rnn_selected, dict)
+        or rnn_selected.get("hidden_size") not in rnn_grid["hidden_size"]
+        or rnn_selected.get("epochs") not in rnn_grid["epochs"]
+    ):
+        return (
+            False,
+            "quotient classifier selected RNN options are outside the declared grid",
+        )
+    if selected.get("temporal_probabilistic") is not None:
+        return False, "quotient classifier temporal model must stay closed-form"
+    selection_scores = selection.get("scores_by_option")
+    if not isinstance(selection_scores, dict):
+        return False, "quotient classifier selection scores are missing"
+    for name in ("calibrated_interpretable", "neural_sequence"):
+        option_scores = selection_scores.get(name)
+        if not isinstance(option_scores, dict) or not option_scores or any(
+            not isinstance(value, (int, float)) or not np.isfinite(float(value))
+            for value in option_scores.values()
+        ):
+            return (
+                False,
+                f"quotient classifier selection scores are invalid for {name}",
+            )
     sensitivity = payload.get("seed_sensitivity")
     if not isinstance(sensitivity, dict):
         return False, "quotient classifier seed sensitivity is missing"
@@ -1657,6 +2569,115 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
             return (
                 False,
                 f"quotient classifier label-permutation control matches or beats {name}",
+            )
+    family_shuffle = negative_controls.get("family_shuffle")
+    if not isinstance(family_shuffle, dict) or not isinstance(
+        family_shuffle.get("metrics"), dict
+    ):
+        return False, "quotient classifier family-shuffle control is missing"
+    shuffle_accuracy = family_shuffle["metrics"].get("balanced_accuracy")
+    if not isinstance(shuffle_accuracy, (int, float)) or not np.isfinite(
+        float(shuffle_accuracy)
+    ):
+        return False, "quotient classifier family-shuffle control metric is invalid"
+    if family_shuffle.get("seed") != FAMILY_SHUFFLE_SEED:
+        return False, "quotient classifier family-shuffle seed drift"
+    comparator_models = [
+        name
+        for name in MODEL_FAMILIES
+        if float(models[name]["balanced_accuracy"]) > 0.5
+    ]
+    if not comparator_models:
+        return (
+            False,
+            "quotient classifier no co-primary model exceeds chance for the "
+            "family-shuffle comparison",
+        )
+    expected_loses = all(
+        float(shuffle_accuracy) < float(models[name]["balanced_accuracy"])
+        for name in comparator_models
+    )
+    recorded_excluded = family_shuffle.get("chance_level_comparison_excluded")
+    expected_excluded = [
+        name
+        for name in MODEL_FAMILIES
+        if name not in comparator_models
+    ]
+    if list(recorded_excluded or []) != expected_excluded:
+        return (
+            False,
+            "quotient classifier family-shuffle chance-level exclusion drift",
+        )
+    if family_shuffle.get("loses_to_all_co_primary") is not expected_loses:
+        return (
+            False,
+            "quotient classifier family-shuffle control verdict drift",
+        )
+    if not expected_loses:
+        return (
+            False,
+            "quotient classifier family-shuffle control does not lose to all "
+            "co-primary models",
+        )
+    leakage = payload.get("leakage_attacks")
+    if not isinstance(leakage, dict):
+        return False, "quotient classifier leakage attacks are missing"
+    if leakage.get("metadata_only_beats_label_blind") is True:
+        return (
+            False,
+            "quotient classifier metadata-only probe beat the label-blind models",
+        )
+    if leakage.get("metadata_only_beats_label_blind") is not False:
+        return False, "quotient classifier leakage probe verdict is missing"
+    probe_scores = leakage.get("held_out_scores")
+    full_scores = leakage.get("label_blind_full_held_out_scores")
+    if (
+        not isinstance(probe_scores, dict)
+        or not isinstance(full_scores, dict)
+        or set(MODEL_FAMILIES) - set(probe_scores)
+        or set(MODEL_FAMILIES) - set(full_scores)
+        or any(
+            not isinstance(probe_scores[name], (int, float))
+            or not isinstance(full_scores[name], (int, float))
+            for name in MODEL_FAMILIES
+        )
+    ):
+        return False, "quotient classifier leakage probe score ledger is missing"
+    if leakage.get("beats_threshold") != PRACTICAL_MARGIN:
+        return False, "quotient classifier leakage probe threshold drift"
+    expected_beats = any(
+        float(probe_scores[name]) - float(full_scores[name])
+        > PRACTICAL_MARGIN + 1e-12
+        for name in MODEL_FAMILIES
+    )
+    if leakage.get("metadata_only_beats_label_blind") is not expected_beats:
+        return False, "quotient classifier leakage probe verdict drift"
+    boundary = str(leakage.get("conclusion_bound", ""))
+    if "bounded probe only" not in boundary or "no architecture-metadata claim" not in boundary:
+        return False, "quotient classifier leakage probe boundary statement is missing"
+    cross_encoding = leakage.get("cross_encoding_consistency")
+    if not isinstance(cross_encoding, dict) or cross_encoding.get(
+        "check"
+    ) != "cross_encoding_label_consistency":
+        return False, "quotient classifier cross-encoding consistency check is missing"
+    near_duplicate = payload.get("near_duplicate_checks")
+    if not isinstance(near_duplicate, dict):
+        return False, "quotient classifier near-duplicate checks are missing"
+    if list(near_duplicate.get("metrics", ())) != ["byte_identity", "token_jaccard"]:
+        return False, "quotient classifier near-duplicate metrics drift"
+    threshold = near_duplicate.get("threshold")
+    if not isinstance(threshold, (int, float)) or float(threshold) != NEAR_DUPLICATE_THRESHOLD:
+        return False, "quotient classifier near-duplicate threshold drift"
+    flagged_pairs = near_duplicate.get("flagged_pairs")
+    if not isinstance(flagged_pairs, list):
+        return False, "quotient classifier near-duplicate flagged pairs are missing"
+    for pair in flagged_pairs:
+        if not isinstance(pair, dict):
+            return False, "quotient classifier near-duplicate flagged pair is malformed"
+        if pair.get("crosses_training_held_out") is True and pair.get("declared") is not True:
+            return (
+                False,
+                "quotient classifier undeclared training-held-out near-duplicate pair",
             )
     comparisons = payload.get("model_comparisons")
     if not isinstance(comparisons, dict) or set(MODEL_FAMILIES) - set(comparisons):
