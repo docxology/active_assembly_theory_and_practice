@@ -5,7 +5,7 @@ decodes, emulates, models, evaluates, formalizes, or receipts lives here;
 [`../scripts`](../scripts) are thin orchestrators that import from this package
 and write artifacts to the untracked `output/` tree.
 
-58 modules plus `__init__.py`, and one subpackage,
+The package includes the adapter subpackage,
 [`assembly_packages/`](assembly_packages/README.md).
 
 ## Layers
@@ -17,9 +17,9 @@ and write artifacts to the untracked `output/` tree.
 | Protocol & evaluation | `evaluation`, `corpus_coverage`, `quotient_invariance`, `representation_invariance`, `quotient_classifier`, `intervention_analysis`, `compiler_transfer`, `replication`, `replay_vm`, `scientific_program`, `scientific_protocol` | Decoder metrics, negative controls, the P3 invariance benchmark, and the promotion-gate ledger. |
 | Formal | `formal_verification`, `formal_correspondence`, `lean_bridge`, `counterexample_search`, `theorem_phase` | Drivers for the Lean fragment in [`../formal`](../formal/README.md). |
 | External sources | `external_sources`, `external_labeling`, `external_corpus` | Pinned, static-only licensed-source acquisition and label contracts. |
-| Receipts & registries | `receipt`, `artifact_contract`, `provenance`, `reproducibility`, `build_provenance`, `claim_register`, `scholarship`, `validation` | Protocol-v2 artifact envelopes, hash manifests, and the validation oracle. |
+| Receipts & registries | `receipt`, `artifact_contract`, `provenance`, `reproducibility`, `build_provenance`, `claim_register`, `scholarship`, `docs_validation`, `validation` | Protocol-v2 artifact envelopes, hash manifests, and the validation oracle. |
 | Figures | `figures`, `advanced_figures`, `figure_contract`, `visual_atlas` | Source-bound figure specifications, the offline atlas, and the figure registry. |
-| Manuscript & delivery | `manuscript_variables`, `manuscript_registry`, `docx_validation`, `pdf_accessibility` | Token hydration for [`../manuscript`](../manuscript) and post-render DOCX/PDF audits. |
+| Manuscript & delivery | `manuscript_variables`, `manuscript_registry`, `document_rendering`, `docx_validation`, `pdf_accessibility`, `pdf_ua` | Token hydration for [`../manuscript`](../manuscript) and post-render DOCX/PDF audits. |
 
 ## Quick Start
 

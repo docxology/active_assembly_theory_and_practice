@@ -94,8 +94,9 @@ exact numbers are emitted as manuscript variables (`IDENTITY_TRANSITION_MEAN_ACC
 descriptive per-step score intervals; within-fixture observations are dependent
 and the toy corpus is not an inferential sample of binaries. Demonstrating a
 *positive* temporal advantage requires longer or more ambiguous fixtures. That
-is scoped as `MED-01` in [`docs/roadmap.md`](roadmap.md), rather than treated
-as an unfinished part of the current result.
+requires a new experiment with a prospectively frozen endpoint. The completed
+`MED-01` fixture expansion in [the roadmap](roadmap.md) is coverage evidence;
+it does not by itself establish a positive temporal advantage.
 
 ## Generative adequacy
 
@@ -266,8 +267,9 @@ the formal status therefore cannot be cleared by editing a JSON file. The
 generated `formal/ActiveAssembly/GeneratedCorrespondence.lean` bridge checks
 one shared Python/Lean Word64 boundary fixture. The receipt still does not
 establish a general correspondence theorem between Lean and Capstone/Unicorn,
-and it does not cover flags, memory, exceptions, ABI behavior, compiler
-correctness, or the x86 ISA as a whole.
+and its normalized flag-definedness, memory/stack bounds and generated fixture
+invariants do not prove all instruction effects, exceptions, ABI behavior,
+compiler correctness, or the x86 ISA as a whole.
 
 ## Cross-architecture adapter benchmark
 
@@ -348,34 +350,15 @@ The `advanced_evaluation_freshness` check re-derives the headline summary from
 the live generator and compares it to the on-disk artifact, so a stale or
 hand-edited number fails the gate.
 
-## Statistical correction and evaluation scope (2026-10-13)
+## Statistical interpretation
 
-Protocol v2.2 retains the quotient labels, source-family split, models, primary
-metrics, practical margin and percentile cluster intervals. Significance uses
-whole-family prediction swaps under a conditional exchangeability null, with
-inclusive ties and the Monte Carlo `(exceedances + 1) / (replicates + 1)` rule.
-The paired receipt records seed, draw count, exceedances, p-values, and null
-assumptions. Holm adjustment covers all three models by seven baselines by two
-metrics. Nonpositive bootstrap fractions remain descriptive; they are never
-passed to Holm. This retrospective correction withholds superiority claims
-until a new comparison is frozen prospectively and independently evaluated.
-
-The temporal corpus's named family unit is fixture identity, not independently
-sampled source lineage. Its fixed partition is a design inventory. Current
-supervised, factorized and observation-only fits use complete-fixture
-leave-one-out folds, so other inventory partitions can enter a fold's training
-complement. An excluded fixture's labels do not enter that fold's fitting, but
-these folds must not be called permanently held-out or lineage-disjoint tests.
+[Statistics](statistics.md) owns the protocol-2.2 uncertainty and inferential
+contract: whole-family prediction swaps, inclusive ties, plus-one Monte Carlo
+values, the complete Holm family, retrospective withholding of superiority,
+actual fixture exclusion folds and dependent authored quotient lineages.
 
 The HMM uses log-space filtering, smoothing and Viterbi calculations on the
-validated positive tensors. Tiny likelihoods retain their declared values;
-rare events are not rounded up to an arbitrary probability floor. Tests
-compare all three algorithms against exhaustive state-path enumeration.
-The emulation budget counts completed instructions, including the final
-instruction's register and memory effects.
-
-The quotient family unit is a generated transformation identifier. Shared
-authored template lineages remain dependent even when identifiers are disjoint
-across splits. Cluster intervals and prediction swaps describe the finite
-inventory conditionally; they do not establish population-generalization
-uncertainty or independently sampled source lineage.
+validated positive tensors. Rare events retain their declared values;
+independent exhaustive state-path tests verify all three algorithms. The
+emulation budget includes the final completed instruction's register and memory
+effects. These numerical correctness checks do not change the sampling scope.

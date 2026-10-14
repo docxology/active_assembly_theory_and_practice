@@ -131,7 +131,7 @@ uv run python scripts/run_scientific_program.py audit-external-preparation
 
 uv run python scripts/run_scientific_program.py generate-public
 
-# Acquisition is the only network-enabled command and is always explicit.
+# Pinned external acquisition is network-capable only with explicit permission.
 uv run python scripts/run_scientific_program.py acquire-external \
   --manifest configs/external_sources.yaml \
   --allow-network
@@ -165,34 +165,23 @@ uv run python scripts/run_julia_tests.py
 The first `generate-public` call freezes the public toolchain receipt. An
 intentional protocol or public-bundle refresh must explicitly reseed that
 surface; manuscript or figure regeneration does not silently replace it.
-Acquisition is the only network-enabled operation, and operator-side replay
-consumes only the label-blind `output/replication/public/` directory.
+External acquisition and VM setup are explicit network-capable operations;
+operator-side replay consumes only the label-blind `output/replication/public/` directory.
 
-After rendering through the sibling template checkout, validate the standard
-DOCX and tagged PDF as separate delivery surfaces:
-
-```bash
-uv run python scripts/validate_docx_render.py
-uv run python scripts/validate_pdf_accessibility.py
-```
-
-Render through the sibling template engine:
+For the complete producer, test, hydration, native export and document gate:
 
 ```bash
-cd "$TEMPLATE_REPO_ROOT"
-uv run python -m infrastructure.orchestration link-projects --dry-run
-uv run python -m infrastructure.orchestration link-projects
-uv run python scripts/pipeline/stage_03_render.py \
-  --project working/active_assembly_theory_and_practice \
-  --skip-manuscript-hydration
+scripts/run_full_verification.sh --julia
 ```
 
-The project-side `z_generate_manuscript_variables.py` command above is the
-authoritative hydration step. The render command is deliberately run with
-`--skip-manuscript-hydration` so that the template consumes the already
-validated, source-bound manuscript tree; this also avoids a second hydration
-pass with a shorter renderer timeout. If the source, protocol, or generator
-changes, rerun project-side hydration before rendering again.
+For the staged workflow, use `--analysis-only --julia`, then
+`uv run --locked python scripts/render_manuscript.py`, then
+`--post-render-only`. The latter forces strict validation and does not regenerate
+scientific inputs. Template environment/registration prerequisites are in
+[getting started](docs/getting_started.md); [verification](docs/verification.md)
+and [document rendering](docs/document_rendering.md) own the exact gate order.
+The [docs index](docs/README.md) routes methods, statistics, source lineage,
+replay and remaining scientific promotion gates.
 
 ## Outputs
 

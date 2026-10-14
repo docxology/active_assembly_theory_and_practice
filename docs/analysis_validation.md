@@ -79,33 +79,34 @@ the scholarship source ledger, and emits:
 - `output/data/cross_architecture_fixtures.json`
 - `output/data/active_information_frontier.json`
 
-The standard DOCX lane is deliberately a post-render gate. The project-side
-generator can run before a clean checkout has a DOCX, so source validation
-marks that artifact as deferred until the sibling template has rendered it.
-After rendering, run:
+## Regeneration and existing-output boundaries
+
+The default command above is a pre-render producer: it regenerates variables,
+analysis and figures and sets pre-render deferral unless the operator already
+configured it. It does not certify an exported edition. Use the canonical
+[verification modes](verification.md) to force the intended boundary.
+
+After native template export, validate existing inputs strictly:
 
 ```bash
-uv run python scripts/validate_docx_render.py
+ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0 \
+  uv run --locked python scripts/validate_analysis_outputs.py --existing-only
 ```
 
-The command writes `output/data/docx_render_receipt.json` and exits non-zero
-for a missing, corrupt, stale, unresolved, figure/caption-inconsistent, or
-cover-contract-inconsistent document. When a source-configured cover exists,
-the DOCX must contain its exact image bytes and configured alternative text;
-the cover is additional to the registered manuscript-figure count. The gate
-is independent of the PDF/UA audit: a valid DOCX receipt cannot certify PDF
-tags, reading order, or accessibility semantics.
+This mode does not call the variable/figure producers or the summary-figure
+writer. It writes validation JSON and refreshes build provenance while checking
+current science, registries and actual rendered outputs. It preserves the
+source/figure handoff consumed by the editions.
 
+Pre-render registry validation defers only the validation summary values and
+the two consumed DOCX counts. Records, consumer lists and token summaries are
+still checked. Unused compatibility entries do not exempt consumed scientific
+values; final post-render counts must be resolved. The exact deferred set is
+implemented in `src/manuscript_registry.py`, not inferred from a pending status.
 
-The DOCX 1.1 integrity lane also compares embedded media bytes with all 66
-substantive canonical PNGs and binds the active Python cover adapter and Lua
-filter. The two validator-summary figures remain outside this digest comparison
-to avoid a self-referential receipt; their count, caption, alternative and
-nonblankness checks remain active. The DOCX core metadata stores its hydrated-source SHA-256 at conversion time;
-receipt writing rejects stale text instead of rebinding it to changed sources.
-Counts alone cannot certify figure freshness. The adapter also requires the
-canonical composition receipt to match every current numbered hydrated section
-and the combined Markdown bytes, rejecting stale text before conversion.
+DOCX and PDF audits are independent post-render contracts. Their complete
+paths, source/media bindings, self-referential exclusions and manual-review
+obligation are maintained in [document rendering](document_rendering.md).
 
 The validator is intentionally stricter than artifact existence. Empty figures,
 missing citation keys, malformed DOI/URL fields, nonfinite free-energy records,

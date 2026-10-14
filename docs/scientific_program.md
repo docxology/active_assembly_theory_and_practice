@@ -7,7 +7,7 @@ feature roadmap. The program is generated as a machine-readable receipt at
 `src/scientific_program.py`.
 
 The current repository is not a prize-level result. It is a carefully bounded
-measurement and inference demonstrator whose core temporal corpus contains six
+measurement and inference demonstrator whose core temporal corpus contains ten
 transparent x86-64 fixtures, augmented by a 64-family co-primary quotient
 benchmark, a separate four-state representation pilot, and bounded P3--P17
 research receipts.
@@ -108,7 +108,7 @@ the generated program receipt. The abbreviated sequence is:
 | P0 | Source-bound assembly observation bridge | Implemented locally | Exact trace lineage and fail-closed bounded semantics |
 | P1 | Temporal inference under controlled ambiguity | Implemented locally | A preregistered mechanism result with both null and positive directions |
 | P2 | Observation-only parameter learning | Implemented locally | Leakage-safe held-out estimation with negative result preserved |
-| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 64-family source-disjoint co-primary benchmark, clustered statistics, leakage controls, and a separate four-state representation pilot; no semantic-discovery claim |
+| P3 | Quotient-state identifiability and representation invariance | Implemented bounded tranche; promotion blocked | 64-family identifier-disjoint co-primary benchmark with dependent authored lineages, clustered statistics, leakage controls, and a separate four-state representation pilot; no semantic-discovery claim |
 | P4 | Mechanically verified operational semantics | Implemented bounded correspondence; theorem unearned | Explicit 16-register, width-aware Python state, real Capstone/Unicorn step matching, and a separate Lean fragment; no full-ISA Lean/Python theorem |
 | P5 | Cross-architecture and cross-compiler invariance | Implemented local capability tranche; external gate blocked | Exact local compiler/static-object matrix with unavailable targets retained; no licensed external-source effectiveness result |
 | P6 | Information-per-cost law for active observation | Implemented finite measured-cost tranche; general law unearned | Eight-component deterministic costs, local calibration with overhead/regression diagnostics, and exact finite-policy certificates; no infinite-horizon or cross-machine law |
@@ -124,8 +124,8 @@ the generated program receipt. The abbreviated sequence is:
 | P16 | Theorem/countertheorem synthesis and publication promotion | Planned; fail closed | Kernel-checked theorem or preserved counterexample, claim-evidence closure, regenerated accessible package, and owner/reviewer promotion gates |
 | P17 | Protocol-v2 artifact and manuscript closure | Implemented locally; integrity-only | Shared receipt envelope, atomic producer writes, fail-closed artifact audit, source-bound figure/variable closure, and post-render document lineage |
 
-The order is deliberate. The project does not jump from six toy fixtures to a
-large opaque corpus. It first defines what a semantic object is, then builds
+The order is deliberate. The project starts with the transparent fixture corpus
+before expanding to a larger corpus. It first defines what a semantic object is, then builds
 and tests a small formal contract, then exercises real compiler and adapter
 APIs, solves a finite active-information mechanism exactly, freezes a local
 replication interface, and finally records theorem/countertheorem outcomes.
@@ -137,7 +137,7 @@ is closed in the maintainer backlog; actionable follow-up is now scoped as
 ## Source-bound visual atlas
 
 The visual-atlas tranche adds a canonical, receipt-backed specification layer
-over the compatibility figure-path interface. The 68 substantive figure rows (the
+over the compatibility figure-path interface. The registered figure rows (the
 cover is separate) record the generator, source artifact hashes, population
 grain, split and uncertainty semantics, evidence status, claim boundary,
 visible caption, short alternative text, long description, and vector/raster
@@ -162,11 +162,14 @@ curated narrative subset. A visual status such as `unavailable`, `unsupported`,
 `underpowered`, or `not observed` is textually preserved and is never replaced
 with a numeric zero.
 
-## The active program: P3
+## P3: implemented benchmark and future promotion design
 
-P3 is the next scientific tranche because it attacks the largest current gap:
-the present labels are authored phase hypotheses, not discovered semantic
-objects.
+The bounded quotient benchmark and its controls are implemented. The proposals
+below describe stronger designs required for promotion; they are not a list of
+unstarted local tasks or a claim that the existing endpoints were preregistered.
+The remaining gap is scientific: authored phases and finite quotient labels
+are not discovered semantic objects. [Statistics](statistics.md) owns the current
+protocol-2.2 analysis and retrospective limitations.
 
 ### P3.1 Define the quotient before fitting a model
 
@@ -220,8 +223,9 @@ portfolio includes a regularized interpretable classifier, a class-conditional
 temporal Markov classifier, a fixed NumPy recurrent classifier, and a surface
 baseline. It reports balanced accuracy, macro-F1, Brier score, ten-bin ECE,
 confusion counts, false-equivalence/false-distinction rates, and source-family
-cluster bootstrap intervals. With 16 held-out families, the intervals are
-an audit of the frozen benchmark rather than population inference, and no
+cluster bootstrap intervals and protocol-2.2 conditional paired randomization.
+Generated families share authored template lineages. With 16 held-out families,
+the intervals describe the frozen benchmark rather than population inference; no
 superiority or learned-semantics claim is promoted.
 
 The same protocol retains a deliberately insufficient single-state
@@ -242,7 +246,9 @@ The initial preregistered endpoints should be:
 - failure-stratified results by unsupported instruction, memory effect, branch
   effect, and intervention coverage.
 
-The sampling unit is the source-program family, not the instruction. Uncertainty
+For that future design, the sampling unit must be an independently constructed
+source-program lineage. Generated family IDs and individual instructions are
+insufficient independence units. Uncertainty
 must be clustered at that family level. If there are too few independent
 families to support an interval, the result is descriptive and must be labelled
 that way.
@@ -427,8 +433,10 @@ document. Current status is intentionally conservative: P0–P2 are implemented
 locally, and P3–P17 have implemented bounded tranches with explicit receipts.
 The remaining promotion gates are not implied: P3 remains a bounded benchmark,
 P4 lacks a full-ISA theorem, P5 lacks licensed external validity, P6 is
-finite-benchmark optimality, P7 has an observed same-host controlled replay but
-no independent implementation, P13 has source-bound labels but remains
+finite-benchmark optimality, and P7 retains a recorded same-host guest run
+pending attestation and protected scoring. Independent replay is not yet
+observed and independent implementation is absent. P13 has source-bound labels
+but remains
 underpowered until its external acquisition/build replay gate is observed, and
 P16 lacks a broad theorem. The source-bound status is therefore “implemented,
 bounded, and fail-closed,” not “scientifically complete.”

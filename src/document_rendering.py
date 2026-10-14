@@ -2,6 +2,9 @@
 
 from importlib import import_module
 from pathlib import Path
+import json
+import os
+import subprocess
 import tempfile
 
 import yaml
@@ -13,7 +16,11 @@ from .docx_validation import (
     _configured_cover,
     _hydrated_manuscript_hash,
 )
-from .template_hydration import load_template_injection
+from .template_hydration import (
+    load_template_injection,
+    resolve_template_root,
+    validate_hydrated_tree,
+)
 
 
 def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
@@ -96,3 +103,52 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
         render_docx(source, staged, extra_args=args)
         staged.replace(output)
     return output
+
+
+def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
+    """Export current hydrated sources through the registered native template.
+
+    Registration and environment preparation are explicit prerequisites. Never
+    select a different checkout or silently hydrate under the template runtime.
+    """
+    project_root = Path(project_root).resolve()
+    variables = json.loads(
+        (project_root / "output/data/manuscript_variables.json").read_text()
+    )
+    validate_hydrated_tree(
+        project_root / "output/manuscript", variables, project_root=project_root
+    )
+    template_root = resolve_template_root(project_root)
+    project_name = project_root.name
+    working_slot = template_root / "projects/working" / project_name
+    if not working_slot.is_dir() or working_slot.resolve() != project_root:
+        raise RuntimeError(
+            f"register the canonical project working slot first: {working_slot}"
+        )
+    runtime = os.environ.get("TEMPLATE_PYTHON")
+    executable = (
+        Path(runtime).expanduser().resolve()
+        if runtime
+        else (
+            template_root
+            / ".venv"
+            / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        )
+    )
+    if not executable.is_file() or not os.access(executable, os.X_OK):
+        raise RuntimeError(
+            "prepare the template Python environment or set TEMPLATE_PYTHON: "
+            f"{executable}"
+        )
+    subprocess.run(
+        [
+            str(executable),
+            str(template_root / "scripts/pipeline/stage_03_render.py"),
+            "--project",
+            f"working/{project_name}",
+            "--skip-manuscript-hydration",
+        ],
+        cwd=template_root,
+        check=True,
+        stdin=subprocess.DEVNULL,
+    )

@@ -7,7 +7,7 @@ the current manuscript and validation report. It writes:
 - `output/data/reproducibility_manifest.md`
 - `output/figures/artifact_hash_manifest.png`
 - `output/figures/README.md` (a caption ledger documenting every figure)
-- `output/data/figure_registry.json` (the canonical 64-row figure contract)
+- `output/data/figure_registry.json` (the live canonical figure contract)
 - `output/figure_atlas/index.html` (the offline accessible visual atlas)
 
 The rendered PDF has a separate post-render audit at
@@ -16,23 +16,12 @@ into the byte manifest because the report describes the PDF and would create a
 self-referential freshness cycle. The report must be regenerated after every
 render and must pass alongside the strict build-provenance check.
 
-The standard combined DOCX is a separate post-render surface at
-`output/docx/active_assembly_theory_and_practice_combined.docx`. It is emitted
-by the sibling docxology/template renderer when `render.formats.docx: true` in
-`manuscript/config.yaml`. Run
-`uv run python scripts/validate_docx_render.py` after rendering; the resulting
-`output/data/docx_render_receipt.json` binds the document bytes to the hydrated
-manuscript tree and canonical figure registry, checks OOXML package integrity,
-and requires one embedded image and one caption paragraph per registered
-figure. When `manuscript/config.yaml` declares `paper.cover`, the receipt also
-requires exactly one byte-matching cover image, its configured alternative
-text, and the template's cover/page-break contract; the cover is counted in
-DOCX media parity but is not a manuscript figure or caption. Its digest
-excludes only the validator-produced artifact-hash and validation-summary
-figures, whose own nonblankness and registry checks are self-referential; all
-substantive figure rows remain bound. This receipt is intentionally separate
-from the PDF/UA report because DOCX validity does not imply PDF tagging,
-reading order, or scholarly validity.
+The combined DOCX has a separate post-render receipt at
+`output/data/docx_render_receipt.json`. The complete composition, native cover
+projection, source/media binding and PDF/UA workflow are maintained in
+[document rendering](document_rendering.md). Use
+[verification](verification.md) for the strict existing-output boundary;
+regeneration after export changes the consumed scientific inputs.
 
 Each manifest row records:
 
@@ -101,8 +90,8 @@ extension tranche:
   quotient construction, splits, model portfolio, statistics, costs, and
   provenance contract consumed by the extension producers.
 - `output/data/representation_invariance_benchmark.json` and
-  `output/data/quotient_classifier.json` bind the source-family-disjoint
-  quotient benchmark, co-primary classifier portfolio, clustered uncertainty,
+  `output/data/quotient_classifier.json` bind the family-identifier-disjoint
+  quotient benchmark with dependent authored lineages, co-primary classifier portfolio, clustered uncertainty,
   calibration, seed sensitivity, and neural gradient check.
 - `output/data/formal_trace_correspondence.json` binds the real
   Python/Capstone/Unicorn fixture comparison and explicit unsupported boundary;
@@ -175,6 +164,7 @@ dropped from the denominator. Regenerate it with:
 uv run python scripts/run_scientific_program.py label-external
 uv run python scripts/run_scientific_program.py validate-external
 uv run python scripts/run_scientific_program.py audit-external-preparation
+```
 
 `audit-external-preparation` is offline by construction: it rehearses the
 pinned manifest parsing, license-file checks, archive safety, static-only
@@ -238,7 +228,7 @@ checks its reported version, and then runs the real Julia package tests. This
 prevents a compatible-but-different local environment from silently replacing
 the environment that produced the manuscript's native free-energy values.
 
-The developer envelope extends beyond the pinned scientific toolchain. The
+The October 13 producer record extends beyond the pinned scientific toolchain. The
 compiler-transfer receipt records the expanded local toolchain surface:
 Apple clang 21 as the validated static compiler, `nasm` 3.02 and `rustc` 1.95
 as recorded local toolchains (the `rustc` `x86_64-apple-darwin` standard
@@ -251,7 +241,7 @@ behavioral-validity evidence.
 
 The producer order is material: regenerate source-bound data first, then
 figures and figure metadata, then manuscript variables and hydration, then
-render the PDF/HTML/slides, and finally run accessibility, freshness, and
+render the configured editions, and finally run accessibility, freshness, and
 provenance gates. Hand-editing a generated receipt, figure caption, or hydrated
 manuscript is not a reproducible repair and will be overwritten or rejected by
 the next gate.

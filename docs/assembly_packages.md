@@ -59,7 +59,7 @@ implementation obligations:
 These packages are not required for the current fixture gate. They must enter as
 optional extras or command probes with explicit unavailable status, not as
 hidden runtime requirements. If one is selected for implementation, scope it
-under `MED-06` or `MAJ-05` in [`docs/roadmap.md`](roadmap.md) and add a
+as a new bounded tranche or under `MAJ-05` in [the roadmap](roadmap.md) and add a
 source-bound receipt before referring to it as an evidence adapter.
 
 ## Trace Bundle Fields
@@ -93,8 +93,8 @@ pair are retained in `output/data/memory_evidence.json`; its figure is
 bundle remain empty because that fixture does not access mapped data memory.
 `output/data/corpus_coverage.json` records the per-fixture static/dynamic path
 and evidence-regime inventory. `symbolic_facts` contains the bounded
-transfer-function rows, including the documented stack-relative store/load
-subset, while the complete comparison report is emitted as
+transfer-function rows for its declared register/branch subset. The complete
+comparison report is emitted as
 `output/data/symbolic_execution.json`. The dynamic register trace additionally
 contains one `instruction` row per executed step with pre/post `RAX`, `RIP`,
 `RSP`, and `EFLAGS`; its `instruction_index` is execution order, not a static

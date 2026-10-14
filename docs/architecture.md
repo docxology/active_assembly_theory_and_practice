@@ -38,12 +38,12 @@ The project follows the template code-project pattern:
    figure content, scholarship, and manuscript artifacts.
 18. `src/experiments.py` orchestrates the domain modules and writes artifacts.
 
-### current temporal / active / evaluation layer
+## Temporal, active and evaluation layer
 
 19. `src/temporal_model.py` defines the temporal generative model with a
     left-to-right transition matrix `B` and implements HMM forward filtering,
-    Viterbi decoding, and forward–backward smoothing. This is the proper fix for
-    the identity-transition filter, which omitted state dynamics (implicit `B = I`).
+    Viterbi decoding, and forward–backward smoothing. The identity-transition (`B = I`) comparator remains an explicit
+    baseline; temporal structure does not universally improve its competitors.
 20. `src/active_selection.py` implements the expected-free-energy policy
     (epistemic + pragmatic value) and the greedy active-disassembly ordering —
     the *active* half of Active Inference.
@@ -142,3 +142,13 @@ The project follows the template code-project pattern:
 
 Scripts are thin entrypoints. Manuscript variables are generated from the live
 experiment so prose and figures stay aligned with the code.
+
+## Documentation and edition boundary
+
+`src/docs_validation.py` checks authored Markdown structural and index closure.
+`src/document_rendering.py` validates the current hydrated tree and registered
+working slot before invoking the native template export, then completes the
+configured DOCX projection. `src/docx_validation.py`, `src/pdf_accessibility.py`
+and `src/pdf_ua.py` inspect the real editions; the strict existing-output oracle
+refreshes lineage without regenerating their inputs. See
+[document rendering](document_rendering.md) and [verification](verification.md).

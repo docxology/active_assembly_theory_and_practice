@@ -24,6 +24,13 @@ exist, is missing from the generated register, or is not marked `validated`.
 The artifact-reproducibility claim also requires the generated manifest and
 manifest figure to exist before claim closure can pass.
 
-This claim register is deliberately stricter than the prose. It prevents a
-future manuscript edit from adding a confident claim that is not tied to a
-source, generated artifact, and executable validation check.
+`validated` means that a row clears its bounded artifact/check contract. It
+never promotes an external or independent milestone by itself. The generated
+scientific-program and replay receipts own those status fields.
+
+Run `uv run --locked python scripts/check_claim_map.py` after generating the
+register. It requires identifier-set equality with [the authored claim map](claim_map.md)
+and rejects duplicated IDs. [The docs gate](README.md) checks authored structure
+and citations; [analysis validation](analysis_validation.md) checks executable
+artifact closure. These checks require human review of changed claim meaning:
+they do not parse arbitrary prose to prove that every assertion is supported.

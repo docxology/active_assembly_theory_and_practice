@@ -1,6 +1,6 @@
 # Scientific roadmap and current backlog
 
-**Roadmap revision:** 2026-10-13
+**Roadmap revision:** 2026-10-14
 
 **Repository:** `docxology/active_assembly_theory_and_practice`
 **Machine-readable status source:** `output/data/scientific_program.json`
@@ -47,7 +47,7 @@ evidence remain visibly unearned.
 | P13 licensed-source track | Acquisition, static compilation, and source-bound labels closed locally | External validation remains `underpowered` until the full gate passes | `output/data/external_acquisition.json`, `output/data/external_static_validation.json`, `output/data/external_label_contract.json` |
 | P17 protocol, figures, manuscript, and document closure | Closed local integrity tranche | Source-bound local package; not peer review or independent validation | `output/data/reproducibility_manifest.json`, `output/data/figure_registry.json`, `output/data/validation_report.json` |
 
-### Completed historical work: no open TODO remains
+### Completed local implementation tranches
 
 The following action items have been completed and are now maintenance
 surfaces, not unstarted roadmap tasks:
@@ -82,8 +82,9 @@ surfaces, not unstarted roadmap tasks:
   references, fixed-seed policy rollouts, repeated calibration-stability rows,
   and budget-constrained value gaps.
 - the MED-01 longer transparent corpus with repeated authored phases,
-  taken/not-taken branch paths, bounded memory operands, and family-level
-  splits frozen before scoring under protocol schema 2.1.0
+  taken/not-taken branch paths, bounded memory operands, and a fixed
+  partition design inventory introduced under historical protocol schema 2.1.0
+  (current exclusion folds and corrected protocol 2.2 are documented separately)
   (`output/data/corpus_coverage.json`);
 - the MED-02 broader declared-subset semantics expansion covering width
   updates, `INC`/`DEC` carry preservation, `ADC`/`SBB` carry consumption,
@@ -164,9 +165,9 @@ scientifically material, and a manuscript boundary statement.
 
 | ID | Deliverable | Dependencies and acceptance evidence | Promotion effect |
 | --- | --- | --- | --- |
-| MED-05 | Separately controlled replay | Run the public bundle on a separately controlled CI worker or machine, disable network access, return the signed/hash-bound receipt and predictions, and ingest them through the protected scorer. | Can change P15 from local/guest evidence to observed external replay, but not to independent reimplementation. |
+| MED-05 | Separately controlled replay | Run the public bundle on a separately controlled CI worker or machine, disable network access, return predictions and a hash-bound receipt with explicit operator attestation, and ingest them through the protected scorer. | Can change P15 from local/guest evidence to observed external replay, but not to independent reimplementation. |
 
-Note: MED-05 is the only open Medium item and is locally blocked by design.
+MED-05 is the only currently scoped open Medium item and is locally blocked by design.
 It requires a separately operated machine or CI worker; the roadmap forbids
 inferring an independent replay from a local rerun. The replay receipt
 remains `submitted_pending_verification` with `independent_replay`

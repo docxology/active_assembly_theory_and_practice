@@ -93,3 +93,21 @@ def test_existing_output_validation_mode_is_explicit_in_cli_help() -> None:
     assert "without regenerating scientific inputs or figures" in " ".join(
         completed.stdout.split()
     )
+
+
+def test_full_verification_modes_are_explicit_and_conflicts_fail():
+    script = PROJECT_ROOT / "scripts/run_full_verification.sh"
+    help_result = subprocess.run(
+        ["bash", str(script), "--help"], capture_output=True, text=True, check=True
+    )
+    assert "--post-render-only" in help_result.stdout
+    assert "native template" in help_result.stdout
+    for args in (
+        ["--post-render-only", "--analysis-only"],
+        ["--post-render-only", "--julia"],
+        ["--unknown"],
+    ):
+        result = subprocess.run(
+            ["bash", str(script), *args], capture_output=True, text=True, check=False
+        )
+        assert result.returncode == 2

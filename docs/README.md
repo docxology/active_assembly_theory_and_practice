@@ -1,93 +1,50 @@
-# Documentation
+# Documentation index
 
-This folder records the maintained project contract: the observation bridge,
-temporal and active inference layers, quantitative evaluation, scholarship
-boundaries, and scientific roadmap. It is the source of truth for how the
-pipeline is structured, what it claims, and how it is verified. Generated
-artifacts under `output/` are regenerated from the code; the documents in this
-folder and the `manuscript/` sources are authored interfaces.
+These guides describe the current code and its evidence boundaries. Source
+contracts live in `src/` and `configs/`; current results and statuses live in
+regenerated `output/` receipts. Authored prose must agree with those surfaces.
+Committed `data/` and `figures/` files are examples and never producer inputs.
 
-- `architecture.md` describes the disassembly-to-inference pipeline.
-- `assembly_packages.md` defines adapter provenance and the trace schema.
-- `rxinfer_roadmap.md` defines the native Julia/RxInfer free-energy spine.
-- `review_2026_10_13.md` records the comprehensive correctness and methods review, repairs, verification, and remaining environment/evidence limits.
-- `evaluation.md` defines the quantitative evaluation: decoders, metrics,
-  negative controls, adequacy checks, and the bounded headline results.
-- `scholarship.md` defines citation roles and claim boundaries.
-- `claim_map.md` maps key claims to evidence artifacts and boundaries.
-- `claim_register.md` defines generated claim rows, source keys, artifacts, and validation checks.
-- `roadmap.md` closes completed implementation tranches and defines the
-  actionable minor, medium, and major backlog for the remaining evidence
-  gates. It is the maintainer-facing execution view; the generated scientific
-  program receipt remains the machine-readable status source.
-- `scientific_program.md` defines the long-horizon conjecture, falsifiers,
-  dependencies, promotion gates, replication requirements, and award-reality
-  boundary for ambitious research advancement; its machine-readable receipt is
-  `output/data/scientific_program.json`.
-- The P3 representation-invariance benchmark is emitted at
-  `output/data/representation_invariance_benchmark.json`; it freezes
-  source-family-disjoint transformation pairs, near-miss controls, and
-  predeclared protocol endpoints without claiming fitted semantic recovery. It
-  also retains a deliberately insufficient single-state intervention catalog as
-  a negative control, so the primary witness rate cannot be read as a universal
-  separation law.
-- The P9 intervention-power receipt is emitted at
-  `output/data/intervention_power.json`; it exactly enumerates all non-empty
-  intervention subsets, records minimum separating sets, and retains the
-  deliberately underpowered one-state control. It is a finite diagnostic, not
-  semantic identifiability.
-- The P10 parameter-learning robustness surface is emitted in
-  `output/data/parameter_learning.json` and `output/figures/parameter_learning.png`;
-  five deterministic starts per complete-fixture holdout are retained, including
-  weak or unstable fits.
-- The P11--P17 promotion tranche is emitted through
-  `scripts/run_scientific_program.py`: the normalized machine-state and
-  generated Lean bridge receipts, 64-family quotient portfolio, compiler and
-  static-only external-source manifests, measured sensing-cost certificates,
-  label-separated offline replication bundle, theorem/countertheorem ledger,
-  source-bound manuscript registries, and protocol-v2 artifact-envelope audit
-  are all separate evidence surfaces. Use `all` for the canonical local
-  orchestration summary, `seal-artifacts` only for an explicit legacy migration,
-  and `audit-artifacts` as a read-only fail-closed check.
-  `blocked_external`, `underpowered`, `unavailable`, `falsified`, and
-  `unresolved` statuses remain visible and are not promoted to positive claims.
-- `reproducibility.md` defines the generated artifact hash manifest, build receipt, and figure/variable registries.
-- `visual_atlas.md` defines the canonical 64-figure source-bound registry,
-  nine narrative producers, vector/raster outputs, offline accessible atlas,
-  caption rules, status semantics, and visual-QA gates.
-- `analysis_validation.md` defines the generated-output validation oracle.
-- `assembly_packages.md` also documents the pinned Lean formal fragment, real
-  multi-architecture adapter fixtures, and exact finite-horizon information
-  frontier, each with a separate claim boundary.
-- `verification.md` lists the local and template-side gates and keeps the oracle count generated rather than hard-coded. It also defines the post-render PDF tag-tree audit and VeraPDF gate.
-- `replay_vm.md` defines the pinned, blue-backed Lima guest used for a
-  separately controlled same-host replay of the label-blind public bundle. It
-  is evidence of replay under a distinct guest control boundary, not
-  independent reimplementation or independent physical-machine replication.
-- `replay_operator_runbook.md` is the handoff for an operator who is not the
-  producer of the gold-label receipt: what the public bundle contains, what
-  must never be shared, and the offline replay procedure.
-- `AGENTS.md` is the agent-facing guide to this folder: how the documents
-  relate, the fail-closed status vocabulary, and the editing rules.
+Start with [getting started](getting_started.md). Use [verification](verification.md)
+for gate selection and [document rendering](document_rendering.md) for the
+ordered hydration, export and post-render workflow. Read [statistics](statistics.md)
+before interpreting a score, interval, p-value or leakage control.
 
-The project emits the figure set declared by the source-bound registry under
-`output/figures/`; each has a
-generated caption, population, statistic, citation, alternative text, and
-machine-QA row in `output/figures/README.md` and
-`output/data/figure_registry.json`. The rendered manuscript additionally emits
-`output/data/manuscript_variable_registry.json`,
-`output/data/build_provenance.json`, and the post-render
-`output/data/pdf_accessibility_report.json`. The last report inspects the real
-PDF tag tree, not only its metadata flag; it checks language, marked structure,
-heading hierarchy, figure alternatives/captions, formula associated files,
-structured links, and table-tag parity with the generated TeX surface.
-The sibling template consumes the generated boundary projection at
-`output/figures/figure_registry.json`; validation checks that projection is an
-exact alternative-text view of the canonical data registry.
-The same template configuration emits the standard combined DOCX at
-`output/docx/active_assembly_theory_and_practice_combined.docx`; its separate
-post-render receipt is `output/data/docx_render_receipt.json`. The DOCX gate
-checks OOXML integrity, hydration, figure/caption parity, and—when configured—
-the exact cover bytes, cover alternative text, and cover/page-break contract.
-The cover is additional to the registered manuscript-figure count. This gate
-does not stand in for the PDF/UA or visual reading-order audits.
+| Topic | Maintained responsibility |
+| --- | --- |
+| [Getting started](getting_started.md) | Checkout, locked environments, native tools, template registration, first run and troubleshooting. |
+| [Architecture](architecture.md) | Module responsibilities and observation-to-inference data flow. |
+| [Assembly packages](assembly_packages.md) | Real adapter provenance, trace schema, bounded semantics and formal/ISA boundaries. |
+| [RxInfer](rxinfer_roadmap.md) | Authoritative Gaussian spine, categorical companion, native toolchain and expansion boundary. |
+| [Evaluation](evaluation.md) | Temporal, typed, learned and sensing methods, negative results and artifact/check map. |
+| [Statistics](statistics.md) | Sampling units, folds, descriptive uncertainty, paired randomization, multiplicity and retrospective limitations. |
+| [Scholarship](scholarship.md) | Citation roles, primary-source review history and claims that citations cannot support. |
+| [Claim map](claim_map.md) | Authored mapping of scientific claims to evidence and limits. |
+| [Claim register](claim_register.md) | Machine-readable claim-row contract and documentation closure. |
+| [Reproducibility](reproducibility.md) | Artifact envelopes, source/byte lineage, public/private receipts and producer order. |
+| [Visual atlas](visual_atlas.md) | Canonical figure specs, raster/vector metadata, offline atlas and visual QA. |
+| [Analysis validation](analysis_validation.md) | Regeneration versus existing-output checks, deferred values and fail-closed oracle. |
+| [Document rendering](document_rendering.md) | Native template handoff, DOCX media/source binding, tagged PDF and manual review. |
+| [Verification](verification.md) | Pre-render, complete-build and post-render commands, gate scope and failure behavior. |
+| [Replay operator runbook](replay_operator_runbook.md) | Public-only operator handoff, predictions, attestation and protected scoring. |
+| [Replay VM](replay_vm.md) | Pinned Lima guest, filtered committed runtime archive, network boundary and same-host limits. |
+| [Roadmap](roadmap.md) | Completed engineering tranches, actionable maintenance and open promotion gates. |
+| [Scientific program](scientific_program.md) | Long-horizon conjectures, falsifiers, future designs and formal-theory ladder. |
+
+Dated reviews are historical observations, not promises about a later checkout:
+[October 13 correctness and methods review](review_2026_10_13.md) and
+[October 14 documentation and workflow review](review_2026_10_14.md).
+[AGENTS.md](AGENTS.md) records maintenance conventions.
+
+Run the offline authored-document check from the repository root:
+
+```bash
+uv run --locked python scripts/check_docs.py
+uv run --locked python scripts/check_claim_map.py
+```
+
+The first checks titles, fenced blocks, inline local links and Markdown heading
+anchors, bibliography keys and index coverage. It does not fetch remote links
+or establish scientific correctness. The second compares claim identifiers
+against the generated claim register and therefore requires canonical outputs.
+Scientific, figure and rendered-document validation remain separate gates.

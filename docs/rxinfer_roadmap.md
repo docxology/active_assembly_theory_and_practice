@@ -76,7 +76,7 @@ must use the corresponding RxInfer engine history field when they are added.
 > is implemented and tested but is not silently substituted into that spine. The
 > Python side independently gained a genuine temporal HMM
 > (`src/temporal_model.py`, forward filter + Viterbi + smoothing) used for the
-> measured phase-decoding evaluation (see `docs/evaluation.md`).
+> measured phase-decoding evaluation (see [evaluation](evaluation.md)).
 
 1. Discrete HMM over instruction and trace phases.
 2. Gaussian state-space model over register deltas and entropy features.
@@ -121,3 +121,7 @@ trace-hash mismatches. `output/figures/inference_diagnostics.png` is generated
 as a two-panel figure so readers can see that pymdp comparison diagnostics and
 RxInfer Bethe Free Energy are separate recorded objectives rather than a single
 interchangeable series.
+
+Native preparation is in [getting started](getting_started.md); the complete
+gate order is in [verification](verification.md). Expansion items 2--5 are
+proposals, not implemented backends or current scientific evidence.

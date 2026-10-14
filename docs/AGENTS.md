@@ -14,29 +14,18 @@ document — never leave a claim standing that the pipeline does not produce.
 
 ## File Organization
 
-16 topic documents plus this guide and the folder index:
+The folder index owns the complete topic list; do not maintain duplicate line
+counts or live artifact totals here. Its routes are:
 
-```
-docs/
-├── AGENTS.md                     this file
-├── README.md                     folder index
-├── analysis_validation.md        generated-output validation oracle
-├── architecture.md               disassembly-to-inference pipeline (144)
-├── assembly_packages.md          adapter provenance, trace schema, formal fragment (164)
-├── claim_map.md                  claims mapped to evidence and boundaries
-├── claim_register.md             generated claim-row contract (29)
-├── evaluation.md                 decoders, metrics, negative controls, results (349)
-├── replay_operator_runbook.md    handoff for a separately controlled replay (126)
-├── replay_vm.md                  pinned blue-backed Lima replay boundary (148)
-├── reproducibility.md            hash manifest, build receipt, registries (230)
-├── review_2026_10_13.md           October correctness and methods review
-├── roadmap.md                    minor/medium/major backlog by evidence gate (235)
-├── rxinfer_roadmap.md            native Julia/RxInfer free-energy spine (123)
-├── scholarship.md                citation roles and claim boundaries (97)
-├── scientific_program.md         conjecture, falsifiers, promotion gates (434)
-├── verification.md               local and template-side gates (224)
-└── visual_atlas.md               source-bound figure registry and QA gates (122)
-```
+- setup and operations: `getting_started.md`, `verification.md`,
+  `document_rendering.md`;
+- pipeline: `architecture.md`, `assembly_packages.md`, `rxinfer_roadmap.md`;
+- methods and interpretation: `evaluation.md`, `statistics.md`, `scholarship.md`;
+- evidence and lineage: `claim_map.md`, `claim_register.md`,
+  `analysis_validation.md`, `reproducibility.md`, `visual_atlas.md`;
+- replay: `replay_operator_runbook.md`, `replay_vm.md`;
+- future evidence: `roadmap.md`, `scientific_program.md`;
+- historical observations: dated `review_*.md` files.
 
 ## How the documents relate
 
@@ -74,6 +63,11 @@ general sensing law.
 - Keep counts generated where the project already generates them (for example
   the oracle count in `verification.md`).
 - Use relative links between documents and to sibling folders.
+- Run `uv run --locked python scripts/check_docs.py` after editing. It checks
+  offline structure, local links/anchors, bibliography keys and index closure.
+- Keep detailed rendering mechanics in `document_rendering.md`, statistical
+  interpretation in `statistics.md`, and environment setup in `getting_started.md`;
+  other guides link to those contracts instead of duplicating them.
 - Add a new document to the list in [`README.md`](README.md) and to the map
   above in the same change.
 

@@ -6,7 +6,7 @@
 # exit, so this is safe to use as a CI or pre-push gate. It does not replace
 # the individual commands -- it simply runs them together.
 #
-#   scripts/run_full_verification.sh          # deterministic gates
+#   scripts/run_full_verification.sh          # complete build and document gates
 #   scripts/run_full_verification.sh --julia  # + Julia backend Pkg.test()
 #
 set -euo pipefail
@@ -16,20 +16,31 @@ export MPLBACKEND="${MPLBACKEND:-Agg}"
 
 run_julia=0
 analysis_only=0
+post_render_only=0
 for argument in "$@"; do
   case "$argument" in
     --julia) run_julia=1 ;;
     --analysis-only) analysis_only=1 ;;
+    --post-render-only) post_render_only=1 ;;
     --help)
-      echo "Usage: scripts/run_full_verification.sh [--julia] [--analysis-only]"
-      echo "Default: regenerate analysis, test, hydrate, and validate existing rendered documents."
+      echo "Usage: scripts/run_full_verification.sh [--julia] [--analysis-only | --post-render-only]"
+      echo "Default: regenerate analysis, test, hydrate, export through the native template, and strictly audit documents."
       echo "--analysis-only: run the pre-render gates; does not certify PDF or DOCX."
+      echo "--post-render-only: audit a current template export without regenerating scientific inputs."
       exit 0 ;;
     *) echo "Unknown argument: $argument" >&2; exit 2 ;;
   esac
 done
-if [ "$analysis_only" -eq 1 ]; then
+if [ "$post_render_only" -eq 1 ] && { [ "$analysis_only" -eq 1 ] || [ "$run_julia" -eq 1 ]; }; then
+  echo "--post-render-only cannot be combined with --analysis-only or --julia" >&2
+  exit 2
+fi
+# Producer gates explicitly defer document-dependent values. Final gates below
+# force strictness even if the invoking shell inherited the pre-render flag.
+if [ "$post_render_only" -eq 0 ]; then
   export ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=1
+else
+  export ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0
 fi
 steps=0
 failures=0
@@ -55,6 +66,7 @@ run_step() {
 
 # Tests include generated-artifact integration checks. Produce their inputs
 # first, so a fresh clone and a previously rendered checkout use the same order.
+if [ "$post_render_only" -eq 0 ]; then
 run_step "locked development environment" uv sync --locked --extra dev
 run_step "canonical analysis and artifact regeneration" \
   uv run --locked python scripts/run_scientific_program.py all
@@ -66,6 +78,10 @@ run_step "ruff format --check" \
   uv run --locked ruff format --check src tests scripts
 run_step "mypy" \
   uv run --locked mypy
+run_step "authored documentation closure" \
+  uv run --locked python scripts/check_docs.py
+run_step "claim-map identifier closure" \
+  uv run --locked python scripts/check_claim_map.py
 run_step "formal correspondence + Lean receipt" \
   uv run --locked python scripts/run_formal_verification.py
 run_step "blind replication bundle" \
@@ -75,6 +91,18 @@ run_step "RxInfer backend receipt" \
 run_step "manuscript variables + template hydration" \
   uv run --locked python scripts/z_generate_manuscript_variables.py
 if [ "$analysis_only" -eq 0 ]; then
+run_step "native template manuscript export" \
+  uv run --locked python scripts/render_manuscript.py
+fi
+fi
+if [ "$post_render_only" -eq 1 ]; then
+run_step "authored documentation closure" \
+  uv run --locked python scripts/check_docs.py
+run_step "claim-map identifier closure" \
+  uv run --locked python scripts/check_claim_map.py
+fi
+if [ "$analysis_only" -eq 0 ]; then
+export ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0
 run_step "DOCX configured cover projection" \
   uv run --locked python scripts/render_docx_cover.py
 run_step "DOCX structural receipt" \
@@ -84,7 +112,7 @@ run_step "PDF accessibility receipt" \
 run_step "PDF syntax (qpdf)" \
   qpdf --check output/pdf/active_assembly_theory_and_practice_combined.pdf
 run_step "PDF/UA-2 (VeraPDF)" \
-  verapdf --format text --flavour ua2 output/pdf/active_assembly_theory_and_practice_combined.pdf
+  uv run --locked python scripts/validate_pdf_ua.py
 
 fi
 

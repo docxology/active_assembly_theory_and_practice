@@ -32,7 +32,7 @@ Provisioning is the only VM operation that may use the network. It requires an
 explicit `--allow-network` flag and retrieves only the pinned guest image,
 the pinned Linux ARM64 `uv` release, and packages required to build the
 locked Python environment. The source archive is created from a clean Git
-`HEAD`; the public bundle is a deterministic archive containing exactly the
+`HEAD` and filtered through the explicit runtime allowlist in `src/replay_vm.py`; the public bundle is a deterministic archive containing exactly the
 four files under `output/replication/public/`. The host checkout is never
 mounted into the guest.
 
@@ -146,3 +146,16 @@ A same-host VM does not satisfy the stronger requirement for a separately
 operated physical machine or independently controlled CI service. Such a run
 can be ingested through the ordinary external receipt interface, but its
 `control_scope` and limitation must remain visible in the promotion ledger.
+
+## Current endpoint and transfer scope
+
+The retained guest receipt remains `submitted_pending_verification`; the current
+owner-side independent-replay endpoint is `not_yet_observed`. The attestation
+commands above describe the permitted transition, not evidence that it has
+already occurred. Read the live replication receipt for current status.
+
+The runtime export contains the allowlisted source and entry points, rather
+than a full research checkout. Producer algorithms remain inspectable in that
+source. Public-file separation and the namespace proof therefore establish the
+declared replay boundary, not independently owned blind labels or source-code
+secrecy. See the [operator handoff](replay_operator_runbook.md).

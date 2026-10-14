@@ -62,8 +62,10 @@ boundary.
 - Statistical reporting: Brown, Cai, and DasGupta motivate Wilson score
   intervals for small binomial hit counts; the project still treats them as
   descriptive because fixture steps are dependent. Cameron, Gelbach, and
-  Miller motivate resampling at the source-family level, and Holm supplies the
-  declared step-down multiplicity adjustment.
+  Miller motivate grouped resampling, Holm supplies the declared step-down
+  multiplicity adjustment, and Phipson--Smyth motivates the Monte Carlo
+  plus-one rule. None establishes independent source lineages or the
+  conditional prediction-exchangeability assumption; see [statistics](statistics.md).
 - Active sensing: Lindley's expected-information formulation motivates the
   finite model-derived information objective; it does not calibrate physical
   sensor time or establish a general policy theorem.
@@ -135,3 +137,12 @@ corrected and the RO-Crate citation identifies the pinned 1.1.3 release.
 The JSTOR landing title resolves, but its detailed metadata was not accessible
 in this follow-up; the prior record and citation remain rather than inferring
 verification from an unavailable page.
+
+## Maintenance boundary
+
+Dated metadata reviews above apply to their recorded source sets. Current
+ledger/BibTeX/manuscript closure is generated and validated rather than inferred
+from historical totals. The offline docs check also rejects unknown citation
+keys in authored guides; it does not revisit publisher records or certify a
+citation's scientific relevance. New scholarship must identify the precise
+method, interface or limitation it supports and obtain primary-source review.

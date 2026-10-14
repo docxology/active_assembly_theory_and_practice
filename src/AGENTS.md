@@ -8,8 +8,9 @@ builds a figure lives here. [`../scripts`](../scripts/AGENTS.md) hold no logic:
 they import from this package, call it, and write artifacts. Tests in
 [`../tests`](../tests/AGENTS.md) import these modules directly.
 
-The package contains 59 modules plus `__init__.py` and the
-[`assembly_packages/`](assembly_packages/AGENTS.md) subpackage.
+The package includes the [`assembly_packages/`](assembly_packages/AGENTS.md)
+subpackage; the maintained layer map below describes responsibilities rather
+than duplicating a module count.
 
 ## Import boundary
 
@@ -98,6 +99,7 @@ only network-enabled path and always requires `--allow-network`.
 `artifact_contract.py` (protocol-v2 closure over generated JSON),
 `provenance.py`, `reproducibility.py` (hash/size manifest),
 `build_provenance.py` (source/generated/hydrated/rendered lineage),
+`docs_validation.py` (offline authored-Markdown closure),
 `claim_register.py`, `scholarship.py`, `validation.py` (the analysis
 validation oracle).
 
@@ -109,7 +111,7 @@ atlas; `visual_atlas.py` produces the narrative atlas figures.
 `manuscript_variables.py` and `manuscript_registry.py` hydrate the
 `{{TOKEN}}` surface for [`../manuscript`](../manuscript/AGENTS.md);
 `document_rendering.py` completes the source-configured DOCX cover through the
-canonical renderer; `docx_validation.py` and `pdf_accessibility.py` audit the rendered artifacts
+canonical renderer; `docx_validation.py`, `pdf_accessibility.py` and `pdf_ua.py` audit the rendered artifacts
 after the sibling template renders them.
 
 ## Boundaries to preserve

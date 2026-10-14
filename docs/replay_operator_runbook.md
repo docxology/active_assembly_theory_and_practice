@@ -8,7 +8,8 @@ not independent evidence.
 
 ## What the operator receives
 
-The operator receives the repository at a pinned revision plus the contents of
+The operator receives a filtered runtime export from a pinned revision plus
+the contents of
 `output/replication/public/`:
 
 - `public_manifest.json` — label-blind sequences and public features;
@@ -20,11 +21,20 @@ The operator must not receive `output/replication/private/gold_labels.json`, any
 source-family or split manifest, the source-bound label contract, or a file
 whose ordering or filename encodes the protected target. The public bundle is
 already digest-ordered to prevent source-generation order from becoming a
-label channel.
+label channel. The VM implementation's explicit runtime allowlist is `README.md`,
+`pyproject.toml`, `uv.lock`, `src/` and `scripts/`; it excludes tracked `configs/`,
+`data/`, `docs/`, `figures/`, `formal/`, `julia/`, `manuscript/` and `tests/`.
+Use that filtered export for a handoff; a full research checkout includes
+owner-side contracts and is not the prescribed public artifact bundle.
+
+The interface prevents gold-label files from being required by replay. Runtime
+source still exposes producer algorithms; this is not a cryptographic secrecy
+or independently owned blind-challenge guarantee. A stronger challenge needs an
+independent party to own the future labels and scoring boundary.
 
 ## Operator procedure
 
-Run from the pinned repository checkout with network access disabled at the
+Run from the pinned runtime export with network access disabled at the
 machine or job boundary:
 
 ```text
