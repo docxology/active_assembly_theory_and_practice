@@ -109,7 +109,7 @@ The new source-bound artifact family is:
 
 | Surface | Contract that is actually checked | Promotion boundary |
 | --- | --- | --- |
-| quotient classifier | protocol hash, label-blind features, disjoint training/development/held-out families, finite metrics and clustered intervals; development-only hyperparameter selection, five-start ledger, family-shuffle and bounded metadata-probe controls, declared near-duplicate siblings, and cross-encoding consistency | bounded endpoint only; no semantic-discovery or superiority claim without the preregistered margin and independent replay |
+| quotient classifier | protocol hash, label-blind features, disjoint training/development/held-out families, finite metrics and clustered intervals; development-only hyperparameter selection, five-start ledger, family-shuffle and bounded metadata-probe controls, declared near-duplicate siblings, and cross-encoding consistency | bounded endpoint only; semantic discovery is not established and the retrospective correction withholds superiority claims |
 | formal correspondence | real Capstone decode, bounded Unicorn trace, Python reference step alignment, modeled flags, and Lean prerequisite | declared transparent subset only; no complete x86-64 theorem |
 | compiler transfer | exact local target command, source/object/disassembly hashes, Capstone decode, no object execution, explicit unavailable cells | capability receipt only; no compiler-generalization or application claim |
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |

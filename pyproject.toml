@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "capstone>=5.0,<6",
     "defusedxml>=0.7.1",
@@ -24,8 +24,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "mypy>=2.4.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "ruff>=0.17.0",
 ]
 heavy = [
     "angr>=9.2",
@@ -34,6 +36,9 @@ heavy = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src", "src.*"]
+
+[tool.setuptools.package-data]
+src = ["*.lua"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
@@ -61,12 +66,13 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 files = ["src"]
 check_untyped_defs = true
 warn_unused_ignores = true
 
 [tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
 # Thin scripts intentionally import after inserting the project root into
 # sys.path (the shared orchestration bootstrap), so E402 is scoped out there.
 extend-per-file-ignores = { "scripts/*.py" = ["E402"] }

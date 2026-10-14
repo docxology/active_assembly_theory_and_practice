@@ -76,3 +76,20 @@ def test_full_verification_orchestrator_is_valid_shell() -> None:
         text=True,
     )
     assert completed.returncode == 0
+
+
+def test_existing_output_validation_mode_is_explicit_in_cli_help() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts/validate_analysis_outputs.py"),
+            "--help",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "--existing-only" in completed.stdout
+    assert "without regenerating scientific inputs or figures" in " ".join(
+        completed.stdout.split()
+    )

@@ -16,7 +16,6 @@ from .corpus import (
     SPLITS,
     CorpusFixture,
     build_corpus,
-    corpus_family_split,
     fixture_family,
     fixture_split,
 )
@@ -261,9 +260,7 @@ def validate_corpus_coverage_payload(payload: dict[str, object]) -> tuple[bool, 
     # assignment drifts from the frozen constant fails closed.
     expected_assignment: dict[str, str] = {}
     for fixture in build_corpus():
-        expected_assignment[fixture_family(fixture.name)] = fixture_split(
-            fixture.name
-        )
+        expected_assignment[fixture_family(fixture.name)] = fixture_split(fixture.name)
     if assignment != expected_assignment:
         return False, "frozen split assignment does not match the frozen constant"
     row_family_splits: dict[str, str] = {}

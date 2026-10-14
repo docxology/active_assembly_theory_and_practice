@@ -1423,7 +1423,10 @@ def validate_formal_correspondence_payload(payload: object) -> tuple[bool, str]:
         if not isinstance(fixture, dict):
             return False, "generated Lean bridge fixture is not an object"
         if fixture.get("bridge_id") != declared["bridge_id"]:
-            return False, f"generated Lean bridge fixture drift at {declared['bridge_id']}"
+            return (
+                False,
+                f"generated Lean bridge fixture drift at {declared['bridge_id']}",
+            )
         if list(fixture.get("theorems", [])) != list(declared["theorems"]):
             return False, (
                 f"generated Lean bridge theorem manifest drift at {declared['bridge_id']}"

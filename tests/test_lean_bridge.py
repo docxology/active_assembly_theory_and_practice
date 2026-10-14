@@ -94,9 +94,7 @@ def test_bridge_fixture_traces_fail_closed_on_mismatch(
     monkeypatch.setattr(
         lean_bridge.subprocess,
         "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=0, stdout="", stderr=""
-        ),
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
     )
     monkeypatch.setattr(
         lean_bridge,
@@ -125,9 +123,7 @@ def test_bridge_fails_closed_when_emulation_is_unavailable(
     monkeypatch.setattr(
         lean_bridge.subprocess,
         "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=0, stdout="", stderr=""
-        ),
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
     )
 
     def broken_emulation(fixture: object) -> object:

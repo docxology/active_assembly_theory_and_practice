@@ -1,5 +1,6 @@
 {
-  "claim_count": 32,
+  "artifact_id": "output/data/claim_register.json",
+  "claim_count": 40,
   "claims": [
     {
       "artifact_paths": [
@@ -460,7 +461,7 @@
         "output/data/parameter_learning.json",
         "output/figures/parameter_learning.png"
       ],
-      "boundary": "The estimator uses an ordered-state scaffold, a reference-model initialization, a positive transition-support prior, and only six transparent toy fixtures; its held-out accuracy is a finite implementation diagnostic, not evidence of unsupervised semantic discovery, identifiable phase meanings, or general binary-analysis performance.",
+      "boundary": "The estimator uses an ordered-state scaffold, a reference-model initialization, a positive transition-support prior, and the authored transparent toy fixture corpus; its held-out accuracy is a finite implementation diagnostic, not evidence of unsupervised semantic discovery, identifiable phase meanings, or general binary-analysis performance.",
       "claim_id": "CLM-024",
       "claim_type": "observation_only_parameter_learning",
       "statement": "An ordered categorical HMM can be fit by observation-only Baum-Welch expectation-maximization on training-fixture observation IDs, with phase labels reserved for held-out scoring and a complete-fixture comparison against supervised MAP and the fixed reference model.",
@@ -606,8 +607,8 @@
     {
       "artifact_paths": [
         "output/data/replication_manifest.json",
-        "output/replication/public_manifest.json",
-        "output/replication/gold_labels.json"
+        "output/replication/public/public_manifest.json",
+        "output/replication/private/gold_labels.json"
       ],
       "boundary": "This is a deterministic no-network local reproduction interface. It does not constitute independent replay, a public challenge, or an external-validity result until a separately controlled implementation reproduces the receipt.",
       "claim_id": "CLM-032",
@@ -640,14 +641,206 @@
         "theorem_countertheorem_contract",
         "theorem_countertheorem_freshness"
       ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/intervention_power.json",
+        "output/figures/intervention_power.png"
+      ],
+      "boundary": "This is an exact finite combinatorial diagnostic over a source-bound outcome matrix. Singleton separators and a negative control do not establish semantic identifiability, completeness of the intervention catalog, or a universal separation law.",
+      "claim_id": "CLM-034",
+      "claim_type": "finite_intervention_power_diagnostic",
+      "statement": "The finite quotient benchmark enumerates every non-empty subset of its four declared initial-state interventions and reports the minimum separating sets for the current equivalent and near-miss outcome matrix.",
+      "status": "validated",
+      "support_keys": [
+        "capstone",
+        "unicorn",
+        "intel_sdm"
+      ],
+      "validation_checks": [
+        "intervention_power_contract",
+        "intervention_power_freshness",
+        "figure_intervention_power"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/parameter_learning.json",
+        "output/figures/parameter_learning.png"
+      ],
+      "boundary": "The multi-start result is a finite seed-sensitivity and robustness analysis. It does not establish stable latent parameters, unsupervised semantic discovery, or population-level performance; the observed spread is retained as a limitation.",
+      "claim_id": "CLM-035",
+      "claim_type": "observation_only_initialization_robustness",
+      "statement": "Observation-only ordered-HMM fitting is evaluated across five frozen initializations for each of six complete-fixture holdouts, with every held-out score and pairwise label-agreement diagnostic retained.",
+      "status": "validated",
+      "support_keys": [
+        "dempster1977em",
+        "rabiner1989tutorial"
+      ],
+      "validation_checks": [
+        "parameter_learning_contract",
+        "parameter_learning_freshness",
+        "parameter_learning_leakage_guard",
+        "figure_parameter_learning"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "configs/external_sources.yaml",
+        "output/data/external_source_validation.json"
+      ],
+      "boundary": "This receipt records a controlled acquisition and static-analysis interface. It is not external validity or application effectiveness until the project, revision, label-count, build, and independent-replay gates pass.",
+      "claim_id": "CLM-036",
+      "claim_type": "licensed_external_validation_boundary",
+      "statement": "The external-validation track uses an immutable manifest with license, revision, archive-hash, compiler, and static-only safety fields; the pinned source rows and their underpowered label/build gates remain visible rather than becoming a zero-valued application result.",
+      "status": "validated",
+      "support_keys": [
+        "wilkinson2016fair"
+      ],
+      "validation_checks": [
+        "external_source_contract",
+        "external_source_freshness",
+        "figure_external_source_provenance"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "configs/external_sources.yaml",
+        "output/data/external_capabilities.json",
+        "output/data/external_static_validation.json"
+      ],
+      "boundary": "Static compilation and decoding establish coverage and provenance only. They do not establish source equivalence, project-held-out accuracy, compiler correctness, or application effectiveness.",
+      "claim_id": "CLM-038",
+      "claim_type": "licensed_static_source_coverage",
+      "statement": "Pinned permissively licensed source rows are acquired only through explicit network opt-in, checked against archive and license digests, compiled with an allowlisted static argument vector, and decoded with object/disassembly hashes while emitted objects remain unexecuted.",
+      "status": "validated",
+      "support_keys": [
+        "wilkinson2016fair"
+      ],
+      "validation_checks": [
+        "external_static_contract",
+        "external_static_freshness",
+        "external_capability_contract",
+        "external_capability_freshness"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/replication_manifest.json",
+        "output/replication/public/protocol_manifest.json",
+        "output/replication/public/toolchain_receipt.json",
+        "output/replication/public/REPLAY_INSTRUCTIONS.md"
+      ],
+      "boundary": "The repository can prepare and ingest a receipt but cannot fabricate the separate run. Independent replay, when observed, is not independent reimplementation and does not establish new external validity.",
+      "claim_id": "CLM-039",
+      "claim_type": "separately_controlled_replay_boundary",
+      "statement": "The frozen public replay bundle carries protocol, toolchain, instruction, and prediction hashes, while the protected ingestion path requires an explicit separately controlled-run attestation before recording observed independent replay.",
+      "status": "validated",
+      "support_keys": [
+        "wilkinson2016fair",
+        "acm2020artifact"
+      ],
+      "validation_checks": [
+        "replication_contract",
+        "replication_freshness",
+        "independent_replay_contract",
+        "independent_replay_freshness"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/research_protocol.json",
+        "output/data/validation_report.json",
+        "output/figures/artifact_receipt_closure.png"
+      ],
+      "boundary": "The receipt contract detects stale, mixed, or bypassed generated artifacts; it does not establish semantic identifiability, external validity, independent replication, or a formal theorem.",
+      "claim_id": "CLM-037",
+      "claim_type": "protocol_artifact_closure",
+      "statement": "Project-owned generated JSON artifacts carry a shared protocol-v2 receipt layer distinct from their domain schema, and the producer pipeline binds that surface to manuscript and document-generation checks.",
+      "status": "validated",
+      "support_keys": [
+        "w3cprov2013",
+        "rocrate2023",
+        "sandve2013repro",
+        "acm2020artifact"
+      ],
+      "validation_checks": [
+        "artifact_receipt_surface",
+        "scientific_protocol_contract",
+        "figure_artifact_receipt_closure"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/counterexample_search.json",
+        "output/data/formal_trace_correspondence.json",
+        "output/figures/counterexample_search.png"
+      ],
+      "boundary": "The search is bounded to the declared finite candidate list and the declared reference-interpreter domain. A holds result covers only the enumerated inputs; a falsified candidate narrows the claim and does not prove the strongest negation, establish complete ISA semantics, or promote a cross-language theorem.",
+      "claim_id": "CLM-040",
+      "claim_type": "formal_counterexample_search",
+      "statement": "A smallest-first exhaustive search over the declared bounded x86-64 reference model resolves each declared candidate theorem to a re-verified minimal counterexample or an explicit holds-in-searched-domain result, keeping falsified generalizations as preserved evidence.",
+      "status": "validated",
+      "support_keys": [
+        "intel_sdm",
+        "sandve2013repro"
+      ],
+      "validation_checks": [
+        "counterexample_search_contract",
+        "counterexample_search_freshness",
+        "figure_counterexample_search"
+      ]
+    },
+    {
+      "artifact_paths": [
+        "output/data/sensing_stress.json",
+        "output/data/active_information_frontier.json",
+        "output/figures/sensing_stress.png"
+      ],
+      "boundary": "Regret and optimality gaps are exact-enumeration quantities over the declared finite sensor space; seeded rollouts are fixed-seed diagnostics; timing-stability rows are machine-specific measurements. The study establishes no universal information-per-cost law and no cross-machine calibration invariance.",
+      "claim_id": "CLM-041",
+      "claim_type": "active_sensing_stress_study",
+      "statement": "The active-sensing stress study evaluates policy controls against exact finite-horizon dynamic-programming references across a declared horizon, budget, and cost-weight grid, and repeats the local timing calibration to record coefficient drift and residual stability.",
+      "status": "validated",
+      "support_keys": [
+        "friston2017activeinference",
+        "sandve2013repro"
+      ],
+      "validation_checks": [
+        "sensing_stress_contract",
+        "sensing_stress_freshness",
+        "figure_sensing_stress"
+      ]
     }
   ],
+  "generator_revision": "3db6f0896a2141db2186373b748ae2fe4816f0d65259cc84a1709fe812cd8774",
+  "input_hashes": {
+    "producer/src/claim_register.py": "3db6f0896a2141db2186373b748ae2fe4816f0d65259cc84a1709fe812cd8774",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
+  "producer": "src/claim_register.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "artifact-payload-v1",
+  "status": "implemented_local",
   "status_counts": {
-    "validated": 32
+    "validated": 40
+  },
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
   },
   "type_counts": {
     "action_conditioned_sensing": 1,
     "active_selection": 1,
+    "active_sensing_stress_study": 1,
     "ambiguity_ablation": 1,
     "artifact_reproducibility": 1,
     "blind_replication_harness": 1,
@@ -658,15 +851,21 @@
     "decoder_calibration": 1,
     "evaluation_controls": 1,
     "exact_information_policy": 1,
+    "finite_intervention_power_diagnostic": 1,
+    "formal_counterexample_search": 1,
     "formal_verification_receipt": 1,
     "generative_adequacy": 1,
     "held_out_estimation": 1,
     "implemented_trace": 2,
     "intervention_separation_control": 1,
+    "licensed_external_validation_boundary": 1,
+    "licensed_static_source_coverage": 1,
     "model_evidence": 1,
     "observation_model": 1,
+    "observation_only_initialization_robustness": 1,
     "observation_only_parameter_learning": 1,
     "phase_segmentation": 1,
+    "protocol_artifact_closure": 1,
     "quotient_protocol": 1,
     "representation_invariance_benchmark": 1,
     "roadmap_scope": 1,
@@ -674,8 +873,15 @@
     "scholarship_boundary": 1,
     "scientific_program_contract": 1,
     "segmentation_evaluation": 1,
+    "separately_controlled_replay_boundary": 1,
     "temporal_inference": 1,
     "theorem_or_countertheorem_phase": 1,
     "typed_observation_model": 1
-  }
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

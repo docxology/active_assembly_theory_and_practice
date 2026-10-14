@@ -57,7 +57,7 @@ checks the artifacts that a normal test suite can miss:
   `scripts/validate_docx_render.py` and
   `output/data/docx_render_receipt.json`.
 
-Run the validator from the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
+Run the validator from the project checkout:
 
 ```bash
 uv run python scripts/validate_analysis_outputs.py
@@ -95,6 +95,17 @@ the DOCX must contain its exact image bytes and configured alternative text;
 the cover is additional to the registered manuscript-figure count. The gate
 is independent of the PDF/UA audit: a valid DOCX receipt cannot certify PDF
 tags, reading order, or accessibility semantics.
+
+
+The DOCX 1.1 integrity lane also compares embedded media bytes with all 66
+substantive canonical PNGs and binds the active Python cover adapter and Lua
+filter. The two validator-summary figures remain outside this digest comparison
+to avoid a self-referential receipt; their count, caption, alternative and
+nonblankness checks remain active. The DOCX core metadata stores its hydrated-source SHA-256 at conversion time;
+receipt writing rejects stale text instead of rebinding it to changed sources.
+Counts alone cannot certify figure freshness. The adapter also requires the
+canonical composition receipt to match every current numbered hydrated section
+and the combined Markdown bytes, rejecting stale text before conversion.
 
 The validator is intentionally stricter than artifact existence. Empty figures,
 missing citation keys, malformed DOI/URL fields, nonfinite free-energy records,

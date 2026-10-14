@@ -10,6 +10,7 @@ folder and the `manuscript/` sources are authored interfaces.
 - `architecture.md` describes the disassembly-to-inference pipeline.
 - `assembly_packages.md` defines adapter provenance and the trace schema.
 - `rxinfer_roadmap.md` defines the native Julia/RxInfer free-energy spine.
+- `review_2026_10_13.md` records the comprehensive correctness and methods review, repairs, verification, and remaining environment/evidence limits.
 - `evaluation.md` defines the quantitative evaluation: decoders, metrics,
   negative controls, adequacy checks, and the bounded headline results.
 - `scholarship.md` defines citation roles and claim boundaries.

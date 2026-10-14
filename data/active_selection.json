@@ -1,5 +1,14 @@
 {
+  "artifact_id": "output/data/active_selection.json",
   "confidence_threshold": 0.7,
+  "generator_revision": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+  "input_hashes": {
+    "producer/src/advanced_inference.py": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
   "per_fixture": {
     "x86_accumulator": {
       "active_no_worse_than_fixed": true,
@@ -124,6 +133,174 @@
           1,
           2,
           3
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_branch_not_taken": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.9478540998805407,
+          0.4933477119248455,
+          0.5718750289928181,
+          0.5814594398956889,
+          0.784166520586927,
+          0.8781223821078267
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.812917400988094,
+          1.6950833119197584,
+          1.7998144949510257,
+          1.7925164451627429,
+          1.8096166404462302,
+          1.8034876797714114
+        ],
+        "observation_id_order": [
+          0,
+          4,
+          4,
+          3,
+          1,
+          1,
+          3
+        ],
+        "order": [
+          0,
+          2,
+          5,
+          1,
+          3,
+          6,
+          4
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.8713634456374516,
+          0.5245175389933502,
+          0.7399558838016991,
+          1.0531109713784408,
+          1.108985349795784,
+          0.8781223821078267
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          2.1060737126816393,
+          1.4449135625839535,
+          2.0071978140364037,
+          2.104914556804797,
+          1.8476338476453982,
+          1.5608965015400975
+        ],
+        "observation_id_order": [
+          0,
+          1,
+          1,
+          3,
+          3,
+          4,
+          4
+        ],
+        "order": [
+          0,
+          3,
+          6,
+          1,
+          4,
+          2,
+          5
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_call_return": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.1680863544597521,
+          0.14825496982492975,
+          0.13215024325284871,
+          0.11916208103258812
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.7774886169761215,
+          1.7879005434426574,
+          1.7909702737222422,
+          1.7911177656028558,
+          1.7912414518844253
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          5,
+          4,
+          4,
+          4
+        ],
+        "order": [
+          0,
+          1,
+          3,
+          2,
+          4,
+          5
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.1680863544597521,
+          0.14825496982492975,
+          0.13215024325284871,
+          0.11916208103258812
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          1.4816868810046588,
+          1.712869209727336,
+          1.7719280845932326,
+          1.775654742655974,
+          1.7787713070077944
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          5,
+          4,
+          4,
+          4
+        ],
+        "order": [
+          0,
+          1,
+          3,
+          2,
+          4,
+          5
         ],
         "policy": "realized",
         "steps_to_confidence": 1
@@ -400,6 +577,206 @@
         "policy": "realized",
         "steps_to_confidence": 1
       }
+    },
+    "x86_optimization_rewrite": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.6821244458860884,
+          0.9777509948611466,
+          0.6104754182060693,
+          0.13728096398116021,
+          0.021757554297182007,
+          0.0030722526251880755
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.7774886169761215,
+          1.8248040698159984,
+          1.8239860023611403,
+          1.6900478712348237,
+          1.5048939804176107,
+          1.7083114147034966,
+          1.7779688758760432
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "order": [
+          0,
+          3,
+          4,
+          1,
+          2,
+          5,
+          6,
+          7
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.24697661396047124,
+          0.6324175063712,
+          0.5917968659951579,
+          0.15637556950896642,
+          0.02615647645628751,
+          0.003787848193867478,
+          0.003072252625188188
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          1.4816868810046588,
+          2.177200361638784,
+          1.7511388288520129,
+          1.3563381727418635,
+          1.661540376175376,
+          1.769390840965635,
+          1.7910438736593757
+        ],
+        "observation_id_order": [
+          0,
+          5,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2
+        ],
+        "order": [
+          0,
+          3,
+          1,
+          2,
+          5,
+          6,
+          7,
+          4
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
+    },
+    "x86_stack_local": {
+      "active_no_worse_than_fixed": true,
+      "active_steps_to_confidence": 1,
+      "fixed_steps_to_confidence": 1,
+      "predictive_selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.07698245432817209,
+          0.03141632707707084,
+          0.0202474720002346,
+          0.08247431561300765,
+          0.18240950045006762,
+          0.5496054593340565,
+          0.6323636458014471,
+          0.1859565754580753
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          1.5199987937508936,
+          1.4873985052070444,
+          1.7894969528575178,
+          1.7912020212440134,
+          1.795537389062838,
+          1.799945487460823,
+          1.8274819138868181,
+          1.8092607564101777,
+          1.5506722114161942
+        ],
+        "observation_id_order": [
+          0,
+          0,
+          5,
+          5,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "order": [
+          0,
+          2,
+          1,
+          5,
+          6,
+          3,
+          4,
+          7,
+          8
+        ],
+        "policy": "predictive",
+        "steps_to_confidence": 1
+      },
+      "predictive_steps_to_confidence": 1,
+      "selection": {
+        "belief_entropy_by_step": [
+          0.5570492021838674,
+          0.07698245432817209,
+          0.03141632707707084,
+          0.0202474720002346,
+          0.08247431561300765,
+          0.18240950045006762,
+          0.5496054593340565,
+          0.6323636458014471,
+          0.1859565754580753
+        ],
+        "confidence_threshold": 0.7,
+        "efe_by_step": [
+          0.8253274349436833,
+          1.3116927213723595,
+          1.7461933419769538,
+          1.7805906141512187,
+          1.853986312840828,
+          1.891694654065115,
+          2.1589554281120438,
+          1.8745176556954455,
+          1.3453523988846832
+        ],
+        "observation_id_order": [
+          0,
+          0,
+          5,
+          5,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "order": [
+          0,
+          2,
+          1,
+          5,
+          6,
+          3,
+          4,
+          7,
+          8
+        ],
+        "policy": "realized",
+        "steps_to_confidence": 1
+      }
     }
   },
   "preference": [
@@ -410,10 +787,29 @@
     1.0,
     1.0
   ],
+  "producer": "src/advanced_inference.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "artifact-payload-v1",
+  "status": "implemented_local",
   "summary": {
     "active_never_worse": true,
     "active_strictly_fewer_steps": 0,
-    "fixture_count": 6,
-    "ties": 6
-  }
+    "fixture_count": 10,
+    "ties": 10
+  },
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

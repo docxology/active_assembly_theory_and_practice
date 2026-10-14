@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-
 from copy import deepcopy
 
 from src.corpus import (
@@ -160,9 +159,7 @@ def test_stack_local_fixture_present_with_exact_bytes() -> None:
     """MED-01: the stack-local fixture bytes must be in the corpus verbatim."""
 
     expected = bytes.fromhex(
-        "b807000000 50 b903000000 83c003 83e802 59 d1e0 83c002 83e808".replace(
-            " ", ""
-        )
+        "b807000000 50 b903000000 83c003 83e802 59 d1e0 83c002 83e808".replace(" ", "")
     )
     matches = [f for f in build_corpus() if f.name == "x86_stack_local"]
     assert len(matches) == 1
@@ -238,9 +235,7 @@ def test_optimization_rewrite_observation_ids_hand_checked() -> None:
     authored latent phase is accumulator_update: ambiguity is data (MED-01).
     """
 
-    fixture = next(
-        f for f in build_corpus() if f.name == "x86_optimization_rewrite"
-    )
+    fixture = next(f for f in build_corpus() if f.name == "x86_optimization_rewrite")
     assert fixture_observation_ids(fixture) == (0, 1, 1, 5, 2, 1, 1, 1)
 
 
@@ -274,14 +269,12 @@ def test_frozen_family_split_is_reimport_stable() -> None:
     first = corpus_family_split()
     second = dict(CORPUS_FAMILY_SPLIT)
     assert first == second
-    assert PROTOCOL_SCHEMA_VERSION == "2.1.0"
+    assert PROTOCOL_SCHEMA_VERSION == "2.2.0"
     protocol = build_scientific_protocol()
     block = protocol.split_contract["temporal_corpus_split"]
     assert block["fixture_split"] == second
     assert block["frozen_before_scoring"] is True
-    assert block["holdout_scoring"] == (
-        "leave_one_fixture_out_over_complete_fixtures"
-    )
+    assert block["holdout_scoring"] == ("leave_one_fixture_out_over_complete_fixtures")
     assert set(block["fixture_bytes_sha256"]) == set(second)
 
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-`figures/` is a tracked snapshot of 12 generated PNG figures, kept so a reader
+`figures/` is a tracked snapshot of 18 generated PNG figures, kept so a reader
 can see representative output without running the pipeline. It is not an input
 directory and not the path the manuscript resolves: manuscript sources
 reference `../output/figures/<name>.png` after token hydration, per
@@ -17,7 +17,7 @@ Figure code lives in [`../src`](../src):
 - `src/figures.py` — publication figures for the demonstrator; every file in
   this snapshot is named there.
 - `src/advanced_figures.py` — temporal, active, and evaluation-layer figures,
-  including `active_efe.png`, `model_comparison.png`, and the six
+  including `active_efe.png`, `model_comparison.png`, and the ten
   `temporal_beliefs_*` traces.
 - `src/figure_contract.py` — canonical source-bound figure specifications and
   the offline figure atlas; it declares the specs behind
@@ -55,8 +55,8 @@ uv run python scripts/validate_analysis_outputs.py                  # figure-reg
 ## Best Practices
 
 - Do regenerate into `output/figures/` and refresh this snapshot deliberately.
-- Do keep the fixture-named traces aligned with `src/corpus.py`; the six
-  `temporal_beliefs_*` names are the six corpus fixtures.
+- Do keep the fixture-named traces aligned with `src/corpus.py`; the ten
+  `temporal_beliefs_*` names are the ten corpus fixtures.
 - Do not hand-edit or re-crop a PNG here; the audit compares hashes.
 - Do not reference this folder from manuscript sources.
 

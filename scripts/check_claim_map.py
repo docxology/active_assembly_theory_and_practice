@@ -72,7 +72,9 @@ def main() -> int:
 
     map_set = set(map_ids)
     register_set = set(register_ids)
-    duplicated = sorted({claim_id for claim_id in map_ids if map_ids.count(claim_id) > 1})
+    duplicated = sorted(
+        {claim_id for claim_id in map_ids if map_ids.count(claim_id) > 1}
+    )
     missing_from_map = sorted(register_set - map_set)
     missing_from_register = sorted(map_set - register_set)
 
@@ -84,9 +86,15 @@ def main() -> int:
         return 0
 
     if duplicated:
-        print(f"claim IDs repeated across claim_map.md rows: {duplicated}", file=sys.stderr)
+        print(
+            f"claim IDs repeated across claim_map.md rows: {duplicated}",
+            file=sys.stderr,
+        )
     if missing_from_map:
-        print(f"claim IDs absent from docs/claim_map.md: {missing_from_map}", file=sys.stderr)
+        print(
+            f"claim IDs absent from docs/claim_map.md: {missing_from_map}",
+            file=sys.stderr,
+        )
     if missing_from_register:
         print(
             f"claim IDs in docs/claim_map.md absent from claim_register.json: "

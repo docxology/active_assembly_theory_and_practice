@@ -61,8 +61,8 @@ def _template_implementation_hashes(template_root: Path | None) -> dict[str, str
         if candidate.is_dir():
             paths.extend(
                 path
-                for path in sorted(candidate.rglob("*.py"))
-                if "__pycache__" not in path.parts
+                for path in sorted(candidate.rglob("*"))
+                if path.suffix in {".py", ".lua"} and "__pycache__" not in path.parts
             )
         elif candidate.is_file():
             paths.append(candidate)
@@ -84,8 +84,8 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "manuscript" / "assets" / "active_assembly_cover.png",
         *sorted(
             path
-            for path in (project_root / "src").rglob("*.py")
-            if "__pycache__" not in path.parts
+            for path in (project_root / "src").rglob("*")
+            if path.suffix in {".py", ".lua"} and "__pycache__" not in path.parts
         ),
         *sorted(
             path

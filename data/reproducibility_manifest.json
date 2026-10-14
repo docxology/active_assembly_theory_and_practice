@@ -1,6 +1,6 @@
 {
   "all_required_present": true,
-  "artifact_count": 111,
+  "artifact_count": 116,
   "artifact_id": "output/data/reproducibility_manifest.json",
   "artifact_type_counts": {
     "action_sensing": 1,
@@ -14,10 +14,11 @@
     "evaluation": 4,
     "external_acquisition": 1,
     "external_capabilities": 1,
+    "external_corpus_preparation_audit": 1,
     "external_label_contract": 1,
     "external_source_validation": 1,
     "external_static_validation": 1,
-    "figure": 57,
+    "figure": 61,
     "formal_correspondence": 1,
     "formal_verification": 1,
     "independent_replay_receipt": 1,
@@ -47,14 +48,14 @@
   "artifacts": [
     {
       "artifact_type": "trace",
-      "bytes": 2741,
+      "bytes": 2753,
       "claim_ids": [
         "CLM-001"
       ],
       "generated_by": "src.experiments.run_experiment",
       "path": "output/data/disassembly_trace.json",
       "required": true,
-      "sha256": "d8c41a2ce349010ee4d02965b5fab67ff7dbe5ecb8805897e9df46d425029d9b",
+      "sha256": "6b95ccd371dc6215b686adbbcda1c7c288125292489cebe5b953cc933e8371dd",
       "status": "present",
       "validation_checks": [
         "trace_instruction_observation_alignment"
@@ -62,14 +63,14 @@
     },
     {
       "artifact_type": "trace",
-      "bytes": 5474,
+      "bytes": 5486,
       "claim_ids": [
         "CLM-002"
       ],
       "generated_by": "src.experiments.run_experiment",
       "path": "output/data/emulation_trace.json",
       "required": true,
-      "sha256": "5790f48ffdac96aa7ce9019f70fd9433743f2cb1630c85890afc3f6432558308",
+      "sha256": "4a28715fb73745de08b69b56ea38287f9e1779a4d8e192026e197c8e210da129",
       "status": "present",
       "validation_checks": [
         "trace_dynamic_register_contract"
@@ -77,7 +78,7 @@
     },
     {
       "artifact_type": "inference",
-      "bytes": 4712,
+      "bytes": 4724,
       "claim_ids": [
         "CLM-003",
         "CLM-005"
@@ -85,7 +86,7 @@
       "generated_by": "src.experiments.run_experiment",
       "path": "output/data/inference_result.json",
       "required": true,
-      "sha256": "6b61aa795e56f5f9166a4ad20755e1c39348c2c112b5490499ff684185de21f9",
+      "sha256": "bbd914d8479d18fac1204027a5700c30d220f23abc8c1e7247c4ffcbfe6f1df2",
       "status": "present",
       "validation_checks": [
         "trace_observation_semantics"
@@ -93,7 +94,7 @@
     },
     {
       "artifact_type": "trace",
-      "bytes": 16062,
+      "bytes": 16075,
       "claim_ids": [
         "CLM-001",
         "CLM-002",
@@ -103,7 +104,7 @@
       "generated_by": "src.experiments.run_experiment",
       "path": "output/data/trace_bundle.json",
       "required": true,
-      "sha256": "4f09007c3dad914b080fd46a7331d47975a584cf8104e6b1fdf998e69fd05420",
+      "sha256": "d9cadb2bd2f1dac8d20a857ac8ce7aa10cc8500de52b69b3129a6af311b143f9",
       "status": "present",
       "validation_checks": [
         "trace_schema_version",
@@ -112,7 +113,7 @@
     },
     {
       "artifact_type": "semantics",
-      "bytes": 5475,
+      "bytes": 5487,
       "claim_ids": [
         "CLM-001",
         "CLM-019"
@@ -120,7 +121,7 @@
       "generated_by": "src.symbolic_semantics.symbolic_execute",
       "path": "output/data/symbolic_execution.json",
       "required": true,
-      "sha256": "380511dd060c7692283337824ad094e5459bc76cf7f99d32d268aea5142732b7",
+      "sha256": "ac91066beadd1b3dc1ac689b881e4e99176320a7a2812eea4116379960cea6ad",
       "status": "present",
       "validation_checks": [
         "symbolic_semantics_contract",
@@ -145,14 +146,14 @@
     },
     {
       "artifact_type": "evaluation",
-      "bytes": 24461,
+      "bytes": 41581,
       "claim_ids": [
         "CLM-018"
       ],
       "generated_by": "src.model_fitting.leave_one_fixture_out_evaluation",
       "path": "output/data/held_out_model.json",
       "required": true,
-      "sha256": "a26b2fb9d5100a1918544873218ece10dda5fc3d3c9022ca6738cb19ff3f559b",
+      "sha256": "36ff43c4b33ad2866a842a7191787e64b7c54bb1a3cdef3c6caedc8f72dd0937",
       "status": "present",
       "validation_checks": [
         "held_out_model_contract",
@@ -161,14 +162,14 @@
     },
     {
       "artifact_type": "observation_schema",
-      "bytes": 15008,
+      "bytes": 29679,
       "claim_ids": [
         "CLM-021"
       ],
       "generated_by": "src.advanced_inference.typed_observation_payload",
       "path": "output/data/typed_observations.json",
       "required": true,
-      "sha256": "7b360a2dcd93c648863a5f82bc6136273486c163ecf99f6a652aeae815923846",
+      "sha256": "7f3f9afbcfb66e3ecfbb0855593354a137d40c7483d563a1687c8363d596a2db",
       "status": "present",
       "validation_checks": [
         "typed_observation_schema_contract",
@@ -177,14 +178,14 @@
     },
     {
       "artifact_type": "evaluation",
-      "bytes": 196134,
+      "bytes": 394218,
       "claim_ids": [
         "CLM-021"
       ],
       "generated_by": "src.factorized_model.leave_one_fixture_out_factorized_evaluation",
       "path": "output/data/factorized_observation_model.json",
       "required": true,
-      "sha256": "1450bea37939c8a0c8992eea9d1f3802862a9f64fbf63e81472960d7244bc935",
+      "sha256": "56be3d2be2e13bc136d18d469ea2840b28aaec8ce1497cd39e15782f34edfd76",
       "status": "present",
       "validation_checks": [
         "factorized_observation_contract",
@@ -194,14 +195,14 @@
     },
     {
       "artifact_type": "corpus_design",
-      "bytes": 8622,
+      "bytes": 14067,
       "claim_ids": [
         "CLM-022"
       ],
       "generated_by": "src.corpus_coverage.corpus_coverage_payload",
       "path": "output/data/corpus_coverage.json",
       "required": true,
-      "sha256": "a11656f7868650ca0d68d4e36be5f82e6d3a734a1c0f0768713fb4ac42ff74d8",
+      "sha256": "a3c7b746e21f425f05c67746e74cc4196255485af0e344ad85a2e0cca69e445e",
       "status": "present",
       "validation_checks": [
         "corpus_coverage_contract",
@@ -210,14 +211,14 @@
     },
     {
       "artifact_type": "action_sensing",
-      "bytes": 186035,
+      "bytes": 349363,
       "claim_ids": [
         "CLM-023"
       ],
       "generated_by": "src.action_sensing.action_conditioned_sensing_payload",
       "path": "output/data/action_sensing.json",
       "required": true,
-      "sha256": "7193e424b82ffa4e7c6fee3067efc42fcf7a35b2ddbc9df32fbe18c92c4d6929",
+      "sha256": "ef07dc4dbaf7c726dd4009a825b54b0acba984664a19c5e5c58e3649a3d1548a",
       "status": "present",
       "validation_checks": [
         "action_sensing_contract",
@@ -227,14 +228,14 @@
     },
     {
       "artifact_type": "parameter_learning",
-      "bytes": 540666,
+      "bytes": 905724,
       "claim_ids": [
         "CLM-024"
       ],
       "generated_by": "src.parameter_learning.parameter_learning_payload",
       "path": "output/data/parameter_learning.json",
       "required": true,
-      "sha256": "e18ef751265c2eed7801c92fb6cec90cee684e05e9cd6f23cc42a35daacf868d",
+      "sha256": "82153135aae364c2c68e2aefaefeab6d493acd0573d305f1d8c762078ef4364c",
       "status": "present",
       "validation_checks": [
         "parameter_learning_contract",
@@ -244,14 +245,14 @@
     },
     {
       "artifact_type": "research_program",
-      "bytes": 45441,
+      "bytes": 45999,
       "claim_ids": [
         "CLM-025"
       ],
       "generated_by": "src.scientific_program.write_scientific_program",
       "path": "output/data/scientific_program.json",
       "required": true,
-      "sha256": "577cde010e221949c615bba7d86230c440178d02146b07387e6995bdfac935ed",
+      "sha256": "6a3a88ba852c0f74a498340e7df96d878a46d6584eacd9fc811d7bc99b65538d",
       "status": "present",
       "validation_checks": [
         "scientific_program_contract",
@@ -260,14 +261,14 @@
     },
     {
       "artifact_type": "research_protocol",
-      "bytes": 7763,
+      "bytes": 10864,
       "claim_ids": [
         "CLM-025"
       ],
       "generated_by": "src.scientific_protocol.write_scientific_protocol",
       "path": "output/data/research_protocol.json",
       "required": true,
-      "sha256": "a8942a478ae7129c93ba686d26e12715c4289481d90d0828f9381110cb65f0bb",
+      "sha256": "d75caaea4b219432cd2b7f62e3fa2ed70a6c8477177d7502b6cd4b0c3601a100",
       "status": "present",
       "validation_checks": [
         "scientific_protocol_contract",
@@ -276,14 +277,14 @@
     },
     {
       "artifact_type": "quotient_classifier",
-      "bytes": 92963,
+      "bytes": 194794,
       "claim_ids": [
         "CLM-027"
       ],
       "generated_by": "src.quotient_classifier.write_quotient_classifier_report",
       "path": "output/data/quotient_classifier.json",
       "required": true,
-      "sha256": "a30a6c2f2664d74a57c2be418c5c595b3d61887fd4e0f5cc4717b15570a8833e",
+      "sha256": "dbf0fe9125712a207e1e0a7e453289d3c0be509f76f81bfbdc5fcc7e6704970d",
       "status": "present",
       "validation_checks": [
         "quotient_classifier_contract",
@@ -292,14 +293,14 @@
     },
     {
       "artifact_type": "research_protocol",
-      "bytes": 58511,
+      "bytes": 58523,
       "claim_ids": [
         "CLM-026"
       ],
       "generated_by": "src.quotient_invariance.write_quotient_invariance_protocol",
       "path": "output/data/quotient_invariance_protocol.json",
       "required": true,
-      "sha256": "c4b91696dc07865df30f382162ca1a243a0b7b5051bb939d8d6f2aeb7be7bfe7",
+      "sha256": "40f0abcd0896001063059b1718579980cf785dc6070d38dd471c6b44a2185371",
       "status": "present",
       "validation_checks": [
         "quotient_invariance_contract",
@@ -308,14 +309,14 @@
     },
     {
       "artifact_type": "research_benchmark",
-      "bytes": 281202,
+      "bytes": 281214,
       "claim_ids": [
         "CLM-027"
       ],
       "generated_by": "src.representation_invariance.write_representation_invariance_benchmark",
       "path": "output/data/representation_invariance_benchmark.json",
       "required": true,
-      "sha256": "5e2813f9521ff6835ae1f25b2e535c0e5e46192221b4ca3a9e7956ca102b2a2e",
+      "sha256": "3a3bc600b60f51cacca6b3016959b44eb911f32554212124bf6b8db887ade4c6",
       "status": "present",
       "validation_checks": [
         "representation_invariance_contract",
@@ -324,14 +325,14 @@
     },
     {
       "artifact_type": "intervention_power",
-      "bytes": 13781,
+      "bytes": 13793,
       "claim_ids": [
         "CLM-034"
       ],
       "generated_by": "src.intervention_analysis.write_intervention_power_payload",
       "path": "output/data/intervention_power.json",
       "required": true,
-      "sha256": "1cc0d9a810ab32fb6ee2e618ee468f63e261ca02e3f6d210be266d4edfd83810",
+      "sha256": "505a61d9276d183c3cf17b418f3addeb68916f04f7a6d6ffc974ed5af17fff1b",
       "status": "present",
       "validation_checks": [
         "intervention_power_contract",
@@ -340,14 +341,14 @@
     },
     {
       "artifact_type": "cross_architecture_benchmark",
-      "bytes": 5599,
+      "bytes": 5611,
       "claim_ids": [
         "CLM-029"
       ],
       "generated_by": "src.advanced_inference.cross_architecture_payload_current",
       "path": "output/data/cross_architecture_fixtures.json",
       "required": true,
-      "sha256": "e43f444ac66ea293ce111088ff65625f3941cb59a185eab82c5cc2cd7751a70b",
+      "sha256": "5cf938bdad01f73022a5baad95f7a90c50418536dcc42ae4e2d4b58431b99c53",
       "status": "present",
       "validation_checks": [
         "cross_architecture_contract",
@@ -356,14 +357,14 @@
     },
     {
       "artifact_type": "formal_verification",
-      "bytes": 10912,
+      "bytes": 92107,
       "claim_ids": [
         "CLM-030"
       ],
       "generated_by": "src.formal_verification.write_formal_verification",
       "path": "output/data/formal_verification.json",
       "required": true,
-      "sha256": "8142d4536dd47bad53a46b1eda39e16c752c1d9654fcbb8231c8fbac7a5983b2",
+      "sha256": "7eb6510fd9621a2a67e65fc14b43698ef9ae7b6f6d4c21187dc9966e6308d40d",
       "status": "present",
       "validation_checks": [
         "formal_verification_contract",
@@ -372,14 +373,14 @@
     },
     {
       "artifact_type": "formal_correspondence",
-      "bytes": 673594,
+      "bytes": 714860,
       "claim_ids": [
         "CLM-030"
       ],
       "generated_by": "src.formal_correspondence.write_formal_correspondence",
       "path": "output/data/formal_trace_correspondence.json",
       "required": true,
-      "sha256": "828566934cab04a7b5986440f20003f1643f7453ec77defc7362335e37c4e81f",
+      "sha256": "acab647b282e16dfb0e3e6e2def864f13e201e7011d5b9fbf3df1f6ccbece386",
       "status": "present",
       "validation_checks": [
         "formal_correspondence_contract",
@@ -388,14 +389,14 @@
     },
     {
       "artifact_type": "compiler_transfer",
-      "bytes": 92284,
+      "bytes": 429675,
       "claim_ids": [
         "CLM-029"
       ],
       "generated_by": "src.compiler_transfer.write_compiler_transfer",
       "path": "output/data/compiler_transfer.json",
       "required": true,
-      "sha256": "2eb64ccb710d752c974f9d6a3ae00261a3a34ba35c8a5af9f649a5e2d0ddb040",
+      "sha256": "66dc6fd161c244dabbc33cd6e3acdc9acded2e8d3c7efda835360985ea753af2",
       "status": "present",
       "validation_checks": [
         "compiler_transfer_contract",
@@ -404,14 +405,14 @@
     },
     {
       "artifact_type": "information_policy",
-      "bytes": 11864,
+      "bytes": 13182,
       "claim_ids": [
         "CLM-031"
       ],
       "generated_by": "src.advanced_inference.active_information_payload_current",
       "path": "output/data/active_information_frontier.json",
       "required": true,
-      "sha256": "27f8fd9a9d61938a1deab98f457d7d0a729183e7ebf4f2df67faf451a909d708",
+      "sha256": "86318ad9cc4ced9bc95988e0df8880ff3a3aeaaa4a4ce05b43358acddc3e1111",
       "status": "present",
       "validation_checks": [
         "active_information_contract",
@@ -420,14 +421,14 @@
     },
     {
       "artifact_type": "sensor_cost",
-      "bytes": 91173,
+      "bytes": 91891,
       "claim_ids": [
         "CLM-031"
       ],
       "generated_by": "src.sensor_costs.write_sensor_cost_payload",
       "path": "output/data/sensor_cost_receipt.json",
       "required": true,
-      "sha256": "b4240bb7120d9a21963f5e0eab4b215e8df5a79cf007a1135ab5d664ea5b0f54",
+      "sha256": "79a203e23ffeff1fa5d93eefab6258170d053cc51b9a984e79a81b9157512cc3",
       "status": "present",
       "validation_checks": [
         "sensor_cost_contract",
@@ -436,14 +437,14 @@
     },
     {
       "artifact_type": "replication_manifest",
-      "bytes": 2988,
+      "bytes": 3000,
       "claim_ids": [
         "CLM-032"
       ],
       "generated_by": "src.replication.write_replication_bundle",
       "path": "output/data/replication_manifest.json",
       "required": true,
-      "sha256": "3373504cb022fb0c370c97fd166f284f66fbef1163145d686b2e75431a7e3b9b",
+      "sha256": "4f50cebea1834efba1d63882c468a6fba83e58dcf4e96f626e8152c725b15a86",
       "status": "present",
       "validation_checks": [
         "replication_contract",
@@ -452,14 +453,14 @@
     },
     {
       "artifact_type": "external_source_validation",
-      "bytes": 2996554,
+      "bytes": 2996726,
       "claim_ids": [
         "CLM-036"
       ],
       "generated_by": "src.external_sources.write_external_source_validation_payload",
       "path": "output/data/external_source_validation.json",
       "required": true,
-      "sha256": "1a476eecb5c315265812b80ff01c805c7e6a7632e42efd773eefbf1a117f4a16",
+      "sha256": "9f02461045345932bba3283a54b181cf556df154826af27db9701d9ede29f65d",
       "status": "present",
       "validation_checks": [
         "external_source_contract",
@@ -468,14 +469,14 @@
     },
     {
       "artifact_type": "external_acquisition",
-      "bytes": 9048,
+      "bytes": 9220,
       "claim_ids": [
         "CLM-036"
       ],
       "generated_by": "src.external_sources.write_external_acquisition_payload",
       "path": "output/data/external_acquisition.json",
       "required": true,
-      "sha256": "87e636979ce809090f1b01ff94ac1a6b1015fdf00f65c35d0753d68042dcddb5",
+      "sha256": "81c40c102ce54ee4413b767c1d5d11700999abcda27fd1346925d80fb0934d6f",
       "status": "present",
       "validation_checks": [
         "external_acquisition_contract",
@@ -484,14 +485,14 @@
     },
     {
       "artifact_type": "external_label_contract",
-      "bytes": 257460,
+      "bytes": 257472,
       "claim_ids": [
         "CLM-036"
       ],
       "generated_by": "src.external_labeling.write_external_label_contract",
       "path": "output/data/external_label_contract.json",
       "required": true,
-      "sha256": "1f477d56894a7df0f0f725f21c75802ba88bcd1efa645e996eda7d1d6e906c68",
+      "sha256": "049d237289d998b5cb45504fce5084974994cb3d7a4b90ac8eeb1509171ab81e",
       "status": "present",
       "validation_checks": [
         "external_label_contract",
@@ -500,7 +501,7 @@
     },
     {
       "artifact_type": "external_static_validation",
-      "bytes": 2981006,
+      "bytes": 2981178,
       "claim_ids": [
         "CLM-036",
         "CLM-038"
@@ -508,7 +509,7 @@
       "generated_by": "src.external_sources.write_external_static_validation",
       "path": "output/data/external_static_validation.json",
       "required": true,
-      "sha256": "841d92a2722e9fb10e4d1cc3ba72604e9d731363704d26732d920a6ed05608fe",
+      "sha256": "69ba78d38e85676396e5aabe46260d309755dcbb6189a5a416cb89a4549787aa",
       "status": "present",
       "validation_checks": [
         "external_static_contract",
@@ -517,7 +518,7 @@
     },
     {
       "artifact_type": "external_capabilities",
-      "bytes": 2619,
+      "bytes": 2701,
       "claim_ids": [
         "CLM-036",
         "CLM-038"
@@ -525,11 +526,28 @@
       "generated_by": "src.external_sources.write_compiler_capabilities",
       "path": "output/data/external_capabilities.json",
       "required": true,
-      "sha256": "ebf77b4f04394234d49720e69ebf93e68dbd3b8fe830160f4f97989c851d35d0",
+      "sha256": "ef56a197e0c04f0edb21098f67b7fbabf29e2817d90178e23e64790a58228cf0",
       "status": "present",
       "validation_checks": [
         "external_capability_contract",
         "external_capability_freshness"
+      ]
+    },
+    {
+      "artifact_type": "external_corpus_preparation_audit",
+      "bytes": 22541,
+      "claim_ids": [
+        "CLM-036",
+        "CLM-038"
+      ],
+      "generated_by": "src.external_sources.write_external_corpus_preparation_audit",
+      "path": "output/data/external_corpus_preparation_audit.json",
+      "required": true,
+      "sha256": "b62378fbe81f9a646251534cecdc373a05dac8dcda0a449620a68885b9dd4374",
+      "status": "present",
+      "validation_checks": [
+        "external_preparation_audit_contract",
+        "external_preparation_audit_freshness"
       ]
     },
     {
@@ -551,14 +569,14 @@
     },
     {
       "artifact_type": "theorem_phase",
-      "bytes": 11216,
+      "bytes": 14178,
       "claim_ids": [
         "CLM-033"
       ],
       "generated_by": "src.theorem_phase.write_theorem_or_countertheorem",
       "path": "output/data/theorem_or_countertheorem.json",
       "required": true,
-      "sha256": "4a8d3efa44986c36a887bb328f99d89a078c30eefa198117cc20c978835379bd",
+      "sha256": "3a5bf479c144cbbc6adc07e98ba01ce6591a5b9f691e90dc52c9426ca5a2c5c1",
       "status": "present",
       "validation_checks": [
         "theorem_countertheorem_contract",
@@ -567,14 +585,14 @@
     },
     {
       "artifact_type": "counterexample_search",
-      "bytes": 19335,
+      "bytes": 19347,
       "claim_ids": [
         "CLM-040"
       ],
       "generated_by": "src.counterexample_search.write_counterexample_search",
       "path": "output/data/counterexample_search.json",
       "required": true,
-      "sha256": "2512a940728d3ddf922d26691eedb9f11fb2ebacccfb09ef1c35332db5ca81cd",
+      "sha256": "8f4ecdf911ceeb8267e82a1d1132194d69d1ecccbbc75e8b5de5d7c378294ff5",
       "status": "present",
       "validation_checks": [
         "counterexample_search_contract",
@@ -583,14 +601,14 @@
     },
     {
       "artifact_type": "sensing_stress",
-      "bytes": 118859,
+      "bytes": 120348,
       "claim_ids": [
         "CLM-041"
       ],
       "generated_by": "src.sensing_stress.write_sensing_stress",
       "path": "output/data/sensing_stress.json",
       "required": true,
-      "sha256": "b19251c14eec64df096744e578a68e10654b62ab2c0ef7af3874ef1ee43b0bd1",
+      "sha256": "bcc8cbfca7fcf505af44ab7d8312a6d408e6bccfb09c53c413dc8d8326b14c27",
       "status": "present",
       "validation_checks": [
         "sensing_stress_contract",
@@ -629,7 +647,7 @@
     },
     {
       "artifact_type": "cfg_evidence",
-      "bytes": 3747,
+      "bytes": 3759,
       "claim_ids": [
         "CLM-001",
         "CLM-019"
@@ -637,7 +655,7 @@
       "generated_by": "src.advanced_inference.cfg_evidence_payload",
       "path": "output/data/cfg_evidence.json",
       "required": true,
-      "sha256": "a564062bbeb615b5b45aee19c15bf5dcd2bfd7453cda6f5ff68de2cb0f710096",
+      "sha256": "5225808751fee977be4f02f2716ccaec0c903970d30bcc763753aae3301a60df",
       "status": "present",
       "validation_checks": [
         "cfg_evidence_contract",
@@ -646,7 +664,7 @@
     },
     {
       "artifact_type": "memory_evidence",
-      "bytes": 4020,
+      "bytes": 4032,
       "claim_ids": [
         "CLM-001",
         "CLM-002",
@@ -655,7 +673,7 @@
       "generated_by": "src.advanced_inference.memory_evidence_payload",
       "path": "output/data/memory_evidence.json",
       "required": true,
-      "sha256": "132950e27f6cfbb2dd8b7a61bc7527d03068d69b2a272adf130dc49097c83e94",
+      "sha256": "4a4d57a0f785c94b336faafd61f9598d654045a044d09bd671d0dc353efc727e",
       "status": "present",
       "validation_checks": [
         "memory_evidence_contract",
@@ -679,7 +697,7 @@
     },
     {
       "artifact_type": "trace_projection",
-      "bytes": 3856,
+      "bytes": 3868,
       "claim_ids": [
         "CLM-001",
         "CLM-003"
@@ -687,7 +705,7 @@
       "generated_by": "src.assembly_formalism.assembly_listing_payload",
       "path": "output/data/assembly_listing.json",
       "required": true,
-      "sha256": "839782a7854361113c8952e6dda89358398fb1f2d089be581e356eb2327b1203",
+      "sha256": "2d609caedee657d139a12cab77fb6fd2292b986d343dea7fd69651d4b509a64e",
       "status": "present",
       "validation_checks": [
         "assembly_listing_contract"
@@ -695,7 +713,7 @@
     },
     {
       "artifact_type": "scholarship",
-      "bytes": 36234,
+      "bytes": 38006,
       "claim_ids": [
         "CLM-006",
         "CLM-008"
@@ -703,7 +721,7 @@
       "generated_by": "src.scholarship.write_scholarship_sources",
       "path": "output/data/scholarship_sources.json",
       "required": true,
-      "sha256": "72247f071416d1aac8548b10cd692cfa8b00375733129349e142be81356ee820",
+      "sha256": "a9878126349d3b2cc08905a663031fa4a9f2e068243ed58da9ad3953e39b907c",
       "status": "present",
       "validation_checks": [
         "scholarship_source_quality",
@@ -712,14 +730,14 @@
     },
     {
       "artifact_type": "claim_register",
-      "bytes": 40599,
+      "bytes": 40621,
       "claim_ids": [
         "CLM-009"
       ],
       "generated_by": "src.claim_register.write_claim_register",
       "path": "output/data/claim_register.json",
       "required": true,
-      "sha256": "cbfc20c8b868a251dd7636b3baee2aea80714fc9fa92600e011851ef2984dc35",
+      "sha256": "2acb8d7df23f4309584b8ae2c242c49ed06392f7739ebd13f57b4b9488c74748",
       "status": "present",
       "validation_checks": [
         "claim_register_contract"
@@ -734,7 +752,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
       "path": "output/rxinfer/free_energy_trace.jsonl",
       "required": true,
-      "sha256": "218c90fa2bfb7f065a28ba4ea5d4d0049cf86103a3588193de39073cf9c1dcd9",
+      "sha256": "80ee1073ee30742083d337fcf8b3843f0144a0f4cdc6a32a1b7ef095c3676629",
       "status": "present",
       "validation_checks": [
         "rxinfer_free_energy_records"
@@ -749,7 +767,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
       "path": "output/rxinfer/posteriors.json",
       "required": true,
-      "sha256": "8d509a03007ef2a4ce2e7b91aec443deab7bd95360dbb17ebf983e00a6ca7f4d",
+      "sha256": "a5caf898dde9f68399f880bb38f5c21eaeaf68db53ea59fdc8ba1141df06b44e",
       "status": "present",
       "validation_checks": [
         "rxinfer_companion_artifacts"
@@ -764,7 +782,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_backend",
       "path": "output/rxinfer/diagnostics.json",
       "required": true,
-      "sha256": "e35ec20e74e403e6bd655ee43bb6be76639e8bcf56eb071c9c7eae49b9620e64",
+      "sha256": "0f69a3e7093089540d455053e6ead47c4e7d79e26fb0e596bc067b52384b4a15",
       "status": "present",
       "validation_checks": [
         "rxinfer_diagnostics_consistent"
@@ -794,7 +812,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
       "path": "output/rxinfer_categorical/categorical_free_energy_trace.jsonl",
       "required": true,
-      "sha256": "6611aaae0d92498beb5cd2eec66ee01b60d4eee570441149409ff8da0c2e2b5e",
+      "sha256": "afbd0d1400316e9667997481de1171d30ab5ad3493b88627b249a8245cd5c529",
       "status": "present",
       "validation_checks": [
         "rxinfer_categorical_free_energy_records"
@@ -809,7 +827,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
       "path": "output/rxinfer_categorical/categorical_posteriors.json",
       "required": true,
-      "sha256": "866e073100113747017faf1965a3e97f7799ca6af67260b90e77f95cc4c3ef5a",
+      "sha256": "531aaf58ca9a9604050275c2084a7bf51d0f2fc3734ee452f3b2b64b55b4f676",
       "status": "present",
       "validation_checks": [
         "rxinfer_categorical_companion_artifacts"
@@ -824,7 +842,7 @@
       "generated_by": "src.rxinfer_bridge.run_rxinfer_categorical_backend",
       "path": "output/rxinfer_categorical/categorical_diagnostics.json",
       "required": true,
-      "sha256": "0ad9ea5d96192c13bdf86e02716e909b721a37f396dec34d14218527f24b636b",
+      "sha256": "d481d27aab7b2f95c04d1bdd22ce8cdbf158ccd9494493ae61fdd7e9744e9537",
       "status": "present",
       "validation_checks": [
         "rxinfer_categorical_diagnostics_consistent"
@@ -877,14 +895,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 215836,
+      "bytes": 214930,
       "claim_ids": [
         "CLM-006"
       ],
       "generated_by": "src.figures.plot_package_provenance",
       "path": "output/figures/package_provenance.png",
       "required": true,
-      "sha256": "11ec59b84db7fcb4a39607b16e5e8633efe9aaaca130c185fc0ee156c35d5887",
+      "sha256": "fb2b348457387d335d73c76f156fa0f553df1233ff0f6b25e7e099d0e10c7559",
       "status": "present",
       "validation_checks": [
         "figure_package_provenance"
@@ -937,14 +955,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 160855,
+      "bytes": 161727,
       "claim_ids": [
         "CLM-008"
       ],
       "generated_by": "src.figures.plot_scholarship_source_roles",
       "path": "output/figures/scholarship_source_roles.png",
       "required": true,
-      "sha256": "a00e6de3d3746e851cfc0863a790d0b35bad3e5596283213920c2b81492eb808",
+      "sha256": "e212387647e84e224f02235e292aad0bf30a5618676317f4a9d0c28c557eb7de",
       "status": "present",
       "validation_checks": [
         "figure_scholarship_source_roles"
@@ -952,14 +970,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 203827,
+      "bytes": 204523,
       "claim_ids": [
         "CLM-008"
       ],
       "generated_by": "src.figures.plot_scholarship_evidence_matrix",
       "path": "output/figures/scholarship_evidence_matrix.png",
       "required": true,
-      "sha256": "fbfe7c89781da9dfd674c0477470c4e9f35c3a90f8a06a05c323961eaefb2355",
+      "sha256": "461c222e44974e3ad46b760f257b9bfe6659768820989d05d9213958f13fc869",
       "status": "present",
       "validation_checks": [
         "figure_scholarship_evidence_matrix"
@@ -982,7 +1000,7 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 244866,
+      "bytes": 283247,
       "claim_ids": [
         "CLM-010",
         "CLM-011"
@@ -990,7 +1008,7 @@
       "generated_by": "src.advanced_figures.write_advanced_figures",
       "path": "output/figures/model_comparison.png",
       "required": true,
-      "sha256": "faf4a4920e92c6434a8dfd51eec4f9202626cba0a8b653c50ba4e6f79c5777fc",
+      "sha256": "39552a2535319befaf0afca76b83b8d914babe1bdc8f0ecae52058aa03191c75",
       "status": "present",
       "validation_checks": [
         "figure_model_comparison"
@@ -1061,14 +1079,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 171221,
+      "bytes": 172453,
       "claim_ids": [
         "CLM-011"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/calibration_curve.png",
       "required": true,
-      "sha256": "5f104f5f21983ee4f5c398d777d0c6f750e47ffe09d38da909474caa7527e3d8",
+      "sha256": "0f2ec42c4b278ce03a0730541471a0e0a748e5db8ec8c19489ed6be2ab3c667a",
       "status": "present",
       "validation_checks": [
         "figure_calibration_curve"
@@ -1076,14 +1094,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 247627,
+      "bytes": 255347,
       "claim_ids": [
         "CLM-011"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/confusion_matrix.png",
       "required": true,
-      "sha256": "954bb5f8ad245cef82e01a22f2c81b4d44a6cdcf353bfc53a331039f12b003ef",
+      "sha256": "7a1ba809e6cde1d310628e616919243115661236105210cd1924f1ad50580208",
       "status": "present",
       "validation_checks": [
         "figure_confusion_matrix"
@@ -1091,14 +1109,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 322520,
+      "bytes": 340839,
       "claim_ids": [
         "CLM-014"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/ambiguity_ablation.png",
       "required": true,
-      "sha256": "ee36c30d8629e9d5e7eb56d790d2eeacdf6bcbd9377cd2202eace1b2b59acba0",
+      "sha256": "7cc8f59f9ddbe1f8e4033d8311d8824967399046773118f0b86788c26cbc662b",
       "status": "present",
       "validation_checks": [
         "figure_ambiguity_ablation"
@@ -1106,14 +1124,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 166410,
+      "bytes": 234715,
       "claim_ids": [
         "CLM-015"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/segmentation_ribbons.png",
       "required": true,
-      "sha256": "0eb982bd4d92b8a08f8bf284a622beb35f17c62fc519249528ff837b97f04e39",
+      "sha256": "c85f432a6a272f2cd1f29d7986f72120a865145cdefab5269fd23e758a22f7d4",
       "status": "present",
       "validation_checks": [
         "figure_segmentation_ribbons"
@@ -1121,14 +1139,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 162390,
+      "bytes": 202894,
       "claim_ids": [
         "CLM-010"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/corpus_stability.png",
       "required": true,
-      "sha256": "c5d40ec47fa9001d11ca1d0b0c3165236d5a738f6039316845b0bf9a6617ab22",
+      "sha256": "a5538c6835320af32c718b861c62017a16b5a91edcb5c08da769477abf183686",
       "status": "present",
       "validation_checks": [
         "figure_corpus_stability"
@@ -1136,14 +1154,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 111125,
+      "bytes": 113381,
       "claim_ids": [
         "CLM-010"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/phase_recovery.png",
       "required": true,
-      "sha256": "043d01f0c7024df7ab2607f0e1c6e314cbeb1adec3f59b65f4df069c265d7f50",
+      "sha256": "9bf82f5e641c27daa7e34bd464a90c4341bf3ea06d593829556d352f8c3e4ace",
       "status": "present",
       "validation_checks": [
         "figure_phase_recovery"
@@ -1151,14 +1169,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 150753,
+      "bytes": 156990,
       "claim_ids": [
         "CLM-016"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/decoder_calibration.png",
       "required": true,
-      "sha256": "4d2acc47c0bcdecb8f4845756067386105c0c1d21fabed7e769c2dea3abe66fd",
+      "sha256": "6329be76f751212b028ed37cd093285a0b13bdd7b0b59f71535536b0b79bec6a",
       "status": "present",
       "validation_checks": [
         "figure_decoder_calibration"
@@ -1196,14 +1214,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 77763,
+      "bytes": 79259,
       "claim_ids": [
         "CLM-017"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/model_evidence.png",
       "required": true,
-      "sha256": "a5d2dc3f0014a42135d460a21ebdf30bdbd8f1ac2145e636093bc7c91b04401d",
+      "sha256": "5bdf2abd005a75376d1c5cc80cf6b7e4a58a3c328130402a874793ab1523d461",
       "status": "present",
       "validation_checks": [
         "figure_model_evidence"
@@ -1211,14 +1229,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 132226,
+      "bytes": 133835,
       "claim_ids": [
         "CLM-014"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/transition_ablation.png",
       "required": true,
-      "sha256": "643d30931111ffec3b84a6de5d40955621942fcb8ebfe1875125e783b6ca334c",
+      "sha256": "fe9339404a435914896e0aa44e8f11ec7244c9953da38e1507dcd2864adc354c",
       "status": "present",
       "validation_checks": [
         "figure_transition_ablation"
@@ -1226,14 +1244,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 248899,
+      "bytes": 317868,
       "claim_ids": [
         "CLM-020"
       ],
       "generated_by": "src.advanced_figures.write_stats_figures",
       "path": "output/figures/generative_adequacy.png",
       "required": true,
-      "sha256": "fe3921095b3fab1ff64217d3bea07d07fcac42cf7e9db08ee96b819023972834",
+      "sha256": "5ac2c8f1c10c9c1b9cae615e372e415e26e4396299d6361c5094ddbe805c3dc9",
       "status": "present",
       "validation_checks": [
         "figure_generative_adequacy"
@@ -1256,14 +1274,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 301969,
+      "bytes": 371034,
       "claim_ids": [
         "CLM-021"
       ],
       "generated_by": "src.figures.plot_factorized_observation_comparison",
       "path": "output/figures/factorized_observation_comparison.png",
       "required": true,
-      "sha256": "0c58a182c1f68c329283684b82551c4406f86120f20213438bd34c5c4cf410fd",
+      "sha256": "b239f6fce20e5ccb4885179e48469ac1bbfe89a8e9e7f9b311b2366d5444fa6a",
       "status": "present",
       "validation_checks": [
         "figure_factorized_observation_comparison"
@@ -1271,14 +1289,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 217140,
+      "bytes": 300585,
       "claim_ids": [
         "CLM-022"
       ],
       "generated_by": "src.figures.plot_corpus_coverage",
       "path": "output/figures/corpus_coverage.png",
       "required": true,
-      "sha256": "04a90d0ad16ffc65ded6b9a4282701701751dce7a0e53dc8d7b04e3837fec89a",
+      "sha256": "8cdaf3affb7b8b7677da9c52ac89d098dfce601da11eb16a3c465c22c8d3b74b",
       "status": "present",
       "validation_checks": [
         "figure_corpus_coverage"
@@ -1286,14 +1304,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 238361,
+      "bytes": 237982,
       "claim_ids": [
         "CLM-023"
       ],
       "generated_by": "src.figures.plot_action_sensing",
       "path": "output/figures/action_sensing.png",
       "required": true,
-      "sha256": "7064edc3656336d11f8f22f25fe25357a1f15e0491cbdaf4b907ad03f85badda",
+      "sha256": "7e96481625dc10429a849782662b1f555fd72d9d5127219e0b6d654d4b5be0bd",
       "status": "present",
       "validation_checks": [
         "figure_action_sensing"
@@ -1301,14 +1319,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 437492,
+      "bytes": 514553,
       "claim_ids": [
         "CLM-024"
       ],
       "generated_by": "src.figures.plot_parameter_learning",
       "path": "output/figures/parameter_learning.png",
       "required": true,
-      "sha256": "1ccb6c9a40e1246d2cd555aab321558787534c722509c419d89f38f2f5c90811",
+      "sha256": "6ddb21023d9f358d17adaa9983091d349d3a864d01be3076581e761b32794926",
       "status": "present",
       "validation_checks": [
         "figure_parameter_learning"
@@ -1362,14 +1380,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 196681,
+      "bytes": 214933,
       "claim_ids": [
         "CLM-040"
       ],
       "generated_by": "src.figures.plot_counterexample_search",
       "path": "output/figures/counterexample_search.png",
       "required": true,
-      "sha256": "01c3a907d6582b5a4d1a56fc084b27eb65a015d3163e7a89a3e1289db5502504",
+      "sha256": "9b79af0399d92d521316497a889f4713af0fc39b09cdef2a9cb9ac98a4e98d88",
       "status": "present",
       "validation_checks": [
         "figure_counterexample_search"
@@ -1377,14 +1395,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 218630,
+      "bytes": 222733,
       "claim_ids": [
         "CLM-041"
       ],
       "generated_by": "src.figures.plot_sensing_stress",
       "path": "output/figures/sensing_stress.png",
       "required": true,
-      "sha256": "3494276ca7bbb349114415aac6f61de664f5fd98b86e06e211c46e181711a18f",
+      "sha256": "5964fbaf0adeabbfaea3d233529236e0dd884db988a36cc0e66a484a90477a0d",
       "status": "present",
       "validation_checks": [
         "figure_sensing_stress"
@@ -1392,14 +1410,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 379332,
+      "bytes": 474395,
       "claim_ids": [
         "CLM-030"
       ],
       "generated_by": "src.figures.plot_formal_verification_receipt",
       "path": "output/figures/formal_verification_receipt.png",
       "required": true,
-      "sha256": "f69cfbf993f51f679a632b1d82de17d43495a3b0a9d00184e952b609644e01b6",
+      "sha256": "1310d4a0be1ce3f2dcc9ef0fc2b6fa86ed07ebcaae6cc13c6fd684c81b831fbf",
       "status": "present",
       "validation_checks": [
         "figure_formal_verification_receipt"
@@ -1407,14 +1425,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 159937,
+      "bytes": 156238,
       "claim_ids": [
         "CLM-031"
       ],
       "generated_by": "src.figures.plot_active_information_frontier",
       "path": "output/figures/active_information_frontier.png",
       "required": true,
-      "sha256": "700513e81debf531cb8601124bc3912d0ad81396f0c01d8ea9fb9444c2365796",
+      "sha256": "a006d745b82f6f3c6684a9205cbb0d92f34bb9ba659a7f746081c1069b68985c",
       "status": "present",
       "validation_checks": [
         "figure_active_information_frontier"
@@ -1437,14 +1455,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 357154,
+      "bytes": 352272,
       "claim_ids": [
         "CLM-036"
       ],
       "generated_by": "src.figures.plot_external_label_coverage",
       "path": "output/figures/external_label_coverage.png",
       "required": true,
-      "sha256": "5b874a87a77a795bafd256476f5a5442c302bcb5a8a343484d82877386876dd0",
+      "sha256": "e2d2efbced358e9f6bcc253ab04532032fe49cfe16cc83216bb1d6f5546bca88",
       "status": "present",
       "validation_checks": [
         "figure_external_label_coverage"
@@ -1452,14 +1470,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 285925,
+      "bytes": 289453,
       "claim_ids": [
         "CLM-037"
       ],
       "generated_by": "src.figures.plot_artifact_receipt_closure",
       "path": "output/figures/artifact_receipt_closure.png",
       "required": true,
-      "sha256": "1a806845a96f43b517c3082231ebdd487e769507c3f2e8e26467d2bba889aba5",
+      "sha256": "60f611e2913951e773532146ec9b6073fe76d3ce9b00a18f515c6e83286cbffd",
       "status": "present",
       "validation_checks": [
         "figure_artifact_receipt_closure"
@@ -1467,14 +1485,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 354800,
+      "bytes": 356704,
       "claim_ids": [
         "CLM-009"
       ],
       "generated_by": "src.visual_atlas.plot_research_architecture",
       "path": "output/figures/research_architecture.png",
       "required": true,
-      "sha256": "cf465e29c6637ec0e247ae438b1238ee2ca7f589265a9e7ca6559fd34566c342",
+      "sha256": "58b838edc4287c2d7ea48b2d17daab8f19b33fc8a78cfa52441c073a42914fb4",
       "status": "present",
       "validation_checks": [
         "figure_research_architecture",
@@ -1483,7 +1501,7 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 591494,
+      "bytes": 581351,
       "claim_ids": [
         "CLM-003",
         "CLM-009"
@@ -1491,7 +1509,7 @@
       "generated_by": "src.visual_atlas.plot_observation_semantics",
       "path": "output/figures/observation_semantics.png",
       "required": true,
-      "sha256": "28d1bf2a64f38885100354159e39cc77d9a2b71fa646f6f72995ce04dbe85692",
+      "sha256": "5c01a8895fdab4c9fe96d0f380bff47abdf425cbe826e49a8ba6f5d4f8379c80",
       "status": "present",
       "validation_checks": [
         "figure_observation_semantics",
@@ -1583,14 +1601,14 @@
     },
     {
       "artifact_type": "figure",
-      "bytes": 230443,
+      "bytes": 234441,
       "claim_ids": [
         "CLM-031"
       ],
       "generated_by": "src.visual_atlas.plot_policy_certificate_frontier",
       "path": "output/figures/policy_certificate_frontier.png",
       "required": true,
-      "sha256": "911c5973c2c983d493dc02b39c1b59d8dede31c5eb3b49124ffc8e33602e83d6",
+      "sha256": "44852841cd7504cafa812f47994b60057773b3363a6401fcb1c96d8657192b47",
       "status": "present",
       "validation_checks": [
         "figure_policy_certificate_frontier",
@@ -1615,14 +1633,14 @@
     },
     {
       "artifact_type": "inference",
-      "bytes": 27221,
+      "bytes": 52848,
       "claim_ids": [
         "CLM-010"
       ],
       "generated_by": "src.advanced_inference.run_advanced_inference",
       "path": "output/data/temporal_inference.json",
       "required": true,
-      "sha256": "fa851f91664f257ef39507d1ed30ad4a50348a70bfde84a6295d1f552abc2fac",
+      "sha256": "5d7cb8eaba2f388b1a4758ab1e15883e96de7144834570ea92bd15364ac52f24",
       "status": "present",
       "validation_checks": [
         "advanced_temporal_artifacts_present"
@@ -1630,7 +1648,7 @@
     },
     {
       "artifact_type": "evaluation",
-      "bytes": 73972,
+      "bytes": 114677,
       "claim_ids": [
         "CLM-010",
         "CLM-011"
@@ -1638,7 +1656,7 @@
       "generated_by": "src.advanced_inference.run_advanced_inference",
       "path": "output/data/evaluation_report.json",
       "required": true,
-      "sha256": "d0f33bfb8f2f19200422a5952c692c1857ba6124a9f80af82151e45409d0a0ba",
+      "sha256": "00acd2e8531a09e7357c257c811ee9ad1725d809851796bbe809a9646550432e",
       "status": "present",
       "validation_checks": [
         "advanced_temporal_beats_identity_transition"
@@ -1646,14 +1664,14 @@
     },
     {
       "artifact_type": "inference",
-      "bytes": 3929,
+      "bytes": 6021,
       "claim_ids": [
         "CLM-012"
       ],
       "generated_by": "src.advanced_inference.run_advanced_inference",
       "path": "output/data/phase_segments.json",
       "required": true,
-      "sha256": "a0083dc4c71caa5a3cc6a24d3b86e0496d0d93073115126a4e2816775eb5f6d1",
+      "sha256": "f5ee4c499e0776d5dc065028cac6f2d6dce82c64625d5424d541dc81c02a9019",
       "status": "present",
       "validation_checks": [
         "advanced_phase_segmentation_partition"
@@ -1661,14 +1679,14 @@
     },
     {
       "artifact_type": "inference",
-      "bytes": 10724,
+      "bytes": 19022,
       "claim_ids": [
         "CLM-013"
       ],
       "generated_by": "src.advanced_inference.run_advanced_inference",
       "path": "output/data/active_selection.json",
       "required": true,
-      "sha256": "99787e2a6481565c83feed14fcaadac0f9d95a9a8a971e06e387b24040dec7f0",
+      "sha256": "388085960c8d31712ffc3d61ef4d22855afb68fffaef43a247b0b15c02ea99e6",
       "status": "present",
       "validation_checks": [
         "advanced_active_never_worse"
@@ -1676,14 +1694,14 @@
     },
     {
       "artifact_type": "evaluation",
-      "bytes": 11084,
+      "bytes": 17751,
       "claim_ids": [
         "CLM-020"
       ],
       "generated_by": "src.advanced_inference.generative_adequacy_payload",
       "path": "output/data/generative_adequacy.json",
       "required": true,
-      "sha256": "71e31a8b37cbcea9f14b2d325d959edc2a535dde86bdb796ed1a7a23bf6212dc",
+      "sha256": "aa3fc1435ca8312ec6ae3afc67e288f18cdccd5e72c34f4871cef70ba015cb24",
       "status": "present",
       "validation_checks": [
         "generative_adequacy_contract",
@@ -1785,6 +1803,70 @@
       "validation_checks": [
         "figure_temporal_beliefs_x86_guard_taken"
       ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 181312,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_call_return.png",
+      "required": true,
+      "sha256": "531ce691296652df7f13dbe9d89e5a22b5d34ff97df1a16a5a551c1afd23b75b",
+      "status": "present",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_call_return"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 193831,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_branch_not_taken.png",
+      "required": true,
+      "sha256": "70b2cf44bbe465570c5ffc5938b0fe1c33d7ea310a1227b4fd40acbd3c1ca2fa",
+      "status": "present",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_branch_not_taken"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 211297,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_stack_local.png",
+      "required": true,
+      "sha256": "67280c48673769b63e6941d806ad2328cdf0b7001ce9b061ae1e8b7d880f7345",
+      "status": "present",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_stack_local"
+      ]
+    },
+    {
+      "artifact_type": "figure",
+      "bytes": 199562,
+      "claim_ids": [
+        "CLM-010",
+        "CLM-012"
+      ],
+      "generated_by": "src.advanced_figures.write_temporal_belief_figures",
+      "path": "output/figures/temporal_beliefs_x86_optimization_rewrite.png",
+      "required": true,
+      "sha256": "ead655ff7f35463a843a267e23692d903554c68b98db7535a4932d5851065344",
+      "status": "present",
+      "validation_checks": [
+        "figure_temporal_beliefs_x86_optimization_rewrite"
+      ]
     }
   ],
   "excluded_self_referential_artifacts": [
@@ -1798,27 +1880,27 @@
     "output/data/figure_registry.json",
     "output/data/build_provenance.json"
   ],
-  "generated_at": "2026-09-12T03:36:00.854307+00:00",
-  "generator_revision": "df61d2fd8c161fca982113ff7de4878572e5891c350214400e012b4938209893",
+  "generated_at": "2026-10-14T01:04:54.848265+00:00",
+  "generator_revision": "0ed474392a92bc3e1593e20e326a9805253d941bc34b8e845b34e59af1ba3aff",
   "input_hashes": {
-    "producer/src/reproducibility.py": "df61d2fd8c161fca982113ff7de4878572e5891c350214400e012b4938209893",
-    "research_protocol.json": "604a778f2cb2892d2168fab754c97c954d019066c89a4dd9c154c69b12e36aad"
+    "producer/src/reproducibility.py": "0ed474392a92bc3e1593e20e326a9805253d941bc34b8e845b34e59af1ba3aff",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
   },
   "limitations": [
     "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
   ],
   "missing_required_count": 0,
   "producer": "src/reproducibility.py",
-  "protocol_id": "active-assembly-open-roadmap-v2",
-  "protocol_sha256": "604a778f2cb2892d2168fab754c97c954d019066c89a4dd9c154c69b12e36aad",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
   "receipt_schema_version": "2.0.0",
   "schema_version": "artifact-payload-v1",
   "status": "implemented_local",
   "toolchain_versions": {
     "capstone": "5.0.6",
     "numpy": "2.4.6",
-    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
-    "python": "3.14.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
     "unicorn": "2.1.4"
   },
   "underpowered_cases": [

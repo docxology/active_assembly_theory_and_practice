@@ -5,6 +5,7 @@ the declarations in the source manuscript makes code-listing support explicit
 and prevents the template from silently dropping them during hydration.
 
 ```latex
+\hypersetup{pdfdisplaydoctitle=true}
 \usepackage{graphicx}
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}

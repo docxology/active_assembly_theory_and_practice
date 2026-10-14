@@ -25,7 +25,6 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 from .artifact_contract import write_json_artifact, write_json_atomic
@@ -35,6 +34,7 @@ from .figures import (
     _caption_context,
     _figure_registry_rows,
     _png_qa_core,
+    read_png_image,
     write_figure_captions,
 )
 from .visual_atlas import NARRATIVE_FIGURE_IDS, write_visual_atlas_figures
@@ -1055,7 +1055,7 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
 def _write_raster_svg(png_path: Path, svg_path: Path) -> None:
     encoded = base64.b64encode(png_path.read_bytes()).decode("ascii")
     try:
-        image = mpimg.imread(png_path)
+        image = read_png_image(png_path)
         height, width = image.shape[:2]
     except (OSError, SyntaxError, ValueError):
         width, height = 2400, 1600
@@ -1069,7 +1069,7 @@ def _write_raster_svg(png_path: Path, svg_path: Path) -> None:
 
 
 def _write_raster_pdf(png_path: Path, pdf_path: Path) -> None:
-    image = mpimg.imread(png_path)
+    image = read_png_image(png_path)
     height, width = image.shape[:2]
     fig = plt.figure(figsize=(max(width / 300.0, 1.0), max(height / 300.0, 1.0)))
     ax = fig.add_axes((0, 0, 1, 1))

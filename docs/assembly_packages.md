@@ -29,7 +29,10 @@ depend on optional reverse-engineering suites:
   explicitly modeled `EFLAGS` bits are compared. Unsupported executed
   instructions are counted and fail the semantics validation contract; they are
   never silently assigned a guessed meaning. The result is trace refinement for
-  the declared fixture subset, not complete x86-64 semantics.
+  the declared fixture subset, not complete x86-64 semantics. Seven corpus
+  fixtures pass this interpreter; call/return, stack-local and optimization
+  rewrite fixtures explicitly fail because their instructions exceed its
+  subset. Broader formal correspondence is checked in a separate lane.
 
 ## Optional Adapter Slots
 

@@ -124,3 +124,64 @@ def test_information_policy_validator_rejects_missing_and_malformed_rows() -> No
     valid, detail = validate_active_information_payload(payload)
     assert not valid
     assert "frontier key missing" in detail
+
+
+@pytest.mark.parametrize("horizon", [True, 0.5, float("nan"), -1])
+def test_exact_policy_rejects_noninteger_horizon(horizon) -> None:
+    with pytest.raises(ValueError, match="non-negative integer"):
+        solve_exact_policy(
+            [0.5, 0.5], [_binary_sensor()], horizon=horizon, cost_weight=0
+        )
+
+
+@pytest.mark.parametrize("cost", [float("nan"), float("inf"), -1.0])
+def test_exact_policy_rejects_nonfinite_cost(cost) -> None:
+    from dataclasses import replace
+
+    with pytest.raises(ValueError, match="positive cost"):
+        solve_exact_policy(
+            [0.5, 0.5], [replace(_binary_sensor(), cost=cost)], horizon=1, cost_weight=0
+        )
+
+
+def test_exact_policy_rejects_ambiguous_sensor_identifiers_and_outcomes() -> None:
+    from dataclasses import replace
+
+    sensor = _binary_sensor()
+    with pytest.raises(ValueError, match="identifiers must be unique"):
+        solve_exact_policy([0.5, 0.5], [sensor, sensor], horizon=1, cost_weight=0)
+    with pytest.raises(ValueError, match="outcomes must be unique"):
+        solve_exact_policy(
+            [0.5, 0.5],
+            [replace(sensor, outcomes=("same", "same"))],
+            horizon=1,
+            cost_weight=0,
+        )
+
+
+def test_exact_policy_keeps_distinct_rare_outcome_posteriors() -> None:
+    # Both posterior vectors round to (1, 0) at 12 decimal places, but their
+    # terminal entropies differ. Exhaustive one-query conditioning supplies
+    # an independent reference for the weighted terminal objective.
+    import math
+
+    prior = np.asarray([1.0 - 1e-13, 1e-13])
+    sensor = FiniteSensor(
+        sensor_id="weak",
+        outcomes=("a", "b"),
+        cost=1.0,
+        likelihood=((0.5, 0.25), (0.5, 0.75)),
+    )
+    terms = []
+    for likelihood in sensor.likelihood:
+        weights = [float(p) * channel for p, channel in zip(prior, likelihood)]
+        probability = math.fsum(weights)
+        posterior = [weight / probability for weight in weights]
+        h = -math.fsum(p * math.log(p) for p in posterior if p > 0)
+        terms.append(probability * h)
+    expected = math.fsum(terms)
+    result = solve_exact_policy(prior, [sensor], horizon=1, cost_weight=0.0)
+    assert result.expected_terminal_entropy == pytest.approx(
+        expected, abs=1e-16, rel=1e-6
+    )
+    assert result.objective == pytest.approx(expected, abs=1e-16, rel=1e-6)

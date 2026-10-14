@@ -1,3 +1,11 @@
+---
+lang: en
+pdfstandard:
+  version: "2.0"
+  standards: [UA-2]
+  tagging: true
+---
+
 # Abstract {#sec:abstract}
 
 `{{PROJECT_TITLE}}` is a source-bound demonstrator for connecting assembly-language
@@ -16,8 +24,9 @@ declared user-mode integer subset; this is a checked boundary, not complete x86-
 semantics.
 
 A temporal corpus of `{{TEMPORAL_FIXTURE_COUNT}}` transparent x86-64 fixtures
-with a frozen `{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out family
-split supports the decoding comparison. At the authored informative likelihood
+with a declared `{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out
+fixture inventory supports complete-fixture exclusion diagnostics. These
+leave-one-fixture-out folds are distinct from fixed-partition test evaluation. At the authored informative likelihood
 the memoryless per-step decoder outperforms the temporal filter; the temporal
 advantage appears only under synthetic observation ambiguity, and the designed
 `lea`-category ambiguity of the optimization-rewrite fixture is retained as a

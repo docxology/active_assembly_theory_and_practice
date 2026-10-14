@@ -508,7 +508,7 @@ def plot_observation_semantics(payload: Mapping[str, Any], output_path: Path) ->
     ax.add_patch(
         Rectangle(
             (3.98, 0.30),
-            2.23,
+            2.05,
             1.18,
             facecolor=PALETTE[3] + "12",
             edgecolor=PALETTE[3],
@@ -519,17 +519,19 @@ def plot_observation_semantics(payload: Mapping[str, Any], output_path: Path) ->
     ax.text(4.12, 1.20, "Interpretation rules", fontsize=8.5, weight="bold", color=INK)
     ax.text(
         4.12,
-        0.92,
-        "missing ≠ unseen\nunsupported / unavailable ≠ numeric zero",
-        fontsize=8.4,
+        1.06,
+        "missing ≠ unseen\nunsupported / unavailable\n≠ numeric zero",
+        fontsize=6.6,
         color=INK,
-        va="center",
+        va="top",
     )
     ax.text(
         4.12,
         0.48,
-        "A numeric zero is valid only when a receipt measures zero.",
-        fontsize=7.0,
+        textwrap.fill(
+            "A numeric zero is valid only when a receipt measures zero.", width=29
+        ),
+        fontsize=5.8,
         color=MUTED,
     )
 
@@ -628,8 +630,8 @@ def plot_observation_semantics(payload: Mapping[str, Any], output_path: Path) ->
     ax.text(
         6.48,
         0.82,
-        f"source-bound receipts · {protocol_id} · hash {protocol_hash} · replay status {replay_status}",
-        fontsize=7.0,
+        f"protocol: {protocol_id} · hash {protocol_hash}\nreplay receipt: {replay_status}",
+        fontsize=6.1,
         color=INK,
         va="center",
     )

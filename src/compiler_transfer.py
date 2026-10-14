@@ -19,7 +19,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Callable
+from typing import Any, cast
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_MODE_64, Cs
 
@@ -547,7 +547,7 @@ def _compile_one(
         # hash non-deterministic across runs.  Clang reads the source from
         # stdin and keeps an absolute object path.
         object_ref = str(object_path) if spec["stdin_source"] else object_path.name
-        source_ref = None if spec["stdin_source"] else source_path.name
+        source_ref = source_path.name if source_path is not None else ""
         command = [
             object_ref
             if part == "<object>"
@@ -764,20 +764,27 @@ def validate_compiler_transfer_payload(payload: object) -> tuple[bool, str]:
     for row in rows:
         if not isinstance(row, dict):
             return False, "compiler transfer row is not an object"
-        compiler = row.get("compiler")
-        spec = COMPILER_SPECS.get(compiler) if isinstance(compiler, str) else None
-        if spec is None:
+        row_compiler = row.get("compiler")
+        row_spec = (
+            COMPILER_SPECS.get(row_compiler) if isinstance(row_compiler, str) else None
+        )
+        if row_spec is None:
             return False, "compiler transfer row names an unknown compiler"
-        cell = (compiler, row.get("source_id"), row.get("target_id"), row.get("optimization"))
+        cell = (
+            row_compiler,
+            row.get("source_id"),
+            row.get("target_id"),
+            row.get("optimization"),
+        )
         if not all(isinstance(part, str) for part in cell):
             return False, "compiler transfer row matrix key is incomplete"
         if cell in seen_cells:
             return False, "compiler transfer matrix contains duplicate cells"
-        seen_cells.add(cell)
-        target = spec["targets"].get(row.get("target_id"))
+        seen_cells.add(cast(tuple[str, str, str, str], cell))
+        target = row_spec["targets"].get(row.get("target_id"))
         if target is None:
             return False, "compiler transfer row names an unknown target id"
-        if row.get("optimization") not in spec["optimizations"]:
+        if row.get("optimization") not in row_spec["optimizations"]:
             return False, "compiler transfer row has unknown optimization level"
         if row.get("object_format") != target["object_format"]:
             return False, "compiler transfer row object-format drift"
@@ -836,10 +843,9 @@ def validate_compiler_transfer_payload(payload: object) -> tuple[bool, str]:
     ):
         return False, "compiler transfer capability summary object-format set drift"
     source_families = payload.get("source_families")
-    if (
-        not isinstance(source_families, list)
-        or summary.get("source_family_count") != len(source_families)
-    ):
+    if not isinstance(source_families, list) or summary.get(
+        "source_family_count"
+    ) != len(source_families):
         return False, "compiler transfer capability summary source-family count drift"
     for claim_field in (
         "compiler_matrix_claim",

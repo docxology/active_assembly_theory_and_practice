@@ -126,7 +126,7 @@ The project follows the template code-project pattern:
     `docs/evaluation.md`.
 
 36. `src.visual_atlas.py` produces the nine narrative visuals from live
-    receipts, while `src/figure_contract.py` unifies all 64 substantive figure
+    receipts, while `src/figure_contract.py` unifies all 68 substantive figure
     specifications, source hashes, captions, alternatives, long descriptions,
     vector companions, and the offline semantic atlas. Legacy plotting callers
     remain compatible through `FIGURE_CAPTIONS` and the existing path tokens.

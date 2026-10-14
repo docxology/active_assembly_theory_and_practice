@@ -18,8 +18,6 @@ import numpy as np
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .generative_model import build_generative_model
 
-_EPS = 1e-12
-
 
 @dataclass(frozen=True)
 class TemporalGenerativeModel:
@@ -130,8 +128,10 @@ def _variational_free_energy(logits: np.ndarray, posterior: np.ndarray) -> float
     is scored against unnormalized ``logits = log_prior + log_likelihood``.
     """
 
-    safe_posterior = np.clip(posterior, _EPS, 1.0)
-    return float(np.sum(safe_posterior * (np.log(safe_posterior) - logits)))
+    positive = posterior > 0.0
+    return float(
+        np.sum(posterior[positive] * (np.log(posterior[positive]) - logits[positive]))
+    )
 
 
 @dataclass(frozen=True)
@@ -200,7 +200,9 @@ def forward_filter(
         observation_ids, observation_count=len(model.observation_labels)
     )
 
-    posterior = np.asarray(model.D, dtype=float)
+    log_posterior = np.log(model.D)
+    log_a = np.log(model.A)
+    log_b = np.log(model.B)
     filtered_posteriors: list[tuple[float, ...]] = []
     predicted_priors: list[tuple[float, ...]] = []
     free_energy_by_step: list[float] = []
@@ -208,22 +210,18 @@ def forward_filter(
     log_evidence = 0.0
 
     for step, obs in enumerate(ids):
-        if step == 0:
-            prior = np.asarray(model.D, dtype=float)
-        else:
-            prior = model.B @ posterior
-        prior = prior / prior.sum()
-        predicted_priors.append(tuple(float(value) for value in prior))
-
-        likelihood = np.asarray(model.A[obs, :], dtype=float)
-        unnormalized = prior * likelihood
-        marginal = float(unnormalized.sum())
-        log_evidence += float(np.log(max(marginal, _EPS)))
-        posterior = unnormalized / marginal
-
-        log_prior = np.log(np.clip(prior, _EPS, 1.0))
-        log_likelihood = np.log(np.clip(likelihood, _EPS, 1.0))
-        logits = log_prior + log_likelihood
+        log_prior = (
+            np.log(model.D)
+            if step == 0
+            else np.logaddexp.reduce(log_b + log_posterior[np.newaxis, :], axis=1)
+        )
+        log_prior -= np.logaddexp.reduce(log_prior)
+        predicted_priors.append(tuple(float(value) for value in np.exp(log_prior)))
+        logits = log_prior + log_a[obs, :]
+        log_marginal = float(np.logaddexp.reduce(logits))
+        log_evidence += log_marginal
+        log_posterior = logits - log_marginal
+        posterior = np.exp(log_posterior)
 
         filtered_posteriors.append(tuple(float(value) for value in posterior))
         free_energy_by_step.append(_variational_free_energy(logits, posterior))
@@ -256,9 +254,9 @@ def viterbi_decode(
     )
 
     n_states = len(model.hidden_state_labels)
-    log_a = np.log(np.clip(np.asarray(model.A, dtype=float), _EPS, 1.0))
-    log_b = np.log(np.clip(np.asarray(model.B, dtype=float), _EPS, 1.0))
-    log_d = np.log(np.clip(np.asarray(model.D, dtype=float), _EPS, 1.0))
+    log_a = np.log(np.asarray(model.A, dtype=float))
+    log_b = np.log(np.asarray(model.B, dtype=float))
+    log_d = np.log(np.asarray(model.D, dtype=float))
 
     delta = log_d + log_a[ids[0], :]
     backpointers: list[np.ndarray] = []
@@ -306,7 +304,7 @@ def forward_backward(
 ) -> SmoothingResult:
     """Standard forward-backward smoothing.
 
-    Computes scaled forward (alpha) and backward (beta) messages and returns
+    Computes log-space forward (alpha) and backward (beta) messages and returns
     the per-step smoothed posteriors ``gamma_t ∝ alpha_t * beta_t``. Each step
     sums to one; at the last step gamma equals the forward filter posterior.
     """
@@ -318,32 +316,26 @@ def forward_backward(
 
     n_steps = len(ids)
     n_states = len(model.hidden_state_labels)
-    matrix_a = np.asarray(model.A, dtype=float)
-    matrix_b = np.asarray(model.B, dtype=float)
-    prior_d = np.asarray(model.D, dtype=float)
-
-    # Scaled forward pass.
-    alpha = np.zeros((n_steps, n_states), dtype=float)
-    prior = prior_d
+    log_a = np.log(model.A)
+    log_b = np.log(model.B)
+    log_alpha = np.zeros((n_steps, n_states), dtype=float)
+    log_prior = np.log(model.D)
     for step, obs in enumerate(ids):
         if step > 0:
-            prior = matrix_b @ alpha[step - 1]
-        unnormalized = prior * matrix_a[obs, :]
-        alpha[step] = unnormalized / unnormalized.sum()
+            log_prior = np.logaddexp.reduce(
+                log_b + log_alpha[step - 1][np.newaxis, :], axis=1
+            )
+        logits = log_prior + log_a[obs, :]
+        log_alpha[step] = logits - np.logaddexp.reduce(logits)
 
-    # Scaled backward pass. beta is normalized for numerical stability; only the
-    # alpha * beta product up to per-step normalization matters for gamma.
-    beta = np.zeros((n_steps, n_states), dtype=float)
-    beta[-1] = np.ones(n_states, dtype=float) / n_states
+    log_beta = np.zeros((n_steps, n_states), dtype=float)
     for step in range(n_steps - 2, -1, -1):
-        obs_next = ids[step + 1]
-        weighted = matrix_a[obs_next, :] * beta[step + 1]
-        # message[s] = sum_{s'} B[s', s] * weighted[s']  (s is current state)
-        message = matrix_b.T @ weighted
-        beta[step] = message / message.sum()
-
-    smoothed = alpha * beta
-    smoothed = smoothed / smoothed.sum(axis=1, keepdims=True)
+        weighted = log_a[ids[step + 1], :] + log_beta[step + 1]
+        message = np.logaddexp.reduce(log_b + weighted[:, np.newaxis], axis=0)
+        log_beta[step] = message - np.logaddexp.reduce(message)
+    log_smoothed = log_alpha + log_beta
+    log_smoothed -= np.logaddexp.reduce(log_smoothed, axis=1, keepdims=True)
+    smoothed = np.exp(log_smoothed)
 
     smoothed_posteriors = tuple(
         tuple(float(value) for value in row) for row in smoothed

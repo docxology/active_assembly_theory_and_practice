@@ -224,7 +224,7 @@ def _milestones() -> tuple[ScientificMilestone, ...]:
             ),
             current_result=(
                 "Implemented: observation-only EM underperforms supervised MAP and "
-                "the fixed reference on the six-fixture surface."
+                "the fixed reference on the authored fixture surface."
             ),
         ),
         ScientificMilestone(
@@ -1100,7 +1100,7 @@ def scientific_program_payload() -> dict[str, object]:
         "current_evidence_boundary": (
             "The repository demonstrates a source-bound x86-64 observation bridge, controlled "
             "temporal mechanisms, typed/action-conditioned diagnostics, leakage-safe ordered-HMM "
-            "parameter learning on six transparent fixtures, and bounded P3-P10 implementation "
+            "parameter learning on the transparent fixture corpus, and bounded P3-P10 implementation "
             "receipts with active P11-P17 promotion contracts. The extensions remain local or finite: they do not establish semantic "
             "identifiability, broad cross-architecture/compiler invariance, external validity, a "
             "general theorem, or independent replication."

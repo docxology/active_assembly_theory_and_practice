@@ -9,6 +9,8 @@ import zipfile
 from src.docx_validation import (
     DOCX_ARTIFACT,
     DOCX_RECEIPT_ARTIFACT,
+    HYDRATED_SOURCE_BINDING_PREFIX,
+    _hydrated_manuscript_hash,
     docx_render_payload,
     validate_docx_render_payload,
     validate_docx_render_receipt,
@@ -101,6 +103,11 @@ def _write_fake_docx(
     relationship_xml = (
         f'<Relationships xmlns="{relationship_namespace}">{relationships}</Relationships>'
     ).encode("utf-8")
+    source_figures = project_root / "output/figures"
+    source_figures.mkdir()
+    for name in media_names:
+        if name != "cover.png":
+            (source_figures / name).write_bytes(b"PNG fixture " + name.encode())
     artifact = project_root / DOCX_ARTIFACT
     with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("[Content_Types].xml", "<Types/>")
@@ -108,11 +115,18 @@ def _write_fake_docx(
         archive.writestr("word/document.xml", document)
         archive.writestr("word/_rels/document.xml.rels", relationship_xml)
         archive.writestr("word/styles.xml", "<styles/>")
-        archive.writestr("docProps/core.xml", "<coreProperties/>")
+        archive.writestr(
+            "docProps/core.xml",
+            '<coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            f"<dc:description>{HYDRATED_SOURCE_BINDING_PREFIX}{_hydrated_manuscript_hash(project_root)}</dc:description>"
+            "</coreProperties>",
+        )
         for name in media_names:
             archive.writestr(
                 f"word/media/{name}",
-                b"COVER PNG" if name == "cover.png" else b"PNG fixture",
+                b"COVER PNG"
+                if name == "cover.png"
+                else b"PNG fixture " + name.encode(),
             )
 
 
@@ -199,3 +213,45 @@ def test_docx_contract_fails_closed_when_artifact_is_missing(tmp_path: Path) -> 
     assert validate_docx_render_receipt(tmp_path, payload) == [
         f"missing {DOCX_RECEIPT_ARTIFACT}"
     ]
+
+
+def test_docx_rejects_stale_figure_pixels_even_with_matching_counts(tmp_path):
+    _write_fake_docx(tmp_path)
+    payload = docx_render_payload(tmp_path)
+    assert payload["valid"]
+    (tmp_path / "output/figures/image0.png").write_bytes(b"changed source pixels")
+    changed = docx_render_payload(tmp_path)
+    assert changed["embedded_media_count"] == payload["embedded_media_count"]
+    assert changed["caption_count"] == payload["caption_count"]
+    assert changed["missing_source_figure_media"] == ["image0"]
+    assert not changed["valid"]
+    assert any("do not match source PNGs" in error for error in changed["errors"])
+
+
+def test_docx_rejects_missing_source_figure_and_projection_tampering(tmp_path):
+    _write_fake_docx(tmp_path)
+    payload = docx_render_payload(tmp_path)
+    payload["projection_source_hashes"]["src/docx_cover.lua"] = "0" * 64
+    assert "DOCX projection source hashes mismatch" in validate_docx_render_payload(
+        payload
+    )
+    (tmp_path / "output/figures/image1.png").unlink()
+    assert not docx_render_payload(tmp_path)["valid"]
+
+
+def test_receipt_cannot_rebind_stale_document_text_to_new_hydrated_source(tmp_path):
+    _write_fake_docx(tmp_path)
+    assert docx_render_payload(tmp_path)["valid"]
+    (tmp_path / "output/manuscript/00_abstract.md").write_text(
+        "Changed scientific text.\n"
+    )
+    payload = docx_render_payload(tmp_path)
+    assert not payload["valid"]
+    assert (
+        "embedded hydrated manuscript digest is missing or stale" in payload["errors"]
+    )
+    receipt = json.loads(write_docx_render_receipt(tmp_path).read_text())
+    assert receipt["valid"] is False
+    assert "DOCX receipt records an invalid artifact" in validate_docx_render_receipt(
+        tmp_path
+    )

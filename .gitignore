@@ -9,3 +9,5 @@ output/
 .coverage.*
 **/*.egg-info/
 formal/.lake/
+build/
+dist/

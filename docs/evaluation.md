@@ -6,15 +6,15 @@ by the validation gate; nothing is hand-stamped.
 
 ## Corpus
 
-`src/corpus.py` defines six transparent x86-64 byte fixtures
+`src/corpus.py` defines ten transparent x86-64 byte fixtures
 (`x86_accumulator`, `x86_bitwise`, `x86_guard`, `x86_long_accumulator`,
-`x86_memory`, and `x86_guard_taken`). Each fixture carries a hand-authored
+`x86_memory`, `x86_guard_taken`, `x86_call_return`,
+`x86_branch_not_taken`, `x86_stack_local`, and `x86_optimization_rewrite`). Each fixture carries a hand-authored
 phase-label sequence aligned 1:1 to its decoded instructions over the five
 hidden states (`setup`, `accumulator_update`, `representation_transform`,
 `guard_check`, `exit`). The fixtures are decoded with real Capstone and
-emulated with real Unicorn — no mocks. The final two fixtures add bounded
-stack-memory operands and a taken branch that skips a statically decoded
-instruction, so the typed-model evaluation has observable static/dynamic
+emulated with real Unicorn — no mocks. The corpus includes bounded stack-memory operands, call/return,
+optimization rewrites, and taken/not-taken branches, so the typed-model evaluation has observable static/dynamic
 variation.
 
 ## Decoders compared
@@ -39,8 +39,8 @@ variation.
   `compare_models`.
 - **Leakage-safe estimation** — `fit_temporal_model` estimates categorical
   emission, transition, and initial-state probabilities with positive
-  Dirichlet smoothing. `leave_one_fixture_out_evaluation` fits on five
-  fixtures and scores the sixth, repeating for every fixture; the training and
+  Dirichlet smoothing. `leave_one_fixture_out_evaluation` fits on the complete-fixture complement
+  and scores the excluded fixture, repeating for every fixture; the training and
   held-out names are written into `held_out_model.json`.
 - **Typed observation expansion** — `src.typed_observations` retains static
   Capstone fields and bounded dynamic status without phase labels, while
@@ -134,7 +134,7 @@ register-context, control-flow, and dynamic-context groups before normalizing
 the state scores for HMM decoding. The latter is a composite score, not a
 claim of a normalized joint distribution.
 
-The generated report includes six complete-fixture held-out rows, training
+The generated report includes one complete-fixture held-out row per fixture, training
 membership, fitted supports, removal of each field family, and a deliberate
 masked-memory run. A null or negative typed-model delta remains scientifically
 useful: the expanded corpus adds one memory fixture and one alternate dynamic
@@ -150,7 +150,7 @@ The source-bound coverage inventory is written to
 bounded executed length, contiguous authored phase runs, memory addressing
 modes, direct branch-target classes, and typed instruction-family support per
 fixture. The artifact documents memory, repeated-phase, and static/dynamic
-path variation, but it does not turn six hand-authored programs into
+path variation, but it does not turn related hand-authored programs into
 independent samples of binaries.
 
 ## Active selection — reported as a non-result at corpus scale
@@ -347,3 +347,35 @@ accuracy per fixture and pooled. This makes the F3 segmentation module
 The `advanced_evaluation_freshness` check re-derives the headline summary from
 the live generator and compares it to the on-disk artifact, so a stale or
 hand-edited number fails the gate.
+
+## Statistical correction and evaluation scope (2026-10-13)
+
+Protocol v2.2 retains the quotient labels, source-family split, models, primary
+metrics, practical margin and percentile cluster intervals. Significance uses
+whole-family prediction swaps under a conditional exchangeability null, with
+inclusive ties and the Monte Carlo `(exceedances + 1) / (replicates + 1)` rule.
+The paired receipt records seed, draw count, exceedances, p-values, and null
+assumptions. Holm adjustment covers all three models by seven baselines by two
+metrics. Nonpositive bootstrap fractions remain descriptive; they are never
+passed to Holm. This retrospective correction withholds superiority claims
+until a new comparison is frozen prospectively and independently evaluated.
+
+The temporal corpus's named family unit is fixture identity, not independently
+sampled source lineage. Its fixed partition is a design inventory. Current
+supervised, factorized and observation-only fits use complete-fixture
+leave-one-out folds, so other inventory partitions can enter a fold's training
+complement. An excluded fixture's labels do not enter that fold's fitting, but
+these folds must not be called permanently held-out or lineage-disjoint tests.
+
+The HMM uses log-space filtering, smoothing and Viterbi calculations on the
+validated positive tensors. Tiny likelihoods retain their declared values;
+rare events are not rounded up to an arbitrary probability floor. Tests
+compare all three algorithms against exhaustive state-path enumeration.
+The emulation budget counts completed instructions, including the final
+instruction's register and memory effects.
+
+The quotient family unit is a generated transformation identifier. Shared
+authored template lineages remain dependent even when identifiers are disjoint
+across splits. Cluster intervals and prediction swaps describe the finite
+inventory conditionally; they do not establish population-generalization
+uncertainty or independently sampled source lineage.

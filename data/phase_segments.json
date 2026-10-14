@@ -1,4 +1,13 @@
 {
+  "artifact_id": "output/data/phase_segments.json",
+  "generator_revision": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+  "input_hashes": {
+    "producer/src/advanced_inference.py": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
   "per_fixture": {
     "x86_accumulator": {
       "segment_count": 2,
@@ -6,13 +15,13 @@
         {
           "end_index": 0,
           "label": "setup",
-          "mean_confidence": 0.8889358932708087,
+          "mean_confidence": 0.8889358932708088,
           "start_index": 0
         },
         {
           "end_index": 3,
           "label": "accumulator_update",
-          "mean_confidence": 0.7074977188389723,
+          "mean_confidence": 0.7074977188389724,
           "start_index": 1
         }
       ]
@@ -23,7 +32,7 @@
         {
           "end_index": 0,
           "label": "setup",
-          "mean_confidence": 0.36408970772153526,
+          "mean_confidence": 0.3640897077215354,
           "start_index": 0
         },
         {
@@ -34,13 +43,65 @@
         }
       ]
     },
+    "x86_branch_not_taken": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 1,
+          "label": "guard_check",
+          "mean_confidence": 0.5744693454246885,
+          "start_index": 0
+        },
+        {
+          "end_index": 6,
+          "label": "exit",
+          "mean_confidence": 0.8517941255241208,
+          "start_index": 2
+        }
+      ]
+    },
+    "x86_call_return": {
+      "segment_count": 5,
+      "segments": [
+        {
+          "end_index": 1,
+          "label": "setup",
+          "mean_confidence": 0.7681457585907009,
+          "start_index": 0
+        },
+        {
+          "end_index": 2,
+          "label": "accumulator_update",
+          "mean_confidence": 0.42632465253048035,
+          "start_index": 2
+        },
+        {
+          "end_index": 3,
+          "label": "representation_transform",
+          "mean_confidence": 0.5581970944219,
+          "start_index": 3
+        },
+        {
+          "end_index": 4,
+          "label": "guard_check",
+          "mean_confidence": 0.4825722907627662,
+          "start_index": 4
+        },
+        {
+          "end_index": 5,
+          "label": "exit",
+          "mean_confidence": 0.4105072311806205,
+          "start_index": 5
+        }
+      ]
+    },
     "x86_guard": {
       "segment_count": 3,
       "segments": [
         {
           "end_index": 0,
           "label": "setup",
-          "mean_confidence": 0.41659161352962415,
+          "mean_confidence": 0.4165916135296237,
           "start_index": 0
         },
         {
@@ -52,7 +113,7 @@
         {
           "end_index": 3,
           "label": "exit",
-          "mean_confidence": 0.5245956921494066,
+          "mean_confidence": 0.5245956921494064,
           "start_index": 2
         }
       ]
@@ -63,7 +124,7 @@
         {
           "end_index": 1,
           "label": "setup",
-          "mean_confidence": 0.7036901037352384,
+          "mean_confidence": 0.7036901037352383,
           "start_index": 0
         },
         {
@@ -80,13 +141,13 @@
         {
           "end_index": 0,
           "label": "setup",
-          "mean_confidence": 0.8989247881828858,
+          "mean_confidence": 0.8989247881828855,
           "start_index": 0
         },
         {
           "end_index": 5,
           "label": "accumulator_update",
-          "mean_confidence": 0.9071769059675703,
+          "mean_confidence": 0.9071769059675706,
           "start_index": 1
         }
       ]
@@ -97,16 +158,69 @@
         {
           "end_index": 1,
           "label": "setup",
-          "mean_confidence": 0.801779100961189,
+          "mean_confidence": 0.8017791009611889,
           "start_index": 0
         },
         {
           "end_index": 2,
           "label": "accumulator_update",
-          "mean_confidence": 0.8438159145102542,
+          "mean_confidence": 0.8438159145102543,
           "start_index": 2
         }
       ]
+    },
+    "x86_optimization_rewrite": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 0,
+          "label": "setup",
+          "mean_confidence": 0.9017815750789523,
+          "start_index": 0
+        },
+        {
+          "end_index": 7,
+          "label": "accumulator_update",
+          "mean_confidence": 0.9411815098582442,
+          "start_index": 1
+        }
+      ]
+    },
+    "x86_stack_local": {
+      "segment_count": 2,
+      "segments": [
+        {
+          "end_index": 2,
+          "label": "setup",
+          "mean_confidence": 0.9533799596721516,
+          "start_index": 0
+        },
+        {
+          "end_index": 8,
+          "label": "accumulator_update",
+          "mean_confidence": 0.8657514787972426,
+          "start_index": 3
+        }
+      ]
     }
-  }
+  },
+  "producer": "src/advanced_inference.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "artifact-payload-v1",
+  "status": "implemented_local",
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

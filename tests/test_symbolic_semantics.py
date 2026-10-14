@@ -15,13 +15,29 @@ from src.symbolic_semantics import symbolic_execute, validate_symbolic_report
 
 @pytest.mark.parametrize("fixture", build_corpus(), ids=lambda fixture: fixture.name)
 def test_symbolic_execution_agrees_with_real_unicorn_for_each_fixture(fixture) -> None:
-    """Every transparent fixture is decoded, emulated, and semantically replayed."""
+    """Check supported refinement and explicit failure outside its subset."""
 
     instructions = disassemble_bytes(fixture.code)
     trace = emulate_x86_64(fixture.code)
     report = symbolic_execute(instructions, trace)
     valid, detail = validate_symbolic_report(report)
 
+    unsupported = {
+        "x86_call_return": ["push", "call", "pop"],
+        "x86_stack_local": ["push", "mov", "pop"],
+        "x86_optimization_rewrite": ["inc", "lea", "inc"],
+    }
+    if fixture.name in unsupported:
+        assert valid is False
+        assert detail == "unsupported_executed=3"
+        assert report.unsupported_instruction_count == 3
+        assert [
+            event.mnemonic
+            for event in report.events
+            if event.executed and not event.supported
+        ] == unsupported[fixture.name]
+        assert len(report.executed_addresses) == trace.instruction_count
+        return
     assert valid, detail
     assert report.final_rax == trace.final_rax
     assert report.final_rax_matches is True

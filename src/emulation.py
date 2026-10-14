@@ -5,15 +5,15 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from unicorn import (
-    Uc,
     UC_ARCH_X86,
     UC_HOOK_CODE,
     UC_HOOK_MEM_READ,
     UC_HOOK_MEM_WRITE,
     UC_MEM_WRITE,
     UC_MODE_64,
+    Uc,
+    x86_const,
 )
-import unicorn.x86_const as x86_const
 from unicorn.x86_const import (
     UC_X86_REG_EFLAGS,
     UC_X86_REG_RAX,
@@ -153,8 +153,9 @@ def emulate_x86_64(
         pre_states.append(_snapshot(uc))
         current_instruction["address"] = int(address)
         current_instruction["index"] = len(addresses) - 1
-        if len(addresses) >= max_instructions:
-            uc.emu_stop()
+        # Unicorn's native count limit stops after executing the last allowed
+        # instruction. Stopping here would record that instruction's pre-state
+        # but suppress its effects, because UC_HOOK_CODE runs before execution.
 
     def _record_memory(
         uc: Uc,

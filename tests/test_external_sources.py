@@ -1386,9 +1386,7 @@ def _audit_fixture(tmp_path: Path) -> dict[str, object]:
     )
     destination = tmp_path / "output" / "external_sources"
     destination.mkdir(parents=True)
-    (destination / f"{row['source_id']}-{row['revision']}.archive").write_bytes(
-        archive
-    )
+    (destination / f"{row['source_id']}-{row['revision']}.archive").write_bytes(archive)
     extraction = destination / str(row["source_id"])
     extraction.mkdir()
     (extraction / "LICENSE").write_bytes(b"BSD-3-Clause\n")
@@ -1422,9 +1420,7 @@ def test_preparation_audit_full_pass_is_offline_static_and_valid(
     assert payload["execution_performed"] is False
     assert payload["static_only"] is True
     assert payload["promotion_requires"] == "MAJ-01_independent_replay"
-    assert [step["step_id"] for step in payload["steps"]] == list(
-        _EXTERNAL_AUDIT_STEPS
-    )
+    assert [step["step_id"] for step in payload["steps"]] == list(_EXTERNAL_AUDIT_STEPS)
     assert all(step["status"] == "validated" for step in payload["steps"])
     static_step = _audit_step_index(payload)["static_compile"]
     assert static_step["rows"][0]["object_sha256"]
@@ -1469,9 +1465,7 @@ def test_preparation_audit_records_archive_digest_mismatch(
     tmp_path: Path,
 ) -> None:
     _audit_fixture(tmp_path)
-    archive_path = next(
-        (tmp_path / "output" / "external_sources").glob("*.archive")
-    )
+    archive_path = next((tmp_path / "output" / "external_sources").glob("*.archive"))
     archive_path.write_bytes(b"tampered-bytes")
     payload = external_corpus_preparation_audit_payload(tmp_path)
     step = _audit_step_index(payload)["archive_digest_verify"]
@@ -1486,9 +1480,7 @@ def test_preparation_audit_records_missing_and_changed_license(
     tmp_path: Path,
 ) -> None:
     _audit_fixture(tmp_path)
-    license_path = (
-        tmp_path / "output" / "external_sources" / "project_a" / "LICENSE"
-    )
+    license_path = tmp_path / "output" / "external_sources" / "project_a" / "LICENSE"
     license_path.write_bytes(b"MIT\n")
     payload = external_corpus_preparation_audit_payload(tmp_path)
     step = _audit_step_index(payload)["license_check"]
@@ -1560,9 +1552,10 @@ def test_preparation_audit_validator_matrix_is_fail_closed(
 
     bad_step_boundary = deepcopy(payload)
     bad_step_boundary["steps"][0]["static_only"] = False
-    assert validate_external_corpus_preparation_audit_payload(bad_step_boundary)[
-        0
-    ] is False
+    assert (
+        validate_external_corpus_preparation_audit_payload(bad_step_boundary)[0]
+        is False
+    )
 
     bad_row = deepcopy(payload)
     bad_row["steps"][0]["rows"][0]["execution_performed"] = True
@@ -1578,15 +1571,12 @@ def test_preparation_audit_validator_matrix_is_fail_closed(
 
     top_efficacy = deepcopy(payload)
     top_efficacy["accuracy"] = 0.9
-    assert (
-        validate_external_corpus_preparation_audit_payload(top_efficacy)[0] is False
-    )
+    assert validate_external_corpus_preparation_audit_payload(top_efficacy)[0] is False
 
     nested_efficacy = deepcopy(payload)
     nested_efficacy["steps"][0]["evidence"]["effectiveness"] = 1
     assert (
-        validate_external_corpus_preparation_audit_payload(nested_efficacy)[0]
-        is False
+        validate_external_corpus_preparation_audit_payload(nested_efficacy)[0] is False
     )
 
 
@@ -1598,9 +1588,9 @@ def test_preparation_audit_no_efficacy_invariant(tmp_path: Path) -> None:
     def walk(node: object) -> None:
         if isinstance(node, dict):
             for key, value in node.items():
-                assert not any(
-                    token in str(key).lower() for token in tokens
-                ), f"efficacy key leaked: {key}"
+                assert not any(token in str(key).lower() for token in tokens), (
+                    f"efficacy key leaked: {key}"
+                )
                 walk(value)
         elif isinstance(node, list):
             for item in node:

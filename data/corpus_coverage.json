@@ -1,11 +1,43 @@
 {
+  "artifact_id": "output/data/corpus_coverage.json",
+  "frozen_split": {
+    "assignment": {
+      "x86_accumulator": "training",
+      "x86_bitwise": "training",
+      "x86_branch_not_taken": "held_out",
+      "x86_call_return": "training",
+      "x86_guard": "held_out",
+      "x86_guard_taken": "held_out",
+      "x86_long_accumulator": "development",
+      "x86_memory": "development",
+      "x86_optimization_rewrite": "training",
+      "x86_stack_local": "held_out"
+    },
+    "families_per_split": {
+      "development": 2,
+      "held_out": 4,
+      "training": 4
+    },
+    "frozen_before_scoring": true,
+    "protocol_ref": "active-assembly-open-roadmap-v2-2026-10-13",
+    "unit": "source_program_family"
+  },
+  "generator_revision": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+  "input_hashes": {
+    "producer/src/advanced_inference.py": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
   "interpretation": "Coverage variation is a fixture-design diagnostic. It supports a more informative Phase A stress test but is not independent binary sampling, external validity, or evidence that typed fields encode intrinsic program semantics.",
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
   "method": "transparent_fixture_coverage_inventory",
   "per_fixture": [
     {
       "branch_target_classes": [],
       "dynamic_path_fraction": 1.0,
       "executed_instruction_count": 4,
+      "family": "x86_accumulator",
       "fixture": "x86_accumulator",
       "has_alternate_dynamic_path": false,
       "has_memory_variation": false,
@@ -24,6 +56,7 @@
       },
       "phase_run_count": 4,
       "repeated_phase_count": 0,
+      "split": "training",
       "static_instruction_count": 4,
       "typed_field_cardinality": {
         "branch_target_class": 1,
@@ -41,6 +74,7 @@
       "branch_target_classes": [],
       "dynamic_path_fraction": 1.0,
       "executed_instruction_count": 4,
+      "family": "x86_bitwise",
       "fixture": "x86_bitwise",
       "has_alternate_dynamic_path": false,
       "has_memory_variation": false,
@@ -57,6 +91,7 @@
       },
       "phase_run_count": 3,
       "repeated_phase_count": 1,
+      "split": "training",
       "static_instruction_count": 4,
       "typed_field_cardinality": {
         "branch_target_class": 1,
@@ -76,6 +111,7 @@
       ],
       "dynamic_path_fraction": 1.0,
       "executed_instruction_count": 4,
+      "family": "x86_guard",
       "fixture": "x86_guard",
       "has_alternate_dynamic_path": false,
       "has_memory_variation": false,
@@ -94,6 +130,7 @@
       },
       "phase_run_count": 3,
       "repeated_phase_count": 1,
+      "split": "held_out",
       "static_instruction_count": 4,
       "typed_field_cardinality": {
         "branch_target_class": 2,
@@ -111,6 +148,7 @@
       "branch_target_classes": [],
       "dynamic_path_fraction": 1.0,
       "executed_instruction_count": 6,
+      "family": "x86_long_accumulator",
       "fixture": "x86_long_accumulator",
       "has_alternate_dynamic_path": false,
       "has_memory_variation": false,
@@ -129,6 +167,7 @@
       },
       "phase_run_count": 5,
       "repeated_phase_count": 1,
+      "split": "development",
       "static_instruction_count": 6,
       "typed_field_cardinality": {
         "branch_target_class": 1,
@@ -146,6 +185,7 @@
       "branch_target_classes": [],
       "dynamic_path_fraction": 1.0,
       "executed_instruction_count": 3,
+      "family": "x86_memory",
       "fixture": "x86_memory",
       "has_alternate_dynamic_path": false,
       "has_memory_variation": true,
@@ -164,6 +204,7 @@
       },
       "phase_run_count": 3,
       "repeated_phase_count": 0,
+      "split": "development",
       "static_instruction_count": 3,
       "typed_field_cardinality": {
         "branch_target_class": 1,
@@ -183,6 +224,7 @@
       ],
       "dynamic_path_fraction": 0.8,
       "executed_instruction_count": 4,
+      "family": "x86_guard_taken",
       "fixture": "x86_guard_taken",
       "has_alternate_dynamic_path": true,
       "has_memory_variation": false,
@@ -202,6 +244,7 @@
       },
       "phase_run_count": 4,
       "repeated_phase_count": 1,
+      "split": "held_out",
       "static_instruction_count": 5,
       "typed_field_cardinality": {
         "branch_target_class": 2,
@@ -214,21 +257,189 @@
         "register_write_set": 4
       },
       "unexecuted_instruction_count": 1
+    },
+    {
+      "branch_target_classes": [
+        "external",
+        "internal",
+        "return"
+      ],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 6,
+      "family": "x86_call_return",
+      "fixture": "x86_call_return",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "control_transfer",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "exit": 1,
+        "guard_check": 2,
+        "setup": 3
+      },
+      "phase_run_count": 5,
+      "repeated_phase_count": 2,
+      "split": "training",
+      "static_instruction_count": 6,
+      "typed_field_cardinality": {
+        "branch_target_class": 4,
+        "dynamic_status": 1,
+        "flag_effect": 1,
+        "instruction_family": 2,
+        "memory_addressing_mode": 1,
+        "operand_class": 3,
+        "register_read_set": 4,
+        "register_write_set": 4
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [
+        "external",
+        "internal"
+      ],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 7,
+      "family": "x86_branch_not_taken",
+      "fixture": "x86_branch_not_taken",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "comparison",
+        "control_transfer",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "accumulator_update": 1,
+        "exit": 1,
+        "guard_check": 4,
+        "setup": 1
+      },
+      "phase_run_count": 5,
+      "repeated_phase_count": 1,
+      "split": "held_out",
+      "static_instruction_count": 7,
+      "typed_field_cardinality": {
+        "branch_target_class": 3,
+        "dynamic_status": 1,
+        "flag_effect": 3,
+        "instruction_family": 4,
+        "memory_addressing_mode": 1,
+        "operand_class": 1,
+        "register_read_set": 3,
+        "register_write_set": 4
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 9,
+      "family": "x86_stack_local",
+      "fixture": "x86_stack_local",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": false,
+      "instruction_families": [
+        "arithmetic",
+        "bitwise",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [],
+      "memory_operand_count": 0,
+      "phase_counts": {
+        "accumulator_update": 3,
+        "exit": 1,
+        "representation_transform": 1,
+        "setup": 4
+      },
+      "phase_run_count": 6,
+      "repeated_phase_count": 2,
+      "split": "held_out",
+      "static_instruction_count": 9,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 3,
+        "memory_addressing_mode": 1,
+        "operand_class": 2,
+        "register_read_set": 4,
+        "register_write_set": 5
+      },
+      "unexecuted_instruction_count": 0
+    },
+    {
+      "branch_target_classes": [],
+      "dynamic_path_fraction": 1.0,
+      "executed_instruction_count": 8,
+      "family": "x86_optimization_rewrite",
+      "fixture": "x86_optimization_rewrite",
+      "has_alternate_dynamic_path": false,
+      "has_memory_variation": true,
+      "instruction_families": [
+        "arithmetic",
+        "bitwise",
+        "data_transfer"
+      ],
+      "memory_addressing_modes": [
+        "base_plus_displacement"
+      ],
+      "memory_operand_count": 1,
+      "phase_counts": {
+        "accumulator_update": 5,
+        "exit": 1,
+        "representation_transform": 1,
+        "setup": 1
+      },
+      "phase_run_count": 5,
+      "repeated_phase_count": 1,
+      "split": "training",
+      "static_instruction_count": 8,
+      "typed_field_cardinality": {
+        "branch_target_class": 1,
+        "dynamic_status": 1,
+        "flag_effect": 2,
+        "instruction_family": 3,
+        "memory_addressing_mode": 2,
+        "operand_class": 2,
+        "register_read_set": 3,
+        "register_write_set": 2
+      },
+      "unexecuted_instruction_count": 0
     }
   ],
-  "schema_version": "1.0.0",
+  "producer": "src/advanced_inference.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "1.1.0",
   "scope": "real Capstone static decoding and bounded Unicorn execution over hand-authored transparent x86-64 fixtures",
+  "status": "implemented_local",
   "summary": {
     "alternate_path_fixture_count": 1,
-    "fixture_count": 6,
-    "memory_fixture_count": 1,
-    "repeated_phase_fixture_count": 4,
-    "total_executed_instruction_count": 25,
-    "total_phase_run_count": 22,
-    "total_static_instruction_count": 26,
-    "unique_branch_target_class_count": 2,
+    "fixture_count": 10,
+    "memory_fixture_count": 2,
+    "repeated_phase_fixture_count": 8,
+    "total_executed_instruction_count": 55,
+    "total_phase_run_count": 43,
+    "total_static_instruction_count": 56,
+    "unique_branch_target_class_count": 3,
     "unique_instruction_family_count": 5,
-    "unique_memory_mode_count": 1
+    "unique_memory_mode_count": 2
+  },
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
   },
   "typed_fields": [
     "instruction_family",
@@ -240,10 +451,14 @@
     "branch_target_class",
     "dynamic_status"
   ],
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
   "unique_values": {
     "branch_target_classes": [
       "external",
-      "internal"
+      "internal",
+      "return"
     ],
     "instruction_families": [
       "arithmetic",
@@ -253,7 +468,11 @@
       "data_transfer"
     ],
     "memory_addressing_modes": [
+      "base_plus_displacement",
       "stack_relative"
     ]
-  }
+  },
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

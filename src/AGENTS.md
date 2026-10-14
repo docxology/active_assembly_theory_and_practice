@@ -8,7 +8,7 @@ builds a figure lives here. [`../scripts`](../scripts/AGENTS.md) hold no logic:
 they import from this package, call it, and write artifacts. Tests in
 [`../tests`](../tests/AGENTS.md) import these modules directly.
 
-The package contains 58 modules plus `__init__.py` and the
+The package contains 59 modules plus `__init__.py` and the
 [`assembly_packages/`](assembly_packages/AGENTS.md) subpackage.
 
 ## Import boundary
@@ -30,7 +30,7 @@ The package contains 58 modules plus `__init__.py` and the
 
 | Module | Purpose |
 | --- | --- |
-| `corpus.py` | The six transparent x86-64 byte fixtures (`x86_accumulator`, `x86_bitwise`, `x86_guard`, `x86_long_accumulator`, `x86_memory`, `x86_guard_taken`). |
+| `corpus.py` | Ten transparent x86-64 byte fixtures covering register arithmetic, branch paths, memory, stack, call/return, and optimization rewrites. |
 | `disassembly.py` | Capstone-backed static decoding with register and memory-operand metadata. |
 | `emulation.py` | Bounded Unicorn execution with read/write memory hooks. |
 | `features.py` | Categorical observation features derived from instruction and trace events. |
@@ -108,7 +108,8 @@ validation oracle).
 atlas; `visual_atlas.py` produces the narrative atlas figures.
 `manuscript_variables.py` and `manuscript_registry.py` hydrate the
 `{{TOKEN}}` surface for [`../manuscript`](../manuscript/AGENTS.md);
-`docx_validation.py` and `pdf_accessibility.py` audit the rendered artifacts
+`document_rendering.py` completes the source-configured DOCX cover through the
+canonical renderer; `docx_validation.py` and `pdf_accessibility.py` audit the rendered artifacts
 after the sibling template renders them.
 
 ## Boundaries to preserve

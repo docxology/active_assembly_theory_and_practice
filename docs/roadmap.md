@@ -1,6 +1,6 @@
 # Scientific roadmap and current backlog
 
-**Roadmap revision:** 2026-09-03
+**Roadmap revision:** 2026-10-13
 
 **Repository:** `docxology/active_assembly_theory_and_practice`
 **Machine-readable status source:** `output/data/scientific_program.json`
@@ -70,7 +70,7 @@ surfaces, not unstarted roadmap tasks:
   policy certificates, and non-oracle baselines;
 - the public/private replay bundle, no-network replay path, controlled guest
   replay receipt, and stale-source rejection;
-- the 64-substantive-figure source-bound atlas, cover contract, caption and
+- the source-registered substantive-figure source-bound atlas, cover contract, caption and
   alternative-text registry, vector/raster outputs, tagged PDF, and DOCX
   validation surface.
 - the MIN-04 formal boundary regression pack covering width updates,
@@ -107,6 +107,16 @@ surfaces, not unstarted roadmap tasks:
 These items should receive regression coverage and freshness audits. They should
 not reappear in future documentation as “to do,” “next tranche,” or “not yet
 implemented” unless a new defect is demonstrated.
+
+### October correctness and methods maintenance
+
+The emulator budget now counts completed steps; HMM inference preserves tiny
+positive likelihoods in log space. Protocol v2.2 distinguishes percentile
+cluster intervals from whole-family prediction-swap significance diagnostics.
+This retrospective correction retains endpoints and withholds superiority
+claims pending prospective independent evaluation. Temporal inventory splits
+are described separately from the complete-fixture exclusion folds actually
+scored. These repairs do not close any external or independent evidence gate.
 
 ## Open evidence gates
 

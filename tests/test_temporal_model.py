@@ -455,3 +455,62 @@ def test_determinism_repeated_runs_identical() -> None:
     first = forward_filter(ids, model).to_dict()
     second = forward_filter(ids, model).to_dict()
     assert first == second
+
+
+def test_rare_likelihoods_preserve_evidence_and_joint_path() -> None:
+    """Strictly positive rare events must not be rounded up to 1e-12."""
+    model = TemporalGenerativeModel(
+        A=np.asarray([[1e-100, 2e-100], [1.0, 1.0]]),
+        B=np.asarray([[0.8, 0.3], [0.2, 0.7]]),
+        D=np.asarray([0.6, 0.4]),
+        observation_labels=("rare", "common"),
+        hidden_state_labels=("a", "b"),
+    )
+    result = forward_filter([0], model)
+    assert result.log_evidence == pytest.approx(np.log(1.4e-100))
+    assert result.final_posterior == pytest.approx([3 / 7, 4 / 7])
+    assert sum(result.free_energy_by_step) == pytest.approx(-result.log_evidence)
+    labels, log_probability = viterbi_decode([0], model)
+    assert labels == ("b",)
+    assert log_probability == pytest.approx(np.log(8e-101))
+    assert log_probability <= result.log_evidence
+
+
+def test_hmm_matches_exhaustive_log_space_path_enumeration() -> None:
+    """Filtering, Viterbi and smoothing share the same very small probabilities."""
+    from itertools import product
+
+    model = TemporalGenerativeModel(
+        A=np.asarray([[1e-200, 2e-200], [1.0, 1.0]]),
+        B=np.asarray([[0.8, 0.3], [0.2, 0.7]]),
+        D=np.asarray([0.6, 0.4]),
+        observation_labels=("rare", "common"),
+        hidden_state_labels=("a", "b"),
+    )
+    observations = [0, 1, 0, 0]
+    paths = list(product(range(2), repeat=len(observations)))
+    log_weights = np.asarray(
+        [
+            np.log(model.D[path[0]])
+            + sum(np.log(model.A[obs, state]) for obs, state in zip(observations, path))
+            + sum(np.log(model.B[path[t], path[t - 1]]) for t in range(1, len(path)))
+            for path in paths
+        ]
+    )
+    evidence = np.logaddexp.reduce(log_weights)
+    weights = np.exp(log_weights - evidence)
+    smoothed = forward_backward(observations, model)
+    for step, posterior in enumerate(smoothed.smoothed_posteriors):
+        expected = [
+            sum(weight for path, weight in zip(paths, weights) if path[step] == state)
+            for state in range(2)
+        ]
+        assert posterior == pytest.approx(expected)
+    result = forward_filter(observations, model)
+    assert result.log_evidence == pytest.approx(evidence)
+    assert result.final_posterior == pytest.approx(smoothed.final_posterior)
+    assert sum(result.free_energy_by_step) == pytest.approx(-evidence)
+    labels, log_probability = viterbi_decode(observations, model)
+    best = paths[int(log_weights.argmax())]
+    assert labels == tuple(model.hidden_state_labels[state] for state in best)
+    assert log_probability == pytest.approx(log_weights.max())

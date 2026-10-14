@@ -560,7 +560,7 @@ def weakly_supervised_parameter_learning_payload(
         "The multi-start analysis is a finite robustness result, not population-level inference.",
     ]
     underpowered_cases = [
-        "The current six-fixture surface is below the protocol minimum independent-family target.",
+        "The current authored-fixture surface is below the protocol minimum independent-family target; fixture identities are not independent source lineages.",
     ]
     envelope = build_receipt_envelope(
         protocol=protocol,

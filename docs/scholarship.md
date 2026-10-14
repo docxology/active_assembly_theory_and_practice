@@ -39,10 +39,8 @@ claim appear stronger.
 
 On 2026-09-17, a full closure audit recorded 47/47 ledger keys cited 1:1 with
 `manuscript/references.bib`, and 40/40 claim-register entries validated and
-spot-checked against their receipts. The only known open gap is the absence of
-dedicated `nasm_manual` and rustc manual citations (flagged by the
-compiler-transfer figure sources); whether to add them is the manuscript
-agent's decision. This audit introduced no new claim and changed no claim
+spot-checked against their receipts. That historical audit did not cover dedicated Rust compiler documentation
+or the updated role of the existing `nasm` manual citation. This audit introduced no new claim and changed no claim
 boundary.
 
 ## Source Roles
@@ -105,3 +103,35 @@ generative model. It must not say that:
 - finite RxInfer Bethe Free Energy proves semantic understanding;
 - optional adapters produced facts when they were only probed;
 - Free Energy Principle citations imply a binary is an active biological agent.
+
+## 2026-10-13 targeted primary-source review
+
+The NASM manual's running/format section and the official rustc command-line
+and code-generation chapters were checked against the static compiler-transfer
+interfaces. The existing `nasm` role now describes optional transfer cells,
+and `rustc_manual` is cited at the same boundary. These sources document
+interfaces; they do not certify compiler correctness or behavioral transfer.
+
+Phipson and Smyth (2010; DOI `10.2202/1544-6115.1585`) was checked against the
+authors' corrected manuscript and added as `phipson2010permutation` for the
+inclusive-tail, plus-one Monte Carlo rule. It does not establish the benchmark's
+family-exchangeability assumption or retroactively preregister a correction.
+All added keys must pass the existing ledger/BibTeX/manuscript closure gate.
+
+The DOI-bearing ledger was also checked through Crossref metadata: 16 of 21
+records were retrieved, with title/year agreement after stripping publisher
+HTML markup. Five Crossref lookups were unavailable (three rate limits, plus
+JSTOR and Zenodo identifiers outside the retrieved Crossref records); these
+are retrieval limitations rather than evidence of invalid sources. The RxInfer
+JOSS publisher page independently confirmed its title, authors and 2023 date.
+This metadata audit does not certify every source's full scientific content.
+
+Four unavailable Crossref lookups were resolved through primary records:
+[JOSS](https://joss.theoj.org/papers/10.21105/joss.05161),
+[Rabiner's publication list](https://web.ece.ucsb.edu/Faculty/Rabiner/ece259/publications.html),
+[Cambridge](https://www.cambridge.org/core/books/introduction-to-bisimulation-and-coinduction/8B54001CB763BAE9C4BA602C0A341D60), and
+[Zenodo](https://zenodo.org/records/7867028). The Cambridge landing URL is
+corrected and the RO-Crate citation identifies the pinned 1.1.3 release.
+The JSTOR landing title resolves, but its detailed metadata was not accessible
+in this follow-up; the prior record and citation remain rather than inferring
+verification from an unavailable page.

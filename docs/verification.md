@@ -1,6 +1,6 @@
 # Verification
 
-Run from the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
+Run from the project checkout:
 
 ```bash
 uv run pytest tests \
@@ -64,7 +64,7 @@ label-blind prediction file against the sealed gold labels, which remain
 private to this ingestion boundary.
 
 The active research protocol is `output/data/research_protocol.json` at
-schema 2.1.0 (`active-assembly-open-roadmap-v2-2026-09-17`), which freezes the
+schema 2.2.0 (`active-assembly-open-roadmap-v2-2026-10-13`), which freezes the
 temporal-corpus split. All protocol-bound receipts rebind on regeneration: a
 protocol revision deliberately invalidates previously generated receipts
 rather than being silently absorbed by them.
@@ -75,7 +75,7 @@ Run the Julia integration gate:
 uv run python scripts/run_julia_tests.py
 ```
 
-Render from `/Volumes/external_drive/Git/template`:
+Render from the configured `TEMPLATE_REPO_ROOT` checkout:
 
 ```bash
 uv run python -m infrastructure.orchestration link-projects --dry-run
@@ -93,7 +93,7 @@ that validated tree without silently regenerating it under a different
 timeout. Any source, protocol, or generator change requires fresh project-side
 hydration before rendering.
 
-The figure gates require all 64 substantive specifications to have unique
+The figure gates require all 68 substantive specifications to have unique
 labels, current input hashes, nonblank PNGs, parseable vector companions, and
 complete caption/alternative/long-description metadata. The offline atlas must
 contain one semantic figure card per registry row and no remote dependency.
@@ -102,17 +102,42 @@ statuses rather than zero-valued measurements. A passing atlas gate is a
 source-bound document property, not a promotion of the scientific claim shown
 by a figure.
 
+The current template DOCX exporter omits the configured paper cover. Complete
+that edition through the same native Pandoc renderer before its integrity gate:
+
+```bash
+uv run python scripts/render_docx_cover.py
+uv run python scripts/validate_docx_render.py
+```
+
+The project-owned final filter adds the source-configured raster and alternative
+after scientific figure numbering. It also resolves scientific image references to the canonical output folder, so committed documentation snapshots cannot shadow them through Pandoc resource paths. It preserves the shared manuscript and its
+citations; a failed conversion preserves the previous DOCX.
+
+
+The DOCX 1.1 integrity lane also compares embedded media bytes with all 66
+substantive canonical PNGs and binds the active Python cover adapter and Lua
+filter. The two validator-summary figures remain outside this digest comparison
+to avoid a self-referential receipt; their count, caption, alternative and
+nonblankness checks remain active. The DOCX core metadata stores its hydrated-source SHA-256 at conversion time;
+receipt writing rejects stale text instead of rebinding it to changed sources.
+Counts alone cannot certify figure freshness. The adapter also requires the
+canonical composition receipt to match every current numbered hydrated section
+and the combined Markdown bytes, rejecting stale text before conversion.
+
+After document export, run `uv run python scripts/validate_analysis_outputs.py --existing-only` with the pre-render environment unset. This validates the existing scientific inputs and images; the default command regenerates them and belongs before rendering. Both modes refresh the build receipt and inspect the actual outputs.
+
 Post-render sanity checks:
 
 ```bash
 rg -n "\\{\\{[A-Z0-9_]+\\}\\}" \
-  /Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice/output/manuscript
+  output/manuscript
 ```
 
 Artifact freshness sanity check:
 
 ```bash
-cd /Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice
+# From the project checkout
 uv run python - <<'PY'
 from src.reproducibility import verify_reproducibility_manifest
 
@@ -155,6 +180,13 @@ structured link annotations, and parity between source table environments and
 PDF `/Table` tags. A visual pass in a PDF reader remains required for layout,
 reading order, and figure legibility.
 
+The abstract's Pandoc metadata declares PDF 2.0, tagging and the UA-2 target
+before the document class. The source preamble requests display of the document
+title. These declarations do not prove compliance: qpdf, the structural audit,
+VeraPDF and visual inspection remain required. The native LuaLaTeX environment
+also needs `seqsplit` for breakable source paths and `selnolig` for Pandoc's
+generated preamble. See the [LaTeX tagging instructions](https://tagging-project.latex-project.org/documentation/usage-instructions).
+
 The accessibility report is a post-render gate. Run it only after the template
 renderer has regenerated `output/pdf/`; a source edit or template-renderer edit
 must be followed by fresh manuscript hydration, rendering, reporting, and a
@@ -174,10 +206,9 @@ certify PDF/UA tags or reading order.
 
 The DOCX lane additionally expects the configured cover asset to be embedded
 beside the substantive figures (media count = registry figures + 1). That
-embedding is supplied by the sibling template's combined-DOCX renderer; a
-template checkout whose DOCX path does not yet carry the cover produces a
-precisely diagnosed media/alternative-text mismatch in the receipt rather
-than a silently relaxed contract. The PDF and EPUB lanes embed the cover
+embedding is completed by `scripts/render_docx_cover.py`, which uses the
+sibling template's native renderer with the project-owned cover filter. Missing
+media or alternative text remains a diagnosed receipt failure. The PDF and EPUB lanes embed the cover
 independent of this parity gate.
 
 ## What the validation gate enforces
@@ -253,3 +284,19 @@ The variable registry and build receipt provide the corresponding
 manuscript/render lineage.
 `output/data/claim_register.md` ties each bounded claim to its artifacts and
 checks.
+
+## Fresh-checkout verification order
+
+The full gate installs the locked development extra and regenerates canonical
+analysis inputs before running generated-artifact integration tests. It stops
+at the first failed prerequisite and prints the end of the failing log. Use
+`--analysis-only` for the explicit pre-render boundary; that option does not
+certify a PDF or DOCX. The default retains the rendered-document gates and
+requires the sibling template render first. `--julia` runs the real native
+package tests with `allow_reresolve=false`, preserving the committed Julia
+manifest rather than selecting newer dependencies during test setup.
+
+Set `JULIA` to an installed Julia 1.12.7 executable when the generic launcher
+selects another version. If a stale General registry cannot resolve the pinned
+RxInfer version, refresh the registry and retry with the original manifest.
+Do not replace a missing pin with a different version or a synthetic receipt.

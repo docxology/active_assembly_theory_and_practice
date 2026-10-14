@@ -11,7 +11,6 @@ from pathlib import Path
 import re
 from typing import Any
 
-import matplotlib.image as mpimg
 import numpy as np
 
 from .artifact_contract import (
@@ -87,7 +86,7 @@ from .compiler_transfer import (
     compiler_transfer_payload,
     validate_compiler_transfer_payload,
 )
-from .figures import FIGURE_CAPTIONS, plot_validation_summary
+from .figures import FIGURE_CAPTIONS, plot_validation_summary, read_png_image
 from .figure_contract import FIGURE_REGISTRY_SCHEMA_VERSION
 from .manuscript_registry import (
     COMPATIBILITY_ONLY_TOKENS,
@@ -1005,7 +1004,7 @@ def _cover_image_checks(project_root: Path) -> list[ValidationCheck]:
     image_path = project_root / "manuscript" / "assets" / "active_assembly_cover.png"
     try:
         config_text = config_path.read_text(encoding="utf-8")
-        image = np.asarray(mpimg.imread(image_path), dtype=float)
+        image = np.asarray(read_png_image(image_path), dtype=float)
         configured = 'image: "assets/active_assembly_cover.png"' in config_text
         alt_configured = 'alt: "Abstract cover illustration' in config_text
         present_and_nonblank = (
@@ -1193,7 +1192,7 @@ def _figure_checks(figure_dir: Path) -> list[ValidationCheck]:
             checks.append(_check(f"figure_{path.stem}", False, "missing"))
             continue
         try:
-            image = np.asarray(mpimg.imread(path), dtype=float)
+            image = np.asarray(read_png_image(path), dtype=float)
         except (OSError, SyntaxError, ValueError) as exc:
             checks.append(_check(f"figure_{path.stem}", False, f"unreadable: {exc}"))
             continue
@@ -1622,21 +1621,26 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
     }
     unused = sorted((set(variables) - required) - atlas_only - compatibility_only)
     pending = sorted(
-        token for token, value in variables.items() if str(value).lower() == "pending"
+        token
+        for token, value in variables.items()
+        if str(value).lower() == "pending"
+        and token not in compatibility_only - required
     )
-    if pending:
-        return [
-            _check(
-                "manuscript_variable_coverage",
-                not missing and not unused,
-                f"pre-validation values pending: missing={missing} unused={unused}",
-            ),
-            _check(
-                "manuscript_variable_registry",
-                True,
-                "deferred until validation values are produced",
-            ),
-        ]
+    # Initial validation bootstraps its own four summary values. DOCX counts
+    # may await the renderer only in the explicitly selected pre-render lane.
+    # Even then, check the registry structure instead of bypassing it.
+    deferred_tokens = {
+        "VALIDATION_PASS_COUNT",
+        "VALIDATION_FAIL_COUNT",
+        "VALIDATION_TOTAL_COUNT",
+        "VALIDATION_ALL_PASSED",
+    }
+    if os.environ.get("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER") == "1":
+        deferred_tokens.update(
+            {"DOCX_RENDER_FIGURE_COUNT", "DOCX_RENDER_CAPTION_COUNT"}
+        )
+    deferred_pending = sorted(set(pending) & deferred_tokens)
+    unresolved_pending = sorted(set(pending) - deferred_tokens)
     registry_path = project_root / MANUSCRIPT_VARIABLE_REGISTRY
     registry_errors: list[str] = []
     registry_payload: dict[str, Any] = {}
@@ -1665,8 +1669,10 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
     )
     if recorded_compatibility_only != compatibility_only - set(required):
         registry_errors.append("registry compatibility-only token summary is stale")
-    if not registry_payload.get("summary", {}).get("no_pending_values", False):
-        registry_errors.append("registry contains pending values")
+    if registry_payload.get("summary", {}).get("no_pending_values") != (not pending):
+        registry_errors.append("registry pending-value summary is stale")
+    if unresolved_pending:
+        registry_errors.append(f"registry contains pending values={unresolved_pending}")
     record_consumer_errors = [
         str(record.get("token"))
         for record in records
@@ -1677,8 +1683,8 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
     return [
         _check(
             "manuscript_variable_coverage",
-            not missing and not unused and not pending,
-            f"required={len(required)} generated={len(variables)} missing={missing} unused={unused} pending={pending}",
+            not missing and not unused and not unresolved_pending,
+            f"required={len(required)} generated={len(variables)} missing={missing} unused={unused} pending={unresolved_pending} deferred={deferred_pending}",
         ),
         _check(
             "manuscript_variable_registry",
@@ -2454,9 +2460,7 @@ def _external_preparation_audit_checks(project_root: Path) -> list[ValidationChe
     if not path.exists():
         return [
             _check("external_preparation_audit_contract", False, "artifact missing"),
-            _check(
-                "external_preparation_audit_freshness", False, "artifact missing"
-            ),
+            _check("external_preparation_audit_freshness", False, "artifact missing"),
         ]
     try:
         payload = _load_json(path)

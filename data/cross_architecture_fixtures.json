@@ -4,7 +4,19 @@
     "aarch64",
     "riscv64"
   ],
-  "protocol_id": "same-accumulator-operation-v1",
+  "artifact_id": "output/data/cross_architecture_fixtures.json",
+  "generator_revision": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+  "input_hashes": {
+    "producer/src/advanced_inference.py": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
+  "producer": "src/advanced_inference.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
   "rows": [
     {
       "accumulator_register": "RAX",
@@ -149,10 +161,24 @@
     "capstone",
     "unicorn"
   ],
+  "status": "implemented_local",
   "summary": {
     "all_bounded_executions_passed": true,
     "all_decoded_three_instructions": true,
     "architecture_count": 3,
     "same_numeric_result": true
-  }
+  },
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

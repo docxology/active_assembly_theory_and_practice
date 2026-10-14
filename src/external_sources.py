@@ -1345,7 +1345,6 @@ def write_external_source_validation_payload(project_root: Path = PROJECT_ROOT) 
     return path
 
 
-
 # Ordered preparation steps rehearsed by the consolidated audit.  The order
 # is contractual: validators reject membership or ordering drift so a
 # partially recorded audit can never look complete.
@@ -1883,9 +1882,7 @@ def external_corpus_preparation_audit_payload(
     # by step/reason/role; nothing is dropped silently.
     union: list[dict[str, object]] = []
     if contracts is not None:
-        union.extend(
-            cast(list[dict[str, object]], contracts.get("exclusions", []))
-        )
+        union.extend(cast(list[dict[str, object]], contracts.get("exclusions", [])))
     union.extend(failure_rows)
     accounting = exclusion_accounting_summary(union)
     accounting_groups = cast(list[dict[str, object]], accounting["groups"])
@@ -1927,7 +1924,11 @@ def external_corpus_preparation_audit_payload(
         else "failed"
     )
     input_hashes: dict[str, str] = {}
-    for relative in (EXTERNAL_MANIFEST_PATH, LABEL_CONTRACT_PATH, "src/external_sources.py"):
+    for relative in (
+        EXTERNAL_MANIFEST_PATH,
+        LABEL_CONTRACT_PATH,
+        "src/external_sources.py",
+    ):
         candidate = project_root / relative
         if candidate.is_file():
             input_hashes[relative] = _sha256_path(candidate)
@@ -2000,7 +2001,10 @@ def validate_external_corpus_preparation_audit_payload(
     for step in steps:
         assert isinstance(step, dict)
         if step.get("status") not in _EXTERNAL_AUDIT_STEP_STATUSES:
-            return False, f"external preparation audit step {step.get('step_id')} has an unknown status"
+            return (
+                False,
+                f"external preparation audit step {step.get('step_id')} has an unknown status",
+            )
         for field, expected in (
             ("network_used", False),
             ("execution_performed", False),
@@ -2013,15 +2017,27 @@ def validate_external_corpus_preparation_audit_payload(
                 )
         rows = step.get("rows")
         if not isinstance(rows, list):
-            return False, f"external preparation audit step {step.get('step_id')} rows must be a list"
+            return (
+                False,
+                f"external preparation audit step {step.get('step_id')} rows must be a list",
+            )
         if not isinstance(step.get("evidence"), dict):
-            return False, f"external preparation audit step {step.get('step_id')} evidence must be an object"
+            return (
+                False,
+                f"external preparation audit step {step.get('step_id')} evidence must be an object",
+            )
         for row in rows:
             if not isinstance(row, dict):
-                return False, f"external preparation audit step {step.get('step_id')} row is not an object"
+                return (
+                    False,
+                    f"external preparation audit step {step.get('step_id')} row is not an object",
+                )
             status = row.get("status")
             if status is not None and status not in _EXTERNAL_AUDIT_ROW_STATUSES:
-                return False, f"external preparation audit step {step.get('step_id')} row has an unknown status"
+                return (
+                    False,
+                    f"external preparation audit step {step.get('step_id')} row has an unknown status",
+                )
             for field, expected in (
                 ("network_used", False),
                 ("execution_performed", False),
@@ -2077,6 +2093,7 @@ def write_external_corpus_preparation_audit(
         ),
     )
     return path
+
 
 __all__ = [
     "EXTERNAL_PREPARATION_AUDIT_ARTIFACT",

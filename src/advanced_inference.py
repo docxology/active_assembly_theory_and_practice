@@ -67,6 +67,8 @@ from .model_fitting import leave_one_fixture_out_evaluation
 from .multi_arch import cross_architecture_payload, validate_cross_architecture_payload
 from .compiler_transfer import write_compiler_transfer
 from .external_sources import (
+    write_external_corpus_preparation_audit,
+    write_external_acquisition_payload,
     write_compiler_capabilities,
     write_external_source_validation_payload,
     write_external_static_validation,
@@ -86,6 +88,8 @@ from .representation_invariance import write_representation_invariance_benchmark
 from .scientific_protocol import write_scientific_protocol
 from .scientific_program import write_scientific_program
 from .sensor_costs import write_sensor_cost_payload
+from .sensing_stress import write_sensing_stress
+from .counterexample_search import write_counterexample_search
 from .theorem_phase import write_theorem_or_countertheorem
 from .temporal_model import (
     build_temporal_model,
@@ -499,6 +503,10 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         "sensor_cost_receipt": str(
             local_path(write_sensor_cost_payload(output_dir.parent))
         ),
+        "sensing_stress": str(local_path(write_sensing_stress(output_dir.parent))),
+        "counterexample_search": str(
+            local_path(write_counterexample_search(output_dir.parent))
+        ),
         "replication_manifest": str(
             local_path(write_replication_bundle(output_dir.parent))
         ),
@@ -520,6 +528,12 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
     # must not turn a local fixture test into an implicit network operation.
     external_manifest = output_dir.parent / "configs" / "external_sources.yaml"
     if external_manifest.is_file():
+        if not (data_dir / "external_acquisition.json").is_file():
+            # A fresh offline checkout needs an explicit blocked/cache receipt.
+            # Network acquisition remains exclusive to the opt-in CLI command.
+            paths["external_acquisition"] = str(
+                local_path(write_external_acquisition_payload(output_dir.parent))
+            )
         external_design = output_dir.parent / "configs" / "external_label_design.yaml"
         if external_design.is_file():
             paths["external_label_contract"] = str(
@@ -533,6 +547,9 @@ def run_advanced_inference(output_dir: Path = OUTPUT_DIR) -> dict[str, str]:
         )
         paths["external_source_validation"] = str(
             local_path(write_external_source_validation_payload(output_dir.parent))
+        )
+        paths["external_corpus_preparation_audit"] = str(
+            local_path(write_external_corpus_preparation_audit(output_dir.parent))
         )
     if output_dir.resolve() == OUTPUT_DIR.resolve():
         paths["formal_verification"] = write_formal_verification(PROJECT_ROOT)

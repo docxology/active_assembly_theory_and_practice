@@ -88,7 +88,25 @@ general sensing law.
 
 ## Run
 
-From the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
+Use the committed Python 3.13 pin and install the locked development tools:
+
+```bash
+uv sync --locked --extra dev
+```
+
+The package requires Python 3.11 or newer (`tomllib` is part of the runtime);
+the canonical replay environment is pinned to 3.13. Python 3.15 currently
+cannot install the locked JAX wheel. On macOS, if loading native libraries from
+an external volume stalls, place only the environment on local storage using
+`UV_PROJECT_ENVIRONMENT` and `--link-mode copy`; keep the repository canonical.
+
+Protocol v2.2 corrects paired significance testing with whole-source-family
+prediction swaps. Bootstrap intervals remain descriptive, and the correction
+withholds superiority claims pending prospective independent evaluation.
+Temporal fixture exclusion folds remain distinct from the declared fixed
+partition inventory; see [`docs/evaluation.md`](docs/evaluation.md).
+
+From the project checkout:
 
 ```bash
 uv run python scripts/run_assembly_inference.py
@@ -161,7 +179,7 @@ uv run python scripts/validate_pdf_accessibility.py
 Render through the sibling template engine:
 
 ```bash
-cd /Volumes/external_drive/Git/template
+cd "$TEMPLATE_REPO_ROOT"
 uv run python -m infrastructure.orchestration link-projects --dry-run
 uv run python -m infrastructure.orchestration link-projects
 uv run python scripts/pipeline/stage_03_render.py \
@@ -181,7 +199,7 @@ changes, rerun project-side hydration before rendering again.
 Generated artifacts live under `output/`. The authoritative enumerations are
 the reproducibility manifest (`output/data/reproducibility_manifest.json`,
 with SHA-256 and byte-size rows for every project-owned artifact) and the
-figure registry (`output/data/figure_registry.json`, 64 figures with
+figure registry (`output/data/figure_registry.json`, the registered figures with
 generators, inputs, statistics, claims, alt text, long descriptions, and the
 machine visual-QA receipt). `output/figures/README.md` is the generated
 caption ledger for every figure. Representative paths:

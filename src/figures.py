@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 import json
 import hashlib
 import os
@@ -51,6 +52,12 @@ def _style_axes(ax: Any, *, grid_axis: str = "y") -> None:
         ax.grid(axis="x", color=GRID, linewidth=0.7, alpha=0.8)
     if grid_axis in {"y", "both"}:
         ax.grid(axis="y", color=GRID, linewidth=0.7, alpha=0.8)
+
+
+def read_png_image(path: Path) -> np.ndarray:
+    """Read PNG bytes once before decoding, avoiding small reads on mounted drives."""
+
+    return np.asarray(plt.imread(BytesIO(path.read_bytes()), format="png"))
 
 
 def _save_figure(fig: Any, output_path: Path) -> Path:
@@ -817,7 +824,10 @@ def plot_corpus_coverage(payload: dict[str, object], output_path: Path) -> Path:
     ax_counts.set_yticklabels(fixture_names)
     ax_counts.set_xlabel("Instruction rows")
     ax_counts.set_title("Static span versus bounded path", loc="left", fontsize=10)
-    ax_counts.legend(loc="lower right", frameon=False, fontsize=8)
+    ax_counts.invert_yaxis()
+    ax_counts.legend(
+        loc="upper left", bbox_to_anchor=(0, -0.12), frameon=False, fontsize=8, ncol=2
+    )
     ax_counts.set_xlim(0.0, max(static_counts, default=1) * 1.22)
     for index, (static_count, executed_count) in enumerate(
         zip(static_counts, executed_counts, strict=True)
@@ -924,7 +934,7 @@ def plot_corpus_coverage(payload: dict[str, object], output_path: Path) -> Path:
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.14, top=0.82, wspace=0.28)
+    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.20, top=0.82, wspace=0.28)
     return _save_figure(fig, output_path)
 
 
@@ -4452,9 +4462,7 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
         sizes.append(float(domain_size))
         colors.append(_COUNTEREXAMPLE_STATUS_COLORS[status])
         hatches.append(_COUNTEREXAMPLE_STATUS_HATCHES[status])
-        edgecolors.append(
-            INK if status == "falsified_by_counterexample" else "white"
-        )
+        edgecolors.append(INK if status == "falsified_by_counterexample" else "white")
         witness_sizes.append(
             witness_size if status == "falsified_by_counterexample" else None
         )
@@ -4691,9 +4699,8 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         ):
             raise ValueError(f"malformed confidence interval for {name}.{key}")
         lo, hi = float(raw_interval[0]), float(raw_interval[1])
-        value = metric(name, key)
-        if not 0.0 <= lo <= value <= hi <= 1.0:
-            raise ValueError(f"confidence interval does not contain {name}.{key}")
+        if not np.isfinite([lo, hi]).all() or not 0.0 <= lo <= hi <= 1.0:
+            raise ValueError(f"confidence interval is invalid for {name}.{key}")
         return lo, hi
 
     def paired_record(name: str, key: str) -> dict[str, object] | None:
@@ -4737,7 +4744,14 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
             or not all(isinstance(item, (int, float)) for item in raw_interval)
         ):
             raise ValueError(f"malformed paired interval for {name}.{key}")
-        return float(difference), (float(raw_interval[0]), float(raw_interval[1]))
+        lo, hi = float(raw_interval[0]), float(raw_interval[1])
+        if (
+            not np.isfinite([difference, lo, hi]).all()
+            or not -1.0 <= lo <= hi <= 1.0
+            or not -1.0 <= difference <= 1.0
+        ):
+            raise ValueError(f"paired interval is invalid for {name}.{key}")
+        return float(difference), (lo, hi)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
@@ -4757,34 +4771,27 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     )
     for key, label, color, offset in endpoint_keys:
         values = [metric(name, key) for name in names]
-        xerr_low: list[float] = []
-        xerr_high: list[float] = []
-        for name, value in zip(names, values, strict=True):
-            bounds = interval(name, key)
-            if bounds is None:
-                xerr_low.append(0.0)
-                xerr_high.append(0.0)
-            else:
-                xerr_low.append(value - bounds[0])
-                xerr_high.append(bounds[1] - value)
-        axes[0].errorbar(
+        axes[0].plot(
             values,
             y + offset,
-            xerr=[xerr_low, xerr_high],
-            fmt="o",
+            "o",
             markersize=5.5,
             markeredgecolor=INK,
             markeredgewidth=0.55,
             color=color,
-            ecolor=INK,
-            elinewidth=1.1,
-            capsize=3,
             label=label,
             zorder=3,
         )
-        for value, position in zip(values, y + offset, strict=True):
+        for name, position in zip(names, y + offset, strict=True):
+            bounds = interval(name, key)
+            if bounds is not None:
+                axes[0].hlines(position, *bounds, color=INK, linewidth=1.1)
+                axes[0].plot(bounds, [position, position], "|", color=INK, markersize=6)
+        for name, value, position in zip(names, values, y + offset, strict=True):
             axes[0].text(
-                min(value + 0.025, 1.04),
+                min(
+                    max(value, (interval(name, key) or (value, value))[1]) + 0.025, 1.08
+                ),
                 position,
                 f"{value:.2f}",
                 va="center",
@@ -4797,7 +4804,9 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     axes[0].set_xlim(0.0, 1.16)
     axes[0].set_xlabel("Held-out score")
     axes[0].set_title("Co-primary endpoints", fontsize=10, pad=AXIS_TITLE_PAD)
-    axes[0].legend(frameon=False, fontsize=7.5, loc="lower right")
+    axes[0].legend(
+        frameon=False, fontsize=7.2, loc="upper left", bbox_to_anchor=(0, -0.14), ncol=2
+    )
     axes[0].text(
         0.0,
         AXIS_SUBTITLE_Y,
@@ -4814,37 +4823,43 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     # favorable point estimate cannot be mistaken for a promoted comparison.
     comparison_names = names[:-1]
     delta_y = np.arange(len(comparison_names), dtype=float)
+    delta_extents = [0.0]
     for key, label, color, offset in endpoint_keys:
         deltas: list[float] = []
-        lows: list[float] = []
-        highs: list[float] = []
-        for name in comparison_names:
+        for name, position in zip(comparison_names, delta_y + offset, strict=True):
             difference, bounds = paired_delta(name, key)
             deltas.append(difference)
-            if bounds is None:
-                lows.append(0.0)
-                highs.append(0.0)
-            else:
-                lows.append(difference - bounds[0])
-                highs.append(bounds[1] - difference)
-        axes[1].errorbar(
+            delta_extents.append(difference)
+            if bounds is not None:
+                delta_extents.extend(bounds)
+                axes[1].hlines(position, *bounds, color=INK, linewidth=1.1)
+                axes[1].plot(bounds, [position, position], "|", color=INK, markersize=6)
+        axes[1].plot(
             deltas,
             delta_y + offset,
-            xerr=[lows, highs],
-            fmt="o",
+            "o",
             markersize=5.5,
             markeredgecolor=INK,
             markeredgewidth=0.55,
             color=color,
-            ecolor=INK,
-            elinewidth=1.1,
-            capsize=3,
             label=label,
             zorder=3,
         )
-        for difference, position in zip(deltas, delta_y + offset, strict=True):
+        for name, difference, position in zip(
+            comparison_names, deltas, delta_y + offset, strict=True
+        ):
+            _, bounds = paired_delta(name, key)
+            label_edge = (
+                (
+                    max(difference, bounds[1])
+                    if difference >= 0
+                    else min(difference, bounds[0])
+                )
+                if bounds
+                else difference
+            )
             axes[1].text(
-                difference + (0.018 if difference >= 0 else -0.018),
+                label_edge + (0.02 if difference >= 0 else -0.02),
                 position,
                 f"{difference:+.2f}",
                 ha="left" if difference >= 0 else "right",
@@ -4855,10 +4870,12 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     axes[1].axvline(0.0, color=MUTED, linestyle="--", linewidth=0.9)
     axes[1].set_yticks(delta_y, [labels[name] for name in comparison_names])
     axes[1].invert_yaxis()
-    axes[1].set_xlim(-0.55, 0.38)
+    axes[1].set_xlim(min(delta_extents) - 0.13, max(delta_extents) + 0.13)
     axes[1].set_xlabel("Difference from surface baseline")
     axes[1].set_title("Paired family-level deltas", fontsize=10, pad=AXIS_TITLE_PAD)
-    axes[1].legend(frameon=False, fontsize=7.5, loc="lower right")
+    axes[1].legend(
+        frameon=False, fontsize=7.2, loc="upper left", bbox_to_anchor=(0, -0.14), ncol=2
+    )
     axes[1].text(
         0.0,
         AXIS_SUBTITLE_Y,
@@ -4949,7 +4966,7 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         edgecolor=INK,
         linewidth=0.45,
         zorder=3,
-        label="co-primary held-out",
+        label="held-out portfolio",
     )
     if control_accuracy is not None:
         axes[3].axvline(
@@ -4958,14 +4975,13 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
             linestyle="--",
             linewidth=1.3,
             zorder=4,
-            label="family-shuffle control",
+            label="within-family label scramble",
         )
         axes[3].text(
             control_accuracy + 0.015,
-            len(names) - 0.55,
+            -0.40,
             f"control {control_accuracy:.2f}",
-            rotation=90,
-            va="top",
+            va="bottom",
             fontsize=6.8,
             color=INK,
         )
@@ -4986,11 +5002,13 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     axes[3].set_xlim(0.0, 1.05)
     axes[3].set_xlabel("Balanced accuracy")
     axes[3].set_title(
-        "Family-shuffle control vs co-primary models",
+        "Within-family label scramble and portfolio",
         fontsize=10,
         pad=AXIS_TITLE_PAD,
     )
-    axes[3].legend(frameon=False, fontsize=7.0, loc="lower right")
+    axes[3].legend(
+        frameon=False, fontsize=7.0, loc="upper left", bbox_to_anchor=(0, -0.20)
+    )
 
     # Panel E: Platt-scaled calibration before/after per model, reported
     # alongside the primary uncalibrated endpoints (uncalibrated stays primary).
@@ -5029,9 +5047,9 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
             bar_positions = group_x + (key_index - 1.5) * bar_width
             bar_values: list[float] = []
             for group in calibration_groups:
-                value = group.get(key) if isinstance(group, dict) else None
-                numeric = numeric_or_none(value)
-                bar_values.append(numeric if numeric is not None else 0.0)
+                calibration_value = group.get(key) if isinstance(group, dict) else None
+                numeric = numeric_or_none(calibration_value)
+                bar_values.append(numeric if numeric is not None else float("nan"))
             axes[4].bar(
                 bar_positions,
                 bar_values,
@@ -5042,11 +5060,17 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
                 label=key_label,
                 zorder=3,
             )
-    axes[4].set_xticks(np.arange(len(names), dtype=float), [labels[name] for name in names])
+    axes[4].set_xticks(
+        np.arange(len(names), dtype=float), [labels[name] for name in names]
+    )
+    for index, group in enumerate(calibration_groups):
+        if group is None:
+            axes[4].text(index, 0.025, "n/a", ha="center", fontsize=7, color=MUTED)
+    axes[4].tick_params(axis="x", labelsize=7)
     axes[4].set_ylabel("Lower is better")
     axes[4].set_ylim(0.0, 1.0)
     axes[4].set_title(
-        "Platt calibration before/after (uncalibrated primary)",
+        "Platt calibration before/after\nUncalibrated scores remain primary",
         fontsize=10,
         pad=AXIS_TITLE_PAD,
     )
@@ -5058,10 +5082,14 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
     leakage_attacks = leakage_attacks if isinstance(leakage_attacks, dict) else {}
 
     def numeric_list(value: object) -> list[float] | None:
+        if isinstance(value, dict) and all(name in value for name in names[:-1]):
+            value = [value[name] for name in names[:-1]]
         if not isinstance(value, list) or not value:
             return None
         if all(
-            isinstance(item, (int, float)) and not isinstance(item, bool)
+            isinstance(item, (int, float))
+            and not isinstance(item, bool)
+            and np.isfinite(item)
             for item in value
         ):
             return [float(item) for item in value]
@@ -5085,9 +5113,7 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         )
     else:
         margin_positions = np.arange(len(probe_margins), dtype=float)
-        axes[5].axhline(
-            0.05, color=PALETTE[4], linestyle="--", linewidth=1.0, zorder=2
-        )
+        axes[5].axhline(0.05, color=PALETTE[4], linestyle="--", linewidth=1.0, zorder=2)
         axes[5].axhline(
             -0.05, color=PALETTE[4], linestyle="--", linewidth=1.0, zorder=2
         )
@@ -5113,7 +5139,7 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         if held_out_scores is not None and label_blind_scores is not None:
             axes[5].text(
                 0.02,
-                0.86,
+                0.75,
                 f"mean held-out {float(np.mean(held_out_scores)):.3f}; "
                 f"mean full label-blind {float(np.mean(label_blind_scores)):.3f}",
                 transform=axes[5].transAxes,
@@ -5121,10 +5147,19 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
                 fontsize=6.6,
                 color=MUTED,
             )
-    axes[5].set_xlabel("Probe example index")
-    axes[5].set_ylabel("Margin difference")
+    if probe_margins is not None:
+        axes[5].set_xticks(
+            np.arange(len(probe_margins)),
+            [labels[name] for name in names[:-1]],
+            rotation=15,
+            fontsize=7,
+        )
+        extent = max(0.05, max(abs(value) for value in probe_margins)) + 0.025
+        axes[5].set_ylim(-extent, extent)
+    axes[5].set_xlabel("Co-primary model")
+    axes[5].set_ylabel("Probe − full balanced accuracy")
     axes[5].set_title(
-        "Leakage probe vs full held-out scores (0.05 margin)",
+        "Opcode-only probe minus full score",
         fontsize=10,
         pad=AXIS_TITLE_PAD,
     )
@@ -5148,8 +5183,8 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         color=INK,
     )
     fig.text(
-        0.70,
-        0.052,
+        0.56,
+        0.055,
         "Point estimates; no clustered CI supplied for Brier/ECE.",
         ha="left",
         va="bottom",
@@ -5157,28 +5192,30 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
         color=MUTED,
     )
     fig.text(
-        0.70,
-        0.034,
+        0.10,
+        0.095,
         "Selective coverage/risk (receipt threshold): "
-        + "; ".join(
+        + "\n".join(
             line.replace(": cov ", " ").replace(", risk ", "/")
             for line in coverage_lines
         ),
         ha="left",
         va="top",
-        fontsize=6.2,
+        fontsize=6.8,
         color=MUTED,
     )
     fig.text(
         0.08,
         0.012,
-        "Labels come from the declared intervention relation; typed features omit family, transformation, bytes, and target labels. No post-hoc winner is selected.",
+        "Intervals: family bootstrap. Significance: family prediction swaps. Retrospective correction; superiority claims withheld.",
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.08, top=0.93, hspace=0.52, wspace=0.45)
+    fig.subplots_adjust(
+        left=0.10, right=0.98, bottom=0.19, top=0.88, hspace=0.62, wspace=0.50
+    )
     return _save_figure(fig, output_path)
 
 
@@ -5305,7 +5342,9 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
     for source_id in source_ids:
         cells: list[str] = []
         for compiler, target_id, object_format, optimization in plotted_configurations:
-            row = by_key.get((source_id, compiler, target_id, object_format, optimization))
+            row = by_key.get(
+                (source_id, compiler, target_id, object_format, optimization)
+            )
             status = str(row.get("status", "not_observed")) if row else "not_observed"
             cells.append(status_text.get(status, status.upper()))
         table_values.append(cells)
@@ -5333,7 +5372,9 @@ def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Pat
             compiler, target_id, object_format, optimization = plotted_configurations[
                 col_index
             ]
-            row = by_key.get((source_id, compiler, target_id, object_format, optimization))
+            row = by_key.get(
+                (source_id, compiler, target_id, object_format, optimization)
+            )
             status = str(row.get("status", "not_observed")) if row else "not_observed"
             cell.set_facecolor(status_color.get(status, "white"))
             cell.set_hatch(status_hatch.get(status, "///"))
@@ -6152,6 +6193,28 @@ def plot_external_label_coverage(payload: dict[str, object], output_path: Path) 
         gridspec_kw={"width_ratios": (1.05, 1.15)},
     )
 
+    if not contracts:
+        for axis in axes:
+            axis.set_axis_off()
+        axes[0].text(0.05, 0.72, "External label coverage", fontsize=13, color=INK)
+        axes[0].text(0.05, 0.48, f"Status: {status}", fontsize=11, color=INK)
+        axes[0].text(
+            0.05,
+            0.25,
+            "No accepted source-contract rows are available.",
+            fontsize=9,
+            color=MUTED,
+        )
+        axes[1].text(
+            0.05,
+            0.6,
+            "Acquisition, license and static-build gates\nremain explicit prerequisites.\nNo performance value is imputed.",
+            fontsize=10,
+            color=MUTED,
+        )
+        fig.subplots_adjust(left=0.05, right=0.97, bottom=0.10, top=0.90)
+        return _save_figure(fig, output_path)
+
     ax = axes[0]
     _style_axes(ax, grid_axis="x")
     y_positions = np.arange(len(projects), dtype=float)
@@ -6205,10 +6268,13 @@ def plot_external_label_coverage(payload: dict[str, object], output_path: Path) 
     ax.set_xlabel("accepted source-contract rows (count)")
     ax.set_xlim(0, max(1.0, float(max(left, default=0.0)) * 1.32))
     ax.set_title("Roles by project", pad=AXIS_TITLE_PAD)
-    ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.18),
-        ncol=1,
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.085),
+        ncol=3,
         frameon=False,
         fontsize=7.5,
     )
@@ -7559,11 +7625,14 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
         "rabiner1989tutorial",
         "guo2017calibration",
         "brown2001binomial",
+        "phipson2010permutation",
+        "holm1979multiple",
     ),
     "compiler_transfer": (
         "capstone",
         "clang_users_manual",
         "nasm",
+        "rustc_manual",
         "llvm_objdump",
         "intel_sdm",
         "necula2000translationvalidation",
@@ -8046,7 +8115,7 @@ def _png_qa_core(path: Path) -> dict[str, Any]:
             "native_height_px": None,
         }
     try:
-        image = np.asarray(plt.imread(path), dtype=float)
+        image = np.asarray(read_png_image(path), dtype=float)
         variance = float(np.var(image))
         width = int(image.shape[1]) if image.ndim >= 2 else None
         height = int(image.shape[0]) if image.ndim >= 2 else None
@@ -8147,7 +8216,7 @@ def _figure_registry_rows(
         "cross_architecture_benchmark": "Decoded instruction count, executed instruction count, and final accumulator agreement across three real architecture adapters.",
         "formal_verification_receipt": "Declared theorem count and locally verified Lean receipt status; no population uncertainty is claimed.",
         "active_information_frontier": "Expected information gain by horizon and cost weight from exact branch enumeration; coincident curves are explicitly marked when the finite contract yields the same frontier; the plotted action cost is a unit model-channel quantity, not wall-clock time.",
-        "quotient_classifier": "Balanced accuracy and macro-F1 use source-family-clustered percentile intervals; Brier score and ten-bin ECE use held-out probabilities; paired baseline comparisons use source-family bootstrap and Holm adjustment.",
+        "quotient_classifier": "Balanced accuracy and macro-F1 use source-family-clustered percentile intervals; Brier score and ten-bin ECE use held-out probabilities; paired differences use source-family bootstrap intervals; significance uses whole-family prediction swaps and Holm adjustment, with retrospective superiority claims withheld.",
         "compiler_transfer": "Validated/unavailable status is a capability receipt; decoded instruction counts are static coverage diagnostics without execution.",
         "temporal_beliefs_x86_call_return": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",
         "temporal_beliefs_x86_branch_not_taken": "Per-step normalized forward-filter posteriors over hand-authored phases; probabilities are printed on cells; no population uncertainty is claimed.",

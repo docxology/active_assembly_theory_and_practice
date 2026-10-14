@@ -1,0 +1,336 @@
+{
+  "artifact_id": "output/data/research_protocol.json",
+  "evidence_contract": {
+    "application_claim_gate": "external_validity_receipt_and_independent_replay",
+    "arbitrary_external_execution": false,
+    "canonical_fixture_policy": "transparent_repository_owned_bytes_only",
+    "external_track": "license_cleared_source_local_compile_static_analysis",
+    "network_required_for_replay": false
+  },
+  "formal_contract": {
+    "architecture": "x86_64",
+    "correspondence": "Lean_reference_python_trace_bounded_Unicorn_fixture",
+    "maximum_steps": 256,
+    "memory_window_bytes": 65536,
+    "modeled_flags": [
+      "CF",
+      "PF",
+      "AF",
+      "ZF",
+      "SF",
+      "OF"
+    ],
+    "operand_widths": [
+      8,
+      16,
+      32,
+      64
+    ],
+    "scope": "broad_declared_user_mode_integer_subset",
+    "stack_window_bytes": 4096,
+    "state": [
+      "program_counter",
+      "all_16_64_bit_general_purpose_registers",
+      "modeled_flags_with_definedness",
+      "bounded_byte_addressable_memory",
+      "bounded_stack",
+      "decoded_instruction_and_step_index",
+      "explicit_exceptional_or_unsupported_status"
+    ],
+    "supported_mnemonics": [
+      "mov",
+      "movabs",
+      "movzx",
+      "movsx",
+      "lea",
+      "add",
+      "sub",
+      "adc",
+      "sbb",
+      "inc",
+      "dec",
+      "neg",
+      "not",
+      "and",
+      "or",
+      "xor",
+      "cmp",
+      "test",
+      "shl",
+      "shr",
+      "sal",
+      "sar",
+      "jmp",
+      "jcc",
+      "call",
+      "ret",
+      "push",
+      "pop",
+      "nop"
+    ],
+    "unsupported_classes": [
+      "simd",
+      "floating_point",
+      "privileged_or_system",
+      "self_modifying_code",
+      "unbounded_aliasing",
+      "unmodeled_exception_or_undefined_behavior"
+    ]
+  },
+  "generator_revision": "2e5f17c01c3e3f8e3d307d4dab2bb66048471dcc3c87679bacefef40a8991e5c",
+  "input_hashes": {
+    "src/scientific_protocol.py": "2e5f17c01c3e3f8e3d307d4dab2bb66048471dcc3c87679bacefef40a8991e5c"
+  },
+  "limitations": [
+    "The protocol freezes a bounded research contract; it is not evidence of any scientific endpoint by itself.",
+    "Unavailable compiler targets and unsupported instruction effects remain explicit rather than imputed."
+  ],
+  "model_contract": {
+    "calibrated_interpretable": {
+      "algorithm": "regularized_binary_logistic_gradient_descent",
+      "feature_contract": "typed_trace_summary_without_quotient_label",
+      "stopping_rule": "fixed_80_epoch_budget_no_test_adaptation"
+    },
+    "co_primary": true,
+    "families": [
+      "calibrated_interpretable",
+      "temporal_probabilistic",
+      "neural_sequence"
+    ],
+    "hyperparameters_use_development_only": true,
+    "neural_sequence": {
+      "algorithm": "one_layer_tanh_rnn_cpu_numpy",
+      "epochs": 8,
+      "hidden_size": 16,
+      "optimizer": "fixed_step_gradient_descent",
+      "stopping_rule": "fixed_8_epoch_budget_no_test_adaptation"
+    },
+    "seeds": [
+      11,
+      23,
+      47,
+      89,
+      131
+    ],
+    "surface_baselines": [
+      "opcode_histogram",
+      "byte_ngrams_hashed_128_bins",
+      "mnemonic_counts",
+      "instruction_length",
+      "control_flow_summary",
+      "memory_event_counts"
+    ],
+    "temporal_probabilistic": {
+      "algorithm": "class_conditional_first_order_markov_likelihood",
+      "feature_contract": "typed_trace_token_sequence",
+      "stopping_rule": "closed_form_smoothed_counts_no_test_adaptation"
+    }
+  },
+  "observational_contract": {
+    "initial_register_interventions": [
+      0,
+      1,
+      2,
+      2147483647,
+      2147483648,
+      4294967295,
+      9223372036854775808,
+      18446744073709551615
+    ],
+    "label_blind": true,
+    "memory_model": "bounded_byte_addressable_fixture_memory",
+    "missing_token": "__MISSING__",
+    "sensor_fields": [
+      "instruction_family",
+      "operand_class",
+      "register_read_set",
+      "register_write_set",
+      "flag_effect",
+      "memory_addressing_mode",
+      "branch_target_class",
+      "dynamic_status"
+    ],
+    "unseen_token": "__UNKNOWN__"
+  },
+  "producer": "src/scientific_protocol.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "quotient_contract": {
+    "endpoint": "same_formal_quotient",
+    "label_source": "formal_output_relation",
+    "labels_are_not": [
+      "mnemonic_names",
+      "hand_authored_phase_labels",
+      "model_predictions"
+    ],
+    "negative_controls": [
+      "one_state_non_separating_catalog",
+      "one_observationally_material_near_miss",
+      "family_label_permutation"
+    ],
+    "positive_transformations": "source-bound_or_declared_transparent_fixture",
+    "relation": "equal_terminal_observation_under_all_declared_interventions"
+  },
+  "receipt_contract": {
+    "mixed_protocol_outputs_allowed": false,
+    "required_fields": [
+      "schema_version",
+      "protocol_id",
+      "protocol_sha256",
+      "generator_revision",
+      "input_hashes",
+      "toolchain_versions",
+      "status",
+      "limitations",
+      "unsupported_cases",
+      "underpowered_cases"
+    ],
+    "schema_version": "2.0.0",
+    "status_vocabulary": [
+      "blocked_external",
+      "failed",
+      "falsified",
+      "implemented_local",
+      "not_yet_observed",
+      "unavailable",
+      "underpowered",
+      "unresolved",
+      "unsupported",
+      "validated",
+      "validated_bounded"
+    ],
+    "v1_migration": "read_only_diagnostic"
+  },
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "2.2.0",
+  "sensing_contract": {
+    "calibration": "optional_fixed-hardware_wall_clock_receipt",
+    "certificate_scope": "frozen_finite_state_action_space_only",
+    "certificate_tolerance": 0.05,
+    "cost_components": [
+      "sensor_invocations",
+      "decoded_instructions",
+      "bounded_execution_steps",
+      "register_flag_observations",
+      "branch_observations",
+      "memory_hook_events",
+      "serialized_bytes",
+      "unsupported_attempts"
+    ],
+    "primary_cost": "deterministic_vector"
+  },
+  "split_contract": {
+    "development_fraction": 0.25,
+    "held_out_family_required": true,
+    "minimum_equivalent_rows_per_family": 32,
+    "minimum_examples_per_family": 64,
+    "minimum_held_out_families": 16,
+    "minimum_independent_families": 64,
+    "minimum_near_miss_controls_per_family": 4,
+    "minimum_near_miss_rows_per_family": 32,
+    "minimum_transformations_per_family": 4,
+    "real_program_minimum_labelable_examples": 100,
+    "real_program_minimum_projects": 5,
+    "temporal_corpus_split": {
+      "family_definition": "fixture_identity_not_independent_source_lineage",
+      "family_split_assignment": {
+        "x86_accumulator": "training",
+        "x86_bitwise": "training",
+        "x86_branch_not_taken": "held_out",
+        "x86_call_return": "training",
+        "x86_guard": "held_out",
+        "x86_guard_taken": "held_out",
+        "x86_long_accumulator": "development",
+        "x86_memory": "development",
+        "x86_optimization_rewrite": "training",
+        "x86_stack_local": "held_out"
+      },
+      "fixture_bytes_sha256": {
+        "x86_accumulator": "bc3c4c15ae736188e6b91e7ff1a5a209367ada96cb31b245e5297e14fb80b44b",
+        "x86_bitwise": "4f20c8ad004e398f9f80da5ddce30604e35340a4334f288921a82cf7bf9a7fd8",
+        "x86_branch_not_taken": "780d2e829573bd24790b652738af22e92707031cf6e8c7864d1684f3958e8bb0",
+        "x86_call_return": "02b4b9b7c7a2d7a031c036d2503e128fcbec549327a1cc6647bc885694c0931a",
+        "x86_guard": "d8e48c04948e8926af722ecb90fe4556001dbb4d1ba6557f30481322f505b093",
+        "x86_guard_taken": "474fd7a6da47ec4473cbd985b551c9285adb84005a15d49efad5a3929469ac35",
+        "x86_long_accumulator": "377d3202f64a5f34e8bcbea637bd5471f9671437875f66763f8bc631479bb635",
+        "x86_memory": "2aede5d9182c7d4a3834f60a398849a6e5882632904668b8c72a5d3e8ea8f4f6",
+        "x86_optimization_rewrite": "e31135c9eec081d8c8321653ce29b8bc464c16cbb61a228d382206f13b16461b",
+        "x86_stack_local": "d626f4ee32d7d4c324ca6555112054986c881fcd812e69e4cd9ce69cca0c8c7c"
+      },
+      "fixture_families": {
+        "x86_accumulator": "x86_accumulator",
+        "x86_bitwise": "x86_bitwise",
+        "x86_branch_not_taken": "x86_branch_not_taken",
+        "x86_call_return": "x86_call_return",
+        "x86_guard": "x86_guard",
+        "x86_guard_taken": "x86_guard_taken",
+        "x86_long_accumulator": "x86_long_accumulator",
+        "x86_memory": "x86_memory",
+        "x86_optimization_rewrite": "x86_optimization_rewrite",
+        "x86_stack_local": "x86_stack_local"
+      },
+      "fixture_split": {
+        "x86_accumulator": "training",
+        "x86_bitwise": "training",
+        "x86_branch_not_taken": "held_out",
+        "x86_call_return": "training",
+        "x86_guard": "held_out",
+        "x86_guard_taken": "held_out",
+        "x86_long_accumulator": "development",
+        "x86_memory": "development",
+        "x86_optimization_rewrite": "training",
+        "x86_stack_local": "held_out"
+      },
+      "frozen_before_scoring": true,
+      "holdout_scoring": "leave_one_fixture_out_over_complete_fixtures",
+      "inventory_does_not_control_leave_one_fixture_out_folds": true,
+      "sampling_unit": "source_program_family",
+      "splits": [
+        "training",
+        "development",
+        "held_out"
+      ]
+    },
+    "test_fraction": 0.25,
+    "three_way_partition": "training/development/held_out; no family overlap",
+    "training_fraction": 0.5,
+    "unit": "source_program_family"
+  },
+  "statistics_contract": {
+    "bootstrap": "source_family_clustered_percentile",
+    "bootstrap_replicates": 1000,
+    "calibration_bins": 10,
+    "confidence_level": 0.95,
+    "multiplicity": "Holm across three co-primary models by seven baselines by two primary metrics",
+    "no_post_hoc_winner_promotion": true,
+    "paired_comparison_sampling_unit": "source_family",
+    "paired_test": "paired_source_family_prediction_swap_monte_carlo",
+    "practical_comparison_margin": 0.05,
+    "primary_metrics": [
+      "balanced_accuracy",
+      "macro_f1"
+    ],
+    "randomization_p_value_rule": "(exceedances + 1) / (replicates + 1); inclusive ties",
+    "randomization_replicates": 1000,
+    "retrospective_correction_claims_withheld": true
+  },
+  "status": "validated",
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "Independent replication, external-validity, and broad-theorem gates remain unearned until their receipts pass."
+  ],
+  "unsupported_cases": [
+    "simd",
+    "floating_point",
+    "privileged_or_system",
+    "self_modifying_code",
+    "unbounded_aliasing",
+    "unmodeled_exception_or_undefined_behavior"
+  ]
+}

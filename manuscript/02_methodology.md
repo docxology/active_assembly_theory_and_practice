@@ -436,8 +436,10 @@ target, and the instruction immediately after each branch or return. Sorting
 $L=(\lambda_0,\ldots,\lambda_{K-1})$ yields the bounded basic-block partition
 
 $$
-\mathcal{B}_j=\{u_i:\lambda_j\leq i<\lambda_{j+1}\},\qquad
-\lambda_K=N,\qquad \bigsqcup_{j=0}^{K-1}\mathcal{B}_j=\{u_0,\ldots,u_{N-1}\}.
+\begin{gathered}
+\mathcal{B}_j=\{u_i:\lambda_j\leq i<\lambda_{j+1}\},\qquad \lambda_K=N,\\
+\bigsqcup_{j=0}^{K-1}\mathcal{B}_j=\{u_0,\ldots,u_{N-1}\}.
+\end{gathered}
 $$ {#eq:cfg-partition}
 
 An edge $(\mathcal{B}_j,\mathcal{B}_k,\tau)$ is emitted for a direct jump,
@@ -451,12 +453,14 @@ concentrations $\alpha_A,\alpha_B,\alpha_D$, the fitted categorical parameters
 are
 
 $$
+\begin{gathered}
 A_{o,s}^{(-k)}=\frac{n_{o,s}^{(-k)}+\alpha_A}
-{\sum_{o'}n_{o',s}^{(-k)}+|\mathcal{O}|\alpha_A},\qquad
+{\sum_{o'}n_{o',s}^{(-k)}+|\mathcal{O}|\alpha_A},\\
 B_{s',s}^{(-k)}=\frac{n_{s',s}^{(-k)}+\alpha_B}
-{\sum_{r}n_{r,s}^{(-k)}+|\mathcal{S}|\alpha_B},\qquad
+{\sum_{r}n_{r,s}^{(-k)}+|\mathcal{S}|\alpha_B},\\
 D_s^{(-k)}=\frac{n_s^{(-k)}+\alpha_D}
 {\sum_r n_r^{(-k)}+|\mathcal{S}|\alpha_D}.
+\end{gathered}
 $$ {#eq:smoothed-hmm-fit}
 
 The superscript $(-k)$ is an exclusion contract: no observation, phase label,
@@ -832,15 +836,22 @@ p_j(v\mid b)=\sum_s L_j(v\mid s)b(s),\qquad
 b^{(v)}(s)=\frac{L_j(v\mid s)b(s)}{p_j(v\mid b)}.
 $$ {#eq:finite-sensor-posterior}
 
-The finite-horizon objective is
+Let $\mathcal{J}_{-j}$ denote the remaining sensors in $\mathcal{J}$
+after querying and removing $j$. The action objective $Q_h$ and finite-horizon value $J_h$
+retain that remaining-set argument explicitly:
 
 $$
-J_h(b)=\min_{j\in\mathcal{J}}
-\left\{\lambda c_j+\sum_v p_j(v\mid b)
-J_{h-1}\!\left(b^{(v)};\mathcal{J}\setminus\{j\}\right)\right\},
+\begin{gathered}
+Q_h(b,j;\mathcal{J})=\lambda c_j+
+\sum_{v:p_j(v\mid b)>0}p_j(v\mid b)
+J_{h-1}(b^{(v)};\mathcal{J}_{-j}),\\
+J_h(b;\mathcal{J})=\min_{j\in\mathcal{J}}Q_h(b,j;\mathcal{J}).
+\end{gathered}
 $$ {#eq:finite-sensor-dynamic-program}
 
-with terminal value $J_0(b)=H(b)$ and declared sensor costs $c_j>0$.
+The terminal values are $J_0(b;\mathcal{J})=H(b)$ and
+$J_h(b;\varnothing)=H(b)$, with declared sensor costs
+$c_j>0$. Posterior updates are defined only for positive-probability outcomes.
 The implementation enumerates all positive-probability outcome branches and
 memoizes normalized beliefs, remaining sensors, horizon, and cost weight. It
 therefore supplies an exact result for the finite sensor family and horizons
@@ -892,7 +903,16 @@ more reliably than a Wald approximation for small denominators
 [@brown2001binomial]. This choice does not remove the dependence among steps
 or broaden the corpus into a population sample.
 
-The corpus expands the original six register-only programs with four designed
+The training/development/held-out assignment is a declared fixture inventory.
+The temporal estimation reports below use leave-one-fixture-out folds: each
+fold excludes its scored fixture but may train on fixtures assigned to the
+inventory's other partitions. They do not report a model trained once on the
+fixed training partition and evaluated once on its held-out partition.
+Related authored fixtures are also not independent source lineages. The
+fold results therefore support a complete-fixture exclusion diagnostic,
+with no claim of lineage-disjoint generalization.
+
+The corpus expands the original six authored programs with four designed
 fixtures: an in-span call/`ret` roundtrip (the call pushes a return address
 inside the decoded span and the `ret` pads it back), a not-taken guard pair
 (two conditional branches whose guards both fall through, so every statically
@@ -1118,7 +1138,9 @@ track. Portable source families are compiled with the exact locally available
 Clang target command, object and disassembly hashes are retained, and emitted
 objects are statically decoded without execution. The Clang manual defines the
 compiler-driver and target-selection interface used for this acquisition
-[@clang_users_manual]. The design is provenance-oriented rather than a
+[@clang_users_manual]. Optional NASM and Rust cells use their documented
+object-format and static-emission interfaces [@nasm;@rustc_manual]; a
+missing compiler or target remains an unavailable cell. The design is provenance-oriented rather than a
 compiler-correctness claim; translation validation is the relevant precedent
 for treating each produced translation as an individually checkable artifact
 [@necula2000translationvalidation]. The current receipt is
@@ -1247,7 +1269,11 @@ classes. Let $u$ index source families and let $\widehat\theta_{k,m}^{(b)}$
 be the metric after resampling whole families with replacement. Resampling the
 source family, rather than treating repeated intervention rows as independent,
 is the declared dependence safeguard; the small-cluster caveat remains explicit
-[@cameron2008clusterbootstrap]. The reported interval is the 2.5th--97.5th
+[@cameron2008clusterbootstrap]. These named transformation families share
+authored template lineages; disjoint identifiers do not establish independent
+source sampling. The intervals and prediction swaps are conditional diagnostics
+on the finite inventory, with no population-generalization coverage claim.
+The reported interval is the 2.5th--97.5th
 percentile of the frozen
 `{{CI_LEVEL_PERCENT}}%` cluster bootstrap:
 
@@ -1257,8 +1283,17 @@ Q_{0.975}(\widehat\theta_{k,m}^{(b)})\right].
 $$ {#eq:quotient-cluster-interval}
 
 Brier score and fixed-bin expected calibration error are retained alongside the
-primary metrics. The five-percentage-point practical margin and Holm
-multiplicity policy are frozen in the protocol [@holm1979multiple]. Holm adjustment spans the
+primary metrics. The five-percentage-point practical margin is retained. Protocol v2.2 separates
+percentile bootstrap intervals from significance testing: an uncentered
+bootstrap fraction below zero is a descriptive tail fraction, not a null
+p-value. The paired randomization diagnostic swaps all predictions in each
+source family between the model and baseline, recomputes both metrics, and
+uses inclusive ties with $(b+1)/(B+1)$ for $B$ Monte Carlo draws
+[@phipson2010permutation]. Its null assumes prediction-block exchangeability
+within families, conditional on the fitted models. It does not include
+model-refitting uncertainty. This is a retrospective methods correction;
+superiority claims are withheld pending a prospectively frozen independent
+comparison. Holm adjustment [@holm1979multiple] spans the
 co-primary model-by-baseline-by-metric comparison family. The current held-out values
 are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_INTERPRETABLE_MACRO_F1}} for the interpretable model,
@@ -1269,9 +1304,10 @@ are {{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_BASELINE_BALANCED_ACCURACY}} /
 {{QUOTIENT_CLASSIFIER_BASELINE_MACRO_F1}} for the surface baseline. These
 numbers are reported as a portfolio: overlapping clustered intervals,
-development/test differences, and the small number of independent families
-preclude a superiority claim unless the preregistered margin and inference
-rule are both satisfied. The receipt retains
+development/test differences, and the small number of declared families
+do not support a superiority claim. The retrospective correction withholds
+all such claims; a future prospectively frozen comparison must satisfy the
+practical margin and inference rule on independent evidence. The receipt retains
 `{{QUOTIENT_CLASSIFIER_RAW_BASELINE_COUNT}}` raw baseline models and
 `{{QUOTIENT_CLASSIFIER_RAW_COMPARISON_COUNT}}` model-by-baseline comparison rows;
 no post-hoc baseline winner is promoted.
@@ -1297,17 +1333,18 @@ terminal-output matrix, before any classifier is fitted. For the separate
 representation-invariance pilot, let $\mathcal U_{\mathrm{pilot}}$ be its four
 initial-state interventions and let $e_{p,u}\in\{0,1\}$ indicate
 whether pair $p$ has equal terminal output under intervention $u$. For every
-non-empty subset $S\subseteq\mathcal U$, the near-miss separation and
+non-empty subset $S\subseteq\mathcal U_{\mathrm{pilot}}$, the near-miss separation and
 equivalent-pair consistency are
 
 $$
+\begin{gathered}
 \operatorname{Sep}(S)=
 \frac{1}{|\mathcal N|}\sum_{p\in\mathcal N}
-\mathbf 1\left[\exists u\in S:e_{p,u}=0\right],
-\qquad
+\mathbf 1[\exists u\in S:e_{p,u}=0],\\
 \operatorname{Cons}(S)=
 \frac{1}{|\mathcal E|}\sum_{p\in\mathcal E}
-\mathbf 1\left[\forall u\in S:e_{p,u}=1\right],
+\mathbf 1[\forall u\in S:e_{p,u}=1].
+\end{gathered}
 $$ {#eq:intervention-power}
 
 where $\mathcal E$ and $\mathcal N$ are the declared equivalent and near-miss
@@ -1339,9 +1376,10 @@ The active-sensing cost model has two layers. The primary layer is a
 deterministic vector
 
 $$
-c(a)=(n_{\mathrm{invoke}},n_{\mathrm{decode}},n_{\mathrm{step}},
-n_{\mathrm{reg/flag}},n_{\mathrm{branch}},n_{\mathrm{memory}},
-n_{\mathrm{bytes}},n_{\mathrm{unsupported}}),
+\begin{gathered}
+c(a)=(n_{\mathrm{invoke}},n_{\mathrm{decode}},n_{\mathrm{step}},n_{\mathrm{reg/flag}},\\
+n_{\mathrm{branch}},n_{\mathrm{memory}},n_{\mathrm{bytes}},n_{\mathrm{unsupported}}).
+\end{gathered}
 $$ {#eq:deterministic-sensor-cost}
 
 recorded for every query. It is machine-independent and auditable. The

@@ -9,7 +9,7 @@ an input directory: no module in [`../src`](../src) and no script in
 [`../scripts`](../scripts) reads from it, and the code writes exclusively to
 `output/data/`.
 
-Every one of the 18 files here has a same-named counterpart in `output/data/`.
+Each of the 20 snapshot artifacts has a same-named counterpart in `output/data/`.
 
 ## Provenance
 
@@ -36,6 +36,9 @@ thin scripts in [`../scripts`](../scripts):
   `cross_architecture_fixtures.json`.
 - `src/information_policy.py` (`write_active_information_payload`) writes
   `active_information_frontier.json`.
+
+- `src/scientific_protocol.py` and `src/quotient_classifier.py` write the
+  versioned protocol and portfolio/randomization receipts.
 
 ## Receipt boundary
 

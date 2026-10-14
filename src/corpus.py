@@ -282,7 +282,6 @@ def build_corpus() -> tuple[CorpusFixture, ...]:
     )
 
 
-
 def fixture_observation_ids(fixture: CorpusFixture) -> tuple[int, ...]:
     """Decode, emulate, and encode a fixture into observation-category ids.
 
@@ -302,22 +301,12 @@ def fixture_observation_ids(fixture: CorpusFixture) -> tuple[int, ...]:
 
 SPLITS = ("training", "development", "held_out")
 
-# Frozen family-level split for the temporal corpus (MED-01, protocol 2.1.0).
-# Grouping policy: one family per fixture -- the family id is the fixture
-# name -- which is the declared grouping and gives maximal family
-# disjointness.  The assignment is frozen before any temporal-track scoring
-# producer runs; holdout scoring for the temporal track remains
-# leave-one-fixture-out over complete fixtures.
-#
-# Justification: the training split keeps the register-arithmetic programs and
-# the two new mechanics-teaching fixtures (call/return control flow and the
-# optimization-rewrite motifs) so both models observe the full observation
-# vocabulary before tuning.  The development split keeps the longer program
-# and the memory fixture for hyperparameter and calibration decisions only.
-# The held_out split keeps every control-flow-sensitive fixture --
-# x86_guard, x86_guard_taken, x86_branch_not_taken -- plus the stack-local
-# fixture, so the branch-behaviour regimes that motivate the dynamic/static
-# distinction are never used for fitting or tuning.
+# Declared fixture-level inventory, retained from protocol 2.1.0.
+# Here family means fixture identity, not independent source lineage. Related
+# authored variants remain dependent. This inventory does not control the
+# current leave-one-fixture-out estimators: each fold excludes its scored
+# fixture and trains on the complete complement, across inventory partitions.
+# Do not describe the inventory as permanently held-out evaluation.
 CORPUS_FAMILY_SPLIT: dict[str, str] = {
     "x86_accumulator": "training",
     "x86_bitwise": "training",

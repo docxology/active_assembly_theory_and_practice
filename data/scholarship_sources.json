@@ -1,35 +1,49 @@
 {
+  "artifact_id": "output/data/scholarship_sources.json",
   "evidence_tier_counts": {
     "assembly_formalism": 5,
     "binary_analysis_context": 3,
     "comparison_baseline": 1,
     "compiler_formalism": 1,
-    "formal_verification": 2,
+    "formal_verification": 3,
     "implemented_backend": 2,
     "implemented_dependency": 3,
-    "integration_guidance": 1,
-    "provenance_method": 1,
-    "roadmap_adapter": 11,
-    "statistical_method": 3,
+    "integration_guidance": 3,
+    "provenance_method": 5,
+    "roadmap_adapter": 10,
+    "statistical_method": 7,
     "theory": 6
   },
+  "generator_revision": "5a5ce02c318552a9a3e7cac0084581b95aa3c56b0b5ca6708ed9631e978967fb",
+  "input_hashes": {
+    "producer/src/scholarship.py": "5a5ce02c318552a9a3e7cac0084581b95aa3c56b0b5ca6708ed9631e978967fb",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
+  "producer": "src/scholarship.py",
   "project_stage_counts": {
     "comparison": 1,
-    "context": 16,
-    "implemented": 10,
-    "roadmap": 12
+    "context": 23,
+    "implemented": 14,
+    "roadmap": 11
   },
-  "source_count": 39,
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
+  "schema_version": "artifact-payload-v1",
+  "source_count": 49,
   "source_type_counts": {
-    "formal_methods_documentation": 1,
-    "methodology_textbook": 1,
+    "formal_methods_documentation": 4,
+    "methodology_textbook": 2,
     "peer_reviewed_binary_analysis": 3,
     "peer_reviewed_compiler_correctness": 1,
     "peer_reviewed_formal_methods": 1,
-    "peer_reviewed_reproducibility": 1,
-    "peer_reviewed_statistics": 1,
+    "peer_reviewed_reproducibility": 2,
+    "peer_reviewed_statistics": 5,
     "peer_reviewed_theory": 7,
-    "software_documentation": 12,
+    "software_documentation": 13,
     "software_paper": 2,
     "software_repository": 6,
     "technical_report": 3
@@ -345,12 +359,12 @@
     },
     {
       "authors": "NASM Project",
-      "claim_boundary": "No NASM-derived bytes are claimed in the current run.",
+      "claim_boundary": "Only a validated static-object receipt establishes local availability; static decoding does not establish behavioral equivalence.",
       "doi": null,
-      "evidence_tier": "roadmap_adapter",
+      "evidence_tier": "integration_guidance",
       "key": "nasm",
-      "project_role": "Documented as an optional x86 assembler for future fixture generation.",
-      "project_stage": "roadmap",
+      "project_role": "Documents x86 assembly syntax and object-format selection for optional NASM compiler-transfer cells.",
+      "project_stage": "implemented",
       "source_type": "software_documentation",
       "title": "NASM: The Netwide Assembler",
       "url": "https://www.nasm.us/docs.html",
@@ -568,6 +582,90 @@
       "year": 2001
     },
     {
+      "authors": "Belinda Phipson and Gordon K. Smyth",
+      "claim_boundary": "The rule does not establish family exchangeability, independent sampling, external validity, or prospective registration of a retrospective correction.",
+      "doi": "10.2202/1544-6115.1585",
+      "evidence_tier": "statistical_method",
+      "key": "phipson2010permutation",
+      "project_role": "Supports the plus-one Monte Carlo p-value rule with inclusive ties for the family prediction-swap diagnostic.",
+      "project_stage": "implemented",
+      "source_type": "peer_reviewed_statistics",
+      "title": "Permutation P-values should never be zero: calculating exact P-values when permutations are randomly drawn",
+      "url": "https://gksmyth.github.io/pubs/PermPValuesPreprint.pdf",
+      "venue": "Statistical Applications in Genetics and Molecular Biology",
+      "year": 2010
+    },
+    {
+      "authors": "The Rust Project Developers",
+      "claim_boundary": "Compiler availability and successful decoding are reported per cell; documentation does not establish behavioral equivalence or compiler correctness.",
+      "doi": null,
+      "evidence_tier": "integration_guidance",
+      "key": "rustc_manual",
+      "project_role": "Documents static object emission and target selection for the optional Rust compiler-transfer cells.",
+      "project_stage": "context",
+      "source_type": "software_documentation",
+      "title": "The rustc book: Command-line arguments and code generation",
+      "url": "https://doc.rust-lang.org/rustc/command-line-arguments.html",
+      "venue": "Rust compiler documentation",
+      "year": 2026
+    },
+    {
+      "authors": "Sture Holm",
+      "claim_boundary": "The adjustment controls the declared comparison family; it does not turn a finite benchmark into population evidence or repair weak endpoint design.",
+      "doi": "10.2307/4615733",
+      "evidence_tier": "statistical_method",
+      "key": "holm1979multiple",
+      "project_role": "Provides the primary reference for the preregistered Holm familywise multiplicity adjustment.",
+      "project_stage": "implemented",
+      "source_type": "peer_reviewed_statistics",
+      "title": "A Simple Sequentially Rejective Multiple Test Procedure",
+      "url": "https://www.jstor.org/stable/4615733",
+      "venue": "Scandinavian Journal of Statistics",
+      "year": 1979
+    },
+    {
+      "authors": "A. Colin Cameron, Jonah B. Gelbach, and Douglas L. Miller",
+      "claim_boundary": "The project uses a transparent family-cluster bootstrap receipt; this citation does not validate the chosen fixture population or establish asymptotic validity for it.",
+      "doi": "10.1162/rest.90.3.414",
+      "evidence_tier": "statistical_method",
+      "key": "cameron2008clusterbootstrap",
+      "project_role": "Grounds the use of source-family resampling and the caution required when the effective cluster count is small.",
+      "project_stage": "implemented",
+      "source_type": "peer_reviewed_statistics",
+      "title": "Bootstrap-Based Improvements for Inference with Clustered Errors",
+      "url": "https://doi.org/10.1162/rest.90.3.414",
+      "venue": "The Review of Economics and Statistics",
+      "year": 2008
+    },
+    {
+      "authors": "Dennis V. Lindley",
+      "claim_boundary": "The project applies information gain only to a bounded model-derived sensor tree; the source does not support a universal active-sensing law or a physical runtime cost model.",
+      "doi": "10.1214/aoms/1177728069",
+      "evidence_tier": "statistical_method",
+      "key": "lindley1956information",
+      "project_role": "Provides the classical expected-information framing for finite sensor-choice objectives.",
+      "project_stage": "context",
+      "source_type": "peer_reviewed_statistics",
+      "title": "On a Measure of the Information Provided by an Experiment",
+      "url": "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-27/issue-4/On-a-Measure-of-the-Information-Provided-by-an-Experiment/10.1214/aoms/1177728069.full",
+      "venue": "The Annals of Mathematical Statistics",
+      "year": 1956
+    },
+    {
+      "authors": "Davide Sangiorgi",
+      "claim_boundary": "The book supplies theory and terminology; the finite quotient receipt is not a bisimulation proof for x86-64 or arbitrary programs.",
+      "doi": "10.1017/CBO9780511777110",
+      "evidence_tier": "formal_verification",
+      "key": "sangiorgi2011bisimulation",
+      "project_role": "Provides the formal behavioral-equivalence and bisimulation vocabulary used to delimit quotient-style claims.",
+      "project_stage": "context",
+      "source_type": "methodology_textbook",
+      "title": "Introduction to Bisimulation and Coinduction",
+      "url": "https://www.cambridge.org/core/books/introduction-to-bisimulation-and-coinduction/8B54001CB763BAE9C4BA602C0A341D60",
+      "venue": "Cambridge University Press",
+      "year": 2011
+    },
+    {
       "authors": "Mark D. Wilkinson, Michel Dumontier, IJsbrand Jan Aalbersberg, Gabrielle Appleton, Myles Axton, Arie Baak, Niklas Blomberg, Jan-Willem Boiten, Luiz Bonino da Silva Santos, Philip E. Bourne, Jildau Bouwman, Anthony J. Brookes, Tim Clark, Merc\u00e8 Crosas, Ingrid Dillo, Olivier Dumon, Paul Groth, Carole Goble, Jeffrey S. Grethe, and collaborators",
       "claim_boundary": "FAIR principles motivate metadata and reuse design; a local manifest does not establish independent replication or scientific validity.",
       "doi": "10.1038/sdata.2016.18",
@@ -580,6 +678,76 @@
       "url": "https://doi.org/10.1038/sdata.2016.18",
       "venue": "Scientific Data",
       "year": 2016
+    },
+    {
+      "authors": "Timothy Lebo, Satya Sahoo, and Deborah McGuinness",
+      "claim_boundary": "PROV-O motivates the lineage vocabulary; this repository emits a compatible receipt contract but does not claim full PROV-O or RDF conformance.",
+      "doi": null,
+      "evidence_tier": "provenance_method",
+      "key": "w3cprov2013",
+      "project_role": "Provides the authoritative provenance vocabulary for distinguishing generated entities, activities, and agents when describing artifact lineage.",
+      "project_stage": "context",
+      "source_type": "formal_methods_documentation",
+      "title": "The PROV Ontology",
+      "url": "https://www.w3.org/TR/2013/REC-prov-o-20130430/",
+      "venue": "W3C Recommendation",
+      "year": 2013
+    },
+    {
+      "authors": "Peter Sefton, Eoghan \u00d3 Carrag\u00e1in, Stian Soiland-Reyes, Oscar Corcho, Daniel Garijo, Raul Palma, Frederik Coppens, Carole Goble, and collaborators",
+      "claim_boundary": "The project adopts selected packaging principles; its JSON receipts are not presented as a complete RO-Crate implementation or certification.",
+      "doi": "10.5281/zenodo.7867028",
+      "evidence_tier": "provenance_method",
+      "key": "rocrate2023",
+      "project_role": "Informs the separation of machine-readable metadata, payload files, and human-readable reproduction guidance in a research package.",
+      "project_stage": "context",
+      "source_type": "formal_methods_documentation",
+      "title": "RO-Crate Metadata Specification 1.1.3",
+      "url": "https://www.researchobject.org/ro-crate/specification/1.1/",
+      "venue": "Research Object Crate Recommendation",
+      "year": 2023
+    },
+    {
+      "authors": "Geir Kjetil Sandve, Anton Nekrutenko, James Taylor, and Eivind Hovig",
+      "claim_boundary": "These rules motivate the engineering contract; passing local gates does not establish independent replication or scientific validity.",
+      "doi": "10.1371/journal.pcbi.1003285",
+      "evidence_tier": "provenance_method",
+      "key": "sandve2013repro",
+      "project_role": "Supports recording exact software versions, intermediate outputs, seeds, and source-to-result links as reproducibility design requirements.",
+      "project_stage": "context",
+      "source_type": "peer_reviewed_reproducibility",
+      "title": "Ten Simple Rules for Reproducible Computational Research",
+      "url": "https://doi.org/10.1371/journal.pcbi.1003285",
+      "venue": "PLoS Computational Biology",
+      "year": 2013
+    },
+    {
+      "authors": "Association for Computing Machinery",
+      "claim_boundary": "The policy is used to name evidence states carefully; it is not an external artifact-review result for this repository.",
+      "doi": null,
+      "evidence_tier": "provenance_method",
+      "key": "acm2020artifact",
+      "project_role": "Provides the publication-practice distinction between author-run reproducibility and reproduction or replication by a separate person or team.",
+      "project_stage": "context",
+      "source_type": "formal_methods_documentation",
+      "title": "Artifact Review and Badging - Current",
+      "url": "https://www.acm.org/publications/policies/artifact-review-and-badging-current",
+      "venue": "ACM Publications Policy",
+      "year": 2020
     }
+  ],
+  "status": "implemented_local",
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
   ]
 }

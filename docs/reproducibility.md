@@ -123,8 +123,8 @@ extension tranche:
   exact dynamic-programming references, fixed-seed policy rollouts, repeated
   local calibration-stability rows, and budget-constrained value gaps.
 
-The active protocol is `output/data/research_protocol.json` at schema 2.1.0
-(`active-assembly-open-roadmap-v2-2026-09-17`), which freezes the
+The active protocol is `output/data/research_protocol.json` at schema 2.2.0
+(`active-assembly-open-roadmap-v2-2026-10-13`), which freezes the
 temporal-corpus split. All receipts rebind on regeneration: a protocol
 revision deliberately invalidates previously generated receipts rather than
 being silently absorbed by them.

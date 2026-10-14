@@ -18,6 +18,7 @@ from src.assembly_formalism import (
     validate_assembly_listing_payload,
 )
 from src.assembly_packages.schema import TRACE_SCHEMA_VERSION, binary_hash
+from src.build_provenance import write_build_provenance
 from src.claim_register import (
     CLAIM_RECORDS,
     claim_register_payload,
@@ -35,7 +36,7 @@ from src.features import (
 )
 from src.figures import FIGURE_CAPTIONS, plot_observation_pipeline
 from src.generative_model import build_generative_model
-from src.manuscript_variables import _mapping_or_empty, generate_variables
+from src.manuscript_variables import _mapping_or_empty
 from src.reproducibility import (
     MANIFEST_TARGETS,
     reproducibility_payload,
@@ -307,8 +308,10 @@ def test_infer_hidden_states_rejects_empty_observation_stream() -> None:
         infer_hidden_states([], build_generative_model())
 
 
-def test_manuscript_variables_are_generated_from_live_result() -> None:
-    variables = generate_variables()
+def test_manuscript_variables_are_generated_from_live_result(
+    canonical_artifacts,
+) -> None:
+    variables = canonical_artifacts
 
     assert variables["PROJECT_TITLE"] == "Active Assembly Theory and Practice"
     assert variables["INSTRUCTION_COUNT"] == "4"
@@ -339,15 +342,28 @@ def test_manuscript_variables_are_generated_from_live_result() -> None:
     assert variables["ACTION_SENSING_FIXED_MEAN_ACTIONS"]
     assert variables["ACTION_SENSING_RANDOM_CONFIDENCE_RATE"]
     assert variables["PARAMETER_LEARNING_LEAKAGE_FREE"] == "yes"
-    assert variables["PARAMETER_LEARNING_HOLDOUT_COUNT"] == "6"
-    assert variables["PARAMETER_LEARNING_EM_MEAN_ACCURACY"] == "0.428"
-    assert variables["PARAMETER_LEARNING_SUPERVISED_MEAN_ACCURACY"] == "0.772"
-    assert variables["PARAMETER_LEARNING_REFERENCE_MEAN_ACCURACY"] == "0.519"
+    learning = json.loads(
+        (PROJECT_ROOT / "output/data/parameter_learning.json").read_text()
+    )["summary"]
+    assert variables["PARAMETER_LEARNING_HOLDOUT_COUNT"] == str(len(build_corpus()))
+    for token, metric in (
+        ("EM", "mean_weakly_supervised_accuracy"),
+        ("SUPERVISED", "mean_supervised_accuracy"),
+        ("REFERENCE", "mean_fixed_reference_accuracy"),
+    ):
+        assert (
+            variables[f"PARAMETER_LEARNING_{token}_MEAN_ACCURACY"]
+            == f"{learning[metric]:.3f}"
+        )
     assert variables["CROSS_ARCHITECTURE_COUNT"] == "3"
     assert variables["CROSS_ARCHITECTURE_ALL_PASSED"] == "yes"
     assert variables["CROSS_ARCHITECTURE_RESULT"] == "8"
     assert variables["FORMAL_VERIFICATION_STATUS"] == "locally_verified"
-    assert variables["FORMAL_THEOREM_COUNT"] == "17"
+    formal = json.loads(
+        (PROJECT_ROOT / "output/data/formal_verification.json").read_text()
+    )
+    assert len(formal["theorems"]) > 0
+    assert variables["FORMAL_THEOREM_COUNT"] == str(len(formal["theorems"]))
     assert variables["ACTIVE_INFORMATION_SENSOR_COUNT"] == "4"
     assert variables["ACTIVE_INFORMATION_FRONTIER_ROW_COUNT"] == "16"
     assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"
@@ -505,8 +521,9 @@ def test_scholarship_payload_partitions_evidence_roles() -> None:
     assert payload["evidence_tier_counts"]["implemented_dependency"] >= 2
 
 
-def test_claim_register_links_sources_artifacts_and_validation_checks() -> None:
-    generate_variables()
+def test_claim_register_links_sources_artifacts_and_validation_checks(
+    canonical_artifacts,
+) -> None:
     relative_path = write_claim_register()
     payload = json.loads((PROJECT_ROOT / relative_path).read_text(encoding="utf-8"))
 
@@ -535,8 +552,9 @@ def test_claim_register_payload_partitions_claim_types() -> None:
     assert payload["status_counts"]["validated"] == len(CLAIM_RECORDS)
 
 
-def test_reproducibility_manifest_records_current_artifact_hashes() -> None:
-    generate_variables()
+def test_reproducibility_manifest_records_current_artifact_hashes(
+    canonical_artifacts,
+) -> None:
     relative_path = write_reproducibility_manifest()
     payload = json.loads((PROJECT_ROOT / relative_path).read_text(encoding="utf-8"))
 
@@ -560,6 +578,7 @@ def test_reproducibility_manifest_records_current_artifact_hashes() -> None:
 
 def test_validation_report_checks_outputs_and_nonblank_figures(
     monkeypatch: pytest.MonkeyPatch,
+    canonical_artifacts,
 ) -> None:
     # The source-side report runs under the documented pre-render contract:
     # the DOCX lane defers to the sibling template's post-render gate
@@ -567,10 +586,14 @@ def test_validation_report_checks_outputs_and_nonblank_figures(
     # not fail source validation here. The dedicated fail-closed post-render
     # gate remains scripts/validate_docx_render.py.
     monkeypatch.setenv("ACTIVE_ASSEMBLY_DOCX_PRE_RENDER", "1")
-    generate_variables()
+    # Earlier integration tests refresh manifest artifacts. Bind the current
+    # package before inspecting freshness, following the canonical gate order.
+    write_build_provenance(PROJECT_ROOT)
     report = write_validation_report()
 
-    assert report.summary["all_passed"] is True
+    assert report.summary["all_passed"] is True, [
+        (check.name, check.detail) for check in report.checks if not check.passed
+    ]
     assert report.summary["failed"] == 0
     assert report.summary["total"] >= 35
     figure_path = PROJECT_ROOT / report.artifact_paths["validation_summary"]
@@ -628,6 +651,37 @@ def test_unicorn_emulation_stops_at_max_instructions() -> None:
     trace = emulate_x86_64(sample_bytes(), max_instructions=2)
     assert trace.instruction_count == 2
     assert trace.addresses == (0x1000, 0x1005)
+    assert trace.final_rax == 3
+    assert trace.instruction_states[-1].post_rax == 3
+    assert trace.final_rip == 0x1008
+
+
+def test_unicorn_one_instruction_budget_executes_the_instruction() -> None:
+    trace = emulate_x86_64(bytes.fromhex("48ffc048ffc0"), max_instructions=1)
+    assert trace.instruction_count == 1
+    assert trace.final_rax == 1
+    assert trace.instruction_states[0].post_rax == 1
+    assert trace.final_rip == trace.base_address + 3
+
+
+def test_unicorn_budget_includes_last_memory_write() -> None:
+    # mov [rsp], rax; inc rax. The sole allowed step must write memory.
+    trace = emulate_x86_64(
+        bytes.fromhex("4889042448ffc0"), initial_rax=7, max_instructions=1
+    )
+    assert trace.instruction_count == 1
+    assert trace.final_rax == 7
+    assert len(trace.memory_events) == 1
+    assert trace.memory_events[0]["value"] == 7
+    assert trace.memory_events[0]["access"] == "write"
+
+
+def test_unicorn_loop_budget_records_only_completed_steps() -> None:
+    # inc rax; jmp back to inc. Six executed instructions contain three incs.
+    trace = emulate_x86_64(bytes.fromhex("48ffc0ebfb"), max_instructions=6)
+    assert trace.instruction_count == 6
+    assert trace.final_rax == 3
+    assert trace.final_rip == trace.base_address
 
 
 def _manifest_row(target, **overrides) -> dict[str, object]:

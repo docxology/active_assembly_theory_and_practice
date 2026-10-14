@@ -328,9 +328,7 @@ BRIDGE_FIXTURES: tuple[dict[str, Any], ...] = (
 )
 
 BRIDGE_FIXTURE_THEOREMS: tuple[str, ...] = tuple(
-    theorem
-    for fixture in BRIDGE_FIXTURES
-    for theorem in fixture["theorems"]
+    theorem for fixture in BRIDGE_FIXTURES for theorem in fixture["theorems"]
 )
 
 
@@ -397,9 +395,14 @@ def _fixture_lean_name(fixture: dict[str, Any]) -> str:
 
 def _fixture_lean_registers(fixture: dict[str, Any]) -> str:
     camel = _fixture_lean_name(fixture)
-    lines = [f"def bridgeGpr{camel} (index : Fin 16) : Word64N :=", "  match index.val with"]
+    lines = [
+        f"def bridgeGpr{camel} (index : Fin 16) : Word64N :=",
+        "  match index.val with",
+    ]
     for index, name in enumerate(BRIDGE_REGISTER_NAMES):
-        lines.append(f"  | {index} => word64n {fixture['initial']['registers'].get(name, 0)}")
+        lines.append(
+            f"  | {index} => word64n {fixture['initial']['registers'].get(name, 0)}"
+        )
     lines.append("  | _ => word64n 0")
     return "\n".join(lines)
 
@@ -422,8 +425,8 @@ def _fixture_lean_source(fixture: dict[str, Any]) -> str:
     header = f"""
 /-! ### Bridge fixture ``{bridge_id}``
 
-Byte code ``{fixture['code_hex']}`` executed by both the Lean machine
-transformers (over the modeled prefix of {fixture['instruction_count']}
+Byte code ``{fixture["code_hex"]}`` executed by both the Lean machine
+transformers (over the modeled prefix of {fixture["instruction_count"]}
 instruction(s)) and, from the Python side, a real Unicorn run plus the
 normalized reference interpreter. -/
 
@@ -431,14 +434,14 @@ normalized reference interpreter. -/
 
 def bridge{camel}Initial : MachineStateN :=
   {{ gprs := bridgeGpr{camel}
-    rip := word64n {initial['rip']}
-    flags := {_lean_flags_literal(int(initial['eflags']))}
+    rip := word64n {initial["rip"]}
+    flags := {_lean_flags_literal(int(initial["eflags"]))}
     memory := fun _ => 0
-    stackLower := {initial['stack_bounds'][0]}
-    stackUpper := {initial['stack_bounds'][1]}
-    memoryLower := {initial['memory_bounds'][0]}
-    memoryUpper := {initial['memory_bounds'][1]}
-    stepIndex := {initial['step_index']}
+    stackLower := {initial["stack_bounds"][0]}
+    stackUpper := {initial["stack_bounds"][1]}
+    memoryLower := {initial["memory_bounds"][0]}
+    memoryUpper := {initial["memory_bounds"][1]}
+    stepIndex := {initial["step_index"]}
     status := MachineStatusN.running }}
 
 def bridge{camel}Final : MachineStateN :=
@@ -447,19 +450,21 @@ def bridge{camel}Final : MachineStateN :=
 
     if bridge_id == "push_pop":
         expected = fixture["expected_boundary"]
-        push_address = int(initial['registers']['rsp']) - 8
+        push_address = int(initial["registers"]["rsp"]) - 8
         memory_clauses = "\n    ∧ ".join(
             f"bridge{camel}Final.memory {address} = {byte}"
             for address, byte in sorted(expected["memory"].items())
         )
-        return header + f"""
+        return (
+            header
+            + f"""
 theorem bridge_{bridge_id}_rsp_restored :
-    bridge{camel}Final.gprs rspIndexN = word64n {expected['registers']['rsp']} := by
+    bridge{camel}Final.gprs rspIndexN = word64n {expected["registers"]["rsp"]} := by
   apply Fin.ext
   decide
 
 theorem bridge_{bridge_id}_rbx_loaded :
-    bridge{camel}Final.gprs rbxIndexN = word64n {expected['registers']['rbx']} := by
+    bridge{camel}Final.gprs rbxIndexN = word64n {expected["registers"]["rbx"]} := by
   apply Fin.ext
   decide
 
@@ -502,6 +507,7 @@ theorem bridge_{bridge_id}_status_running :
     bridge{camel}Final.status = MachineStatusN.running := by
   decide
 """
+        )
 
     if bridge_id.startswith("cmp_jcc"):
         expected = fixture["expected_boundary"]
@@ -515,24 +521,25 @@ theorem bridge_{bridge_id}_status_running :
             for name, value in zip(flag_names, flag_values)
         )
         defined_clauses = "\n    ∧ ".join(
-            f"bridge{camel}Final.flags.defined {name}BitN = true"
-            for name in flag_names
+            f"bridge{camel}Final.flags.defined {name}BitN = true" for name in flag_names
         )
         if bridge_id == "cmp_jcc_taken":
             outcome = f"""theorem bridge_{bridge_id}_branch_target :
-    bridge{camel}Final.rip = word64n {expected['rip']} := by
+    bridge{camel}Final.rip = word64n {expected["rip"]} := by
   apply Fin.ext
   decide"""
         else:
             outcome = f"""theorem bridge_{bridge_id}_fallthrough :
-    bridge{camel}Final.rip = word64n {expected['rip']} := by
+    bridge{camel}Final.rip = word64n {expected["rip"]} := by
   apply Fin.ext
   decide"""
-        return header + f"""
+        return (
+            header
+            + f"""
 {outcome}
 
 theorem bridge_{bridge_id}_rax_boundary :
-    bridge{camel}Final.gprs raxIndexN = word64n {expected['registers']['rax']} := by
+    bridge{camel}Final.gprs raxIndexN = word64n {expected["registers"]["rax"]} := by
   apply Fin.ext
   decide
 
@@ -545,13 +552,16 @@ theorem bridge_{bridge_id}_status_running :
     bridge{camel}Final.status = MachineStatusN.running := by
   decide
 """
+        )
 
     expected = fixture["expected_boundary"]
     primary_theorem = fixture["theorems"][0].removeprefix("ActiveAssembly.")
     flags_theorem = fixture["theorems"][1].removeprefix("ActiveAssembly.")
-    return header + f"""
+    return (
+        header
+        + f"""
 theorem {primary_theorem} :
-    bridge{camel}Final.gprs raxIndexN = word64n {expected['registers']['rax']} := by
+    bridge{camel}Final.gprs raxIndexN = word64n {expected["registers"]["rax"]} := by
   apply Fin.ext
   decide
 
@@ -570,6 +580,7 @@ theorem {flags_theorem} :
     bridge{camel}Final.flags.defined ofBitN = true := by
   decide
 """
+    )
 
 
 def _elan_executable() -> str:
@@ -677,8 +688,10 @@ def _unicorn_fixture_run(fixture: dict[str, Any]) -> dict[str, Any]:
     memory_lower, memory_upper = (int(bound) for bound in initial["memory_bounds"])
 
     emulator = Uc(UC_ARCH_X86, UC_MODE_64)
-    emulator.mem_map(min(memory_lower, stack_lower),
-                     max(memory_upper, stack_upper) - min(memory_lower, stack_lower))
+    emulator.mem_map(
+        min(memory_lower, stack_lower),
+        max(memory_upper, stack_upper) - min(memory_lower, stack_lower),
+    )
     emulator.mem_write(int(initial["rip"]), code)
     for address, byte in initial["memory"].items():
         emulator.mem_write(int(address), bytes([int(byte)]))
@@ -736,7 +749,7 @@ def _reference_fixture_run(fixture: dict[str, Any]) -> dict[str, Any]:
     """Execute the fixture through the normalized reference interpreter."""
 
     from .disassembly import disassemble_bytes
-    from .formal_correspondence import ARCHITECTURAL_FLAGS_MASK, FormalState, _step
+    from .formal_correspondence import FormalState, _step
 
     code = _fixture_code(fixture)
     initial = fixture["initial"]
@@ -746,8 +759,7 @@ def _reference_fixture_run(fixture: dict[str, Any]) -> dict[str, Any]:
             f"fixture {fixture['bridge_id']} declares more steps than decodable"
         )
     registers = {
-        name: int(initial["registers"].get(name, 0))
-        for name in BRIDGE_REGISTER_NAMES
+        name: int(initial["registers"].get(name, 0)) for name in BRIDGE_REGISTER_NAMES
     }
     state = FormalState(
         rax=registers["rax"],
@@ -761,7 +773,10 @@ def _reference_fixture_run(fixture: dict[str, Any]) -> dict[str, Any]:
             for name in ("CF", "PF", "AF", "ZF", "SF", "OF")
         },
         stack_bounds=(int(initial["stack_bounds"][0]), int(initial["stack_bounds"][1])),
-        memory_bounds=(int(initial["memory_bounds"][0]), int(initial["memory_bounds"][1])),
+        memory_bounds=(
+            int(initial["memory_bounds"][0]),
+            int(initial["memory_bounds"][1]),
+        ),
         step_index=int(initial["step_index"]),
     )
     by_address = {event.address: index for index, event in enumerate(events)}
@@ -774,9 +789,7 @@ def _reference_fixture_run(fixture: dict[str, Any]) -> dict[str, Any]:
         if index is None:
             break
         event = events[index]
-        next_address = (
-            events[index + 1].address if index + 1 < len(events) else None
-        )
+        next_address = events[index + 1].address if index + 1 < len(events) else None
         _step(event, state, next_address)
         steps += 1
     if boundary is None:
@@ -818,7 +831,9 @@ def _components_match(observed: dict[str, Any], expected: dict[str, Any]) -> boo
             return False
     if observed["rip"] != int(expected["rip"]):
         return False
-    if (observed["eflags"] & ARCHITECTURAL_FLAGS_MASK) != int(expected["eflags_masked"]):
+    if (observed["eflags"] & ARCHITECTURAL_FLAGS_MASK) != int(
+        expected["eflags_masked"]
+    ):
         return False
     for address, byte in expected.get("memory", {}).items():
         observed_memory = observed.get("memory", {})
@@ -837,9 +852,7 @@ def _verify_bridge_fixture(fixture: dict[str, Any]) -> dict[str, Any]:
     # mutation of one would silently rewrite the others), and memory maps
     # serialize with string addresses so a written payload and its recomputed
     # twin stay identical across a JSON round trip.
-    readback = {
-        str(address): byte for address, byte in unicorn["memory"].items()
-    }
+    readback = {str(address): byte for address, byte in unicorn["memory"].items()}
     unicorn["boundary"]["memory"] = dict(readback)
     unicorn["final"]["memory"] = dict(readback)
     reference = _reference_fixture_run(fixture)
@@ -905,7 +918,9 @@ def write_generated_lean_fixture(project_root: Path = PROJECT_ROOT) -> dict[str,
                     **fixture["expected_boundary"],
                     "memory": {
                         str(address): byte
-                        for address, byte in fixture["expected_boundary"]["memory"].items()
+                        for address, byte in fixture["expected_boundary"][
+                            "memory"
+                        ].items()
                     },
                 },
                 "expected_final": {
@@ -1017,9 +1032,7 @@ def _fixture_expected_from_row(expected: dict[str, Any]) -> dict[str, Any]:
         "registers": expected["registers"],
         "rip": expected["rip"],
         "eflags_masked": expected["eflags_masked"],
-        "memory": {
-            int(address): byte for address, byte in expected["memory"].items()
-        },
+        "memory": {int(address): byte for address, byte in expected["memory"].items()},
     }
 
 

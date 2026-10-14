@@ -130,8 +130,10 @@ def _validate_inputs(
     belief: np.ndarray,
     A: np.ndarray,
     C: np.ndarray | None = None,
+    *,
+    require_channel: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
-    """Validate and normalize the tensors used by active selection."""
+    """Validate conditional weights; predictive objectives require a full channel."""
 
     matrix_a = np.asarray(A, dtype=float)
     if matrix_a.ndim != 2 or matrix_a.shape[0] == 0 or matrix_a.shape[1] == 0:
@@ -140,6 +142,10 @@ def _validate_inputs(
         raise ValueError("A must contain only finite, non-negative values")
     if np.any(matrix_a.sum(axis=0) <= 0.0):
         raise ValueError("each A hidden-state column must have positive support")
+    if require_channel and not np.allclose(
+        matrix_a.sum(axis=0), 1.0, rtol=0.0, atol=1e-9
+    ):
+        raise ValueError("each A hidden-state column must normalize to one")
     prior = _normalize(belief, name="belief")
     if prior.size != matrix_a.shape[1]:
         raise ValueError("belief length must match A hidden-state dimension")
@@ -226,7 +232,7 @@ def predictive_information_contribution(
     distribution over candidate instructions.
     """
 
-    prior, matrix_a, _ = _validate_inputs(belief, A)
+    prior, matrix_a, _ = _validate_inputs(belief, A, require_channel=True)
     index = _as_integral_id(
         observation_id, name="observation_id", upper_bound=matrix_a.shape[0]
     )
@@ -239,7 +245,7 @@ def predictive_information_contribution(
 def expected_information_gain(belief: np.ndarray, A: np.ndarray) -> float:
     """Return the one-step expected information gain of the observation channel."""
 
-    prior, matrix_a, _ = _validate_inputs(belief, A)
+    prior, matrix_a, _ = _validate_inputs(belief, A, require_channel=True)
     contributions = [
         predictive_information_contribution(prior, matrix_a, observation_id)
         for observation_id in range(matrix_a.shape[0])
@@ -314,7 +320,7 @@ def predictive_expected_free_energy(
     instruction-level sensing process.
     """
 
-    prior, matrix_a, preferences = _validate_inputs(belief, A, C)
+    prior, matrix_a, preferences = _validate_inputs(belief, A, C, require_channel=True)
     assert preferences is not None
     index = _as_integral_id(
         observation_id, name="observation_id", upper_bound=matrix_a.shape[0]

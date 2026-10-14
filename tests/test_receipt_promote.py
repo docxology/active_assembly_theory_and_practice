@@ -14,6 +14,7 @@ SURFACE_NAMES = {
     "P13_static_only",
     "P13_capabilities",
     "P13_acquisition",
+    "P13_preparation_audit",
     "P15_local_replay_harness",
     "P15_independent_replay",
 }

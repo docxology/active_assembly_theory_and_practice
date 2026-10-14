@@ -390,7 +390,11 @@ def main() -> int:
         artifact_errors = validate_data_artifact_surface(root)
         _write_json(
             {
-                "status": "validated_local_pipeline",
+                "status": (
+                    "failed_artifact_audit"
+                    if artifact_errors
+                    else "generated_local_pipeline"
+                ),
                 "variable_count": len(variables),
                 "artifact_errors": artifact_errors,
             }

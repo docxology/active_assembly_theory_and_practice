@@ -9,11 +9,28 @@
 #   scripts/run_full_verification.sh          # deterministic gates
 #   scripts/run_full_verification.sh --julia  # + Julia backend Pkg.test()
 #
-set -u
+set -euo pipefail
 cd "$(dirname "$0")/.."
 # Keep figure-producing tests deterministic and display-server independent.
 export MPLBACKEND="${MPLBACKEND:-Agg}"
 
+run_julia=0
+analysis_only=0
+for argument in "$@"; do
+  case "$argument" in
+    --julia) run_julia=1 ;;
+    --analysis-only) analysis_only=1 ;;
+    --help)
+      echo "Usage: scripts/run_full_verification.sh [--julia] [--analysis-only]"
+      echo "Default: regenerate analysis, test, hydrate, and validate existing rendered documents."
+      echo "--analysis-only: run the pre-render gates; does not certify PDF or DOCX."
+      exit 0 ;;
+    *) echo "Unknown argument: $argument" >&2; exit 2 ;;
+  esac
+done
+if [ "$analysis_only" -eq 1 ]; then
+  export ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=1
+fi
 steps=0
 failures=0
 
@@ -27,43 +44,56 @@ run_step() {
   else
     printf '%-46s FAIL\n' "$name"
     failures=$((failures + 1))
-    sed -n '1,25p' "$log" >&2
-    echo "" >&2
+    tail -n 40 "$log" >&2
+    rm -f "$log"
+    echo "Verification stopped at failed prerequisite: $name" >&2
+    exit 1
   fi
   steps=$((steps + 1))
   rm -f "$log"
 }
 
+# Tests include generated-artifact integration checks. Produce their inputs
+# first, so a fresh clone and a previously rendered checkout use the same order.
+run_step "locked development environment" uv sync --locked --extra dev
+run_step "canonical analysis and artifact regeneration" \
+  uv run --locked python scripts/run_scientific_program.py all
 run_step "pytest (>=90% coverage)" \
-  uv run pytest tests --cov=src --cov-fail-under=90 -q
+  uv run --locked pytest tests --cov=src --cov-fail-under=90 -q
 run_step "ruff check" \
-  uv run ruff check src tests scripts
+  uv run --locked ruff check src tests scripts
 run_step "ruff format --check" \
-  uv run ruff format --check src tests scripts
+  uv run --locked ruff format --check src tests scripts
 run_step "mypy" \
-  uv run mypy
+  uv run --locked mypy
 run_step "formal correspondence + Lean receipt" \
-  uv run python scripts/run_formal_verification.py
+  uv run --locked python scripts/run_formal_verification.py
 run_step "blind replication bundle" \
-  uv run python scripts/run_replication.py verify
+  uv run --locked python scripts/run_replication.py verify
 run_step "RxInfer backend receipt" \
-  uv run python scripts/run_rxinfer_backend.py
+  uv run --locked python scripts/run_rxinfer_backend.py
 run_step "manuscript variables + template hydration" \
-  uv run python scripts/z_generate_manuscript_variables.py
-run_step "validation gate (source-bound oracles)" \
-  uv run python scripts/validate_analysis_outputs.py
+  uv run --locked python scripts/z_generate_manuscript_variables.py
+if [ "$analysis_only" -eq 0 ]; then
+run_step "DOCX configured cover projection" \
+  uv run --locked python scripts/render_docx_cover.py
 run_step "DOCX structural receipt" \
-  uv run python scripts/validate_docx_render.py
+  uv run --locked python scripts/validate_docx_render.py
 run_step "PDF accessibility receipt" \
-  uv run python scripts/validate_pdf_accessibility.py
+  uv run --locked python scripts/validate_pdf_accessibility.py
 run_step "PDF syntax (qpdf)" \
   qpdf --check output/pdf/active_assembly_theory_and_practice_combined.pdf
 run_step "PDF/UA-2 (VeraPDF)" \
   verapdf --format text --flavour ua2 output/pdf/active_assembly_theory_and_practice_combined.pdf
 
-if [ "${1:-}" = "--julia" ]; then
+fi
+
+run_step "validation gate (source-bound oracles)" \
+  uv run --locked python scripts/validate_analysis_outputs.py --existing-only
+
+if [ "$run_julia" -eq 1 ]; then
   run_step "Julia backend Pkg.test()" \
-    uv run python scripts/run_julia_tests.py
+    uv run --locked python scripts/run_julia_tests.py
 fi
 
 echo ""

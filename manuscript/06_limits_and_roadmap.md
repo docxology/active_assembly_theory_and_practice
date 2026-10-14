@@ -82,22 +82,23 @@ independent sources of variation. The typed model is a supervised composite
 likelihood diagnostic, not a semantic representation, and the hierarchical
 score is not assumed to be a normalized joint probability.
 
-The quotient robustness machinery narrows what the co-primary portfolio can
-claim, and its own boundaries stay visible. Hyperparameter selection and Platt
-calibration are development-only; the uncalibrated metrics remain primary and
-the calibrated metrics gate no claim. The recurrent comparator scores exactly
-chance on development for every option combination and is excluded from the
-family-shuffle comparison for that declared reason, so the shuffle result
-(balanced accuracy 0.597 against 0.775 temporal and 0.671 interpretable)
-compares only models that are demonstrably above chance. The metadata probe's
-held-out margins (+0.004 interpretable, +0.024 temporal) sit inside the frozen
-practical comparison margin under the boundary
-bounded probe only; no architecture-metadata claim. The 128 flagged
-near-duplicate cross-split pairs are all declared frozen template siblings,
-and the cross-encoding contract covers 61 of 64 families. None of these
-diagnostics promotes a superiority, metadata-leakage, or semantic-discovery
-claim; they quantify where the endpoint could be attacked and record that the
-attacks did not break it inside the declared benchmark.
+The quotient robustness machinery has separate evidential limits.
+Hyperparameter selection and Platt calibration are development-only, and the
+uncalibrated metrics remain primary. The within-family label scramble refits
+on scrambled held-out labels and evaluates those same rows, preserving family
+class totals. Its score ({{QUOTIENT_CLASSIFIER_FAMILY_SCRAMBLE_ACCURACY}}) is an in-sample
+perturbation diagnostic; it does not establish absence of family leakage.
+Models at or below chance are excluded from its comparator set explicitly.
+The encoding/opcode-surface probe uses bounded refits, with margins
+{{QUOTIENT_CLASSIFIER_PROBE_INTERPRETABLE_MARGIN}}, {{QUOTIENT_CLASSIFIER_PROBE_TEMPORAL_MARGIN}},
+and {{QUOTIENT_CLASSIFIER_PROBE_NEURAL_MARGIN}} for the three models; it supplies no
+architecture-metadata conclusion. The similarity ledger retains
+{{QUOTIENT_CLASSIFIER_FLAGGED_PAIR_COUNT}} declared template-sibling flags, and the
+cross-encoding contract covers
+{{QUOTIENT_CLASSIFIER_CROSS_ENCODING_CONSISTENT_FAMILY_COUNT}} of
+{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}} families. The retrospective correction
+withholds every superiority claim. These controls cannot certify behavior
+outside the declared benchmark.
 
 The active layer has the same requirement, and the first action-conditioned
 tranche now makes that boundary explicit. `action_sensing.json` chooses typed
@@ -209,7 +210,7 @@ promotion state remains deliberately asymmetric:
 | P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
-| P12 scaled transfer/quotient | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity, universal invariance, or superiority without adjusted evidence |
+| P12 scaled transfer/quotient | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity or universal invariance; retrospective superiority claims remain withheld |
 | P13 licensed external validation | `{{EXTERNAL_STATIC_ROW_COUNT}}` pinned rows across `{{EXTERNAL_LABEL_PROJECT_COUNT}}` projects and two revisions per project, static-only acquisition/compiler path, Capstone decoding, `{{EXTERNAL_LABEL_ROW_COUNT}}` source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
 | P14 measured policy robustness | deterministic/calibrated cost receipts, finite oracle certificate, stress-grid policy regret and budget-value gaps, and repeated local calibration-stability rows | universal cost law or non-oracle near-optimality claim beyond the declared grid |
 | P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; controlled replay of the frozen interface is not independent reimplementation |

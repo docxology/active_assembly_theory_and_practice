@@ -7,8 +7,8 @@ import json
 
 import numpy as np
 import pytest
-import src.quotient_classifier as quotient_module
 
+import src.quotient_classifier as quotient_module
 from src.quotient_classifier import (
     FAMILY_SHUFFLE_SEED,
     INTERVENTIONS,
@@ -16,12 +16,12 @@ from src.quotient_classifier import (
     LOGISTIC_LEARNING_RATE_GRID,
     MODEL_FAMILIES,
     NEAR_DUPLICATE_THRESHOLD,
-    PairExample,
     RNN_EPOCHS_GRID,
     RNN_HIDDEN_SIZE,
     RNN_HIDDEN_SIZE_GRID,
     SEEDS,
     SURFACE_BASELINE_NAMES,
+    PairExample,
     _adjusted_mutual_information,
     _apply_platt,
     _baseline_matrix,
@@ -29,10 +29,10 @@ from src.quotient_classifier import (
     _binary_cross_entropy,
     _cluster_bootstrap,
     _code_descriptor,
-    _cross_encoding_consistency,
     _dataset,
     _evaluate,
     _family_shuffle_control,
+    _family_specs,
     _feature_names,
     _fit_logistic,
     _fit_markov,
@@ -43,9 +43,9 @@ from src.quotient_classifier import (
     _interval,
     _metrics,
     _near_duplicate_report,
-    _paired_cluster_bootstrap,
     _pad_nops,
     _pair_features,
+    _paired_cluster_bootstrap,
     _predict_logistic,
     _predict_markov,
     _predict_rnn,
@@ -60,7 +60,6 @@ from src.quotient_classifier import (
     _token_vocabulary,
     _trace_summary,
     _wilson_interval,
-    _family_specs,
     quotient_classifier_payload,
     validate_quotient_classifier_payload,
 )
@@ -504,9 +503,19 @@ def test_split_manifest_receipt_gate_fails_closed(full_payload: dict) -> None:
     corrupted["split_manifest"]["sha256"] = "0" * 64
     assert validate_quotient_classifier_payload(corrupted)[0] is False
     corrupted = copy.deepcopy(full_payload)
-    first_training = corrupted["split_manifest"]["assignment"]
-    corrupted["split_manifest"]["assignment"][next(iter(first_training))] = (
-        "held_out"
+    assignment = corrupted["split_manifest"]["assignment"]
+    training_id = next(key for key, split in assignment.items() if split == "training")
+    assignment[training_id] = "held_out"
+    assert validate_quotient_classifier_payload(corrupted)[0] is False
+
+
+def test_label_scramble_receipt_cannot_claim_out_of_sample_evidence(full_payload):
+    control = full_payload["negative_controls"]["family_shuffle"]
+    assert control["fit_scope"] == "held_out_in_sample_perturbation_only"
+    assert control["preserves_family_class_totals"] is True
+    corrupted = copy.deepcopy(full_payload)
+    corrupted["negative_controls"]["family_shuffle"]["fit_scope"] = (
+        "training_only_out_of_sample"
     )
     assert validate_quotient_classifier_payload(corrupted)[0] is False
 
@@ -529,8 +538,12 @@ def test_hyperparameter_selection_is_development_only_and_deterministic() -> Non
     )
     vocabulary = _token_vocabulary([*training, *development])
 
-    first = _select_hyperparameters(training, development, train_matrix, development_matrix, vocabulary)
-    second = _select_hyperparameters(training, development, train_matrix, development_matrix, vocabulary)
+    first = _select_hyperparameters(
+        training, development, train_matrix, development_matrix, vocabulary
+    )
+    second = _select_hyperparameters(
+        training, development, train_matrix, development_matrix, vocabulary
+    )
     # Held-out rows are structurally outside the selection inputs: mutating
     # the held-out universe between runs cannot move the selection.
     assert held != alternative_held
@@ -643,28 +656,22 @@ def test_family_shuffle_control_gate_fails_closed(full_payload: dict) -> None:
         ), name
     # A flipped verdict must be caught by recomputation, not trusted.
     flipped = copy.deepcopy(full_payload)
-    flipped["negative_controls"]["family_shuffle"][
-        "loses_to_all_co_primary"
-    ] = False
+    flipped["negative_controls"]["family_shuffle"]["loses_to_all_co_primary"] = False
     valid, detail = validate_quotient_classifier_payload(flipped)
     assert valid is False
     assert "family-shuffle control verdict drift" in detail
     # A control that secretly wins must be caught by verdict recomputation.
     inflated = copy.deepcopy(full_payload)
-    inflated["negative_controls"]["family_shuffle"]["metrics"][
-        "balanced_accuracy"
-    ] = 0.99
+    inflated["negative_controls"]["family_shuffle"]["metrics"]["balanced_accuracy"] = (
+        0.99
+    )
     valid, detail = validate_quotient_classifier_payload(inflated)
     assert valid is False
     assert "family-shuffle control verdict drift" in detail
     # And a honestly-recorded losing control must still fail the gate.
     losing = copy.deepcopy(full_payload)
-    losing["negative_controls"]["family_shuffle"]["metrics"][
-        "balanced_accuracy"
-    ] = 0.99
-    losing["negative_controls"]["family_shuffle"][
-        "loses_to_all_co_primary"
-    ] = False
+    losing["negative_controls"]["family_shuffle"]["metrics"]["balanced_accuracy"] = 0.99
+    losing["negative_controls"]["family_shuffle"]["loses_to_all_co_primary"] = False
     valid, detail = validate_quotient_classifier_payload(losing)
     assert valid is False
     assert "family-shuffle control does not lose" in detail
@@ -710,9 +717,7 @@ def test_leakage_probe_gate_fails_closed(full_payload: dict) -> None:
         assert 0.0 <= score <= 1.0
         difference = score - leakage["label_blind_full_held_out_scores"][name]
         assert difference <= leakage["beats_threshold"] + 1e-12
-        assert difference == pytest.approx(
-            leakage["probe_margin_differences"][name]
-        )
+        assert difference == pytest.approx(leakage["probe_margin_differences"][name])
     winning = copy.deepcopy(full_payload)
     winning["leakage_attacks"]["metadata_only_beats_label_blind"] = True
     valid, detail = validate_quotient_classifier_payload(winning)
@@ -722,9 +727,7 @@ def test_leakage_probe_gate_fails_closed(full_payload: dict) -> None:
     inflated = copy.deepcopy(full_payload)
     first_model = MODEL_FAMILIES[0]
     inflated["leakage_attacks"]["held_out_scores"][first_model] = (
-        inflated["leakage_attacks"]["label_blind_full_held_out_scores"][
-            first_model
-        ]
+        inflated["leakage_attacks"]["label_blind_full_held_out_scores"][first_model]
         + 0.5
     )
     valid, detail = validate_quotient_classifier_payload(inflated)
@@ -848,7 +851,250 @@ def test_payload_json_is_deterministic(full_payload: dict) -> None:
     """Two production passes must serialize to identical JSON."""
 
     second = quotient_classifier_payload()
-    assert (
-        json.dumps(full_payload, sort_keys=True)
-        == json.dumps(second, sort_keys=True)
+    assert json.dumps(full_payload, sort_keys=True) == json.dumps(
+        second, sort_keys=True
     )
+
+
+def test_family_randomization_matches_explicit_prediction_swaps() -> None:
+    """Swapping whole families must match rowwise rescoring of each null draw."""
+    rows = _rows()
+    model = np.asarray([0.9 if row.label else 0.1 for row in rows])
+    baseline = np.full(len(rows), 0.6)
+    report = quotient_module._paired_family_randomization(
+        rows, model, baseline, seed=19, replicates=127
+    )
+    families = sorted({row.family_id for row in rows})
+    labels = np.asarray([row.label for row in rows])
+    draws = np.random.default_rng(19).integers(0, 2, size=(127, len(families)))
+    counts = {metric: 0 for metric in report["p_values"]}
+    for draw in draws:
+        mask = np.asarray(
+            [draw[families.index(row.family_id)] for row in rows], dtype=bool
+        )
+        first = _metrics(labels, np.where(mask, baseline, model), extended=False)
+        second = _metrics(labels, np.where(mask, model, baseline), extended=False)
+        for metric in counts:
+            counts[metric] += (
+                first[metric] - second[metric]
+                >= report["observed_difference"][metric] - 1e-12
+            )
+    for metric, count in counts.items():
+        assert report["exceedances"][metric] == count
+        assert report["p_values"][metric] == (count + 1) / 128
+    assert (
+        quotient_module._paired_family_randomization(
+            rows, model, baseline, seed=19, replicates=127
+        )
+        == report
+    )
+
+
+def test_family_randomization_identical_predictions_retain_all_ties() -> None:
+    rows = _rows()
+    probabilities = np.full(len(rows), 0.5)
+    report = quotient_module._paired_family_randomization(
+        rows, probabilities, probabilities, seed=7, replicates=99
+    )
+    assert report["p_values"] == {"balanced_accuracy": 1.0, "macro_f1": 1.0}
+    paired = _paired_cluster_bootstrap(
+        rows, probabilities, probabilities, seed=7, replicates=10
+    )
+    assert paired["nonpositive_bootstrap_fractions"]["macro_f1"] == 1.0
+    assert "raw_one_sided_bootstrap_p_values" not in paired
+
+
+@pytest.mark.parametrize("replicates", [0, -1, True, 1.5])
+def test_family_randomization_rejects_invalid_replicates(replicates) -> None:
+    rows = _rows()
+    probabilities = np.full(len(rows), 0.5)
+    with pytest.raises(ValueError, match="positive integer"):
+        quotient_module._paired_family_randomization(
+            rows, probabilities, probabilities, seed=7, replicates=replicates
+        )
+
+
+@pytest.mark.parametrize(
+    "bad", [np.asarray([0.5]), np.asarray([np.nan] * 8), np.asarray([1.5] * 8)]
+)
+def test_family_randomization_rejects_invalid_probabilities(bad) -> None:
+    rows = _rows()
+    with pytest.raises(ValueError, match="probabilities"):
+        quotient_module._paired_family_randomization(
+            rows, bad, np.full(len(rows), 0.5), seed=7, replicates=10
+        )
+
+
+@pytest.mark.parametrize("defect", ["p_value", "holm", "claim", "replicates", "count"])
+def test_randomization_receipt_validator_rejects_inferential_drift(
+    full_payload, defect
+) -> None:
+    payload = copy.deepcopy(full_payload)
+    model = MODEL_FAMILIES[0]
+    metric = "balanced_accuracy"
+    test = payload["paired_comparisons"][f"{model}:surface_baseline:{metric}"][
+        "randomization_test"
+    ]
+    record = payload["model_comparisons"][model][metric]
+    if defect == "p_value":
+        test["p_values"][metric] = 0.0
+    elif defect == "holm":
+        record["holm_adjusted_p_value"] = -1.0
+    elif defect == "claim":
+        record["superiority_claim_allowed"] = True
+    elif defect == "replicates":
+        test["replicates"] = 0
+    else:
+        test["exceedances"][metric] = -1
+    valid, _ = validate_quotient_classifier_payload(payload)
+    assert not valid
+
+
+def test_vectorized_cluster_bootstrap_matches_explicit_family_resampling() -> None:
+    rows = _rows()
+    families = sorted({row.family_id for row in rows})
+    probabilities = np.asarray([0.9 if row.label else 0.7 for row in rows])
+    report = _cluster_bootstrap(rows, probabilities, seed=29, replicates=23)
+    samples = np.random.default_rng(29).choice(
+        families, size=(23, len(families)), replace=True
+    )
+    for sample_index, sample in enumerate(samples):
+        indices = [
+            index
+            for family in sample
+            for index, row in enumerate(rows)
+            if row.family_id == family
+        ]
+        expected = _metrics(
+            np.asarray([rows[index].label for index in indices]),
+            probabilities[indices],
+            extended=False,
+        )
+        for metric in report:
+            assert report[metric][sample_index] == pytest.approx(expected[metric])
+
+
+def test_training_vocabulary_maps_new_held_out_tokens_to_unknown() -> None:
+    from dataclasses import replace
+
+    training, development = _selection_rows()
+    vocabulary = _token_vocabulary(training)
+    unseen = replace(development[0], reference_tokens=("never_seen_in_training",))
+    assert "never_seen_in_training" not in vocabulary
+    assert "<UNKNOWN>" in vocabulary
+    markov = _fit_markov(training, vocabulary)
+    recurrent = _fit_rnn(training, vocabulary, seed=3, epochs=1)
+    for probabilities in (
+        _predict_markov([unseen], vocabulary, markov),
+        _predict_rnn([unseen], vocabulary, recurrent),
+    ):
+        assert probabilities.shape == (1,)
+        assert np.isfinite(probabilities).all()
+        assert 0 <= probabilities[0] <= 1
+
+
+def test_grouped_rnn_gradient_equals_explicit_duplicate_rows() -> None:
+    """An independent full-batch reference checks the duplicate aggregation."""
+    rows = (*_rows(), *_rows())
+    vocabulary = _token_vocabulary(rows)
+    seed, size, epochs, rate = 5, 3, 2, 0.03
+    rng = np.random.default_rng(seed)
+    wxh = rng.normal(0, 0.05, (size, len(vocabulary)))
+    whh = rng.normal(0, 0.05, (size, size))
+    why = rng.normal(0, 0.05, size)
+    by = 0.0
+    for _ in range(epochs):
+        gx, gh, gy = np.zeros_like(wxh), np.zeros_like(whh), np.zeros_like(why)
+        gb = 0.0
+        for row in rows:
+            sequence = (
+                "<REFERENCE>",
+                *row.reference_tokens,
+                "<VARIANT>",
+                *row.variant_tokens,
+            )
+            ids = [vocabulary[token] for token in sequence]
+            probability, states = _rnn_forward(ids, wxh, whh, why, by)
+            delta = probability - row.label
+            gy += delta * states[-1][size:]
+            gb += delta
+            dh = delta * why
+            for index in reversed(range(len(ids))):
+                previous, hidden = np.split(states[index], 2)
+                dz = dh * (1 - hidden**2)
+                gx[:, ids[index]] += dz
+                gh += np.outer(dz, previous)
+                dh = whh.T @ dz
+        wxh -= rate * gx / len(rows)
+        whh -= rate * gh / len(rows)
+        why -= rate * gy / len(rows)
+        by -= rate * gb / len(rows)
+    grouped = _fit_rnn(
+        rows, vocabulary, seed=seed, hidden_size=size, epochs=epochs, learning_rate=rate
+    )
+    for actual, expected in zip(grouped[:4], (wxh, whh, why, by)):
+        np.testing.assert_allclose(actual, expected, rtol=1e-13, atol=1e-15)
+
+
+def test_classifier_plot_preserves_interval_outside_point_estimate(
+    full_payload, tmp_path
+) -> None:
+    """A percentile interval can exclude its point estimate without being invalid."""
+    from src.figures import plot_quotient_classifier
+
+    payload = copy.deepcopy(full_payload)
+    model = MODEL_FAMILIES[0]
+    payload["models"][model]["confidence_intervals"]["balanced_accuracy"][
+        "interval"
+    ] = [0.1, 0.2]
+    payload["paired_comparisons"][f"{model}:surface_baseline:balanced_accuracy"][
+        "confidence_intervals"
+    ]["balanced_accuracy"]["interval"] = [-0.95, -0.8]
+    path = plot_quotient_classifier(payload, tmp_path / "independent_interval.png")
+    assert path.is_file() and path.stat().st_size > 0
+
+
+def test_classifier_plot_rejects_invalid_paired_interval(
+    full_payload, tmp_path
+) -> None:
+    from matplotlib import pyplot as plt
+    from src.figures import plot_quotient_classifier
+
+    payload = copy.deepcopy(full_payload)
+    model = MODEL_FAMILIES[0]
+    payload["paired_comparisons"][f"{model}:surface_baseline:balanced_accuracy"][
+        "confidence_intervals"
+    ]["balanced_accuracy"]["interval"] = [float("nan"), 0.2]
+    try:
+        with pytest.raises(ValueError, match="paired interval is invalid"):
+            plot_quotient_classifier(payload, tmp_path / "invalid_interval.png")
+    finally:
+        plt.close("all")
+
+
+def test_cache_rejects_changed_observation_dependency(
+    full_payload, tmp_path, monkeypatch
+) -> None:
+    """A dependency edit invalidates an otherwise identical benchmark receipt."""
+    payload = copy.deepcopy(full_payload)
+    for name in payload["input_hashes"]:
+        if name.startswith("src/"):
+            target = tmp_path / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((quotient_module.PROJECT_ROOT / name).read_bytes())
+    target = tmp_path / quotient_module.QUOTIENT_CLASSIFIER_ARTIFACT
+    target.parent.mkdir(parents=True)
+    target.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(quotient_module, "PROJECT_ROOT", tmp_path)
+    assert quotient_module._cached_quotient_classifier_payload() is not None
+    dependency = tmp_path / "src/emulation.py"
+    dependency.write_text(
+        dependency.read_text() + "\n# Changed observation dependency\n"
+    )
+    assert quotient_module._cached_quotient_classifier_payload() is None
+
+
+def test_classifier_receipt_rejects_transductive_vocabulary(full_payload) -> None:
+    payload = copy.deepcopy(full_payload)
+    payload["vocabulary_fit_scope"] = "all_rows"
+    assert not validate_quotient_classifier_payload(payload)[0]

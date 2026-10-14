@@ -182,7 +182,9 @@ def test_intervention_power_receipt_and_figure_are_exact(tmp_path) -> None:
     assert path.stat().st_size > 0
 
 
-def test_advanced_figure_registry_includes_open_roadmap_surfaces() -> None:
+def test_advanced_figure_registry_includes_open_roadmap_surfaces(
+    canonical_artifacts,
+) -> None:
     paths = write_advanced_figures()
     required = {
         "quotient_classifier",
@@ -219,7 +221,9 @@ def test_artifact_receipt_closure_figure_is_nonblank(tmp_path) -> None:
     assert path.stat().st_size > 0
 
 
-def test_external_label_coverage_figure_is_nonblank(tmp_path) -> None:
+def test_external_label_coverage_figure_is_nonblank(
+    tmp_path, canonical_artifacts
+) -> None:
     payload = json.loads(
         (PROJECT_ROOT / "output/data/external_label_contract.json").read_text(
             encoding="utf-8"
@@ -389,6 +393,8 @@ def test_run_advanced_inference_writes_deterministic_artifacts(tmp_path) -> None
         "formal_trace_correspondence",
         "compiler_transfer",
         "sensor_cost_receipt",
+        "sensing_stress",
+        "counterexample_search",
         "replication_manifest",
         "theorem_or_countertheorem",
     }

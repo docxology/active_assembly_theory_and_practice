@@ -12,7 +12,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
@@ -436,20 +435,12 @@ def _canonical_source(token: str) -> str:
 
 
 def _template_root(project_root: Path) -> Path | None:
-    explicit = os.environ.get("TEMPLATE_REPO_ROOT")
-    candidates = [Path(explicit).expanduser()] if explicit else []
-    candidates.extend(
-        parent / "template" for parent in (project_root.parent, *project_root.parents)
-    )
-    seen: set[Path] = set()
-    for candidate in candidates:
-        resolved = candidate.resolve()
-        if resolved in seen:
-            continue
-        seen.add(resolved)
-        if (resolved / "infrastructure/rendering/manuscript_injection.py").is_file():
-            return resolved
-    return None
+    from .template_hydration import resolve_template_root
+
+    try:
+        return resolve_template_root(project_root)
+    except RuntimeError:
+        return None
 
 
 def _template_hydration(project_root: Path) -> dict[str, Any]:
@@ -663,8 +654,18 @@ def build_variable_registry(
             ),
             "atlas_only_token_count": len(atlas_only_tokens),
             "compatibility_only_token_count": len(compatibility_only_tokens),
+            # Unused compatibility values may await a later document render.
+            # Any source consumer makes its value mandatory, including DOCX
+            # counts; no rendered manuscript value can be deferred this way.
             "no_pending_values": not any(
-                str(value).lower() == "pending" for value in variables.values()
+                str(value).lower() == "pending"
+                for token, value in variables.items()
+                if token not in compatibility_only_tokens
+            ),
+            "deferred_compatibility_tokens": sorted(
+                token
+                for token in compatibility_only_tokens
+                if str(variables[token]).lower() == "pending"
             ),
         },
     }

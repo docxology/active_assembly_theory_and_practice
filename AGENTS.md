@@ -26,7 +26,7 @@ sidecar is available, and the computational research shape of the sibling
 
 ## Verification
 
-From the project checkout (`/Volumes/external_drive/Git/projects/working/active_assembly_theory_and_practice`):
+From the project checkout:
 
 ```bash
 uv run pytest tests \
@@ -34,7 +34,7 @@ uv run pytest tests \
   --cov-fail-under=90
 ```
 
-From the configured sibling template checkout (`/Volumes/external_drive/Git/template`):
+From the configured sibling template checkout (set `TEMPLATE_REPO_ROOT` to its canonical path):
 
 ```bash
 uv run python -m infrastructure.orchestration link-projects --dry-run

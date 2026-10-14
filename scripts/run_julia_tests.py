@@ -36,7 +36,12 @@ def main() -> int:
     validate_backend_versions(reported_version, EXPECTED_RXINFER_VERSION)
     print(f"Using Julia {reported_version} ({EXPECTED_JULIA_VERSION} pinned)")
     completed = subprocess.run(
-        [julia, f"--project={JULIA_PROJECT}", "-e", "using Pkg; Pkg.test()"],
+        [
+            julia,
+            f"--project={JULIA_PROJECT}",
+            "-e",
+            "using Pkg; Pkg.test(; allow_reresolve=false)",
+        ],
         cwd=PROJECT_ROOT,
         check=False,
     )

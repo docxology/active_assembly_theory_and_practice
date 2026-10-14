@@ -34,6 +34,9 @@ ONE_HOT_VS_UNIFORM_A = np.array(
         [1.0, 1.0, 1.0],  # observation 1: uniform across states
     ]
 )
+# Complete categorical channel for predictive information; the third row
+# carries the complement omitted by the conditional-kernel fixture above.
+ONE_HOT_UNIFORM_CHANNEL_A = np.asarray([[0.5, 0, 0], [0.5, 0.5, 0.5], [0, 0.5, 0.5]])
 UNIFORM_BELIEF_3 = np.array([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0])
 
 
@@ -86,15 +89,16 @@ def test_predictive_information_contributions_sum_to_channel_information():
 
     contributions = [
         predictive_information_contribution(
-            UNIFORM_BELIEF_3, ONE_HOT_VS_UNIFORM_A, observation_id
+            UNIFORM_BELIEF_3, ONE_HOT_UNIFORM_CHANNEL_A, observation_id
         )
-        for observation_id in range(ONE_HOT_VS_UNIFORM_A.shape[0])
+        for observation_id in range(ONE_HOT_UNIFORM_CHANNEL_A.shape[0])
     ]
 
     assert contributions[0] > 0.0
+    assert sum(contributions) == pytest.approx(0.5 * math.log(3) - math.log(2) / 3)
     assert math.isclose(
         sum(contributions),
-        expected_information_gain(UNIFORM_BELIEF_3, ONE_HOT_VS_UNIFORM_A),
+        expected_information_gain(UNIFORM_BELIEF_3, ONE_HOT_UNIFORM_CHANNEL_A),
         rel_tol=1e-9,
     )
 
@@ -104,17 +108,17 @@ def test_predictive_policy_records_distinct_contract_and_finite_efe():
 
     result = active_observation_order(
         [1, 0],
-        ONE_HOT_VS_UNIFORM_A,
+        ONE_HOT_UNIFORM_CHANNEL_A,
         UNIFORM_BELIEF_3,
-        np.array([1.0, 1.0]),
+        np.array([1.0, 1.0, 1.0]),
         policy="predictive",
     )
     assert result.policy == "predictive"
     assert all(math.isfinite(value) for value in result.efe_by_step)
     predictive = predictive_expected_free_energy(
         UNIFORM_BELIEF_3,
-        ONE_HOT_VS_UNIFORM_A,
-        np.array([1.0, 1.0]),
+        ONE_HOT_UNIFORM_CHANNEL_A,
+        np.array([1.0, 1.0, 1.0]),
         candidate_index=0,
         observation_id=0,
     )
@@ -453,3 +457,10 @@ def test_dataclasses_are_frozen():
     result = SelectionResult((0,), (0,), (0.0,), (0.0,), 1, 0.7)
     with pytest.raises(Exception):
         result.confidence_threshold = 0.9  # type: ignore[misc]
+
+
+def test_active_information_rejects_unnormalized_observation_channels() -> None:
+    with pytest.raises(ValueError, match="normalize to one"):
+        expected_information_gain(
+            np.asarray([0.5, 0.5]), np.asarray([[0.8, 0.2], [0.8, 0.2]])
+        )

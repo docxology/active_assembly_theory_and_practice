@@ -83,8 +83,7 @@ def test_formal_theorem_manifest_covers_expansion_families() -> None:
     ):
         assert theorem in names
     bridge_theorems = {
-        theorem.removeprefix("ActiveAssembly.")
-        for theorem in BRIDGE_FIXTURE_THEOREMS
+        theorem.removeprefix("ActiveAssembly.") for theorem in BRIDGE_FIXTURE_THEOREMS
     }
     assert bridge_theorems <= names
     assert len(FORMAL_THEOREMS) == len(set(FORMAL_THEOREMS))
@@ -109,9 +108,7 @@ def test_bridge_fixture_theorems_are_pinned_in_the_receipt(tmp_path) -> None:
     path = tmp_path / write_formal_verification(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
     bridge = payload["cross_language_bridge"]
-    fixture_rows = {
-        row["bridge_id"]: row["theorems"] for row in bridge["fixtures"]
-    }
+    fixture_rows = {row["bridge_id"]: row["theorems"] for row in bridge["fixtures"]}
     for fixture in BRIDGE_FIXTURES:
         assert fixture_rows[fixture["bridge_id"]] == list(fixture["theorems"])
     for theorem in BRIDGE_FIXTURE_THEOREMS:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import shutil
 from pathlib import Path
 from typing import Any, Callable, cast
 
@@ -216,6 +217,7 @@ def test_formal_correspondence_validator_covers_structural_failures() -> None:
         mutation(candidate)
         assert not validate_formal_correspondence_payload(candidate)[0]
 
+
 _COMPILER_PAYLOAD_CACHE: dict[str, dict[str, Any]] = {}
 
 
@@ -239,8 +241,7 @@ def test_compiler_transfer_records_unavailable_targets_without_fallback() -> Non
     clang_levels = {
         row["optimization"]
         for row in payload["rows"]
-        if row["compiler"] == "clang"
-        and row["status"] == "validated_static_object"
+        if row["compiler"] == "clang" and row["status"] == "validated_static_object"
     }
     assert clang_levels == set(CLANG_OPTIMIZATIONS)
 
@@ -248,8 +249,7 @@ def test_compiler_transfer_records_unavailable_targets_without_fallback() -> Non
 def test_compiler_transfer_validated_rows_carry_four_hashes_and_counts() -> None:
     payload = _compiler_payload()
     validated = [
-        row for row in payload["rows"]
-        if row["status"] == "validated_static_object"
+        row for row in payload["rows"] if row["status"] == "validated_static_object"
     ]
     assert validated
     for row in validated:
@@ -267,9 +267,7 @@ def test_compiler_transfer_validated_rows_carry_four_hashes_and_counts() -> None
     assert not validate_compiler_transfer_payload(broken)[0]
 
 
-def test_compiler_transfer_unavailable_rows_carry_reason_and_requested_triple() -> (
-    None
-):
+def test_compiler_transfer_unavailable_rows_carry_reason_and_requested_triple() -> None:
     payload = _compiler_payload()
     unavailable = [
         (index, row)
@@ -298,57 +296,25 @@ def test_compiler_transfer_matrix_is_availability_aware() -> None:
     payload = _compiler_payload()
     probes = {record["compiler"]: record for record in payload["toolchain_probes"]}
     rows = payload["rows"]
-    assert probes["nasm"]["available"] is True
-    nasm_rows = [row for row in rows if row["compiler"] == "nasm"]
-    assert nasm_rows
-    assert all(
-        row["status"] == "validated_static_object" for row in nasm_rows
-    )
-    assert probes["rustc"]["available"] is True
-    rustc_host_rows = [
-        row
-        for row in rows
-        if row["compiler"] == "rustc" and row["target_id"] == "aarch64"
-    ]
-    assert rustc_host_rows
-    assert all(
-        row["status"] == "validated_static_object" for row in rustc_host_rows
-    )
-    rustc_cross_rows = [
-        row
-        for row in rows
-        if row["compiler"] == "rustc" and row["target_id"] == "x86_64"
-    ]
-    assert rustc_cross_rows
-    assert all(
-        row["status"] == "unavailable"
-        and row["reason"] == "compiler_target_unavailable_or_compile_failed"
-        and row["requested_triple"] == "x86_64-apple-darwin"
-        for row in rustc_cross_rows
-    )
-    riscv_rows = [
-        row
-        for row in rows
-        if row["compiler"] == "clang" and row["target_id"] == "riscv64"
-    ]
-    assert riscv_rows
-    assert all(
-        row["status"] == "unavailable"
-        and row["reason"] == "compiler_target_unavailable_or_compile_failed"
-        and row["requested_triple"] == "riscv64-unknown-elf"
-        for row in riscv_rows
-    )
-    absent_rows = [
-        row for row in rows if row["compiler"] in {"go", "zig"}
-    ]
-    assert absent_rows
-    for row in absent_rows:
-        assert row["status"] == "unavailable"
-        assert row["reason"] in {
-            "toolchain_not_installed",
-            "fixture_source_not_embedded",
-        }
-        assert row["requested_triple"]
+    for compiler in ("nasm", "rustc", "clang", "go", "zig"):
+        probe = probes[compiler]
+        assert probe["available"] is (shutil.which(compiler) is not None)
+        compiler_rows = [row for row in rows if row["compiler"] == compiler]
+        assert compiler_rows
+        for row in compiler_rows:
+            assert row["requested_triple"] == row["target_triple"]
+            assert row["status"] in {"validated_static_object", "unavailable"}
+            if not probe["available"]:
+                assert row["status"] == "unavailable"
+                assert row["reason"] == "toolchain_not_installed"
+            elif row["status"] == "unavailable":
+                assert row["reason"] in {
+                    "compiler_target_unavailable_or_compile_failed",
+                    "fixture_source_not_embedded",
+                }
+            else:
+                assert row["decoded_instruction_count"] > 0
+                assert row["execution_performed"] is False
 
 
 def test_compiler_transfer_records_elf_and_macho_object_formats() -> None:
@@ -364,9 +330,7 @@ def test_compiler_transfer_records_elf_and_macho_object_formats() -> None:
         validated_formats
     )
     elf_rows = [row for row in payload["rows"] if row["object_format"] == "elf"]
-    macho_rows = [
-        row for row in payload["rows"] if row["object_format"] == "macho"
-    ]
+    macho_rows = [row for row in payload["rows"] if row["object_format"] == "macho"]
     assert elf_rows and macho_rows
     assert all(
         row["requested_triple"].endswith("-linux-gnu")
@@ -384,9 +348,7 @@ def test_compiler_transfer_records_elf_and_macho_object_formats() -> None:
 def test_compiler_transfer_labels_gcc_probe_as_clang_alias() -> None:
     payload = _compiler_payload()
     gcc_probes = [
-        record
-        for record in payload["toolchain_probes"]
-        if record["compiler"] == "gcc"
+        record for record in payload["toolchain_probes"] if record["compiler"] == "gcc"
     ]
     assert len(gcc_probes) == 1
     gcc = gcc_probes[0]
@@ -897,8 +859,11 @@ def test_roadmap_closes_delivered_work_and_scopes_future_tiers() -> None:
     assert "### Minor: maintenance, clarity, and regression hardening" in roadmap
     assert "### Medium: bounded scientific extensions" in roadmap
     assert "### Major: promotion-gated research programs" in roadmap
-    for identifier in ("MIN-01", "MED-01", "MED-02", "MAJ-01", "MAJ-08"):
+    for identifier in ("MIN-01", "MED-05", "MAJ-01", "MAJ-08"):
         assert f"| {identifier} |" in roadmap
+    for completed in ("MED-01", "MED-02"):
+        assert f"the {completed}" in roadmap
+        assert f"| {completed} |" not in roadmap
     assert "The next Phase B tranche should" not in roadmap
     assert "## The active program: P3" not in roadmap
     assert "planned CFG and symbolic facts" not in roadmap

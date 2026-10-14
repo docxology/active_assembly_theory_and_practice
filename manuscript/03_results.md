@@ -477,33 +477,38 @@ does not recover the endpoint reliably.
 
 The portfolio's robustness diagnostics are development-only and fail closed.
 Hyperparameters are selected on the development families only
-(`test_rows_used = 0`): the logistic comparator selects L2 penalty 0.001 and
-learning rate 0.2, while every recurrent-option combination scores exactly 0.5
-on development, so the recurrent tie is resolved to hidden size 8 and 4 epochs
-by the frozen lexicographic first-maximum rule. Five deterministic seeds
-(11, 23, 47, 89, 131) are rerun for each stochastic family; the recorded
-seed ranges are point-identical for the interpretable model and flat at
-chance for the recurrent model, and they are reported separately from the
-source-family bootstrap intervals. Platt calibration is fitted on the
-development split and reported alongside the primary metrics — the uncalibrated
-balanced accuracy and macro-F1 remain primary and the calibrated metrics gate
-no claim. The family-shuffle control, which permutes each held-out family's
-own label vector before refitting, reaches balanced accuracy 0.597, strictly
-below the temporal model (`{{QUOTIENT_CLASSIFIER_TEMPORAL_BALANCED_ACCURACY}}`)
-and the interpretable model
-(`{{QUOTIENT_CLASSIFIER_INTERPRETABLE_BALANCED_ACCURACY}}`); the recurrent
-model is excluded from that comparison because 0.500 is chance level and
-provides no signal to lose against, an exclusion the receipt declares rather
-than hides. The bounded metadata probe — refitting each co-primary model on
-encoding/opcode-surface information only — yields held-out margin differences
-of +0.004 (interpretable) and +0.024 (temporal), both within the frozen
-0.05 practical comparison margin, under the receipt's stated boundary:
-bounded probe only; no architecture-metadata claim. Of 1,280 cross-split
-family pairs, 128 are flagged as near-duplicates and all 128 are declared
-frozen near-duplicate template siblings (undeclared flags fail closed), and
-the cross-encoding consistency contract holds for 61 of 64 families. These
-diagnostics qualify the endpoint; none of them licenses a superiority,
-metadata-leakage, or semantic-discovery claim.
+(`test_rows_used = 0`): the logistic comparator selects L2 penalty
+{{QUOTIENT_CLASSIFIER_SELECTED_LOGISTIC_L2}} and learning rate
+{{QUOTIENT_CLASSIFIER_SELECTED_LOGISTIC_LEARNING_RATE}}, while the recurrent comparator
+selects hidden size {{QUOTIENT_CLASSIFIER_SELECTED_RNN_HIDDEN_SIZE}} and
+{{QUOTIENT_CLASSIFIER_SELECTED_RNN_EPOCHS}} epochs, with best development balanced
+accuracy {{QUOTIENT_CLASSIFIER_RNN_BEST_DEVELOPMENT_ACCURACY}}. Ties use the frozen
+lexicographic first-maximum rule. Five deterministic starts are reported
+separately from the source-family bootstrap intervals. Platt calibration is
+fitted on development data; uncalibrated balanced accuracy and macro-F1 remain
+primary, and calibrated metrics gate no claim.
+
+The within-family label-scramble diagnostic reaches balanced accuracy
+{{QUOTIENT_CLASSIFIER_FAMILY_SCRAMBLE_ACCURACY}}. It deliberately refits on scrambled
+held-out labels and evaluates on the same rows' original labels. This is an
+in-sample perturbation diagnostic, not an additional out-of-sample prediction.
+Permutations preserve each family's class totals, so they do not remove
+family-prevalence associations or certify absence of leakage. Comparisons
+exclude models at or below binary chance, as recorded in the receipt.
+
+The bounded encoding/opcode-surface probe refits each model with reduced
+features and reports score differences of
+{{QUOTIENT_CLASSIFIER_PROBE_INTERPRETABLE_MARGIN}} (interpretable),
+{{QUOTIENT_CLASSIFIER_PROBE_TEMPORAL_MARGIN}} (temporal), and
+{{QUOTIENT_CLASSIFIER_PROBE_NEURAL_MARGIN}} (recurrent) against its full-feature endpoint.
+These are bounded refit diagnostics, with no architecture-metadata conclusion.
+The cross-split similarity ledger records {{QUOTIENT_CLASSIFIER_CROSS_SPLIT_PAIR_COUNT}}
+family pairs and {{QUOTIENT_CLASSIFIER_FLAGGED_PAIR_COUNT}} declared near-duplicate
+siblings; the cross-encoding contract covers
+{{QUOTIENT_CLASSIFIER_CROSS_ENCODING_CONSISTENT_FAMILY_COUNT}} of
+{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}} families. These diagnostics qualify the
+endpoint and license no superiority, metadata-leakage, or semantic-discovery
+claim.
 
 The real transfer and correspondence results are similarly bounded. The
 Python/Capstone/Unicorn receipt reports status

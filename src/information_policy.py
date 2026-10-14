@@ -124,8 +124,10 @@ def sensors_from_factorized_model(
 
 
 def _validate_sensor(sensor: FiniteSensor, state_count: int) -> np.ndarray:
-    if not sensor.outcomes or sensor.cost <= 0.0:
+    if not sensor.outcomes or not np.isfinite(sensor.cost) or sensor.cost <= 0.0:
         raise ValueError("sensor outcomes and positive cost are required")
+    if len(set(sensor.outcomes)) != len(sensor.outcomes):
+        raise ValueError("sensor outcomes must be unique")
     matrix = np.asarray(sensor.likelihood, dtype=float)
     if matrix.ndim != 2 or matrix.shape != (len(sensor.outcomes), state_count):
         raise ValueError(f"sensor {sensor.sensor_id!r} has an invalid likelihood shape")
@@ -159,7 +161,7 @@ def _optimal(
     """Return objective, entropy, cost, policy count, and first sensor."""
 
     normalized = _normalize(belief)
-    key = (tuple(np.round(normalized, 12)), remaining, horizon)
+    key = (tuple(normalized), remaining, horizon)
     if key in memo:
         return memo[key]
     if horizon <= 0 or not remaining:
@@ -232,13 +234,15 @@ def solve_exact_policy(
 ) -> ExactPolicyResult:
     """Solve the finite sensor problem by exhaustive outcome-branch DP."""
 
-    if horizon < 0:
-        raise ValueError("horizon must be non-negative")
+    if isinstance(horizon, bool) or not isinstance(horizon, int) or horizon < 0:
+        raise ValueError("horizon must be a non-negative integer")
     if cost_weight < 0.0 or not np.isfinite(cost_weight):
         raise ValueError("cost_weight must be finite and non-negative")
     sensor_tuple = tuple(sensors)
     if not sensor_tuple:
         raise ValueError("at least one sensor is required")
+    if len({sensor.sensor_id for sensor in sensor_tuple}) != len(sensor_tuple):
+        raise ValueError("sensor identifiers must be unique")
     normalized = _normalize(np.asarray(belief, dtype=float))
     for sensor in sensor_tuple:
         _validate_sensor(sensor, normalized.size)

@@ -118,7 +118,6 @@ _PRODUCER_MODULES = {
     "emulation_trace.json": "src/experiments.py",
     "evaluation_report.json": "src/advanced_inference.py",
     "experiment_summary.json": "src/experiments.py",
-    "external_source_validation.json": "src/external_sources.py",
     "external_acquisition.json": "src/external_sources.py",
     "external_static_validation.json": "src/external_sources.py",
     "external_source_validation.json": "src/external_sources.py",

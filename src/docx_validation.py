@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 import hashlib
+from io import BytesIO
 import json
 from pathlib import Path
 import re
@@ -25,7 +26,8 @@ import yaml
 from .artifact_contract import write_json_artifact
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DOCX_SCHEMA_VERSION = "1.0.0"
+DOCX_SCHEMA_VERSION = "1.1.0"
+HYDRATED_SOURCE_BINDING_PREFIX = "active-assembly-hydrated-sha256:"
 DOCX_ARTIFACT = "output/docx/active_assembly_theory_and_practice_combined.docx"
 DOCX_RECEIPT_ARTIFACT = "output/data/docx_render_receipt.json"
 
@@ -144,6 +146,49 @@ def _figure_registry_count(project_root: Path) -> tuple[int | None, str | None]:
     return len(figures), None
 
 
+def _source_figure_media_hashes(project_root: Path) -> tuple[dict[str, str], list[str]]:
+    """Bind substantive embedded media to the current source PNGs, by bytes."""
+    path = project_root / "output/data/figure_registry.json"
+    hashes: dict[str, str] = {}
+    errors: list[str] = []
+    try:
+        rows = json.loads(path.read_text())["figures"]
+        for row in rows:
+            relative = row.get("png_path")
+            if relative is None and isinstance(row.get("filename"), str):
+                relative = f"output/figures/{row['filename']}"
+            if not isinstance(relative, str):
+                errors.append("registry figure lacks a PNG path")
+                continue
+            figure_id = str(row.get("figure_id", Path(relative).stem))
+            if figure_id in _VALIDATOR_PRODUCED_FIGURES:
+                continue
+            image = (project_root / relative).resolve()
+            if not image.is_relative_to((project_root / "output/figures").resolve()):
+                errors.append(
+                    f"figure PNG path escapes the canonical directory: {figure_id}"
+                )
+                continue
+            digest = _sha256_file(image)
+            if digest is None:
+                errors.append(f"missing source figure PNG: {figure_id}")
+            elif figure_id in hashes:
+                errors.append(f"duplicate source figure identity: {figure_id}")
+            else:
+                hashes[figure_id] = digest
+    except (OSError, KeyError, TypeError, AttributeError, json.JSONDecodeError) as exc:
+        errors.append(f"source figure media registry: {exc}")
+    return hashes, errors
+
+
+def _projection_source_hashes() -> dict[str, str | None]:
+    """Bind the active cover adapter and its executable filter, never a cache."""
+    return {
+        f"src/{name}": _sha256_file(Path(__file__).with_name(name))
+        for name in ("document_rendering.py", "docx_cover.lua")
+    }
+
+
 def _configured_cover(project_root: Path) -> tuple[Path | None, str | None]:
     """Resolve the source-configured cover image and its alternative text."""
 
@@ -248,6 +293,7 @@ def docx_render_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
 
     artifact_path = project_root / DOCX_ARTIFACT
     expected_figure_count, figure_registry_error = _figure_registry_count(project_root)
+    source_media_hashes, source_media_errors = _source_figure_media_hashes(project_root)
     cover_path, cover_alt = _configured_cover(project_root)
     cover_sha256 = _sha256_file(cover_path) if cover_path is not None else None
     expected_media_count = (
@@ -280,12 +326,17 @@ def docx_render_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "configured_cover_sha256": cover_sha256,
         "cover_media_count": 0,
         "cover_alt_present": False,
+        "source_figure_media_sha256": source_media_hashes,
+        "source_figure_media_errors": source_media_errors,
+        "missing_source_figure_media": sorted(source_media_hashes),
+        "projection_source_hashes": _projection_source_hashes(),
         "caption_count": 0,
         "document_text_length": 0,
         "document_text_sha256": None,
         "unresolved_tokens": [],
         "text_anchors": {name: False for name in REQUIRED_TEXT_ANCHORS},
         "hydrated_manuscript_sha256": _hydrated_manuscript_hash(project_root),
+        "embedded_hydrated_manuscript_sha256": None,
         "figure_registry_sha256": _figure_registry_hash(project_root),
         "excluded_registry_figures": sorted(_VALIDATOR_PRODUCED_FIGURES),
         "hydration": hydration,
@@ -297,7 +348,7 @@ def docx_render_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
         return payload
 
     try:
-        with zipfile.ZipFile(artifact_path) as archive:
+        with zipfile.ZipFile(BytesIO(artifact_path.read_bytes())) as archive:
             payload["zip_integrity"] = archive.testzip() is None
             names = set(archive.namelist())
             payload["required_parts"] = {
@@ -307,6 +358,13 @@ def docx_render_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 name.startswith("word/media/") and not name.endswith("/")
                 for name in names
             )
+            core = ElementTree.fromstring(archive.read("docProps/core.xml"))
+            description = core.find("{http://purl.org/dc/elements/1.1/}description")
+            binding = description.text or "" if description is not None else ""
+            if binding.startswith(HYDRATED_SOURCE_BINDING_PREFIX):
+                payload["embedded_hydrated_manuscript_sha256"] = binding.removeprefix(
+                    HYDRATED_SOURCE_BINDING_PREFIX
+                )
             document_xml = archive.read("word/document.xml")
             relationship_xml = archive.read("word/_rels/document.xml.rels")
             document_text, text_nodes = _document_text(document_xml)
@@ -319,10 +377,18 @@ def docx_render_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 for name in names
                 if name.startswith("word/media/") and not name.endswith("/")
             )
+            media_digests = {
+                name: hashlib.sha256(archive.read(name)).hexdigest()
+                for name in media_names
+            }
+            payload["missing_source_figure_media"] = sorted(
+                figure_id
+                for figure_id, digest in source_media_hashes.items()
+                if digest not in set(media_digests.values())
+            )
             if cover_sha256 is not None:
                 payload["cover_media_count"] = sum(
-                    hashlib.sha256(archive.read(name)).hexdigest() == cover_sha256
-                    for name in media_names
+                    media_digests[name] == cover_sha256 for name in media_names
                 )
             if cover_alt:
                 payload["cover_alt_present"] = cover_alt in document_xml.decode(
@@ -433,6 +499,21 @@ def validate_docx_render_payload(payload: dict[str, Any]) -> list[str]:
     )
     if missing_anchors:
         errors.append(f"missing DOCX text anchors={missing_anchors}")
+    if not payload.get("source_figure_media_sha256"):
+        errors.append("missing substantive source figure digest map")
+    if payload.get("source_figure_media_errors"):
+        errors.append(
+            f"source figure media errors={payload['source_figure_media_errors']}"
+        )
+    if payload.get("missing_source_figure_media"):
+        errors.append(
+            f"embedded figures do not match source PNGs={payload['missing_source_figure_media']}"
+        )
+    if (
+        not all(_projection_source_hashes().values())
+        or payload.get("projection_source_hashes") != _projection_source_hashes()
+    ):
+        errors.append("DOCX projection source hashes mismatch")
     hydration = payload.get("hydration", {})
     summary = hydration.get("summary", {})
     if hydration.get("status") != "hydrated":
@@ -443,6 +524,10 @@ def validate_docx_render_payload(payload: dict[str, Any]) -> list[str]:
         errors.append("template hydration did not generate every source token")
     if not summary.get("no_pending_values", False):
         errors.append("template hydration registry contains pending values")
+    if not payload.get("hydrated_manuscript_sha256") or payload.get(
+        "embedded_hydrated_manuscript_sha256"
+    ) != payload.get("hydrated_manuscript_sha256"):
+        errors.append("embedded hydrated manuscript digest is missing or stale")
     if not payload.get("hydrated_manuscript_sha256"):
         errors.append("missing hydrated manuscript hash")
     if not payload.get("figure_registry_sha256"):
@@ -477,6 +562,7 @@ def validate_docx_render_receipt(
         "artifact_sha256",
         "artifact_bytes",
         "hydrated_manuscript_sha256",
+        "embedded_hydrated_manuscript_sha256",
         "figure_registry_sha256",
         "expected_media_count",
         "embedded_media_count",
@@ -485,6 +571,8 @@ def validate_docx_render_receipt(
         "configured_cover_sha256",
         "cover_media_count",
         "cover_alt_present",
+        "source_figure_media_sha256",
+        "projection_source_hashes",
     ):
         if receipt.get(key) != current.get(key):
             errors.append(f"DOCX receipt stale={key}")
@@ -502,6 +590,9 @@ def write_docx_render_receipt(project_root: Path = PROJECT_ROOT) -> Path:
         "artifact_sha256": payload.get("artifact_sha256"),
         "artifact_bytes": payload.get("artifact_bytes", 0),
         "hydrated_manuscript_sha256": payload.get("hydrated_manuscript_sha256"),
+        "embedded_hydrated_manuscript_sha256": payload.get(
+            "embedded_hydrated_manuscript_sha256"
+        ),
         "figure_registry_sha256": payload.get("figure_registry_sha256"),
         "expected_media_count": payload.get("expected_media_count"),
         "configured_cover_artifact": payload.get("configured_cover_artifact"),
@@ -510,6 +601,9 @@ def write_docx_render_receipt(project_root: Path = PROJECT_ROOT) -> Path:
         "cover_alt_present": payload.get("cover_alt_present", False),
         "excluded_registry_figures": payload.get("excluded_registry_figures", []),
         "embedded_media_count": payload.get("embedded_media_count", 0),
+        "source_figure_media_sha256": payload.get("source_figure_media_sha256", {}),
+        "projection_source_hashes": payload.get("projection_source_hashes", {}),
+        "missing_source_figure_media": payload.get("missing_source_figure_media", []),
         "caption_count": payload.get("caption_count", 0),
         "zip_integrity": payload.get("zip_integrity", False),
         "template_hydration": payload.get("hydration", {}),

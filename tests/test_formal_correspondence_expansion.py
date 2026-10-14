@@ -97,9 +97,7 @@ def test_fail_closed_mutation_matrix(payload: dict[str, Any]) -> None:
         candidate["lean_bridge_status"] = []
 
     def duplicate_bridge_row(candidate: dict[str, Any]) -> None:
-        candidate["lean_bridge_status"].append(
-            dict(candidate["lean_bridge_status"][0])
-        )
+        candidate["lean_bridge_status"].append(dict(candidate["lean_bridge_status"][0]))
 
     def zero_theorem_count(candidate: dict[str, Any]) -> None:
         candidate["lean_bridge_status"][0]["theorem_count"] = 0

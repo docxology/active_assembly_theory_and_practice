@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from .advanced_inference import OUTPUT_DIR as ADVANCED_OUTPUT_DIR
 from .advanced_inference import run_advanced_inference
@@ -41,7 +42,7 @@ from .validation import write_validation_report
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _mapping_or_empty(value: object) -> dict[str, object]:
+def _mapping_or_empty(value: object) -> dict[str, Any]:
     """Treat an optional receipt section as a mapping or an empty section."""
 
     return value if isinstance(value, dict) else {}
@@ -198,6 +199,7 @@ def generate_variables() -> dict[str, str]:
             "exclusions": [],
         }
     )
+    external_label_summary = _mapping_or_empty(external_label_report.get("summary"))
     external_label_rows = [
         row
         for row in external_label_report.get("contracts", [])
@@ -540,19 +542,17 @@ def generate_variables() -> dict[str, str]:
         "CORPUS_UNIQUE_BRANCH_CLASS_COUNT": str(
             corpus_coverage_summary["unique_branch_target_class_count"]
         ),
-        "TEMPORAL_FIXTURE_COUNT": str(
-            corpus_coverage_summary.get("fixture_count", 0)
-        ),
+        "TEMPORAL_FIXTURE_COUNT": str(corpus_coverage_summary.get("fixture_count", 0)),
         "TEMPORAL_SPLIT_SUMMARY": "{}/{}/{}".format(
-            corpus_coverage_report.get("frozen_split", {}).get(
-                "families_per_split", {}
-            ).get("training", 0),
-            corpus_coverage_report.get("frozen_split", {}).get(
-                "families_per_split", {}
-            ).get("development", 0),
-            corpus_coverage_report.get("frozen_split", {}).get(
-                "families_per_split", {}
-            ).get("held_out", 0),
+            corpus_coverage_report.get("frozen_split", {})
+            .get("families_per_split", {})
+            .get("training", 0),
+            corpus_coverage_report.get("frozen_split", {})
+            .get("families_per_split", {})
+            .get("development", 0),
+            corpus_coverage_report.get("frozen_split", {})
+            .get("families_per_split", {})
+            .get("held_out", 0),
         ),
         "ACTION_SENSING_ARTIFACT": f"../{advanced_paths['action_sensing']}",
         "ACTION_SENSING_ACTIVE_MEAN_ACTIONS": f"{action_sensing_summary['mean_actions_used']['active']:.3f}",
@@ -713,6 +713,44 @@ def generate_variables() -> dict[str, str]:
                 ].values()
             )
         ),
+        "QUOTIENT_CLASSIFIER_SELECTED_LOGISTIC_L2": str(
+            quotient_classifier_report["hyperparameter_selection"][
+                "selected_per_model"
+            ]["calibrated_interpretable"]["l2"]
+        ),
+        "QUOTIENT_CLASSIFIER_SELECTED_LOGISTIC_LEARNING_RATE": str(
+            quotient_classifier_report["hyperparameter_selection"][
+                "selected_per_model"
+            ]["calibrated_interpretable"]["learning_rate"]
+        ),
+        "QUOTIENT_CLASSIFIER_SELECTED_RNN_HIDDEN_SIZE": str(
+            quotient_classifier_report["hyperparameter_selection"][
+                "selected_per_model"
+            ]["neural_sequence"]["hidden_size"]
+        ),
+        "QUOTIENT_CLASSIFIER_SELECTED_RNN_EPOCHS": str(
+            quotient_classifier_report["hyperparameter_selection"][
+                "selected_per_model"
+            ]["neural_sequence"]["epochs"]
+        ),
+        "QUOTIENT_CLASSIFIER_RNN_BEST_DEVELOPMENT_ACCURACY": f"{max(quotient_classifier_report['hyperparameter_selection']['scores_by_option']['neural_sequence'].values()):.3f}",
+        "QUOTIENT_CLASSIFIER_FAMILY_SCRAMBLE_ACCURACY": f"{quotient_classifier_report['negative_controls']['family_shuffle']['metrics']['balanced_accuracy']:.3f}",
+        "QUOTIENT_CLASSIFIER_PROBE_INTERPRETABLE_MARGIN": f"{quotient_classifier_report['leakage_attacks']['probe_margin_differences']['calibrated_interpretable']:+.3f}",
+        "QUOTIENT_CLASSIFIER_PROBE_TEMPORAL_MARGIN": f"{quotient_classifier_report['leakage_attacks']['probe_margin_differences']['temporal_probabilistic']:+.3f}",
+        "QUOTIENT_CLASSIFIER_PROBE_NEURAL_MARGIN": f"{quotient_classifier_report['leakage_attacks']['probe_margin_differences']['neural_sequence']:+.3f}",
+        "QUOTIENT_CLASSIFIER_CROSS_SPLIT_PAIR_COUNT": str(
+            quotient_classifier_report["near_duplicate_checks"][
+                "cross_split_pair_count"
+            ]
+        ),
+        "QUOTIENT_CLASSIFIER_FLAGGED_PAIR_COUNT": str(
+            quotient_classifier_report["near_duplicate_checks"]["flagged_pair_count"]
+        ),
+        "QUOTIENT_CLASSIFIER_CROSS_ENCODING_CONSISTENT_FAMILY_COUNT": str(
+            quotient_classifier_report["leakage_attacks"]["cross_encoding_consistency"][
+                "consistent_family_count"
+            ]
+        ),
         "FORMAL_CORRESPONDENCE_ARTIFACT": f"../{advanced_paths['formal_trace_correspondence']}",
         "FORMAL_CORRESPONDENCE_STATUS": str(formal_correspondence_report["status"]),
         "FORMAL_CORRESPONDENCE_FIXTURE_COUNT": str(
@@ -754,9 +792,9 @@ def generate_variables() -> dict[str, str]:
             ).get("object_formats_validated", [])
         ),
         "COMPILER_TRANSFER_ROW_COUNT": str(
-            _mapping_or_empty(
-                compiler_transfer_report.get("capability_summary")
-            ).get("row_count", 0)
+            _mapping_or_empty(compiler_transfer_report.get("capability_summary")).get(
+                "row_count", 0
+            )
         ),
         "EXTERNAL_SOURCE_ARTIFACT": f"../{advanced_paths['external_source_validation']}",
         "EXTERNAL_SOURCE_STATUS": str(external_source_report["status"]),
@@ -806,22 +844,19 @@ def generate_variables() -> dict[str, str]:
             len(external_label_report.get("exclusions", []))
         ),
         "EXTERNAL_LABEL_PROJECT_COUNT": str(
-            external_label_report.get("summary", {}).get("project_count", 0)
+            external_label_summary.get("project_count", 0)
         ),
         "EXTERNAL_LABEL_REVISION_COUNT": str(
             sum(
                 len(value)
-                for value in external_label_report.get("summary", {})
-                .get("revisions_by_project", {})
-                .values()
+                for value in external_label_summary.get(
+                    "revisions_by_project", {}
+                ).values()
                 if isinstance(value, list)
             )
         ),
         "EXTERNAL_LABEL_TEST_PROJECTS": ", ".join(
-            str(item)
-            for item in external_label_report.get("summary", {}).get(
-                "test_projects", []
-            )
+            str(item) for item in external_label_summary.get("test_projects", [])
         )
         or "none",
         "EXTERNAL_STATIC_ARTIFACT": "../output/data/external_static_validation.json",

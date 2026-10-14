@@ -37,6 +37,8 @@ def resolve_template_root(project_root: Path | None = None) -> Path:
     candidates: list[Path] = []
     for parent in (root.parent, *root.parents):
         candidates.append(parent / "template")
+        # GitVault separates the private project and public template slots.
+        candidates.append(parent / "Public" / "template")
     seen: set[Path] = set()
     for candidate in candidates:
         resolved = candidate.resolve()
@@ -55,9 +57,11 @@ def load_template_injection(project_root: Path | None = None):
     template_root = resolve_template_root(project_root)
     if str(template_root) not in sys.path:
         sys.path.insert(0, str(template_root))
-    from infrastructure.rendering.manuscript_injection import (  # type: ignore[import-untyped]
-        write_resolved_manuscript_tree,
-    )
+    from importlib import import_module
+
+    write_resolved_manuscript_tree = import_module(
+        "infrastructure.rendering.manuscript_injection"
+    ).write_resolved_manuscript_tree
 
     return write_resolved_manuscript_tree
 

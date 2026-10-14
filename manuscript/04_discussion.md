@@ -53,8 +53,9 @@ family-shuffle control, the bounded metadata probe (held to its own boundary:
 bounded probe only; no architecture-metadata claim), the declared
 near-duplicate template siblings, and the cross-encoding consistency check all
 qualify the endpoint rather than strengthen it. No superiority claim is gated
-by any of this machinery: every practical-margin test fails closed, and the
-recurrent model's chance-level exclusion from the shuffle comparison is
+by any of this machinery: the retrospective correction withholds all such
+claims, and the recurrent model's at-or-below-chance exclusion from the
+within-family label-scramble diagnostic is
 declared in the receipt rather than absorbed into a favorable summary. On the
 temporal side, the optimization-rewrite fixture plays the analogous negative
 role: its `lea` rewrite shares the residual `other` observation category while

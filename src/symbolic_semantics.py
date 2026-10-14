@@ -1,12 +1,14 @@
 """Bounded, auditable transfer functions for the project's x86-64 fixtures.
 
 The project deliberately does not pretend to be a complete x86 semantics
-engine.  This module implements a small closed-world subset that is sufficient
-for the transparent fixtures in :mod:`src.corpus`: immediate moves and
+engine. This module implements a small closed-world subset for seven of the
+transparent fixtures in :mod:`src.corpus`: immediate moves and
 arithmetic/bitwise updates on ``EAX``/``RAX``, bounded stack-relative memory
 stores and loads, shifts, comparisons, and the conditional-branch decision
 used by the guard fixtures.  Every unsupported instruction is reported
-explicitly rather than silently receiving a guessed meaning.
+explicitly rather than silently receiving a guessed meaning. The call/return,
+stack-local, and optimization-rewrite additions exceed this subset and fail
+validation; the broader formal-correspondence interpreter is a separate lane.
 
 The symbolic expression carried alongside the concrete value is intentionally
 simple.  It is a readable transfer-function trace, not SMT solving.  The final

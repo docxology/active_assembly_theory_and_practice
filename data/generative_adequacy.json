@@ -1,9 +1,18 @@
 {
-  "fixture_count": 6,
-  "inside_interval_count": 46,
-  "inside_interval_fraction": 0.9583333333333334,
+  "artifact_id": "output/data/generative_adequacy.json",
+  "fixture_count": 10,
+  "generator_revision": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+  "input_hashes": {
+    "producer/src/advanced_inference.py": "2f64a316febace52e47c4b6b5944b28924891f7b7f6c7b6d5c0ec6648615d6d4",
+    "research_protocol.json": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b"
+  },
+  "inside_interval_count": 76,
+  "inside_interval_fraction": 0.95,
   "interpretation": "Simulation intervals describe the fixed A/B/D model at fixture length; they are not posterior or population uncertainty intervals.",
   "interval": "central_95_percent_simulation_interval",
+  "limitations": [
+    "This is a source-bound generated artifact. Its domain-specific validator defines the evidence boundary; the receipt alone is not a scientific claim."
+  ],
   "method": "fixed_parameter_generative_adequacy",
   "per_fixture": [
     {
@@ -437,9 +446,316 @@
           "upper": 0.75
         }
       }
+    },
+    {
+      "fixture": "x86_call_return",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 6,
+      "observed": {
+        "phase_occupancy": [
+          0.5,
+          0.0,
+          0.0,
+          0.3333333333333333,
+          0.16666666666666666
+        ],
+        "run_count": 5,
+        "temporal_recovery_accuracy": 0.6666666666666666,
+        "transition_rate": 0.8
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.16666666666666666,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.16666666666666666,
+            "upper": 0.8333333333333334
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.7708333333333334
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 2.0,
+          "upper": 5.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.3333333333333333,
+          "median": 0.8333333333333334,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.2,
+          "upper": 0.8
+        }
+      }
+    },
+    {
+      "fixture": "x86_branch_not_taken",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 7,
+      "observed": {
+        "phase_occupancy": [
+          0.14285714285714285,
+          0.14285714285714285,
+          0.0,
+          0.5714285714285714,
+          0.14285714285714285
+        ],
+        "run_count": 5,
+        "temporal_recovery_accuracy": 0.2857142857142857,
+        "transition_rate": 0.6666666666666666
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          },
+          {
+            "lower": 0.0,
+            "median": 0.14285714285714285,
+            "upper": 0.9464285714285714
+          },
+          {
+            "lower": 0.0,
+            "median": 0.14285714285714285,
+            "upper": 0.8571428571428571
+          },
+          {
+            "lower": 0.0,
+            "median": 0.14285714285714285,
+            "upper": 0.5714285714285714
+          },
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 3.0,
+          "upper": 5.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.2857142857142857,
+          "median": 0.8571428571428571,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.3333333333333333,
+          "upper": 0.6666666666666666
+        }
+      }
+    },
+    {
+      "fixture": "x86_stack_local",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": false,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": false
+      },
+      "length": 9,
+      "observed": {
+        "phase_occupancy": [
+          0.4444444444444444,
+          0.3333333333333333,
+          0.1111111111111111,
+          0.0,
+          0.1111111111111111
+        ],
+        "run_count": 6,
+        "temporal_recovery_accuracy": 0.7777777777777778,
+        "transition_rate": 0.625
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.7361111111111112
+          },
+          {
+            "lower": 0.0,
+            "median": 0.1111111111111111,
+            "upper": 0.7777777777777778
+          },
+          {
+            "lower": 0.0,
+            "median": 0.1111111111111111,
+            "upper": 0.8888888888888888
+          },
+          {
+            "lower": 0.0,
+            "median": 0.1111111111111111,
+            "upper": 0.5555555555555556
+          },
+          {
+            "lower": 0.0,
+            "median": 0.3333333333333333,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 3.0,
+          "upper": 5.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.4444444444444444,
+          "median": 0.8888888888888888,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.25,
+          "upper": 0.5
+        }
+      }
+    },
+    {
+      "fixture": "x86_optimization_rewrite",
+      "inside_interval": {
+        "phase_occupancy": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "run_count": true,
+        "temporal_recovery_accuracy": true,
+        "transition_rate": true
+      },
+      "length": 8,
+      "observed": {
+        "phase_occupancy": [
+          0.125,
+          0.625,
+          0.125,
+          0.0,
+          0.125
+        ],
+        "run_count": 5,
+        "temporal_recovery_accuracy": 0.875,
+        "transition_rate": 0.5714285714285714
+      },
+      "predictive": {
+        "phase_occupancy": [
+          {
+            "lower": 0.0,
+            "median": 0.0,
+            "upper": 0.75
+          },
+          {
+            "lower": 0.0,
+            "median": 0.125,
+            "upper": 0.875
+          },
+          {
+            "lower": 0.0,
+            "median": 0.125,
+            "upper": 0.75
+          },
+          {
+            "lower": 0.0,
+            "median": 0.125,
+            "upper": 0.703125
+          },
+          {
+            "lower": 0.0,
+            "median": 0.125,
+            "upper": 1.0
+          }
+        ],
+        "run_count": {
+          "lower": 1.0,
+          "median": 3.0,
+          "upper": 5.0
+        },
+        "temporal_recovery_accuracy": {
+          "lower": 0.375,
+          "median": 0.875,
+          "upper": 1.0
+        },
+        "transition_rate": {
+          "lower": 0.0,
+          "median": 0.2857142857142857,
+          "upper": 0.5714285714285714
+        }
+      }
     }
   ],
+  "producer": "src/advanced_inference.py",
+  "protocol_id": "active-assembly-open-roadmap-v2-2026-10-13",
+  "protocol_sha256": "d394c9264fb64cb177e42910745deb84e9f00fca55d04159653b6ab89e836b7b",
+  "receipt_schema_version": "2.0.0",
   "replicates": 256,
+  "schema_version": "artifact-payload-v1",
   "seed": 20260815,
-  "tested_metric_count": 48
+  "status": "implemented_local",
+  "tested_metric_count": 80,
+  "toolchain_versions": {
+    "capstone": "5.0.6",
+    "numpy": "2.4.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.16",
+    "unicorn": "2.1.4"
+  },
+  "underpowered_cases": [
+    "This artifact is not, by itself, a promotion of external validity, broad semantic identifiability, or a general theorem."
+  ],
+  "unsupported_cases": [
+    "Domain-specific unsupported cases are declared by the producing module or its validator; no unsupported case was silently imputed here."
+  ]
 }

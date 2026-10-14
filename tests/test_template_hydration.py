@@ -20,7 +20,7 @@ def _make_source_tree(project_root: Path) -> None:
     source_dir = project_root / "manuscript"
     source_dir.mkdir(parents=True)
     (source_dir / "00_abstract.md").write_text(
-        f"Title: {{{{PROJECT_TITLE}}}}", encoding="utf-8"
+        "Title: {{PROJECT_TITLE}}", encoding="utf-8"
     )
     (source_dir / "01_body.md").write_text("Body without tokens", encoding="utf-8")
     # Excluded source files never participate in the hydration contract.
@@ -139,3 +139,17 @@ def test_resolve_template_root_rejects_incomplete_explicit_root(
 
     with pytest.raises(RuntimeError, match="TEMPLATE_REPO_ROOT does not contain"):
         resolve_template_root()
+
+
+def test_resolve_template_root_supports_canonical_vault_slots(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.delenv("TEMPLATE_REPO_ROOT", raising=False)
+    owner = tmp_path / "Username" / "docxology"
+    project = owner / "Private" / "active_assembly"
+    project.mkdir(parents=True)
+    template = owner / "Public" / "template"
+    renderer = template / "infrastructure/rendering/manuscript_injection.py"
+    renderer.parent.mkdir(parents=True)
+    renderer.touch()
+    assert resolve_template_root(project) == template.resolve()

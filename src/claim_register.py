@@ -453,7 +453,7 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
             "parameter_learning_leakage_guard",
             "figure_parameter_learning",
         ),
-        boundary="The estimator uses an ordered-state scaffold, a reference-model initialization, a positive transition-support prior, and only six transparent toy fixtures; its held-out accuracy is a finite implementation diagnostic, not evidence of unsupervised semantic discovery, identifiable phase meanings, or general binary-analysis performance.",
+        boundary="The estimator uses an ordered-state scaffold, a reference-model initialization, a positive transition-support prior, and the authored transparent toy fixture corpus; its held-out accuracy is a finite implementation diagnostic, not evidence of unsupervised semantic discovery, identifiable phase meanings, or general binary-analysis performance.",
         status="validated",
     ),
     ClaimRecord(

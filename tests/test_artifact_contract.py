@@ -209,5 +209,7 @@ def test_preparation_audit_filename_is_registered_on_the_data_surface(
         == "src/external_sources.py"
     )
     path = tmp_path / "output" / "data" / "external_corpus_preparation_audit.json"
-    write_json_artifact(path, {"status": "validated"}, project_root=tmp_path, status="validated")
+    write_json_artifact(
+        path, {"status": "validated"}, project_root=tmp_path, status="validated"
+    )
     assert validate_data_artifact_surface(tmp_path) == []

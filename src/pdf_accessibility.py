@@ -18,6 +18,7 @@ import re
 from typing import Any, Iterable
 
 from pypdf import PdfReader
+from pypdf.generic import BooleanObject
 
 from .artifact_contract import write_json_artifact
 
@@ -213,7 +214,11 @@ def audit_pdf(
     )
     mark_info = _deref(catalog.get("/MarkInfo"))
     lang = str(catalog.get("/Lang", "")).strip()
-    marked = bool(mark_info.get("/Marked")) if hasattr(mark_info, "get") else False
+    marked_value = mark_info.get("/Marked") if hasattr(mark_info, "get") else None
+    # PDF BooleanObject(False) is truthy as a Python object; read its value.
+    marked = marked_value is True or (
+        isinstance(marked_value, BooleanObject) and marked_value.value is True
+    )
 
     configured_language = "en"
     config_path = project_root / "manuscript/config.yaml"

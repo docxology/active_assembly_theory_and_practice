@@ -7,7 +7,7 @@ and no module reads from it.
 
 ## Contents
 
-15 JSON artifacts and 3 Markdown views:
+17 JSON artifacts and 3 Markdown views:
 
 | File | Kind |
 | --- | --- |
@@ -23,6 +23,8 @@ and no module reads from it.
 | `generative_adequacy.json` | fixed-parameter adequacy checks |
 | `parameter_learning.json` | observation-only HMM parameter-learning robustness |
 | `phase_segments.json` | contiguous phase segmentation of belief traces |
+| `quotient_classifier.json` | training-only portfolio, clustered intervals and paired-randomization ledger |
+| `research_protocol.json` | protocol 2.2 definitions, inferential correction and claim restrictions |
 | `reproducibility_manifest.json` | artifact hash/size manifest |
 | `reproducibility_manifest.md` | Markdown view of the manifest |
 | `scholarship_matrix.md` | Markdown source/role/boundary matrix |

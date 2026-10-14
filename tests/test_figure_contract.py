@@ -408,3 +408,14 @@ def test_replay_failure_audit_renders_populated_score(tmp_path: Path) -> None:
     }
     path = plot_replay_failure_audit(payload, tmp_path / "audit_populated.png")
     assert path.is_file() and path.stat().st_size > 0
+
+
+def test_bulk_png_reader_preserves_decoded_pixels(tmp_path):
+    """A real PNG keeps identical values through the bulk-reading path."""
+    import numpy as np
+    from src.figures import read_png_image
+
+    pixels = np.arange(36, dtype=np.uint8).reshape(3, 4, 3)
+    path = tmp_path / "pixels.png"
+    mpimg.imsave(path, pixels)
+    assert np.array_equal(read_png_image(path), mpimg.imread(path))

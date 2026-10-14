@@ -8,9 +8,9 @@ any of the labels into learned semantics.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -18,8 +18,8 @@ from .provenance import generator_revision, sha256_path, toolchain_versions
 from .receipt import EVIDENCE_STATUSES, RECEIPT_SCHEMA_VERSION
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROTOCOL_SCHEMA_VERSION = "2.1.0"
-PROTOCOL_ID = "active-assembly-open-roadmap-v2-2026-09-17"
+PROTOCOL_SCHEMA_VERSION = "2.2.0"
+PROTOCOL_ID = "active-assembly-open-roadmap-v2-2026-10-13"
 PROTOCOL_ARTIFACT = "output/data/research_protocol.json"
 
 MODEL_FAMILIES = (
@@ -124,6 +124,8 @@ def _temporal_corpus_split_block() -> dict[str, Any]:
     fixtures = build_corpus()
     return {
         "sampling_unit": "source_program_family",
+        "family_definition": "fixture_identity_not_independent_source_lineage",
+        "inventory_does_not_control_leave_one_fixture_out_folds": True,
         "splits": list(SPLITS),
         "fixture_families": {
             fixture.name: fixture_family(fixture.name) for fixture in fixtures
@@ -140,11 +142,8 @@ def _temporal_corpus_split_block() -> dict[str, Any]:
             for fixture in fixtures
         },
         "frozen_before_scoring": True,
-        "holdout_scoring": (
-            "leave_one_fixture_out_over_complete_fixtures"
-        ),
+        "holdout_scoring": ("leave_one_fixture_out_over_complete_fixtures"),
     }
-
 
 
 def build_scientific_protocol() -> ScientificProtocol:
@@ -251,7 +250,11 @@ def build_scientific_protocol() -> ScientificProtocol:
             "bootstrap_replicates": BOOTSTRAP_REPLICATES,
             "calibration_bins": 10,
             "practical_comparison_margin": PRACTICAL_MARGIN,
-            "multiplicity": "Holm across model-by-primary-metric comparisons",
+            "multiplicity": "Holm across three co-primary models by seven baselines by two primary metrics",
+            "paired_test": "paired_source_family_prediction_swap_monte_carlo",
+            "randomization_replicates": BOOTSTRAP_REPLICATES,
+            "randomization_p_value_rule": "(exceedances + 1) / (replicates + 1); inclusive ties",
+            "retrospective_correction_claims_withheld": True,
             "paired_comparison_sampling_unit": "source_family",
             "no_post_hoc_winner_promotion": True,
         },
