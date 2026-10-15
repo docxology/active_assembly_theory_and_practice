@@ -8,6 +8,12 @@ results. A passing local gate is not independent or external scientific evidence
 
 ## Canonical modes
 
+Configure `GNN_ROOT` first; see [executable GNN models](gnn_models.md).
+The workflow executes upstream parsing, real Agent controls and shared-tensor
+native smoothing before the diagnostic producers. Its final GNN audit is
+read-only. Stage logs, including failures, are retained under
+`output/verification/`.
+
 Run from the project checkout:
 
 ```bash
@@ -23,7 +29,7 @@ scripts/run_full_verification.sh --post-render-only
 
 `--julia` adds the pinned native Julia package tests to a producer build.
 `--analysis-only` and `--post-render-only` are mutually exclusive; the latter
-also rejects `--julia`. The full mode actually invokes native template stage 03
+also rejects `--julia`. The full mode invokes the native template rendering APIs
 between hydration and the DOCX projection, so changed scientific inputs cannot
 be compared against an obsolete combined manuscript. Each failed prerequisite
 stops the run, prints the useful log tail and exits nonzero.

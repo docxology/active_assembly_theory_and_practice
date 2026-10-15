@@ -23,15 +23,16 @@ Julia executable happens to be installed.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tomllib
+import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 from .figures import plot_rxinfer_categorical_free_energy, plot_rxinfer_free_energy
@@ -466,7 +467,7 @@ def _result_from_outputs(
         rxinfer_version=str(diagnostics["rxinfer_version"]),
         julia_version=str(diagnostics["julia_version"]),
         artifact_paths=artifact_paths,
-        figure_paths={figure_name: str(figure_path.relative_to(PROJECT_ROOT))},
+        figure_paths={figure_name: artifact_path(figure_path)},
     )
 
 
@@ -489,6 +490,9 @@ def run_rxinfer_backend(
     julia_path = resolve_julia_executable(julia_executable)
     rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer").resolve()
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
+    figure_dir = (
+        OUTPUT_DIR / "figures" if output_dir is None else rxinfer_dir / "figures"
+    )
     stdout_path = rxinfer_dir / "stdout.log"
     stderr_path = rxinfer_dir / "stderr.log"
 
@@ -502,7 +506,7 @@ def run_rxinfer_backend(
         records, diagnostics = cached
         figure_path = plot_rxinfer_free_energy(
             records,
-            OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
+            figure_dir / "rxinfer_free_energy.png",
             title="RxInfer Bethe Free Energy: Gaussian event-code",
         )
         return _result_from_outputs(
@@ -580,7 +584,7 @@ def run_rxinfer_backend(
     )
     figure_path = plot_rxinfer_free_energy(
         records,
-        OUTPUT_DIR / "figures" / "rxinfer_free_energy.png",
+        figure_dir / "rxinfer_free_energy.png",
         title="RxInfer Bethe Free Energy: Gaussian event-code",
     )
     return _result_from_outputs(
@@ -599,13 +603,11 @@ def run_rxinfer_categorical_backend(
     iterations: int = 8,
     julia_executable: str = "julia",
     instantiate: bool = True,
+    model_path: Path | None = None,
 ) -> RxInferRunResult:
-    """Run the real categorical RxInfer phase-HMM companion backend.
+    """Run native categorical inference from shared GNN parameter bytes.
 
-    The categorical outputs are deliberately namespaced apart from the
-    authoritative Gaussian demonstrator.  Their free-energy values are
-    model-specific and are not compared numerically across the two model
-    families; the bridge validates both model identity and trace lineage.
+    Gaussian remains an optional numeric-code diagnostic on a separate scale.
     """
 
     if iterations <= 0:
@@ -617,6 +619,14 @@ def run_rxinfer_categorical_backend(
     julia_path = resolve_julia_executable(julia_executable)
     rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer_categorical").resolve()
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
+    from .gnn_parser import compile_gnn
+
+    compiled = compile_gnn(model_path or PROJECT_ROOT / "configs/gnn/passive_phase.md")
+    shared_model_path = rxinfer_dir / "gnn_model.json"
+    shared_model_path.write_text(json.dumps(compiled.to_dict(), allow_nan=False))
+    figure_dir = (
+        OUTPUT_DIR / "figures" if output_dir is None else rxinfer_dir / "figures"
+    )
     stdout_path = rxinfer_dir / "stdout.log"
     stderr_path = rxinfer_dir / "stderr.log"
 
@@ -626,11 +636,11 @@ def run_rxinfer_categorical_backend(
         iterations=iterations,
         categorical=True,
     )
-    if cached is not None:
+    if cached is not None and cached[1].get("model_digest") == compiled.tensor_digest:
         records, diagnostics = cached
         figure_path = plot_rxinfer_categorical_free_energy(
             records,
-            OUTPUT_DIR / "figures" / "rxinfer_categorical_free_energy.png",
+            figure_dir / "rxinfer_categorical_free_energy.png",
         )
         return _result_from_outputs(
             rxinfer_dir,
@@ -678,6 +688,8 @@ def run_rxinfer_categorical_backend(
             str(iterations),
             "--model",
             "categorical",
+            "--model-spec",
+            str(shared_model_path),
         ],
         cwd=PROJECT_ROOT,
         check=False,
@@ -707,7 +719,7 @@ def run_rxinfer_categorical_backend(
     )
     figure_path = plot_rxinfer_categorical_free_energy(
         records,
-        OUTPUT_DIR / "figures" / "rxinfer_categorical_free_energy.png",
+        figure_dir / "rxinfer_categorical_free_energy.png",
     )
     return _result_from_outputs(
         rxinfer_dir,
@@ -715,4 +727,132 @@ def run_rxinfer_categorical_backend(
         diagnostics,
         categorical=True,
         figure_path=figure_path,
+    )
+
+
+def run_shared_gnn_native(
+    model, observations: list[int], output_dir: Path
+) -> dict[str, Any]:
+    """Execute native smoothing from shared validated bytes, without stale-cache reuse."""
+    import numpy as np
+
+    from .gnn_experiments import envelope, model_payload, source_hashes, write_payload
+    from .gnn_model import CompiledModel
+    from .gnn_reference import forward_backward
+
+    model = CompiledModel.from_dict(model.to_dict())
+    reference = forward_backward(model, observations)
+    validate_julia_manifest()
+    julia = resolve_julia_executable()
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    spec_path = output_dir / "model.json"
+    obs_path = output_dir / "observations.json"
+    result_path = output_dir / "result.json"
+    write_payload(spec_path, model_payload(model))
+    write_payload(
+        obs_path,
+        {
+            "observations": observations,
+            "model_digest": model.tensor_digest,
+            "model_file_sha256": file_sha256(spec_path),
+            "tensor_contract_json": json.dumps(
+                {
+                    k: v
+                    for k, v in model.to_dict().items()
+                    if k not in ("source_sha256", "annotations", "name", "model_digest")
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ),
+        },
+    )
+    code = "using ActiveAssemblyRxInfer; ActiveAssemblyRxInfer.run_shared_categorical(ARGS[1],ARGS[2],ARGS[3])"
+    previous_mtime = result_path.stat().st_mtime_ns if result_path.exists() else None
+    started = time.time_ns()
+    try:
+        completed = subprocess.run(
+            [
+                julia,
+                "--startup-file=no",
+                f"--project={JULIA_PROJECT}",
+                "-e",
+                code,
+                str(spec_path),
+                str(obs_path),
+                str(result_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = (
+            exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+        )
+        stderr = (
+            exc.stderr.decode() if isinstance(exc.stderr, bytes) else (exc.stderr or "")
+        )
+        (output_dir / "stdout.log").write_text(stdout)
+        (output_dir / "stderr.log").write_text(stderr)
+        raise RuntimeError(
+            f"GNN_NATIVE_TIMEOUT; see {output_dir / 'stderr.log'}"
+        ) from exc
+    (output_dir / "stdout.log").write_text(completed.stdout)
+    (output_dir / "stderr.log").write_text(completed.stderr)
+    if completed.returncode:
+        raise RuntimeError(
+            f"GNN_NATIVE_FAILED exit={completed.returncode}; see {output_dir / 'stderr.log'}"
+        )
+    if (
+        not result_path.is_file()
+        or result_path.stat().st_mtime_ns < started
+        or result_path.stat().st_mtime_ns == previous_mtime
+    ):
+        raise RuntimeError("GNN_NATIVE_OUTPUT_NOT_FRESH")
+    result = json.loads(result_path.read_text())
+    validate_backend_versions(result["julia_version"], result["rxinfer_version"])
+    if (
+        result["model_digest"] != model.tensor_digest
+        or result["model_file_sha256"] != file_sha256(spec_path)
+        or result["trace_sha256"] != file_sha256(obs_path)
+    ):
+        raise ValueError("GNN_NATIVE_LINEAGE_MISMATCH")
+    native = np.array(result["native_smoothed"], dtype=float)
+    expected = np.array(reference["smoothed"], dtype=float)
+    if (
+        native.shape != expected.shape
+        or not np.isfinite(native).all()
+        or (native < 0).any()
+        or not np.allclose(native.sum(axis=1), 1, atol=1e-5)
+    ):
+        raise RuntimeError("GNN_NATIVE_INVALID_POSTERIOR")
+    error = float(np.max(np.abs(native - expected)))
+    if error > 1e-5:
+        raise RuntimeError(f"GNN_NATIVE_PARITY_FAILED {error}")
+    return envelope(
+        {
+            **result,
+            "python_smoothed": reference["smoothed"],
+            "observations": observations,
+            "max_abs_error": error,
+            "tolerance": 1e-5,
+            "input_hashes": {
+                **source_hashes(),
+                **{
+                    str(p.relative_to(PROJECT_ROOT)): file_sha256(p)
+                    for p in (
+                        Path(__file__),
+                        JULIA_PROJECT / "src/ActiveAssemblyRxInfer.jl",
+                        JULIA_PROJECT / "Project.toml",
+                        JULIA_MANIFEST,
+                    )
+                },
+            },
+            "native_source_sha256": file_sha256(
+                JULIA_PROJECT / "src/ActiveAssemblyRxInfer.jl"
+            ),
+        }
     )

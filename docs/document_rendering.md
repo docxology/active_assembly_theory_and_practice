@@ -13,8 +13,9 @@ agree with a narrative or a receipt.
    hydration gate, checks every expected section and substitution, and reaches
    the source-validation summary fixpoint.
 3. Run `scripts/render_manuscript.py`: it validates that hydration again,
-   checks the template's working slot resolves to this checkout, and invokes
-   native stage 03 with `--skip-manuscript-hydration`.
+   passes the explicit current project root to the real template rendering
+   APIs with `--skip-manuscript-hydration`. It verifies fresh nonempty
+   derivatives and unchanged source/hydrated bytes without changing shared links.
 4. Complete the native DOCX projection with `scripts/render_docx_cover.py`.
 5. Audit DOCX, PDF structure, qpdf and VeraPDF; validate existing scientific
    outputs with pre-render deferral disabled.
@@ -27,11 +28,11 @@ project scripts above. `scripts/run_full_verification.sh` runs the entire
 sequence; `--analysis-only` stops before export and `--post-render-only`
 checks an existing template edition without regenerating its scientific inputs.
 
-For a manual handoff from the template checkout, the equivalent native call is:
+For a manual handoff from this checkout, the explicit-root call is:
 
 ```bash
-uv run python scripts/pipeline/stage_03_render.py \
-  --project working/active_assembly_theory_and_practice \
+uv run python scripts/render_manuscript.py \
+  --project-root "$PWD" \
   --skip-manuscript-hydration
 ```
 
@@ -51,6 +52,7 @@ the existing-output gate checks that relationship explicitly.
 | PDF receipt | `output/data/pdf_accessibility_report.json` | Actual structure, alternatives, formula associated files, links and table parity. |
 | DOCX receipt | `output/data/docx_render_receipt.json` | OOXML integrity, source/adapter/media lineage and image/caption/cover contract. |
 | Build receipt | `output/data/build_provenance.json` | Current source, template, generated, hydrated and rendered lineage. |
+| Explicit-root export receipt | `output/data/project_render_receipt.json` | Exact selected root, template implementation, frozen hydration and freshly emitted derivatives. |
 
 ## DOCX projection
 

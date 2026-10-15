@@ -55,15 +55,29 @@ def resolve_template_root(project_root: Path | None = None) -> Path:
 
 def load_template_injection(project_root: Path | None = None):
     template_root = resolve_template_root(project_root)
-    if str(template_root) not in sys.path:
-        sys.path.insert(0, str(template_root))
     from importlib import import_module
 
-    write_resolved_manuscript_tree = import_module(
-        "infrastructure.rendering.manuscript_injection"
-    ).write_resolved_manuscript_tree
-
-    return write_resolved_manuscript_tree
+    original_path = sys.path[:]
+    original_bytecode = sys.dont_write_bytecode
+    original_scripts = {
+        name: module
+        for name, module in sys.modules.items()
+        if name == "scripts" or name.startswith("scripts.")
+    }
+    try:
+        sys.dont_write_bytecode = True
+        sys.path.insert(0, str(template_root))
+        return import_module(
+            "infrastructure.rendering.manuscript_injection"
+        ).write_resolved_manuscript_tree
+    finally:
+        sys.path[:] = original_path
+        sys.dont_write_bytecode = original_bytecode
+        for name in list(sys.modules):
+            if name == "scripts" or name.startswith("scripts."):
+                if name not in original_scripts:
+                    del sys.modules[name]
+        sys.modules.update(original_scripts)
 
 
 def validate_hydrated_tree(

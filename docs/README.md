@@ -14,8 +14,9 @@ before interpreting a score, interval, p-value or leakage control.
 | --- | --- |
 | [Getting started](getting_started.md) | Checkout, locked environments, native tools, template registration, first run and troubleshooting. |
 | [Architecture](architecture.md) | Module responsibilities and observation-to-inference data flow. |
+| [Executable GNN models](gnn_models.md) | Real upstream parsing, canonical tensors, Agent sensing, native parity and read-only controls. |
 | [Assembly packages](assembly_packages.md) | Real adapter provenance, trace schema, bounded semantics and formal/ISA boundaries. |
-| [RxInfer](rxinfer_roadmap.md) | Authoritative Gaussian spine, categorical companion, native toolchain and expansion boundary. |
+| [RxInfer](rxinfer_roadmap.md) | Shared GNN categorical parameters, separate Gaussian diagnostic, native toolchain and expansion boundary. |
 | [Evaluation](evaluation.md) | Temporal, typed, learned and sensing methods, negative results and artifact/check map. |
 | [Statistics](statistics.md) | Sampling units, folds, descriptive uncertainty, paired randomization, multiplicity and retrospective limitations. |
 | [Scholarship](scholarship.md) | Citation roles, primary-source review history and claims that citations cannot support. |

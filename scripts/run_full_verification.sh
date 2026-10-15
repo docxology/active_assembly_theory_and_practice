@@ -44,30 +44,35 @@ else
 fi
 steps=0
 failures=0
+mkdir -p output/verification
+log_directory="$(mktemp -d "$PWD/output/verification/run-XXXXXXXX")"
+echo "Verification logs: $log_directory"
 
 run_step() {
   local name="$1"
   shift
   local log
-  log="$(mktemp -t aapta_gate)"
+  log="$log_directory/step-$steps.log"
   if "$@" >"$log" 2>&1; then
     printf '%-46s PASS\n' "$name"
   else
     printf '%-46s FAIL\n' "$name"
     failures=$((failures + 1))
     tail -n 40 "$log" >&2
-    rm -f "$log"
     echo "Verification stopped at failed prerequisite: $name" >&2
     exit 1
   fi
   steps=$((steps + 1))
-  rm -f "$log"
 }
 
 # Tests include generated-artifact integration checks. Produce their inputs
 # first, so a fresh clone and a previously rendered checkout use the same order.
 if [ "$post_render_only" -eq 0 ]; then
 run_step "locked development environment" uv sync --locked --extra dev
+run_step "upstream GNN models and real Agent controls" \
+  uv run --locked python scripts/run_gnn_inference.py study
+run_step "shared GNN native smoothing parity" \
+  uv run --locked python scripts/run_gnn_inference.py native
 run_step "canonical analysis and artifact regeneration" \
   uv run --locked python scripts/run_scientific_program.py all
 run_step "pytest (>=90% coverage)" \
@@ -118,6 +123,8 @@ fi
 
 run_step "validation gate (source-bound oracles)" \
   uv run --locked python scripts/validate_analysis_outputs.py --existing-only
+run_step "read-only upstream GNN study audit" \
+  uv run --locked python scripts/run_gnn_inference.py audit --require-native
 
 if [ "$run_julia" -eq 1 ]; then
   run_step "Julia backend Pkg.test()" \

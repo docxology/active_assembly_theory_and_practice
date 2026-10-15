@@ -12,10 +12,10 @@ forward-backward smoothing).
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
 import numpy as np
 
-from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .generative_model import build_generative_model
 
 
@@ -82,40 +82,23 @@ class TemporalGenerativeModel:
         }
 
 
-def _normalized_columns(matrix: np.ndarray) -> np.ndarray:
-    return matrix / matrix.sum(axis=0, keepdims=True)
+def build_temporal_model(model_path: Path | None = None) -> TemporalGenerativeModel:
+    from .gnn_parser import compile_gnn
 
-
-def build_temporal_model() -> TemporalGenerativeModel:
-    """Build a left-to-right temporal model over the five program phases.
-
-    Reuses the likelihood ``A`` and prior ``D`` from
-    :func:`generative_model.build_generative_model` and authors a
-    left-to-right transition matrix ``B`` over
-    ``setup -> accumulator_update -> representation_transform -> guard_check ->
-    exit``. Each non-terminal phase has a self-loop probability and forward mass
-    to the next phase; ``exit`` is (almost) absorbing.
-    """
-
-    base = build_generative_model()
-    n_states = len(base.hidden_state_labels)
-
-    # Column s gives P(next_state | current_state=s). Self-loop + forward mass.
-    self_loop = np.array([0.70, 0.65, 0.65, 0.60, 0.99], dtype=float)
-    transition = np.zeros((n_states, n_states), dtype=float)
-    for state in range(n_states):
-        transition[state, state] = self_loop[state]
-        if state + 1 < n_states:
-            transition[state + 1, state] = 1.0 - self_loop[state]
-    transition = np.clip(transition, 1e-6, None)
-    transition = _normalized_columns(transition)
-
+    compiled = compile_gnn(
+        model_path
+        if model_path is not None
+        else Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"
+    )
+    base = build_generative_model(model_path)
+    if compiled.B[0].shape[2] != 1:
+        raise ValueError("GNN_PASSIVE_CONTRACT_MISMATCH")
     model = TemporalGenerativeModel(
-        A=np.asarray(base.A, dtype=float),
-        B=transition,
-        D=np.asarray(base.D, dtype=float),
-        observation_labels=OBSERVATION_LABELS,
-        hidden_state_labels=HIDDEN_STATE_LABELS,
+        A=base.A,
+        B=compiled.B[0][:, :, 0].copy(),
+        D=base.D,
+        observation_labels=base.observation_labels,
+        hidden_state_labels=base.hidden_state_labels,
     )
     model.validate()
     return model

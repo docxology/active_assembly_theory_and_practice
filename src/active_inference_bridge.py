@@ -39,7 +39,7 @@ def _variational_free_energy(logits: np.ndarray, posterior: np.ndarray) -> float
     return float(np.sum(safe_posterior * (np.log(safe_posterior) - logits)))
 
 
-def infer_hidden_states(
+def infer_hidden_states_reference(
     observations: list[AssemblyObservation],
     model: GenerativeModelSpec,
 ) -> InferenceResult:
@@ -73,4 +73,64 @@ def infer_hidden_states(
         most_likely_states=tuple(most_likely_states),
         final_posterior=tuple(float(value) for value in posterior),
         final_state=final_state,
+    )
+
+
+def infer_hidden_states(
+    observations: list[AssemblyObservation], model: GenerativeModelSpec
+) -> InferenceResult:
+    """Real Agent execution of the historical identity-transition reference.
+
+    This retained static comparator repeatedly conditions one hypothesis;
+    the canonical temporal GNN study instead uses its specified transitions.
+    """
+    if not observations:
+        raise ValueError("observations must not be empty")
+    model.validate()
+    import hashlib
+    import json
+    from dataclasses import replace
+    from pathlib import Path
+
+    from .gnn_parser import compile_gnn
+    from .pymdp_runtime import PymdpRuntime, beliefs
+
+    canonical = compile_gnn(
+        Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"
+    )
+    compiled = replace(
+        canonical,
+        A=(model.A,),
+        D=(model.D,),
+        B=(np.eye(len(model.D))[:, :, None],),
+        source_sha256=hashlib.sha256(
+            json.dumps(
+                {"A": model.A.tolist(), "D": model.D.tolist()}, sort_keys=True
+            ).encode()
+        ).hexdigest(),
+    )
+    runtime = PymdpRuntime(compiled)
+    rows = []
+    energy = []
+    labels = []
+    for observation in observations:
+        prior = np.asarray(runtime.prior[0])[0].astype(float)
+        qs = runtime.infer((observation.observation_id,))
+        posterior = np.array(beliefs(qs)[0])
+        pi, _ = runtime.agent.infer_policies(qs)
+        action = runtime.agent.sample_action(pi)
+        logits = np.log(np.clip(prior, 1e-12, 1.0)) + np.log(
+            np.clip(model.A[observation.observation_id], 1e-12, 1.0)
+        )
+        rows.append(tuple(float(v) for v in posterior))
+        energy.append(_variational_free_energy(logits, posterior))
+        labels.append(model.hidden_state_labels[int(np.argmax(posterior))])
+        runtime.prior = runtime.agent.update_empirical_prior(action, qs)
+        runtime.assert_unchanged()
+    return InferenceResult(
+        posterior_by_step=tuple(rows),
+        free_energy_by_step=tuple(energy),
+        most_likely_states=tuple(labels),
+        final_posterior=rows[-1],
+        final_state=labels[-1],
     )

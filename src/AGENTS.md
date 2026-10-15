@@ -45,7 +45,10 @@ than duplicating a module count.
 | Module | Purpose |
 | --- | --- |
 | `generative_model.py` | Discrete generative model for assembly observations. |
-| `active_inference_bridge.py` | pymdp-backed variational updates. |
+| `active_inference_bridge.py` | Real Agent identity-transition comparator with an independent softmax regression reference. |
+| `gnn_parser.py`, `gnn_model.py`, `gnn_upstream.py` | Strict bounded contract and actual upstream parser tensor admission. |
+| `gnn_experiments.py`, `pymdp_runtime.py`, `fixture_sensor_environment.py` | Canonical real Agent models, controls and action-gated native sensing. |
+| `gnn_validation.py` | Read-only recomputation and source/tensor/native receipt checks. |
 | `temporal_model.py` | Temporal HMM over latent program phases. |
 | `phase_segmentation.py` | Contiguous phase segmentation of belief traces. |
 | `active_selection.py` | Expected Free Energy and active observation selection. |
@@ -119,9 +122,9 @@ after the sibling template renders them.
 - Use real Capstone, Unicorn, and pymdp APIs. Do not mock them in tests.
 - Transparent toy byte fixtures only: never download, execute, or analyze an
   arbitrary binary in the canonical fixture demonstrator.
-- The Gaussian RxInfer run is the authoritative spine; the categorical
-  phase-HMM is a namespaced companion and its free-energy scale must not be
-  compared with the Gaussian trajectory.
+- Canonical categorical models execute from GNN specifications. Gaussian and
+  categorical Bethe free energies remain namespaced diagnostics on separate
+  scales; neither is the policy EFE objective.
 - The typed observation schema is label-blind and must preserve missing versus
   unseen explicitly. Factorized and hierarchical scores are companion
   diagnostics, not learned semantics.

@@ -1,8 +1,9 @@
 # RxInfer Free-Energy Roadmap
 
-Native Julia/RxInfer is the authoritative backend for Bethe Free Energy in this
-project. Python remains responsible for assembly package orchestration, artifact
-layout, manuscript token generation, and comparison baselines.
+Native Julia/RxInfer supplies model-specific Bethe Free Energy diagnostics.
+The [canonical GNN path](gnn_models.md) executes categorical Agent policies and
+shares its passive-model tensors with native smoothing. Python owns assembly
+orchestration, artifact layout, manuscript tokens and finite references.
 
 ## Implemented Spine
 
@@ -35,12 +36,12 @@ uv run python scripts/run_rxinfer_backend.py
 ```
 
 The first model is intentionally conservative. It records real RxInfer Bethe
-Free Energy values and remains the authoritative project spine. The Julia
+Free Energy values as a retained numeric-code diagnostic. The Julia
 package also exposes an additive categorical phase-HMM through
 `--model categorical`; the bridge writes it under `output/rxinfer_categorical/`
 so its model-specific free-energy scale cannot be mistaken for the Gaussian
-trajectory. The pymdp path is retained only as a comparison baseline and does
-not stand in for RxInfer Bethe Free Energy.
+trajectory. The real pymdp Agent executes the canonical GNN models; its policy
+EFE is a distinct objective and does not stand in for RxInfer Bethe Free Energy.
 
 ## Required Free-Energy Fields
 
@@ -71,9 +72,10 @@ must use the corresponding RxInfer engine history field when they are added.
 > (`julia/ActiveAssemblyRxInfer/`) with its own `Pkg.test()` coverage asserting
 > finite Bethe Free Energy output. The Python bridge now executes the categorical
 > CLI path, validates its model identity and trace hash, writes a separate
-> artifact namespace, and renders a companion figure. The Gaussian spine remains
-> authoritative for the project's headline RxInfer value; the categorical model
-> is implemented and tested but is not silently substituted into that spine. The
+> artifact namespace, and renders a companion figure. The Gaussian diagnostic
+> retains its own reported RxInfer value; categorical free energy remains on
+> a separate scale. Native categorical inference consumes shared GNN A/B/D
+> and observes under D before applying transitions. The
 > Python side independently gained a genuine temporal HMM
 > (`src/temporal_model.py`, forward filter + Viterbi + smoothing) used for the
 > measured phase-decoding evaluation (see [evaluation](evaluation.md)).

@@ -19,9 +19,12 @@ uv run --locked python scripts/00_preflight.py
 Use `uv.lock` rather than selecting newer dependencies incidentally. The
 preflight imports real Capstone, Unicorn and pymdp and validates the Julia
 manifest; successful imports alone do not run the scientific or document gates.
-On macOS, native library loading from an external volume may stall. Set
-`UV_PROJECT_ENVIRONMENT` to a local directory and use `uv sync --locked
---extra dev --link-mode copy`; keep the canonical repository in its own slot.
+Keep the environment, base interpreter, caches and temporary files on mounted
+GitVault. Set `UV_PROJECT_ENVIRONMENT`, `UV_CACHE_DIR`, `TMPDIR` and
+`UV_PYTHON_INSTALL_DIR` to external locations and use `UV_LINK_MODE=copy`.
+Check both `sys.prefix` and `sys.base_prefix` before source work: an external
+environment can still point to an internal interpreter. Configure `GNN_ROOT`
+as described in [executable GNN models](gnn_models.md).
 
 | Tool | Contract |
 | --- | --- |
@@ -42,16 +45,17 @@ Native Julia tests use `allow_reresolve=false`.
 
 Set `TEMPLATE_REPO_ROOT` to the canonical template checkout. The resolver also
 recognizes a sibling `template/` and GitVault's `Public/template/` layout.
-Register the configured project sidecar from that template checkout:
+Set `TEMPLATE_PYTHON` to its prepared external Python environment. The
+project renderer passes the explicit current root to the template's native
+rendering APIs and checks fresh output bytes:
 
 ```bash
-uv run python -m infrastructure.orchestration link-projects --dry-run
-uv run python -m infrastructure.orchestration link-projects
+uv run --locked python scripts/render_manuscript.py \
+  --project-root "$PWD" --skip-manuscript-hydration
 ```
 
-Confirm `projects/working/active_assembly_theory_and_practice` resolves to this
-checkout. The project renderer checks that exact working slot before export.
-Its default runtime is the template's `.venv/bin/python` (Windows:
+The renderer preserves shared template links. Its default runtime is the
+template's `.venv/bin/python` (Windows:
 `.venv/Scripts/python.exe`); set `TEMPLATE_PYTHON` to a prepared Python
 executable if the template uses a different environment. It never changes the
 template's dependencies implicitly.
@@ -80,7 +84,7 @@ checkout: tests that consume canonical artifacts need current outputs.
 | Symptom | Next check |
 | --- | --- |
 | Julia version or manifest mismatch | Resolve the exact 1.12.7 binary via `JULIA`, preserve the manifest, rerun the native gate. |
-| Missing template or working slot | Check `TEMPLATE_REPO_ROOT`, template runtime and sidecar registration. |
+| Missing template/runtime | Check `TEMPLATE_REPO_ROOT`, `TEMPLATE_PYTHON` and both external Python prefixes. |
 | Stale composition or hydrated-source digest | Hydrate before the template export; then complete DOCX projection and regenerate document receipts. |
 | Blank/missing/stale figure | Rebuild its source receipt and canonical figure bundle before hydration; never repair a receipt by editing its hash. |
 | Strict check deferred or unresolved | Use `--post-render-only`, which forces `ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0`. |

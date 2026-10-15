@@ -18,9 +18,11 @@ sidecar is available, and the computational research shape of the sibling
   unseen values explicitly. Factorized and hierarchical scores are companion
   diagnostics to the collapsed categorical HMM; do not present them as learned
   semantics or as automatically superior models.
-- The Gaussian RxInfer run remains the authoritative spine; the categorical
-  phase-HMM is a namespaced, validated companion and its free-energy scale must
-  not be compared with the Gaussian trajectory.
+- Canonical categorical models live in `configs/gnn/` and execute through
+  the actual configured GNN parser and real pymdp Agent. Follow
+  [the executable contract](docs/gnn_models.md) for source admission, tensor
+  meaning, acquisition order and native parity. Gaussian, fitted, factorized
+  and hierarchical diagnostics retain separate scales and limitations.
 - Keep manuscript claims cautious: this is a demonstrator linking assembly
   observations to Active Inference/FEP, not a full reverse-engineering system.
 
@@ -34,13 +36,12 @@ uv run pytest tests \
   --cov-fail-under=90
 ```
 
-From the configured sibling template checkout (set `TEMPLATE_REPO_ROOT` to its canonical path):
+Set `GNN_ROOT` and `TEMPLATE_REPO_ROOT` to their canonical external checkouts.
+Render this explicit project root with the prepared template runtime:
 
 ```bash
-uv run python -m infrastructure.orchestration link-projects --dry-run
-uv run python -m infrastructure.orchestration link-projects
-uv run python scripts/pipeline/stage_03_render.py \
-  --project working/active_assembly_theory_and_practice \
+uv run python scripts/render_manuscript.py \
+  --project-root "$PWD" \
   --skip-manuscript-hydration
 ```
 
@@ -48,5 +49,6 @@ The project-side manuscript generator honors `TEMPLATE_REPO_ROOT`; set it when
 the template checkout is not the configured sibling. It fails if hydration
 omits a source section or leaves a `{{TOKEN}}` unresolved.
 
+Preserve shared template links; explicit-root rendering selects this checkout.
 Always render with `--skip-manuscript-hydration`; the README records the
 hydration rule (project-side hydration is authoritative).

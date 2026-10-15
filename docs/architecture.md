@@ -1,5 +1,16 @@
 # Architecture
 
+## Canonical executable GNN path
+
+The [GNN model contract](gnn_models.md) connects `configs/gnn/` to the actual
+upstream Markdown parser, the strict local compiler, immutable model tensors,
+real pymdp state/policy/action calls and action-gated fixture acquisition.
+`src/gnn_experiments.py` emits source-bound runs and interventions;
+`src/gnn_validation.py` independently recomputes their finite reference
+quantities without changing outputs. The static comparator and HMM adapters
+read the same GNN A/B/D rather than maintaining separate numeric defaults.
+The methods below retain their individual diagnostic boundaries.
+
 The project follows the template code-project pattern:
 
 1. `src/assembly_packages/` records adapter provenance and the shared trace
@@ -146,8 +157,8 @@ experiment so prose and figures stay aligned with the code.
 ## Documentation and edition boundary
 
 `src/docs_validation.py` checks authored Markdown structural and index closure.
-`src/document_rendering.py` validates the current hydrated tree and registered
-working slot before invoking the native template export, then completes the
+`src/document_rendering.py` validates the current hydrated tree and passes its
+explicit project root to the native template APIs, then completes the
 configured DOCX projection. `src/docx_validation.py`, `src/pdf_accessibility.py`
 and `src/pdf_ua.py` inspect the real editions; the strict existing-output oracle
 refreshes lineage without regenerating their inputs. See

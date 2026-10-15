@@ -1,5 +1,12 @@
 # Active Assembly Theory and Practice
 
+The canonical categorical models are executable
+[GNN specifications](docs/gnn_models.md), consumed through the configured
+Generalized Notation Notation parser and the real pymdp Agent. The assembly
+entry point runs the passive phase model and action-before-acquisition sensor
+POMDP; source-bound controls and shared-tensor native smoothing are separate
+verification stages. Set `GNN_ROOT` before the commands below.
+
 `active_assembly_theory_and_practice` is a private sidecar project that turns
 assembly-language traces into categorical observations for Active Inference
 experiments. It uses real Capstone disassembly, bounded Unicorn emulation,

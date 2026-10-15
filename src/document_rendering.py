@@ -106,11 +106,6 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
 
 
 def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
-    """Export current hydrated sources through the registered native template.
-
-    Registration and environment preparation are explicit prerequisites. Never
-    select a different checkout or silently hydrate under the template runtime.
-    """
     project_root = Path(project_root).resolve()
     variables = json.loads(
         (project_root / "output/data/manuscript_variables.json").read_text()
@@ -119,15 +114,9 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
         project_root / "output/manuscript", variables, project_root=project_root
     )
     template_root = resolve_template_root(project_root)
-    project_name = project_root.name
-    working_slot = template_root / "projects/working" / project_name
-    if not working_slot.is_dir() or working_slot.resolve() != project_root:
-        raise RuntimeError(
-            f"register the canonical project working slot first: {working_slot}"
-        )
     runtime = os.environ.get("TEMPLATE_PYTHON")
     executable = (
-        Path(runtime).expanduser().resolve()
+        Path(runtime).expanduser().absolute()
         if runtime
         else (
             template_root
@@ -143,12 +132,32 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
     subprocess.run(
         [
             str(executable),
-            str(template_root / "scripts/pipeline/stage_03_render.py"),
-            "--project",
-            f"working/{project_name}",
+            "-I",
+            "-B",
+            str(
+                Path(__file__).resolve().parents[1] / "scripts/render_project_worker.py"
+            ),
+            "--project-root",
+            str(project_root),
             "--skip-manuscript-hydration",
         ],
         cwd=template_root,
         check=True,
         stdin=subprocess.DEVNULL,
+    )
+    from .artifact_contract import write_json_artifact
+
+    report_path = project_root / "output/reports/project_render.json"
+    report = json.loads(report_path.read_text())
+    if report["project_root"] != str(project_root):
+        raise RuntimeError("RENDER_PROJECT_ROOT_MISMATCH")
+    validate_hydrated_tree(
+        project_root / "output/manuscript", variables, project_root=project_root
+    )
+    write_json_artifact(
+        project_root / "output/data/project_render_receipt.json",
+        report,
+        project_root=project_root,
+        producer_path=Path(__file__),
+        input_paths=[report_path],
     )

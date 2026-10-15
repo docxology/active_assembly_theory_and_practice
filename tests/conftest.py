@@ -30,3 +30,31 @@ def canonical_artifacts():
     assert run_hydration_gate() == 0
     values = json.loads((ROOT / "output/data/manuscript_variables.json").read_text())
     return {key: value for key, value in values.items() if key.isupper()}
+
+
+@pytest.fixture(scope="session")
+def gnn_study(tmp_path_factory):
+    configured = os.environ.get("GNN_ROOT")
+    if not configured:
+        pytest.skip("real GNN study requires GNN_ROOT")
+    from src.gnn_experiments import run_gnn_study
+
+    upstream = Path(configured)
+    output = tmp_path_factory.mktemp("gnn-study")
+    return output, upstream, run_gnn_study(output, upstream)
+
+
+@pytest.fixture(scope="session")
+def native_gnn_study(gnn_study):
+    from src.gnn_experiments import write_payload
+    from src.gnn_model import CompiledModel
+    from src.rxinfer_bridge import julia_available, run_shared_gnn_native
+
+    if not julia_available():
+        pytest.skip("native GNN parity requires pinned Julia")
+    output, upstream, payloads = gnn_study
+    model = CompiledModel.from_dict(payloads["passive_model"])
+    observations = [r["observation"][0] for r in payloads["passive_run"]["trajectory"]]
+    native = run_shared_gnn_native(model, observations, output / "native_backend")
+    write_payload(output / "native_comparison.json", native)
+    return output, upstream, payloads

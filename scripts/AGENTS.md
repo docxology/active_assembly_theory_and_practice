@@ -20,7 +20,8 @@ land under `output/` and are disposable; build artifacts such as
 | `render_manuscript.py` | Exports validated hydrated sources via the registered native template | `src/document_rendering.py` |
 | `render_docx_cover.py` | Completes the native DOCX cover and canonical media projection | `src/document_rendering.py` |
 | `validate_pdf_ua.py` | Requires actual VeraPDF UA-2 compliance from the JSON report | `src/pdf_ua.py` |
-| `run_assembly_inference.py` | End-to-end assembly observation and inference experiment (decode, typed observations, artifacts) | `src/experiments.py` (`run_experiment`) |
+| `run_assembly_inference.py` | Canonical GNN study; explicit `--legacy-diagnostic` retains the observation comparator | `src/gnn_cli.py`, `src/experiments.py` |
+| `run_gnn_inference.py` | Upstream qualification, individual runs, study, native parity and read-only audit | `src/gnn_cli.py` |
 | `run_formal_verification.py` | Builds `formal/` and writes the pinned Lean correspondence receipt | `src/formal_verification.py` (`write_formal_verification`) |
 | `run_full_verification.sh` | Complete producer/test/native-export gate; `--analysis-only` stops before export, `--post-render-only` audits existing editions, and `--julia` adds native tests | the other scripts in this directory |
 | `run_julia_tests.py` | Validates Julia/RxInfer pins and runs the native package test suite | `src/rxinfer_bridge.py` |

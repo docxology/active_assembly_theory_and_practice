@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -38,32 +39,27 @@ class GenerativeModelSpec:
             raise ValueError("A and D must be strictly positive for log updates")
 
 
-def _normalized_columns(matrix: np.ndarray) -> np.ndarray:
-    return matrix / matrix.sum(axis=0, keepdims=True)
+def build_generative_model(model_path: Path | None = None) -> GenerativeModelSpec:
+    """Adapt the canonical GNN likelihood/prior to the historical result shape."""
+    from .gnn_parser import compile_gnn
 
-
-def build_generative_model() -> GenerativeModelSpec:
-    """Build a small observation model for assembly-state inference."""
-
-    # Columns are latent states. Rows are observation categories.
-    likelihood = np.array(
-        [
-            [0.72, 0.06, 0.05, 0.05, 0.06],  # load_immediate
-            [0.08, 0.74, 0.08, 0.06, 0.08],  # arithmetic_update
-            [0.06, 0.10, 0.76, 0.05, 0.08],  # bitwise_transform
-            [0.05, 0.04, 0.04, 0.76, 0.10],  # comparison
-            [0.04, 0.03, 0.04, 0.08, 0.68],  # control_transfer
-            [0.05, 0.03, 0.03, 0.00, 0.00],  # other
-        ],
-        dtype=float,
+    model = compile_gnn(
+        Path(model_path)
+        if model_path is not None
+        else Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"
     )
-    likelihood = np.clip(likelihood, 1e-6, None)
-    prior = np.array([0.34, 0.24, 0.18, 0.14, 0.10], dtype=float)
+    if (
+        len(model.factors) != 1
+        or model.modalities != ("category",)
+        or model.outcomes[0] != OBSERVATION_LABELS
+        or model.state_labels[0] != HIDDEN_STATE_LABELS
+    ):
+        raise ValueError("GNN_PASSIVE_CONTRACT_MISMATCH")
     spec = GenerativeModelSpec(
-        A=_normalized_columns(likelihood),
-        D=prior / prior.sum(),
-        observation_labels=OBSERVATION_LABELS,
-        hidden_state_labels=HIDDEN_STATE_LABELS,
+        A=model.A[0].copy(),
+        D=model.D[0].copy(),
+        observation_labels=model.outcomes[0],
+        hidden_state_labels=model.state_labels[0],
     )
     spec.validate()
     return spec

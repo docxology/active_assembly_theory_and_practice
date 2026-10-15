@@ -22,12 +22,36 @@ load immediate, arithmetic update, bitwise transform, comparison, control
 transfer, and other. These observations are supplied to a discrete likelihood
 matrix over `{{HIDDEN_STATE_COUNT}}` latent program-state classes: setup, accumulator update,
 representation transform, guard check, and exit. The posterior update uses
-pymdp's softmax routine over log prior and log likelihood terms, producing one
-belief vector and one comparison free-energy diagnostic per observation step.
+the real pymdp Agent's state-inference interface, producing one belief vector
+and one comparison free-energy diagnostic per observation step. This
+identity-transition comparator retains a separate NumPy/softmax regression
+reference; it is not the prospective sensing model.
 The end-to-end observation pipeline is visualized in [@fig:observation-pipeline],
 and the typed trace feature matrix in [@fig:trace-feature-matrix].
 
 ## Assembly evidence and notation {#sec:assembly-evidence}
+
+### Executable model specifications
+
+The canonical categorical specifications are `configs/gnn/passive_phase.md`
+and `configs/gnn/fixture_sensor.md`. The configured Generalized Notation
+Notation implementation parses their numeric tensors before a strict local
+compiler admits the supported finite profile. The compiler checks declared
+axes, distributions, dependencies and policy enumeration; the upstream
+revision, imported-source hashes and tensor digest accompany each study.
+A is observation likelihood, B is action-conditioned transition, C contains
+dimensionless utilities, D is the initial prior and E is the policy prior.
+The first observation conditions D before any transition. The categorical
+Python and native Julia paths consume the same parameter export.
+
+In the bounded sensor POMDP, the real Agent infers states and policies and
+selects an action before the environment performs the selected static or
+dynamic fixture acquisition. Evaluation identity is recorded after decisions;
+missing acquisition and observed-but-unseen evidence are different outcomes.
+Independent finite references and A/B/C/D/E interventions test implementation
+behavior. These authored toy models do not establish learned semantics,
+general reverse engineering or external validity. Their policy EFE scale is
+distinct from both native Bethe free-energy diagnostics below.
 
 The byte fixture is an instruction-semantics test case, not an opaque binary
 sample. In x86-64, an instruction is a variable-length encoding whose bytes,
@@ -535,7 +559,7 @@ following the RxInfer static-inference interface [@rxinfer_static_docs]. The
 Python-to-RxInfer integration is a native Julia CLI call because the RxInfer
 documentation identifies the server/client route as third-party and not
 maintained by the core team [@rxinfer_python_docs]. This Gaussian trajectory is
-the authoritative Bethe Free Energy spine for the project. The same package now
+an explicitly retained numeric event-code diagnostic. The same package now
 also runs a validated, namespaced categorical companion,
 `{{RXINFER_CATEGORICAL_MODEL_NAME}}`, over one-hot observation categories and
 fixed left-to-right latent phases. Its diagnostics are written to

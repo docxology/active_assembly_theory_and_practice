@@ -12,13 +12,15 @@ from typing import Any
 
 from .artifact_contract import write_json_artifact
 from .manuscript_registry import _git_diff_sha256, _git_value, _template_root
-from .reproducibility import MANIFEST_TARGETS
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BUILD_PROVENANCE_PATH = "output/data/build_provenance.json"
 SCHEMA_VERSION = "1.1"
 
 _TEMPLATE_IMPLEMENTATION_PATHS = (
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
     "infrastructure/core",
     "infrastructure/rendering",
     "scripts/pipeline/stage_03_render.py",
@@ -72,6 +74,8 @@ def _template_implementation_hashes(template_root: Path | None) -> dict[str, str
 def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
     """Return a current, self-excluding lineage payload."""
 
+    from .reproducibility import MANIFEST_TARGETS
+
     source_paths = [
         project_root / "pyproject.toml",
         project_root / "uv.lock",
@@ -82,6 +86,10 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "manuscript" / "config.yaml",
         project_root / "manuscript" / "references.bib",
         project_root / "manuscript" / "assets" / "active_assembly_cover.png",
+        *sorted((project_root / "configs/gnn").glob("*.md")),
+        project_root / "julia/ActiveAssemblyRxInfer/Project.toml",
+        project_root / "julia/ActiveAssemblyRxInfer/Manifest.toml",
+        project_root / "julia/ActiveAssemblyRxInfer/src/ActiveAssemblyRxInfer.jl",
         *sorted(
             path
             for path in (project_root / "src").rglob("*")
@@ -115,6 +123,7 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "output/data/held_out_model.json",
         project_root / "output/figures/README.md",
     ]
+    generated_paths.extend(sorted((project_root / "output/gnn").glob("*.json")))
     generated_paths.extend(
         path
         for path in sorted((project_root / "output/manuscript").glob("*"))

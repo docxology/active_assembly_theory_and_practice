@@ -25,7 +25,11 @@ def test_preflight_script_runs() -> None:
 
 def test_analysis_script_runs() -> None:
     completed = subprocess.run(
-        [sys.executable, str(PROJECT_ROOT / "scripts/run_assembly_inference.py")],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts/run_assembly_inference.py"),
+            "--legacy-diagnostic",
+        ],
         check=True,
         capture_output=True,
         text=True,

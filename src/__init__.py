@@ -13,6 +13,10 @@ from importlib import import_module
 from typing import Any
 
 _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    "CompiledModel": ("gnn_model", "CompiledModel"),
+    "compile_gnn": ("gnn_parser", "compile_gnn"),
+    "compile_upstream": ("gnn_upstream", "compile_upstream"),
+    "run_gnn_study": ("gnn_experiments", "run_gnn_study"),
     "AssemblyObservation": ("features", "AssemblyObservation"),
     "ArchitectureFixture": ("multi_arch", "ArchitectureFixture"),
     "SensingAction": ("action_sensing", "SensingAction"),

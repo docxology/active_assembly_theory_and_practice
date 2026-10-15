@@ -15,6 +15,10 @@ from src.experiments import run_experiment
 
 
 def main() -> int:
+    if "--legacy-diagnostic" not in sys.argv[1:]:
+        from src.gnn_cli import main as gnn_main
+
+        return gnn_main(["study", *sys.argv[1:]])
     result = run_experiment()
     print("sample:", result.sample_name)
     print("instructions:", len(result.instructions))
