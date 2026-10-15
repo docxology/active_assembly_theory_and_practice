@@ -28,6 +28,15 @@ def _hashes(paths: list[Path], root: Path) -> dict[str, str]:
     }
 
 
+def manuscript_sections(directory: Path) -> list[Path]:
+    """Return reader sections; PDF rendering consumes the preamble separately."""
+    return sorted(
+        path
+        for path in directory.glob("*.md")
+        if path.name not in SOURCE_EXCLUDES and path.name != "preamble.md"
+    )
+
+
 def render_project(
     project_root: Path,
     *,
@@ -118,9 +127,7 @@ def _render_project(
     # The artifact envelope adds non-string metadata; the domain mapping is
     # consumed here without relaxing checks on the actual token values.
     validate_hydrated_tree(hydrated, variables, project_root=root)
-    sources = sorted(
-        path for path in hydrated.glob("*.md") if path.name not in SOURCE_EXCLUDES
-    )
+    sources = manuscript_sections(hydrated)
     source_paths = sorted(
         path for path in (root / "manuscript").glob("*") if path.is_file()
     )

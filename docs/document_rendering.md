@@ -83,6 +83,9 @@ not certify visual reading order or PDF/UA compliance.
 
 The abstract metadata declares PDF 2.0, tagging, language and the UA-2 target
 before the document class; the preamble requests display of the document title.
+The exporter hashes `preamble.md` as an auxiliary input. Reader, slide and DOCX
+composition inventories contain the manuscript sections; PDF rendering consumes
+the preamble separately.
 These declarations must be checked against the actual file. Run the project
 structure audit, `qpdf --check` and `verapdf --flavour ua2`; inspect VeraPDF's
 reported compliance, not merely its process exit status. The PDF audit checks

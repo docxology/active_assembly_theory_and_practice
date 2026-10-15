@@ -19,7 +19,6 @@ from .docx_validation import (
     _hydrated_manuscript_hash,
 )
 from .template_hydration import (
-    SOURCE_EXCLUDES,
     load_template_injection,
     resolve_template_root,
     validate_hydrated_tree,
@@ -49,12 +48,14 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
     config_path = project_root / "manuscript/config.yaml"
     config = yaml.safe_load(config_path.read_text())
     load_template_injection(project_root)
+    from .project_rendering import manuscript_sections
+
     composition = import_module("infrastructure.rendering.manuscript_composition")
     try:
         recorded = composition.read_manuscript_composition(
             project_root / "output/reports/manuscript_composition.json"
         )
-        inputs = sorted((project_root / "output/manuscript").glob("[0-9][0-9]_*.md"))
+        inputs = manuscript_sections(project_root / "output/manuscript")
         current = composition.build_manuscript_composition(
             project_root, recorded.project, inputs, source, algorithm=recorded.algorithm
         )
@@ -132,7 +133,7 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
             "prepare the template Python environment or set TEMPLATE_PYTHON: "
             f"{executable}"
         )
-    from .project_rendering import _hashes
+    from .project_rendering import _hashes, manuscript_sections
 
     sources = sorted(
         path for path in (project_root / "manuscript").glob("*") if path.is_file()
@@ -152,8 +153,7 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
         project_root / DOCX_ARTIFACT,
         *(
             project_root / "output/slides" / f"{path.stem}_slides.pdf"
-            for path in hydrated
-            if path.suffix == ".md" and path.name not in SOURCE_EXCLUDES
+            for path in manuscript_sections(project_root / "output/manuscript")
         ),
     ]
     previous = {

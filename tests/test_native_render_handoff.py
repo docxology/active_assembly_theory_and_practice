@@ -15,6 +15,9 @@ def _project(tmp_path):
     project = tmp_path / "project"
     (project / "manuscript").mkdir(parents=True)
     (project / "manuscript/00_abstract.md").write_text("# {{TITLE}}\n")
+    (project / "manuscript/preamble.md").write_text(
+        "# Rendering preamble\n\n```latex\n\\hypersetup{pdfdisplaydoctitle=true}\n```\n"
+    )
     (project / "manuscript/config.yaml").write_text(
         "paper:\n  title: Native handoff regression\n"
     )
@@ -22,6 +25,9 @@ def _project(tmp_path):
     (project / "output/manuscript/00_abstract.md").write_text("# CURRENT_ROOT_7319\n")
     (project / "output/manuscript/config.yaml").write_bytes(
         (project / "manuscript/config.yaml").read_bytes()
+    )
+    (project / "output/manuscript/preamble.md").write_bytes(
+        (project / "manuscript/preamble.md").read_bytes()
     )
     (project / "output/data").mkdir()
     (project / "output/data/manuscript_variables.json").write_text(
