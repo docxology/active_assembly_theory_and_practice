@@ -2,10 +2,12 @@
 
 from importlib import import_module
 from pathlib import Path
+import hashlib
 import json
 import os
 import subprocess
 import tempfile
+import time
 
 import yaml
 
@@ -17,6 +19,7 @@ from .docx_validation import (
     _hydrated_manuscript_hash,
 )
 from .template_hydration import (
+    SOURCE_EXCLUDES,
     load_template_injection,
     resolve_template_root,
     validate_hydrated_tree,
@@ -107,9 +110,9 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
 
 def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
     project_root = Path(project_root).resolve()
-    variables = json.loads(
-        (project_root / "output/data/manuscript_variables.json").read_text()
-    )
+    variables_path = project_root / "output/data/manuscript_variables.json"
+    variables_bytes = variables_path.read_bytes()
+    variables = json.loads(variables_bytes)
     validate_hydrated_tree(
         project_root / "output/manuscript", variables, project_root=project_root
     )
@@ -129,6 +132,36 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
             "prepare the template Python environment or set TEMPLATE_PYTHON: "
             f"{executable}"
         )
+    from .project_rendering import _hashes
+
+    sources = sorted(
+        path for path in (project_root / "manuscript").glob("*") if path.is_file()
+    )
+    hydrated = sorted(
+        path
+        for path in (project_root / "output/manuscript").glob("*")
+        if path.is_file()
+    )
+    inputs = {
+        "source_hashes": _hashes(sources, project_root),
+        "hydrated_hashes": _hashes(hydrated, project_root),
+    }
+    expected = [
+        project_root / "output/pdf" / f"{Path(DOCX_ARTIFACT).stem}.pdf",
+        project_root / "output/web/index.html",
+        project_root / DOCX_ARTIFACT,
+        *(
+            project_root / "output/slides" / f"{path.stem}_slides.pdf"
+            for path in hydrated
+            if path.suffix == ".md" and path.name not in SOURCE_EXCLUDES
+        ),
+    ]
+    previous = {
+        path: path.stat().st_mtime_ns if path.is_file() else None for path in expected
+    }
+    report_path = project_root / "output/reports/project_render.json"
+    previous_report = report_path.stat().st_mtime_ns if report_path.is_file() else None
+    started = time.time_ns()
     subprocess.run(
         [
             str(executable),
@@ -147,10 +180,41 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
     )
     from .artifact_contract import write_json_artifact
 
-    report_path = project_root / "output/reports/project_render.json"
+    if (
+        not report_path.is_file()
+        or report_path.is_symlink()
+        or report_path.stat().st_mtime_ns < started
+        or report_path.stat().st_mtime_ns == previous_report
+    ):
+        raise RuntimeError("RENDER_REPORT_NOT_FRESH")
     report = json.loads(report_path.read_text())
-    if report["project_root"] != str(project_root):
+    if not isinstance(report, dict) or report.get("project_root") != str(project_root):
         raise RuntimeError("RENDER_PROJECT_ROOT_MISMATCH")
+    if (
+        report.get("template_root") != str(template_root)
+        or report.get("formats") != ["pdf", "html", "docx", "slides"]
+        or report.get("skip_manuscript_hydration") is not True
+        or report.get("variables_sha256") != hashlib.sha256(variables_bytes).hexdigest()
+        or variables_path.read_bytes() != variables_bytes
+        or any(report.get(key) != value for key, value in inputs.items())
+        or _hashes(sources, project_root) != inputs["source_hashes"]
+        or _hashes(hydrated, project_root) != inputs["hydrated_hashes"]
+    ):
+        raise RuntimeError("RENDER_REPORT_INPUT_MISMATCH")
+    for path in expected:
+        if (
+            not path.resolve().is_relative_to(project_root)
+            or not path.is_file()
+            or not path.stat().st_size
+        ):
+            raise RuntimeError("RENDER_OUTPUT_MISSING")
+        if (
+            path.stat().st_mtime_ns < started
+            or path.stat().st_mtime_ns == previous[path]
+        ):
+            raise RuntimeError("RENDER_OUTPUT_NOT_FRESH")
+    if report.get("rendered_hashes") != _hashes(expected, project_root):
+        raise RuntimeError("RENDER_REPORT_OUTPUT_MISMATCH")
     validate_hydrated_tree(
         project_root / "output/manuscript", variables, project_root=project_root
     )

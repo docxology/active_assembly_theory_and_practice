@@ -1,6 +1,6 @@
 # Scientific roadmap and current backlog
 
-**Roadmap revision:** 2026-10-14
+**Roadmap revision:** 2026-10-15
 
 **Repository:** `docxology/active_assembly_theory_and_practice`
 **Machine-readable status source:** `output/data/scientific_program.json`
@@ -48,6 +48,9 @@ evidence remain visibly unearned.
 | P17 protocol, figures, manuscript, and document closure | Closed local integrity tranche | Source-bound local package; not peer review or independent validation | `output/data/reproducibility_manifest.json`, `output/data/figure_registry.json`, `output/data/validation_report.json` |
 
 ### Completed local implementation tranches
+
+Completed historical work: no open TODO remains for the listed implementation
+tranches. Their broader scientific promotion gates remain open where stated.
 
 The following action items have been completed and are now maintenance
 surfaces, not unstarted roadmap tasks:

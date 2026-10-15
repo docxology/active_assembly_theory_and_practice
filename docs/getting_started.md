@@ -60,6 +60,14 @@ template's `.venv/bin/python` (Windows:
 executable if the template uses a different environment. It never changes the
 template's dependencies implicitly.
 
+Qualify the selected template revision before the full scientific build. It
+must provide the shared manuscript-composition and native Office-projection
+APIs, including `infrastructure/rendering/office_native_projection.py`.
+The clean committed revision `192c8bda16c08d06ae2fee4eac71d56901d3ad22`
+provides this contract; the older `55dbf35` branch does not. Use an isolated
+checkout when the shared template has another active owner. A prepared Python
+environment alone does not establish renderer compatibility.
+
 ## First canonical build
 
 ```bash

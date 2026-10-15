@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from src.gnn_cli import main
+from src.rxinfer_bridge import julia_available
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -80,6 +81,7 @@ def test_public_cli_missing_upstream_never_writes(tmp_path, monkeypatch, capsys)
     assert not target.exists()
 
 
+@pytest.mark.skipif(not julia_available(), reason="native CLI requires Julia")
 def test_public_cli_study_and_native_produce_auditable_artifacts(tmp_path, gnn_study):
     _, upstream, _ = gnn_study
     arguments = ["--gnn-root", str(upstream), "--output-dir", str(tmp_path)]

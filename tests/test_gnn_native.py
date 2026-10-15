@@ -6,11 +6,12 @@ import pytest
 
 from src.gnn_parser import compile_gnn
 from src.gnn_reference import forward_backward
-from src.rxinfer_bridge import run_shared_gnn_native
+from src.rxinfer_bridge import julia_available, run_shared_gnn_native
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.skipif(not julia_available(), reason="native parity requires Julia")
 def test_native_first_observation_and_smoothing(tmp_path):
     m = compile_gnn(ROOT / "configs/gnn/passive_phase.md")
     first = run_shared_gnn_native(m, [0], tmp_path / "one")
