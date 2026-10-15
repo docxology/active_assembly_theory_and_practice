@@ -166,3 +166,38 @@ def test_real_cli_upstream_validate(upstream_root):
         receipt["model_digest"]
         == compile_upstream(SOURCE, upstream_root).model.tensor_digest
     )
+
+
+def test_worker_emits_actual_parser_results_and_source_witnesses(
+    upstream_root, monkeypatch, capsys
+):
+    from src.gnn_upstream_worker import main
+
+    before_path = sys.path[:]
+    before_modules = {
+        name: module
+        for name, module in sys.modules.items()
+        if name == "gnn" or name.startswith("gnn.")
+    }
+    monkeypatch.setattr(sys, "argv", ["gnn-worker", str(upstream_root), str(SOURCE)])
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    try:
+        assert main() == 0
+        result = json.loads(capsys.readouterr().out)
+    finally:
+        sys.path[:] = before_path
+        for name in list(sys.modules):
+            if (
+                name == "gnn" or name.startswith("gnn.")
+            ) and name not in before_modules:
+                del sys.modules[name]
+        sys.modules.update(before_modules)
+    qualified = compile_upstream(SOURCE, upstream_root)
+    assert result["success"] is True
+    assert result["errors"] == result["warnings"] == []
+    assert result["name"] == qualified.model.name
+    assert result["source_sha256"] == qualified.model.source_sha256
+    assert result["import_hashes"] == qualified.receipt["import_hashes"]
+    assert {row["name"] for row in result["parameters"]} == {
+        row["name"] for row in result["variables"]
+    }
