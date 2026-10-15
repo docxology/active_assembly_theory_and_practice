@@ -52,11 +52,8 @@ _PROPORTION_HINTS = (
     "SPAN",
 )
 
-# These names are retained so older project/template callers can continue to
-# resolve the original figure-path interface.  They are deliberately recorded
-# as compatibility-only values when the manuscript source has migrated to the
-# canonical ``FIGURE_<ID>_*`` metadata surface; silently calling them orphaned
-# would make the registry reject an intentional compatibility view.
+# Retain legacy figure paths and document-render metadata for older callers.
+# Unused values may await rendering; a manuscript consumer makes them mandatory.
 COMPATIBILITY_ONLY_TOKENS = frozenset(
     {
         "ACTION_SENSING_FIGURE",
@@ -77,6 +74,9 @@ COMPATIBILITY_ONLY_TOKENS = frozenset(
         "CORPUS_STABILITY_FIGURE",
         "COUNTEREXAMPLE_SEARCH_FIGURE",
         "DECODER_CALIBRATION_FIGURE",
+        "DOCX_RENDER_CAPTION_COUNT",
+        "DOCX_RENDER_FIGURE_COUNT",
+        "DOCX_RENDER_STATUS",
         "EXTERNAL_LABEL_COVERAGE_FIGURE",
         "EXTERNAL_LABEL_REVISION_COUNT",
         "EXTERNAL_SOURCE_PROVENANCE_FIGURE",

@@ -41,6 +41,11 @@ audits. If they change, regenerate and render again. A documentation-only edit
 can require refreshed build lineage without changing the scientific bytes;
 the existing-output gate checks that relationship explicitly.
 
+The manuscript links to the DOCX receipt for observed status and image/caption
+counts. Embedding an edition's own post-render measurements in its source
+creates a bootstrap cycle on a fresh checkout. Legacy metadata tokens remain
+available to callers; source-consumed values must always be resolved.
+
 ## Generated edition and receipt map
 
 | Surface | Path | Contract |

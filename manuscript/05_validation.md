@@ -18,10 +18,9 @@ The generated artifact surface is separately recorded in
 SHA-256 digest; the manifest is visualized in [@fig:artifact-hash-manifest].
 
 The sibling docxology/template renderer is also configured to emit a standard
-combined DOCX at `{{DOCX_RENDER_ARTIFACT}}`. The current source-bound interface
-reports `{{DOCX_RENDER_STATUS}}`, with `{{DOCX_RENDER_FIGURE_COUNT}}` embedded
-figures and `{{DOCX_RENDER_CAPTION_COUNT}}` caption paragraphs. The post-render
-receipt at `{{DOCX_RENDER_RECEIPT}}` checks OOXML ZIP integrity, required
+combined DOCX at `{{DOCX_RENDER_ARTIFACT}}`. Its post-render receipt at
+`{{DOCX_RENDER_RECEIPT}}` records the observed document status, embedded-image
+count and caption count. It checks OOXML ZIP integrity, required
 document parts, figure/caption parity, unresolved tokens, the hydrated
 manuscript hash, and the substantive figure-registry hash. The two
 validator-produced summary figures are excluded from that digest because
