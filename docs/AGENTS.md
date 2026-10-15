@@ -19,7 +19,8 @@ counts or live artifact totals here. Its routes are:
 
 - setup and operations: `getting_started.md`, `verification.md`,
   `document_rendering.md`;
-- pipeline: `architecture.md`, `assembly_packages.md`, `rxinfer_roadmap.md`;
+- pipeline: `architecture.md`, `gnn_models.md`, `assembly_packages.md`,
+  `rxinfer_roadmap.md`;
 - methods and interpretation: `evaluation.md`, `statistics.md`, `scholarship.md`;
 - evidence and lineage: `claim_map.md`, `claim_register.md`,
   `analysis_validation.md`, `reproducibility.md`, `visual_atlas.md`;
@@ -29,8 +30,8 @@ counts or live artifact totals here. Its routes are:
 
 ## How the documents relate
 
-- **Pipeline shape**: `architecture.md` → `assembly_packages.md` →
-  `rxinfer_roadmap.md`. Read these to understand what is computed and by which
+- **Pipeline shape**: `architecture.md` → `gnn_models.md` →
+  `assembly_packages.md` → `rxinfer_roadmap.md`. Read these to understand what is computed and by which
   adapter.
 - **What is claimed**: `scholarship.md` (citation roles) → `claim_map.md`
   (claim-to-artifact map) → `claim_register.md` (the generated register's
