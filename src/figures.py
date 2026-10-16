@@ -4536,7 +4536,7 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
             witness_size if status == "falsified_by_counterexample" else None
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(8.6, 4.6))
+    fig, ax = plt.subplots(figsize=(12.5, 6.8))
     y = np.arange(len(ids), dtype=float)
     ax.barh(
         y,
@@ -4565,21 +4565,22 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
             fontsize=7.2,
             color=MUTED,
         )
-    ax.set_xlabel("Enumerated inputs before resolution (smallest-first order)")
-    ax.set_title(
+    ax.set_xlabel("Inputs examined before resolution")
+    fig.text(
+        0.34,
+        0.96,
         "Formal counterexample search over the declared bounded model",
-        loc="left",
-        fontsize=11,
-        pad=AXIS_TITLE_PAD,
+        fontsize=13,
+        va="top",
     )
-    ax.text(
-        0.0,
-        AXIS_SUBTITLE_Y,
-        "Every falsified witness is re-verified by an independent second interpretation. Hatch marks falsified bars; solid bars hold within the searched domain.",
-        transform=ax.transAxes,
+    fig.text(
+        0.34,
+        0.90,
+        "Exhaustive smallest-first enumeration; every falsified witness is independently re-verified.\n"
+        "Hatching marks falsified candidates; solid bars hold only in the searched domain.",
         ha="left",
-        va="bottom",
-        fontsize=8,
+        va="top",
+        fontsize=10,
         color=MUTED,
     )
     handles = [
@@ -4598,19 +4599,26 @@ def plot_counterexample_search(payload: dict[str, object], output_path: Path) ->
         )
         for label, hatch in _COUNTEREXAMPLE_STATUS_HATCHES.items()
     ]
-    ax.legend(handles=handles, frameon=False, fontsize=8, loc="lower right")
-    ax.text(
-        1.0,
-        -0.18,
-        "A falsified candidate narrows the claim; a holds result is bounded to the declared search domain only.",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=8,
+    fig.legend(
+        handles=handles,
+        frameon=False,
+        fontsize=10,
+        loc="lower left",
+        bbox_to_anchor=(0.34, 0.07),
+        ncol=2,
+    )
+    fig.text(
+        0.34,
+        0.025,
+        "A falsified candidate narrows the claim; holds is limited to the declared search domain.",
+        ha="left",
+        va="bottom",
+        fontsize=10,
         color=MUTED,
     )
+    ax.margins(x=0.42)
     _style_axes(ax, grid_axis="x")
-    fig.subplots_adjust(left=0.24, right=0.97, bottom=0.26, top=0.78)
+    fig.subplots_adjust(left=0.34, right=0.98, bottom=0.25, top=0.80)
     return _save_figure(fig, output_path)
 
 

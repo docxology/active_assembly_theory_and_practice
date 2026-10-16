@@ -131,7 +131,7 @@ def _readable_graph(
     }
     height = max(4.8, row_count + 2.0)
     with plt.rc_context(
-        {"svg.fonttype": "none", "pdf.fonttype": 42, "font.family": "DejaVu Sans"}
+        {"svg.fonttype": "none", "pdf.fonttype": 42, "font.family": "sans-serif"}
     ):
         fig, ax = plt.subplots(figsize=(max(7.8, len(layers) * 3.0 + 0.8), height))
         for source, target in network.edges:

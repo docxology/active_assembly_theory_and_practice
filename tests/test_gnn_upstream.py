@@ -182,16 +182,20 @@ def test_worker_emits_actual_parser_results_and_source_witnesses(
     monkeypatch.setattr(sys, "argv", ["gnn-worker", str(upstream_root), str(SOURCE)])
     monkeypatch.setattr(sys, "dont_write_bytecode", True)
     try:
+        for name in before_modules:
+            del sys.modules[name]
         assert main() == 0
         result = json.loads(capsys.readouterr().out)
     finally:
         sys.path[:] = before_path
         for name in list(sys.modules):
-            if (
-                name == "gnn" or name.startswith("gnn.")
-            ) and name not in before_modules:
+            if name == "gnn" or name.startswith("gnn."):
                 del sys.modules[name]
         sys.modules.update(before_modules)
+    assert {
+        name for name in sys.modules if name == "gnn" or name.startswith("gnn.")
+    } == before_modules.keys()
+    assert all(sys.modules[name] is module for name, module in before_modules.items())
     qualified = compile_upstream(SOURCE, upstream_root)
     assert result["success"] is True
     assert result["errors"] == result["warnings"] == []
