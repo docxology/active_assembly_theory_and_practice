@@ -22,8 +22,8 @@ silently promoted to executed evidence [@rizin; @radare2; @llvm_objdump;
 assembly trace be converted into an explicit categorical observation stream
 that supports reproducible variational and temporal inference diagnostics?
 
-The contribution is therefore methodological rather than a new disassembler
-or reverse-engineering algorithm. The package provides (i) a source-bound
+The contribution is methodological: it is not a general reverse-engineering
+algorithm or a new disassembler. The package provides (i) a source-bound
 static/dynamic trace contract and typed observation schema that preserve missing,
 unseen, static, and dynamic states; (ii) a width-aware normalized x86-64 machine
 state with explicit register, flag, memory, stack, control-flow, and unsupported

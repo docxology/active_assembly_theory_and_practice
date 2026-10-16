@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -832,6 +834,35 @@ def scholarship_payload() -> dict[str, Any]:
         "project_stage_counts": project_stage_counts,
         "sources": [source.to_dict() for source in SCHOLARSHIP_SOURCES],
     }
+
+
+def scholarship_partition_consistent(payload: dict[str, Any]) -> bool:
+    """Check complete role counts and implemented core-backend attribution.
+
+    A comparison-only source is optional when a backend also drives the
+    implemented model. Its diagnostic role does not retire that implementation.
+    """
+    sources = payload["sources"]
+    by_key = {source["key"]: source for source in sources}
+    required = {"bagaev2023rxinfer", "heins2022pymdp"}
+    return (
+        payload["source_count"] == len(sources) == len(by_key)
+        and payload["project_stage_counts"]
+        == dict(Counter(source["project_stage"] for source in sources))
+        and payload["evidence_tier_counts"]
+        == dict(Counter(source["evidence_tier"] for source in sources))
+        and required.issubset(by_key)
+        and all(
+            by_key[key]["project_stage"] == "implemented"
+            and by_key[key]["evidence_tier"] == "implemented_backend"
+            for key in required
+        )
+        and all(
+            source["project_stage"] == "comparison"
+            for source in sources
+            if source["evidence_tier"] == "comparison_baseline"
+        )
+    )
 
 
 def scholarship_keys() -> set[str]:

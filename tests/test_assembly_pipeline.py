@@ -514,7 +514,12 @@ def test_scholarship_payload_partitions_evidence_roles() -> None:
 
     assert payload["source_count"] == len(scholarship_keys())
     assert payload["project_stage_counts"]["implemented"] >= 4
-    assert payload["project_stage_counts"]["comparison"] >= 1
+    backend_roles = {row["key"]: row for row in payload["sources"]}
+    for key in ("heins2022pymdp", "bagaev2023rxinfer"):
+        assert backend_roles[key]["project_stage"] == "implemented"
+        assert backend_roles[key]["evidence_tier"] == "implemented_backend"
+    assert sum(payload["project_stage_counts"].values()) == payload["source_count"]
+    assert sum(payload["evidence_tier_counts"].values()) == payload["source_count"]
     assert payload["project_stage_counts"]["context"] >= 3
     assert payload["project_stage_counts"]["roadmap"] >= 10
     assert payload["evidence_tier_counts"]["roadmap_adapter"] >= 10

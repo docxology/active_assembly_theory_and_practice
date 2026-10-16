@@ -21,11 +21,13 @@ calculation measures generalization to unseen programs. The separate exact
 dynamic-programming study below evaluates a different finite decision problem;
 its optimality certificate is not a certificate for this predictive Agent.
 
-The canonical fixture produces `{{INSTRUCTION_COUNT}}` decoded instructions and a
-bounded Unicorn trace with final `RAX = {{FINAL_RAX}}`. The inference stream
-contains `{{FREE_ENERGY_STEPS}}` finite pymdp comparison diagnostics, one per
-observation, shown in [@fig:inference-diagnostics]. The native RxInfer run records
-finite Bethe Free Energy values with final value
+The canonical fixture `{{SAMPLE_NAME}}` produces `{{INSTRUCTION_COUNT}}` decoded
+instructions and a bounded Unicorn trace with final `RAX = {{FINAL_RAX}}`.
+Its inference stream contains `{{OBSERVATION_COUNT}}` categorical observations
+and `{{FREE_ENERGY_STEPS}}` finite pymdp comparison diagnostics, one per
+observation, shown in [@fig:inference-diagnostics]. The native RxInfer
+`{{RXINFER_MODEL_NAME}}` records `{{RXINFER_FREE_ENERGY_COUNT}}` finite Bethe
+Free Energy values with final value
 `{{RXINFER_FINAL_FREE_ENERGY}}` on Julia `{{JULIA_VERSION}}` and RxInfer
 `{{RXINFER_VERSION}}`, as shown in [@fig:rxinfer-free-energy]. The final most
 likely pymdp latent class is

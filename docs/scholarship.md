@@ -157,6 +157,12 @@ adjustment supplies neither valid exchangeability assumptions nor prospective
 registration. Transformation-family identifiers are distinguished from their
 dependent authored template lineages throughout the main interpretation.
 
+The role partition requires complete, unique source records and exact stage and
+tier totals. Both pymdp and RxInfer must be attributed as implemented backends.
+A comparison-only source is optional: the comparison diagnostic does not erase
+pymdp's implemented prospective role. Real corrupted ledger copies exercise
+count mismatches, duplicate or missing sources, and incorrect role assignments.
+
 ## Current maintenance boundary
 
 Dated metadata reviews above apply to their recorded source sets. Current

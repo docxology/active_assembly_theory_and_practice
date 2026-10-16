@@ -131,7 +131,11 @@ from .rxinfer_bridge import (
     validate_categorical_rxinfer_outputs,
     validate_free_energy_records,
 )
-from .scholarship import scholarship_keys, scholarship_payload
+from .scholarship import (
+    scholarship_keys,
+    scholarship_partition_consistent,
+    scholarship_payload,
+)
 from .scientific_program import (
     SCIENTIFIC_PROGRAM_SCHEMA_VERSION,
     scientific_program_payload,
@@ -1474,7 +1478,7 @@ def _scholarship_checks_payload(project_root: Path) -> list[ValidationCheck]:
         and int(project_stage_counts.get("implemented", 0)) >= 4
         and int(project_stage_counts.get("roadmap", 0)) >= 10
         and int(project_stage_counts.get("context", 0)) >= 3
-        and int(project_stage_counts.get("comparison", 0)) >= 1
+        and scholarship_partition_consistent(payload)
     )
     # Cautious-boundary language is protected conceptually (not by exact prose),
     # so a legitimate rephrase does not silently trip the gate.
