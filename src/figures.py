@@ -6857,11 +6857,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
         "equivalence theorem or compiler-generalization result [@capstone;@unicorn]."
     ),
     "formal_verification_receipt": (
-        "Kernel-checked theorem manifest for the declared Word64 accumulator fragment. "
-        "Each marker records one theorem present in the source-bound Lean receipt under "
-        "toolchain {formal_toolchain}; the fragment covers modular mov, add, sub, inc, and "
-        "nop transfer functions plus an explicit near-miss counterexample. The receipt "
-        "does not certify the Python pipeline, unsupported ISA effects, or complete x86 "
+        "Formal verification receipt for the declared Word64 fragment under toolchain "
+        "{formal_toolchain}. The upper status ledger separates kernel-checked theorem "
+        "counts, bounded fixture-bridge evidence, and candidate outcomes not recorded in "
+        "this receipt. The lower panel lists the checked operations and the normalized "
+        "machine-state and relation boundary. Counts describe the local proof artifact; "
+        "they are not confidence intervals or independent experiments. The receipt does "
+        "not certify every Python adapter, unsupported ISA effects, or complete x86-64 "
         "semantics [@lean_reference;@dasgupta2019x86semantics]."
     ),
     "active_information_frontier": (
@@ -7144,9 +7146,11 @@ FIGURE_CAPTIONS.update(
             "protected owner boundary, while label-blind public rows, predictions, and hash-bound "
             "receipts remain on the replay path. Identifier validation and protocol hashes are shown "
             "as gates rather than as scientific outcomes. Counts are deterministic and no sampling "
-            "uncertainty is applicable to this manifest audit. The package demonstrates local replay "
-            "and blind separation; the controlled same-host guest result is not independent physical "
-            "replication or independent reimplementation."
+            "uncertainty is applicable to this manifest audit. Gold labels feed protected scoring "
+            "after prediction and never the model input. This schema alone does not establish "
+            "that a separately operated replay occurred; a retained receipt is required. A "
+            "same-host controlled guest also does not establish independent physical replication "
+            "or independent reimplementation."
         ),
         "external_source_provenance": (
             "Licensed-source provenance and P13 application-validity gate for the separate external "
