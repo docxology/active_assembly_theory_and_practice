@@ -106,14 +106,26 @@ and a proved-or-falsified theorem boundary.
 
 The new source-bound artifact family is:
 
+### Model, execution and sensing receipts {#sec:model-receipt-boundaries}
+
 | Surface | Contract that is actually checked | Promotion boundary |
 | --- | --- | --- |
 | quotient classifier | protocol hash, label-blind features, disjoint training/development/held-out families, finite metrics and clustered intervals; development-only hyperparameter selection, five-start ledger, family-shuffle and bounded metadata-probe controls, declared near-duplicate siblings, and cross-encoding consistency | bounded endpoint only; semantic discovery is not established and the retrospective correction withholds superiority claims |
 | formal correspondence | real Capstone decode, bounded Unicorn trace, Python reference step alignment, modeled flags, and Lean prerequisite | declared transparent subset only; no complete x86-64 theorem |
 | compiler transfer | exact local target command, source/object/disassembly hashes, Capstone decode, no object execution, explicit unavailable cells | capability receipt only; no compiler-generalization or application claim |
 | sensing costs | deterministic vectors, machine-specific calibration, exact finite dynamic-program objective and gap | finite benchmark certificate only; no universal optimality law |
+
+### External source and label contracts {#sec:external-receipt-boundaries}
+
+| Surface | Contract that is actually checked | Promotion boundary |
+| --- | --- | --- |
 | external static corpus | `{{EXTERNAL_STATIC_ROW_COUNT}}` pinned source rows, archive/license digests, static compilation, disassembly hashes, Capstone coverage, and explicit failed rows | static coverage and lineage only; no application effectiveness |
 | source-bound label contract | `{{EXTERNAL_LABEL_ROW_COUNT}}` accepted rows across `{{EXTERNAL_LABEL_PROJECT_COUNT}}` projects and two revisions per project: `{{EXTERNAL_LABEL_EQUIVALENT_COUNT}}` lexical-equivalence witnesses, `{{EXTERNAL_LABEL_NEAR_MISS_COUNT}}` contract-directed near misses, and `{{EXTERNAL_LABEL_NEGATIVE_COUNT}}` identity negative controls; base/pair source, object, and disassembly hashes; project-held-out test split | source-contract and static provenance evidence only; lexical comments are not universal equivalence proofs, near misses are not executed behavioral labels, and no application claim follows |
+
+### Replay, formal status and acquisition gates {#sec:replay-receipt-boundaries}
+
+| Surface | Contract that is actually checked | Promotion boundary |
+| --- | --- | --- |
 | replication bundle | public/gold field separation, public protocol/toolchain/instruction hashes, identifier/hash equality, no-network replay metadata | frozen interface and local replay contract; no independent implementation claim |
 | replay ingestion | protected scoring boundary, explicit separate-control attestation, mismatch retention, and source-bound receipt hashes | `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`; observed controlled replay does not imply independent physical-machine replication or independent reimplementation |
 | theorem phase | checked Lean theorem list plus generated bounded counterexample | fail-closed; unresolved claims remain unresolved |

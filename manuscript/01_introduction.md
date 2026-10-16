@@ -75,6 +75,8 @@ claim.
 | External and replay surfaces | Provenance, static-only acquisition safeguards, and the recorded controlled replay outcome | Application effectiveness, independent physical replication, and independent reimplementation |
 | Document and receipt pipeline | Reproducible source-to-render lineage with explicit unavailable and negative states | Peer review, adoption, and scientific validity inferred from engineering gates |
 
+### Recorded research architecture {#sec:research-architecture-map}
+
 ![{{FIGURE_RESEARCH_ARCHITECTURE_CAPTION}}]({{FIGURE_RESEARCH_ARCHITECTURE_PATH}}){#fig:research-architecture width=100%}
 
 The figure is therefore both a reader's map and a claim-control device. Its
