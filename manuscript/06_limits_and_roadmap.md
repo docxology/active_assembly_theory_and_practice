@@ -199,6 +199,8 @@ sensitivity check rather than a competing fitted model.
 The open roadmap is now executable in bounded local tranches, but its
 promotion state remains deliberately asymmetric:
 
+### Benchmark, formal and replication evidence (P3--P7) {#sec:promotion-p3-p7}
+
 | Phase | Earned local evidence | What remains unearned |
 | --- | --- | --- |
 | P3 quotient benchmark | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` quotient-family identifiers with disjoint split membership but shared authored lineages, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent-lineage generalization, independent implementation and any claim of semantic discovery |
@@ -206,11 +208,21 @@ promotion state remains deliberately asymmetric:
 | P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
 | P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |
 | P7 replication | frozen no-network CLI, digest-ordered public rows, private gold separation, hash validation, replay metadata, and recorded replay status `{{INDEPENDENT_REPLAY_STATUS}}` | independent implementation, independent physical/CI replay, and external scientific review |
+
+### Mechanism, robustness and transfer evidence (P8--P12) {#sec:promotion-p8-p12}
+
+| Phase | Earned local evidence | What remains unearned |
+| --- | --- | --- |
 | P8 theorem phase | proved small algebraic theorem group, automatically generated bounded counterexample, and a smallest-first exhaustive counterexample-search receipt over declared candidates | broad trace theorem, transfer guarantee, or field-changing general result |
 | P9 intervention power | exhaustive finite subset enumeration for the separate four-state representation pilot, minimum separating sets, and a one-state negative control | universal identifiability, intervention completeness, or a separation law outside the frozen matrix |
 | P10 initialization robustness | five-start observation-only holdout ledger with accuracy spread and sequence agreement | stable latent-parameter recovery or semantic discovery beyond the finite fixtures |
 | P11 normalized machine state | all-GPR, width-aware, bounded-memory reference state with boundary tests and Lean normalized-state definitions | complete cross-language proof for the declared broad subset |
 | P12 scaled transfer/quotient | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family quotient receipt, source/compiler/architecture capability matrix, and protocol-bound splits | external validity or universal invariance; retrospective superiority claims remain withheld |
+
+### External evidence and promotion gates (P13--P17) {#sec:promotion-p13-p17}
+
+| Phase | Earned local evidence | What remains unearned |
+| --- | --- | --- |
 | P13 licensed external validation | `{{EXTERNAL_STATIC_ROW_COUNT}}` pinned rows across `{{EXTERNAL_LABEL_PROJECT_COUNT}}` projects and two revisions per project, static-only acquisition/compiler path, Capstone decoding, `{{EXTERNAL_LABEL_ROW_COUNT}}` source-bound contract rows, and project-held-out labeling | application-facing effectiveness until source-bound label, project-held-out, build, and external acquisition/build replay gates pass |
 | P14 measured policy robustness | deterministic/calibrated cost receipts, finite oracle certificate, stress-grid policy regret and budget-value gaps, and repeated local calibration-stability rows | universal cost law or non-oracle near-optimality claim beyond the declared grid |
 | P15 blind replication | public/private label separation, hashed public protocol/toolchain/instructions, protected ingestion boundary, and `{{INDEPENDENT_REPLAY_STATUS}}` in `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}` | independent implementation or independent physical/CI replay; controlled replay of the frozen interface is not independent reimplementation |
