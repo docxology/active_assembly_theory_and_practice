@@ -48,6 +48,12 @@ semantic audit as the standalone receipt. This ordering prevents a previous
 edition from being tested against a newly generated figure registry. Running
 the unfiltered suite directly therefore requires the current export.
 
+The rendered-text regression also checks the combined PDF and all eight slide
+editions with Poppler word rectangles. It rejects text endings outside the paper
+and visible unresolved definition, proposition or section identifiers. Real PDF
+controls exercise all four page edges and unresolved references; manual image
+inspection remains necessary for overlaps, font size and figure interpretation.
+
 ## Gate responsibilities
 
 | Gate | Purpose and limitation |

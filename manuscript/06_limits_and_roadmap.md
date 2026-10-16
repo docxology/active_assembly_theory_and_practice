@@ -296,7 +296,8 @@ the corresponding receipt, not as a collection of independent results. The
 canonical command is:
 
 ```bash
-uv run python scripts/run_scientific_program.py generate-figures \
+uv run python scripts/run_scientific_program.py \
+  generate-figures \
   --formats png svg pdf atlas
 ```
 

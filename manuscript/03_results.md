@@ -43,8 +43,9 @@ finite iterations and final Bethe Free Energy `{{RXINFER_CATEGORICAL_FINAL_FREE_
 in `{{RXINFER_CATEGORICAL_ARTIFACT}}`. This is a separate, fixed-parameter
 factor graph; its free-energy scale is not compared with the Gaussian spine.
 Its iteration trace is flat because the structured categorical chain reaches
-its exact fixed point in the first sweep. Figure @fig:rxinfer-categorical-free-energy
-therefore displays actual native runs on successive observation prefixes.
+its exact fixed point in the first sweep. The main manuscript's
+@fig:rxinfer-categorical-free-energy displays actual native runs on successive
+observation prefixes.
 For this normalized tree model, the resulting Bethe free energy agrees with
 the independent scaled-forward value $-\log p(o_{1:t})$. Adjacent increments
 are conditional surprisal, $-\log p(o_t\mid o_{1:t-1})$, rather than an
@@ -70,7 +71,7 @@ still a local instrument check: it prevents a later operation from hiding an
 intermediate transfer-function error, but it does not establish complete
 x86-64 semantics or semantic understanding.
 
-The corresponding trace-refinement visualization is reported in
+The corresponding trace-refinement visualization is reported in the main manuscript's
 @fig:trace-refinement; it is kept as a single registry-owned figure so that
 the manuscript, HTML, and tagged-PDF outputs cannot assign competing labels to
 the same source-bound image.
@@ -258,7 +259,7 @@ are unhelpful in general; it is evidence that this particular composite
 scoring rule is not yet adequate for the available fixture diversity. The
 initial register-dominated fixtures remain near-duplicate in some fields,
 while the expanded corpus adds one memory and one taken-path contrast. The
-field-group ablation and explicit masked-memory sensitivity are reported in
+field-group ablation and explicit masked-memory sensitivity are reported in the main manuscript's
 [@fig:factorized-observation-comparison], with every training membership
 listed in `{{FACTORIZED_OBSERVATION_ARTIFACT}}`.
 
@@ -273,7 +274,8 @@ estimate. The result supports continuing to expand the fixture design with
 longer repeated phases, multiple memory addressing modes, and additional
 branch outcomes before attempting larger models; it does not support selecting
 the hierarchical score as a preferred model. The source-bound design inventory
-is reported in `{{CORPUS_COVERAGE_ARTIFACT}}` and [@fig:corpus-coverage].
+is reported in `{{CORPUS_COVERAGE_ARTIFACT}}` and the main manuscript's
+[@fig:corpus-coverage].
 
 ### Statistical reporting contract {#sec:statistical-reporting}
 
@@ -337,7 +339,7 @@ temporal model is neither the most accurate nor the best calibrated.
 The decoding results above are classification metrics, summarized as a pooled
 confusion matrix in [@fig:confusion-matrix]. A complementary,
 principled *generative* comparison — the log marginal likelihood of the observed
-traces under each model ([@def:model-evidence]; [@fig:model-evidence]) — shows
+traces under each model ([@fig:model-evidence]) — shows
 `{{BEST_MODEL}}` is the best *explainer* of the data: its pooled evidence
 (`{{TEMPORAL_LOG_EVIDENCE}}`)
 is higher than the identity-transition (`{{IDENTITY_TRANSITION_LOG_EVIDENCE}}`) and memoryless
@@ -414,7 +416,8 @@ boundary mismatch between the two rows.
 ![{{FIGURE_SEGMENTATION_RIBBONS_CAPTION}}]({{FIGURE_SEGMENTATION_RIBBONS_PATH}}){#fig:segmentation-ribbons width=100%}
 
 A second ablation isolates the contribution of the transition structure itself
-([@fig:transition-ablation]; [@prop:transition-collapse]): as the transition matrix `B` is blended toward
+([@fig:transition-ablation]), matching the uniform-transition proposition:
+as the transition matrix `B` is blended toward
 a uniform matrix, the temporal decoder converges *exactly* to the per-step
 memoryless decoder — with `B @ posterior` uniform, the forward filter no longer
 carries state history — reaching equivalence by blend `{{TRANSITION_CONVERGENCE_BLEND}}`.
@@ -600,7 +603,7 @@ near-misses and leaves `{{INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT}}`
 families unresolved. This is an exact result for the declared finite outcome
 matrix, not evidence that the intervention catalog is complete or that semantic
 identifiability holds outside the benchmark. The source-bound receipt is
-`{{INTERVENTION_POWER_ARTIFACT}}` and the subset curve is shown in
+`{{INTERVENTION_POWER_ARTIFACT}}` and the subset curve is shown in the main manuscript's
 [@fig:intervention-power].
 
 The external-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`: it records

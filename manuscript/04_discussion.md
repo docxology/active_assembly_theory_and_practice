@@ -35,9 +35,10 @@ mechanism: because the authored likelihood is near-diagonal, a single observatio
 already reveals the phase, so transition structure adds little. Sweeping the
 likelihood toward uniform, the temporal decoder (and the smoothed temporal
 segmentation) is exactly where the advantage appears: per-step decoding collapses
-while the transition structure carries the information ([@fig:ambiguity-ablation]).
+while the transition structure carries the information (main manuscript
+[@fig:ambiguity-ablation]).
 Phase segmentation is now measured against the hand-authored ground truth
-([@fig:segmentation-ribbons]), and both the
+(main manuscript [@fig:segmentation-ribbons]), and both the
 boundary-recovery result and the mechanism are registered as bounded claims
 (CLM-014, CLM-015). This framing keeps the headline faithful: no net temporal
 advantage at an informative likelihood, a clear one under ambiguity, and every

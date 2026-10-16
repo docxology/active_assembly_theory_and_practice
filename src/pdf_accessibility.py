@@ -15,7 +15,9 @@ from collections import Counter
 import json
 from pathlib import Path
 import re
+import subprocess
 from typing import Any, Iterable
+import xml.etree.ElementTree as ET
 
 from pypdf import PdfReader
 from pypdf.generic import BooleanObject
@@ -27,6 +29,36 @@ DEFAULT_PDF = (
     PROJECT_ROOT / "output/pdf/active_assembly_theory_and_practice_combined.pdf"
 )
 DEFAULT_REPORT = PROJECT_ROOT / "output/data/pdf_accessibility_report.json"
+
+
+def rendered_pdf_text_errors(pdf_path: Path) -> list[str]:
+    result = subprocess.run(
+        ["pdftotext", "-bbox", str(pdf_path), "-"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    namespace = {"x": "http://www.w3.org/1999/xhtml"}
+    pages = ET.fromstring(result.stdout).findall(".//x:page", namespace)
+    if not pages:
+        raise ValueError(f"PDF text extraction returned no pages: {pdf_path}")
+    errors = []
+    for number, page in enumerate(pages, 1):
+        width = float(page.attrib["width"])
+        height = float(page.attrib["height"])
+        words = page.findall(".//x:word", namespace)
+        for word in words:
+            if (
+                float(word.attrib["xMin"]) < -1
+                or float(word.attrib["yMin"]) < -1
+                or float(word.attrib["xMax"]) > width + 1
+                or float(word.attrib["yMax"]) > height + 1
+            ):
+                errors.append(f"page {number}: word outside paper: {word.text}")
+        text = " ".join(word.text or "" for word in words)
+        for match in re.finditer(r"\b(?:sec|def|prop|thm|lem):[\w-]+", text):
+            errors.append(f"page {number}: unresolved reference: {match.group()}")
+    return errors
 
 
 def _deref(value: Any) -> Any:

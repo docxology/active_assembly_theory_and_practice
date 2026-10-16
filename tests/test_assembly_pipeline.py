@@ -134,6 +134,7 @@ def test_assembly_listing_is_a_source_bound_projection_of_real_trace() -> None:
     assert "0x1000" in listing
     assert "mov eax, 1" in listing
     assert "category=load_immediate" in listing
+    assert max(map(len, listing.splitlines())) <= 60
     trace_bundle = run_experiment().trace_bundle
     trace_payload = trace_bundle.to_dict()
     valid, detail = validate_assembly_listing_payload(payload, trace_payload)

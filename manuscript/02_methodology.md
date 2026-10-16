@@ -749,13 +749,13 @@ likelihood `A[o, s] = P(o_t = o | s_t = s)`. An observation sequence
 phase emitting one observation.
 :::
 
-::: {.definition #def:expected-free-energy title="Expected free energy"}
-For a candidate observation, the expected free energy is the negative sum of a
-pragmatic term (a prior log-preference over outcomes, `ln C`) and an epistemic
-term (the reduction in phase-belief entropy from observing it). The active policy
-selects the observation minimizing it. With a flat preference `C` the pragmatic
-term is constant across candidates, so selection is driven by the epistemic
-(information-gain) term.
+::: {.definition #def:expected-free-energy title="Retrospective ordering score"}
+For an already decoded candidate category `o`, the ordering score is the negative
+sum of its realized phase-entropy reduction and a log-probability preference
+`ln r(o)`. The diagnostic selects the candidate minimizing that score. A flat
+probability preference `r` makes the pragmatic term constant across candidates.
+This retrospective preference is distinct from the dimensionless utility `C`
+in the canonical prospective sensor POMDP specified above.
 :::
 
 ::: {.definition #def:model-evidence title="Log marginal likelihood (model evidence)"}
@@ -767,7 +767,7 @@ forward-filter normalizer at step `t`.
 ::: {.proposition #prop:forward-normalizer title="Forward-filter normalizer is the evidence"}
 At each step the forward filter's normalizer equals the conditional marginal
 `P(o_t | o_{1:t-1})`, so the cumulative log of the normalizers is exactly the
-model's log marginal likelihood ([@def:model-evidence]).
+model's log marginal likelihood, as defined above.
 :::
 
 ::: {.proposition #prop:transition-collapse title="Uniform transitions collapse temporal to memoryless"}
@@ -818,13 +818,12 @@ a taken branch whose static fall-through instruction is not executed.
 
 ![{{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_TAKEN_CAPTION}}]({{FIGURE_TEMPORAL_BELIEFS_X86_GUARD_TAKEN_PATH}}){#fig:temporal-beliefs-x86-guard-taken width=90%}
 
-To make the *active* in Active Inference explicit, the expected-free-energy
-heuristic ([@def:expected-free-energy]) scores each candidate observation by an
-epistemic term and a pragmatic term (a log-preference over observation
-categories), then selects the observation that minimises expected free energy
-[@friston2017activeinference]. This realises an active-disassembly ordering in
-which the agent chooses which instruction to read next rather than scanning
-left to right.
+The retrospective ordering heuristic defined above scores each already decoded
+candidate by an epistemic term and a pragmatic term (a log-probability preference
+over observation categories), then selects the candidate with the lowest score
+[@friston2017activeinference]. This yields a category-informed instruction
+ordering compared with left-to-right scanning. Its acquisition boundary differs
+from that of the prospective sensor Agent specified above.
 
 We retain two explicitly named epistemic quantities. The primary corpus policy
 uses the *realized* information gain of the category already decoded for a
@@ -931,7 +930,7 @@ enumeration is recorded as `{{ACTIVE_INFORMATION_EXACT}}`; the frontier is
 visualized in [@fig:active-information-frontier]. That information
 frontier uses model-derived unit costs and is therefore a
 mechanism result, not a wall-clock law. The measured-cost receipt in
-Section @sec:measured-sensing is a separate, deterministic/calibrated layer;
+the measured-sensing section below is a separate, deterministic/calibrated layer;
 neither artifact supports a universal cost claim or a policy guarantee outside
 the finite declared family.
 
@@ -1164,11 +1163,16 @@ supplies a decoding/API boundary, Unicorn supplies bounded execution, and the
 Lean fragment supplies independently checked algebra for a much smaller closed
 subset [@intel_sdm;@capstone;@unicorn;@lean_reference].
 
-```{#lst:normalized_ir .text caption="Normalized assembly intermediate representation and explicit unsupported boundary used by the source-bound correspondence layer."}
-pc      op        dst       src/imm       flags read/write       memory/target
-0x1000  MOV       RAX       1             -- / RAX              none
-0x1005  ADD       RAX       2             CF,ZF,SF,OF / same    none
-0x1009  JCC       --        target        ZF / --               bounded internal target
+```{#lst:normalized_ir .text caption="Illustrative normalized instruction records; the generated receipt retains the full source-bound correspondence and unsupported boundary."}
+0x1000  MOV  RAX <- 1
+  flags: preserved
+  memory/target: none
+0x1005  ADD  RAX <- RAX + 2
+  flags written: CF, PF, AF, ZF, SF, OF
+  memory/target: none
+0x1009  JCC  if ZF: target
+  flags read: ZF; flags preserved
+  memory/target: bounded internal target
 ```
 
 ## Formal correspondence and transfer receipts {#sec:formal-correspondence}

@@ -107,9 +107,10 @@ def assembly_listing_markdown(payload: dict[str, object]) -> str:
     if not isinstance(rows, list) or not rows:
         raise ValueError("assembly payload must contain instruction rows")
     lines = [
-        f"; source fixture: {sample_name} | architecture: {architecture}",
-        "; static bytes and mnemonics: Capstone; executed addresses: Unicorn",
-        "; register access: Capstone detail; category and observation_id are model inputs",
+        f"; fixture: {sample_name} | architecture: {architecture}",
+        "; Capstone: static bytes, mnemonics, register access",
+        "; Unicorn: executed addresses",
+        "; Model inputs: category and observation_id",
     ]
     for raw_row in rows:
         if not isinstance(raw_row, dict):
@@ -124,20 +125,14 @@ def assembly_listing_markdown(payload: dict[str, object]) -> str:
             ",".join(str(value) for value in raw_row.get("registers_written", []))
             or "-"
         )
-        # Keep the source-bound listing legible in the manuscript's fixed-width
-        # block.  The evidence annotation is deliberately wrapped onto a
-        # continuation line rather than allowing a long category/register row
-        # to run past the PDF text area and become visually clipped.
         lines.append(
             f"{str(raw_row['address_hex']):>8}  "
             f"{str(raw_row['bytes_hex']):<17}  "
             f"{instruction}"
         )
-        lines.append(" " * 29 + f"; reads={reads} | writes={writes}")
+        lines.append(f"  ; reads={reads} | writes={writes}")
         lines.append(
-            " "
-            * 29
-            + f"; category={raw_row['category']} | obs_id={raw_row['observation_id']} | "
+            f"  ; category={raw_row['category']} | obs_id={raw_row['observation_id']} | "
             f"executed={executed}"
         )
     return "\n".join(lines)
