@@ -1220,7 +1220,7 @@ retaining their compiler diagnostics. The
 separate licensed-source receipt is `{{EXTERNAL_SOURCE_STATUS}}`; it therefore
 cannot support an application-facing effectiveness claim. A target absent from
 the local compiler is a missing capability, not evidence about that
-architecture. This is the correct interpretation of the compiler matrix in
+architecture. This is the correct interpretation of the compiler capability summary in
 [@fig:compiler-transfer].
 
 The separate licensed-source receipt is `{{EXTERNAL_SOURCE_ARTIFACT}}` with
@@ -1496,10 +1496,11 @@ and offline instructions are part of the hashed public bundle
 (`{{REPLICATION_PUBLIC_BUNDLE_SHA256}}`). Replay is local and no-network; the
 protected receipt separately records the current endpoint as
 `{{INDEPENDENT_REPLAY_STATUS}}` in the `{{INDEPENDENT_REPLAY_CONTROL_SCOPE}}`
-scope. When a replay is recorded, it uses `{{INDEPENDENT_REPLAY_MODEL}}` over
-`{{INDEPENDENT_REPLAY_ROW_COUNT}}` protected-score rows, with
-`{{INDEPENDENT_REPLAY_NETWORK_DISABLED}}` recorded for the network-disabled
-boundary; replay of the frozen interface is evidence about the frozen interface,
+scope. The receipt retains separate model (`{{INDEPENDENT_REPLAY_MODEL}}`),
+protected-score row-count (`{{INDEPENDENT_REPLAY_ROW_COUNT}}`), and
+network-disabled (`{{INDEPENDENT_REPLAY_NETWORK_DISABLED}}`) fields. A completed
+receipt requires observed values for these fields and a separately controlled-run
+attestation. Replay of the frozen interface is evidence about the frozen interface,
 not an independent physical-machine run or an independent reimplementation.
 The separation contract is stronger than omitting a visible `label` key. Public
 record identifiers are derived only from public sequence/features, and the
