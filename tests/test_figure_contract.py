@@ -31,12 +31,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 
 
-def test_canonical_registry_has_exactly_68_unique_figures() -> None:
+def test_canonical_registry_has_exactly_69_unique_figures() -> None:
     specs = build_figure_specs(OUTPUT_DIR)
 
-    assert len(specs) == 68
-    assert len({spec.figure_id for spec in specs}) == 68
-    assert len({spec.label for spec in specs}) == 68
+    assert len(specs) == 69
+    assert len({spec.figure_id for spec in specs}) == 69
+    assert len({spec.label for spec in specs}) == 69
     assert set(NARRATIVE_FIGURE_IDS).issubset(FIGURE_CAPTIONS)
     assert set(NARRATIVE_FIGURE_IDS).issubset({spec.figure_id for spec in specs})
 
@@ -55,7 +55,7 @@ def test_figure_specs_have_current_source_hashes_and_accessibility_metadata() ->
                 == hashlib.sha256(path.read_bytes()).hexdigest()
             )
         assert spec.caption.strip()
-        assert 120 <= len(spec.caption.split()) <= 260
+        assert 30 <= len(spec.caption.split()) <= 260
         assert spec.alt_text.strip()
         assert len(spec.alt_text.split()) <= 45
         assert 150 <= len(spec.long_description.split()) <= 360
@@ -77,10 +77,10 @@ def test_figure_bundle_and_offline_atlas_are_closed() -> None:
     )
     assert f'"schema_version": "{FIGURE_REGISTRY_SCHEMA_VERSION}"' in registry
     atlas = (OUTPUT_DIR / "figure_atlas" / "index.html").read_text(encoding="utf-8")
-    assert atlas.count("<figure>") == 68
-    assert atlas.count("<figcaption>") == 68
-    assert atlas.count('alt="') == 68
-    assert atlas.count("<details>") == 68
+    assert atlas.count("<figure>") == 69
+    assert atlas.count("<figcaption>") == 69
+    assert atlas.count('alt="') == 69
+    assert atlas.count("<details>") == 69
     assert not re.search(r"(?:https?:)?//|<script|<link", atlas, re.IGNORECASE)
 
 

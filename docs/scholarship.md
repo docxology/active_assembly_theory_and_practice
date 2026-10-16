@@ -138,7 +138,26 @@ The JSTOR landing title resolves, but its detailed metadata was not accessible
 in this follow-up; the prior record and citation remain rather than inferring
 verification from an unavailable page.
 
-## Maintenance boundary
+## 2026-10-15 executable-model and interpretation review
+
+The implemented GNN software is now cited at its exact source revision
+`46459949944e3217f8a6a804d4ff8c52829ef275`, using the upstream
+[citation file](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation/blob/46459949944e3217f8a6a804d4ff8c52829ef275/CITATION.cff).
+The software version is 4.1.0; the model language declaration remains GNN v1.1.
+The concept DOI does not identify an archived copy of this exact revision.
+The software citation supports parser attribution, while local receipts establish
+the stricter admitted profile and actual execution.
+
+The pymdp role now includes the prospective GNN Agent as well as its separate
+comparison diagnostic. The implementation's utility-plus-state-information-gain
+objective and negative-EFE sign were checked against the
+[versioned source](https://github.com/infer-actively/pymdp/blob/v1.0.2/pymdp/control.py).
+The Holm ledger role now correctly identifies a retrospective correction;
+adjustment supplies neither valid exchangeability assumptions nor prospective
+registration. Transformation-family identifiers are distinguished from their
+dependent authored template lineages throughout the main interpretation.
+
+## Current maintenance boundary
 
 Dated metadata reviews above apply to their recorded source sets. Current
 ledger/BibTeX/manuscript closure is generated and validated rather than inferred

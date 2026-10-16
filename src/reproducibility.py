@@ -798,6 +798,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
+        path="output/figures/gnn_sensing.png",
+        artifact_type="figure",
+        generated_by="src.visual_atlas.plot_gnn_sensing",
+        claim_ids=("CLM-009",),
+        validation_checks=("figure_gnn_sensing", "figure_accessibility_contract"),
+    ),
+    ArtifactManifestTarget(
         path="output/figures/observation_semantics.png",
         artifact_type="figure",
         generated_by="src.visual_atlas.plot_observation_semantics",

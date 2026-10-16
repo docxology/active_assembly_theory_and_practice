@@ -35,14 +35,29 @@ and the typed trace feature matrix in [@fig:trace-feature-matrix].
 
 The canonical categorical specifications are `configs/gnn/passive_phase.md`
 and `configs/gnn/fixture_sensor.md`. The configured Generalized Notation
-Notation implementation parses their numeric tensors before a strict local
+Notation implementation [@friedman2026gnn] parses their numeric tensors before a strict local
 compiler admits the supported finite profile. The compiler checks declared
 axes, distributions, dependencies and policy enumeration; the upstream
 revision, imported-source hashes and tensor digest accompany each study.
 A is observation likelihood, B is action-conditioned transition, C contains
 dimensionless utilities, D is the initial prior and E is the policy prior.
-The first observation conditions D before any transition. The categorical
-Python and native Julia paths consume the same parameter export.
+The first observation conditions D before any transition. The passive
+categorical Python and native Julia paths consume the same parameter export;
+the prospective sensor model executes through pymdp.
+
+For this fixed-parameter profile, each policy's negative expected free energy
+is the finite-horizon sum of expected dimensionless utility and modality-wise
+expected state information gain. With policy precision $\gamma$ and policy
+prior $E$, the Agent uses
+
+$$q(\pi)=\operatorname{softmax}_{\pi}\!\left[\gamma\,(-G(\pi))+\log E(\pi)\right].$$
+
+Larger returned negative-EFE scores are favored; the reported EFE reverses
+their sign. Parameter learning and parameter information gain are disabled.
+This is the predictive policy objective exercised through pymdp, rather than
+the adaptive dynamic-programming optimum of the separate finite sensing
+experiment [@heins2022pymdp]. The executable software version and admitted
+model-language declaration are recorded separately in the upstream receipt.
 
 In the bounded sensor POMDP, the real Agent infers states and policies and
 selects an action before the environment performs the selected static or
@@ -52,6 +67,8 @@ Independent finite references and A/B/C/D/E interventions test implementation
 behavior. These authored toy models do not establish learned semantics,
 general reverse engineering or external validity. Their policy EFE scale is
 distinct from both native Bethe free-energy diagnostics below.
+
+### Instruction evidence and bounded state
 
 The byte fixture is an instruction-semantics test case, not an opaque binary
 sample. In x86-64, an instruction is a variable-length encoding whose bytes,
@@ -1289,9 +1306,9 @@ software correctness diagnostic, not a performance interval.
 
 For primary metric $m$ and model $k$, balanced accuracy is the mean of positive
 and negative recall, while macro-F1 averages the F1 values for both quotient
-classes. Let $u$ index source families and let $\widehat\theta_{k,m}^{(b)}$
+classes. Let $u$ index held-out transformation-family identifiers and let $\widehat\theta_{k,m}^{(b)}$
 be the metric after resampling whole families with replacement. Resampling the
-source family, rather than treating repeated intervention rows as independent,
+family identifier, rather than treating repeated intervention rows as independent,
 is the declared dependence safeguard; the small-cluster caveat remains explicit
 [@cameron2008clusterbootstrap]. These named transformation families share
 authored template lineages; disjoint identifiers do not establish independent
@@ -1311,7 +1328,7 @@ primary metrics. The five-percentage-point practical margin is retained. Protoco
 percentile bootstrap intervals from significance testing: an uncentered
 bootstrap fraction below zero is a descriptive tail fraction, not a null
 p-value. The paired randomization diagnostic swaps all predictions in each
-source family between the model and baseline, recomputes both metrics, and
+held-out family between the model and baseline, recomputes both metrics, and
 uses inclusive ties with $(b+1)/(B+1)$ for $B$ Monte Carlo draws
 [@phipson2010permutation]. Its null assumes prediction-block exchangeability
 within families, conditional on the fitted models. It does not include
@@ -1422,7 +1439,7 @@ dynamic programming over every positive-probability sensor outcome. The
 expected-information component follows the classical view of an experiment as
 changing uncertainty under a stated prior, while the cost layer is separately
 audited [@lindley1956information]. The implemented policy is certified only when its objective equals the oracle
-within the preregistered five-percent tolerance. The current policy is itself
+within the declared five-percent tolerance. The current policy is itself
 the exact finite dynamic-programming oracle, so its zero gap is a certificate
 of the enumerated benchmark—not of an infinite-horizon policy, a physical
 instrument, or a universal active-sensing law. The deterministic/calibrated
@@ -1431,7 +1448,7 @@ The same receipt evaluates fixed-first, greedy-information, seeded-random, and
 abstaining policies under the same finite outcome tree. Their regret and
 deterministic cost vectors are comparison diagnostics; the oracle is an
 inadmissible reference and the non-oracle policies receive no certificate
-unless they independently satisfy the preregistered tolerance.
+unless they independently satisfy the declared tolerance.
 
 ![{{FIGURE_SENSOR_COSTS_CAPTION}}]({{FIGURE_SENSOR_COSTS_PATH}}){#fig:sensor-costs width=100%}
 

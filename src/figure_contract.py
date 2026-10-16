@@ -263,6 +263,11 @@ def _base_artifacts(stem: str) -> tuple[str, ...]:
 
 def _narrative_artifacts(stem: str) -> tuple[str, ...]:
     mapping = {
+        "gnn_sensing": (
+            "output/gnn/figure_inputs.json",
+            "output/gnn/sensor_model.json",
+            "output/gnn/controls.json",
+        ),
         "research_architecture": ("output/data/research_protocol.json",),
         "assembly_state_plate": (
             "output/data/assembly_listing.json",
@@ -335,7 +340,31 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
     typed = _load(data_dir / "typed_observations.json")
     replication = _load(data_dir / "replication_manifest.json")
     protocol_hash = _safe_value(protocol.get("protocol_sha256"), "not observed")[:12]
-    if stem == "research_architecture":
+    if stem == "gnn_sensing":
+        inputs = _load(output_dir / "gnn/figure_inputs.json")
+        model = _load(output_dir / "gnn/sensor_model.json")
+        choices = model["actions"][1]
+        policy = inputs["sensor_policies"]
+        selected = choices[inputs["sensor_actions"][0][1]]
+        caption = (
+            "Prospective sensing on two transparent fixtures under the same fixed GNN model. "
+            f"Panel A shows the first policy probabilities: {', '.join(f'{name} = {value:.3f}' for name, value in zip(choices, policy, strict=True))}. "
+            f"The deterministic Agent selects {selected} before acquisition. Panel B shows "
+            "the probability of the accumulator hypothesis before acquisition and after "
+            "the first dynamic result, separately for the accumulator and bitwise fixtures. "
+            "The two runs share the initial prior and first decision; only acquired evidence "
+            "separates their subsequent beliefs. Lines connect two recorded belief states, "
+            "not a continuous learning trajectory. These probabilities condition on authored "
+            "likelihoods and illustrative dimensionless utilities; they are not uncertainty "
+            "intervals, discovered semantics, or an external performance estimate "
+            "[@friedman2026gnn; @heins2022pymdp]."
+        )
+        alt = "Three first-decision policy probabilities and two fixture-conditioned posterior paths sharing the same prior, then separating after dynamic acquisition."
+        long = (
+            caption
+            + " The horizontal stages in panel B are decision-time posteriors: the first precedes any fixture acquisition, while the second conditions on the preceding dynamic result. The second action does not supply evidence to its own preceding belief. Evaluation fixture names label plotted runs only after decisions. Panel A reports the Agent policy distribution, not repeated-action frequencies; deterministic selection chooses its highest-probability action. The complete source and tensor digests remain in the linked study receipts."
+        )
+    elif stem == "research_architecture":
         caption = (
             f"The research architecture maps the protocol {protocol.get('protocol_id', 'not observed')} "
             f"from source bytes through Capstone static decoding, normalized instruction representation, "
@@ -472,20 +501,21 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
     elif stem == "statistical_hierarchy":
         stats = protocol.get("statistics_contract", {})
         caption = (
-            f"The statistical hierarchy contains {classifier.get('family_count', 'not observed')} source families, "
+            f"The statistical hierarchy contains {classifier.get('family_count', 'not observed')} transformation-family identifiers, "
             f"{classifier.get('row_count', 'not observed')} pair rows, and {len(classifier.get('interventions', []))} "
-            f"classifier interventions in the current receipt. Projects and families contain revisions; revisions "
-            "contain transformation pairs; pairs are evaluated under interventions; interventions produce traces "
-            "with dependent instruction steps. The primary sampling unit is the source family, and the declared "
+            f"classifier interventions in the current receipt. Family identifiers group transformation pairs; "
+            "pairs are evaluated under interventions, producing traces with dependent instruction steps. "
+            "Identifiers are disjoint across splits, but authored template lineages are shared. The resampling unit "
+            "is the held-out family identifier, not an independently sampled source lineage. The declared "
             f"cluster-bootstrap contract uses a {stats.get('confidence_level', 'not observed')} confidence level. "
             "Training, development, and test families are fixed before fitting, with selection and stopping "
             "restricted to development data. The visual explains the dependence structure and interval meaning; "
             "it does not license instruction-step pseudoreplication or turn row counts into independent evidence."
         )
-        alt = "Nested project, family, revision, pair, intervention, trace, and instruction-step hierarchy with family-level bootstrap and fixed splits."
+        alt = "Authored lineages, split-disjoint family identifiers, pairs and dependent steps; family resampling and shared-lineage limitations are explicit."
         long = (
             caption
-            + " The upper chain is a containment relationship, not a causal model. The lower boundary identifies the unit at which uncertainty is resampled. A family-level interval asks how the evaluation behaves across source families, while a row-level interval would be overly optimistic if transformations share source structure. The split boxes expose the selection boundary: the test family is not consulted for model tuning."
+            + " The chain describes the generated inventory, not independent draws from a population. No revision or instruction count is invented when that denominator is absent. Family-resampling intervals retain rows within each sampled identifier, but they do not account for dependence between different identifiers with a shared authored template. Conditional randomization separately assumes exchangeability at the swapping unit. The test identifiers are not consulted for model tuning; that selection boundary does not create lineage-disjoint evaluation or prospective registration."
         )
     elif stem == "replay_failure_audit":
         external = replay.get("external_receipt", {})
@@ -600,7 +630,6 @@ def _dynamic_narrative_copy(output_dir: Path, stem: str) -> dict[str, str]:
         "alongside the rendered visual so that a caption cannot silently drift "
         "from its producer."
     )
-    caption += caption_suffix
     long += caption_suffix + long_suffix
     return {"caption": caption, "alt_text": alt, "long_description": long}
 
@@ -609,6 +638,15 @@ def _metadata_for(stem: str) -> tuple[str, str, str, str, str, str, str]:
     """Return section, placement, question, title, subtitle, chart family, status."""
 
     rows: dict[str, tuple[str, str, str, str, str, str, str]] = {
+        "gnn_sensing": (
+            "Results",
+            "main",
+            "Does acquired evidence follow policy selection and separate fixture beliefs?",
+            "Prospective GNN sensing",
+            "Fixed authored models; action precedes acquisition.",
+            "policy bars and posterior trajectories",
+            "computational",
+        ),
         "research_architecture": (
             "Introduction",
             "main",
@@ -832,14 +870,20 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
             )
             metrics = "counts, statuses, or receipt-backed metrics shown in the visual"
             uncertainty = "exact/status visual; inferential intervals are not added unless the source receipt supplies them"
-            if stem == "statistical_hierarchy":
-                population = "quotient classifier source families, revisions, pair rows, interventions, traces, and steps"
-                hierarchy = "project/family → revision → pair → intervention → trace → instruction step"
-                split = "family-disjoint training/development/test split fixed before fitting"
-                metrics = "family, row, intervention, and step counts"
-                uncertainty = (
-                    "family-clustered bootstrap at the declared confidence level"
+            if stem == "gnn_sensing":
+                population = (
+                    "two transparent owned fixtures under the same GNN sensor POMDP"
                 )
+                hierarchy = "model → fixture run → decision → selected acquisition → next posterior"
+                split = "not a fitted benchmark; fixture identity withheld from policy selection"
+                metrics = "policy and posterior probabilities; recorded sensor actions"
+                uncertainty = "conditional probabilities under fixed authored tensors; no sampling interval"
+            elif stem == "statistical_hierarchy":
+                population = "frozen quotient family identifiers, pair rows, interventions, traces, and steps"
+                hierarchy = "shared authored template lineage → family identifier → pair → intervention → trace → instruction step"
+                split = "disjoint family identifiers with shared authored lineages; development-only selection"
+                metrics = "family, row, intervention, and step counts"
+                uncertainty = "conditional family-bootstrap percentiles; shared-lineage dependence is not resolved"
             elif stem == "replay_failure_audit":
                 population = "one protected score over the frozen public replay bundle"
                 hierarchy = "bundle → public row → prediction → protected score"
@@ -942,8 +986,9 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
             evidence_status = _EVIDENCE_STATUS_OVERRIDES.get(stem, "descriptive")
             artifacts = _base_artifacts(stem)
             caption = str(row["caption"])
-            if len(caption.split()) < 120:
-                caption += (
+            accessible_context = caption
+            if len(accessible_context.split()) < 120:
+                accessible_context += (
                     " The visual is generated from the named receipt and is intended to expose "
                     "the measurement contract, not to enlarge the scientific population beyond "
                     "the recorded fixture or split. Its marks, axes, and annotations retain the "
@@ -956,7 +1001,7 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
                 )
             alt_text = str(row["alt_text"])
             long_description = (
-                caption
+                accessible_context
                 + " The source-bound registry records the exact input paths and hashes, the population, the sampling unit, and the interpretation boundary. Missing, unseen, unsupported, unavailable, excluded, and underpowered states remain explicit. A diagnostic visual can document a method or failure without establishing a population-level performance claim."
             )
             claims = tuple(str(value) for value in row.get("claim_ids", ("CLM-009",)))
@@ -1199,9 +1244,6 @@ def write_figure_bundle(
     root = _root_for(output_dir)
     output_dir = root / "output"
     requested = {str(value).lower() for value in formats}
-    # The nine narrative figures are always regenerated from current receipts
-    # when a bundle is requested.  Their direct vector exports are produced by
-    # the plotting module; legacy figures receive an explicit raster fallback.
     write_visual_atlas_figures(output_dir)
     missing = [
         stem
@@ -1324,10 +1366,12 @@ def validate_figure_bundle(output_dir: Path) -> list[str]:
             errors.append(f"{spec.figure_id}: missing long description")
         if not spec.caption.strip():
             errors.append(f"{spec.figure_id}: missing caption")
-        if not 120 <= len(spec.caption.split()) <= 260:
+        if not 30 <= len(spec.caption.split()) <= 260:
             errors.append(
                 f"{spec.figure_id}: caption word count={len(spec.caption.split())}"
             )
+        if "The visual is generated from the named receipt" in spec.caption:
+            errors.append(f"{spec.figure_id}: repeated reader-caption boilerplate")
         if not 150 <= len(spec.long_description.split()) <= 360:
             errors.append(
                 f"{spec.figure_id}: long description word count={len(spec.long_description.split())}"

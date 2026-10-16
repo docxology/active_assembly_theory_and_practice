@@ -29,7 +29,7 @@ unseen, static, and dynamic states; (ii) a width-aware normalized x86-64 machine
 state with explicit register, flag, memory, stack, control-flow, and unsupported
 states; (iii) a Python/Capstone/Unicorn/Lean correspondence surface for a declared
 user-mode integer subset, with theorem-backed and computational checks separated;
-(iv) a source-family-disjoint quotient benchmark with a co-primary classifier
+(iv) a quotient benchmark with disjoint transformation-family identifiers and a co-primary classifier
 portfolio, calibration, clustered uncertainty, and leakage controls; (v) a pinned,
 permissively licensed, static-only source-contract track that records source,
 compiler, object, and disassembly provenance without executing external binaries;
@@ -46,8 +46,9 @@ fixture uses hand-authored phase states and fixed likelihoods; the temporal
 corpus grows to `{{TEMPORAL_FIXTURE_COUNT}}` transparent fixtures under a
 frozen `{{TEMPORAL_SPLIT_SUMMARY}}` training/development/held_out family split
 but remains hand-labelled;
-the larger quotient benchmark is still synthetic and its observations are
-dependent within traces; the external track provides source contracts and
+the larger quotient benchmark is still synthetic, its family identifiers share
+authored template lineages across splits, and observations are dependent within
+traces; the external track provides source contracts and
 static coverage rather than behavioral labels; and the formal layer covers a
 declared subset rather than the complete architecture. These constraints are
 part of the result: the package makes the assumptions, failure states, and
@@ -70,7 +71,7 @@ claim.
 | --- | --- | --- |
 | Static and dynamic fixture path | Real Capstone decoding and bounded Unicorn instrumentation on transparent repository-owned inputs | Arbitrary-binary execution, complete path recovery, and general reverse engineering |
 | Normalized state and Lean fragment | A width-aware, bounded operational contract and selected kernel-checked algebra | Complete x86-64 semantics, ABI behavior, exceptions, and unrestricted aliasing |
-| Quotient and model portfolio | Source-bound finite labels, family-disjoint evaluation, calibration, and clustered diagnostics | Universal identifiability, population-level semantic recovery, and post-hoc model selection |
+| Quotient and model portfolio | Source-bound finite labels, disjoint family identifiers, calibration, and conditional clustered diagnostics | Independent source-lineage generalization, universal identifiability, and post-hoc model selection |
 | External and replay surfaces | Provenance, static-only acquisition safeguards, and the recorded controlled replay outcome | Application effectiveness, independent physical replication, and independent reimplementation |
 | Document and receipt pipeline | Reproducible source-to-render lineage with explicit unavailable and negative states | Peer review, adoption, and scientific validity inferred from engineering gates |
 

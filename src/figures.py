@@ -6541,6 +6541,13 @@ def plot_artifact_receipt_closure(
 # match the generated PNG stem under ``output/figures/``.
 
 FIGURE_CAPTIONS: dict[str, str] = {
+    "gnn_sensing": (
+        "Prospective sensing under the executable GNN model. Policy probabilities "
+        "are computed before acquisition; paired fixture runs start from the same "
+        "prior and diverge only after actual dynamic evidence is obtained. Fixed "
+        "authored likelihoods and utilities define this finite demonstration, not "
+        "learned program semantics or population confidence intervals."
+    ),
     "generative_model": (
         "Conceptual graph of the discrete generative model and its active-selection extension. "
         "The left side shows hidden phases linked by transition B and emitting categorical observations "
@@ -7496,6 +7503,7 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
 
 
 FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
+    "gnn_sensing": ("friedman2026gnn", "heins2022pymdp"),
     "generative_model": ("friston2017activeinference", "parr2022activeinference"),
     "observation_informativeness": ("friston2017activeinference",),
     "model_evidence": ("kass1995bayes", "rabiner1989tutorial"),

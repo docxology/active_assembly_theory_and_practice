@@ -1,5 +1,26 @@
 # Results {#sec:results}
 
+## Prospective inference from executable GNN models {#sec:gnn-results}
+
+The sensor experiment tests acquisition order as well as numerical inference.
+Both fixtures enter the first decision with the same missing-observation state,
+prior, model, and policy distribution. The Agent chooses the dynamic sensor
+before its fixture-specific result is available. The next posterior separates
+the fixture hypotheses ([@fig:gnn-sensing]); the fixture names in the figure
+are evaluation labels and are not supplied to policy inference. A/B/C/D/E
+interventions, fixed-sensor and uniform-policy controls, and independent finite
+calculations are recorded in `output/gnn/controls.json`.
+
+![{{FIGURE_GNN_SENSING_CAPTION}}]({{FIGURE_GNN_SENSING_PATH}}){#fig:gnn-sensing width=100%}
+
+This result establishes that the declared model is parsed, exercised, and
+linked to prospective acquisition on the owned fixtures. The hand-authored
+likelihood deliberately makes dynamic evidence informative. Neither the
+resulting near-certain conditional belief nor agreement with an independent
+calculation measures generalization to unseen programs. The separate exact
+dynamic-programming study below evaluates a different finite decision problem;
+its optimality certificate is not a certificate for this predictive Agent.
+
 The canonical fixture produces `{{INSTRUCTION_COUNT}}` decoded instructions and a
 bounded Unicorn trace with final `RAX = {{FINAL_RAX}}`. The inference stream
 contains `{{FREE_ENERGY_STEPS}}` finite pymdp comparison diagnostics, one per
@@ -242,6 +263,24 @@ is reported in `{{CORPUS_COVERAGE_ARTIFACT}}` and [@fig:corpus-coverage].
 
 ### Statistical reporting contract {#sec:statistical-reporting}
 
+The reported quantities answer different questions and should not share an
+interpretation merely because each is numeric:
+
+| Quantity | Evaluation unit and interpretation | Limit |
+| --- | --- | --- |
+| GNN policy and posterior probability | A declared policy or hidden-state hypothesis under the fixed authored model | Conditional model probability, not an empirical confidence interval |
+| Temporal hit proportion and Wilson interval | Scored instruction steps nested within authored fixtures | Descriptive pooled accuracy; steps are dependent |
+| Quotient balanced accuracy and macro-F1 | Pair predictions on held-out transformation-family identifiers | Conditional finite-inventory endpoint; authored lineages cross splits |
+| Family-bootstrap interval | Whole held-out identifiers resampled with their rows | Does not model dependence between shared lineages or model-refitting uncertainty |
+| Paired randomization diagnostic | Complete model/baseline prediction vectors swapped within held-out identifiers | Requires exchangeability at that unit; retrospective analysis cannot establish superiority |
+| Fixed-model adequacy interval | Same-length sequences simulated from fixed tensors | Model-checking distribution, not population or parameter-posterior uncertainty |
+
+Implementation agreement, model probability, descriptive performance,
+conditional randomization, and independent replication are separate evidence
+types. In particular, neither a large row count nor multiplicity adjustment
+creates an independent source sample [@cameron2008clusterbootstrap;
+@holm1979multiple].
+
 For decoder $m$, the primary accuracy is the pooled hit proportion
 
 $$
@@ -451,7 +490,7 @@ The complete policy records and revealed values are available in
 
 ## Open-roadmap evidence tranche {#sec:open-roadmap-results}
 
-The new co-primary quotient endpoint is a source-family-held-out portfolio, not
+The co-primary quotient endpoint is a portfolio evaluated on held-out family identifiers, not
 a post-hoc winner selection. The benchmark contains
 `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` families and
 `{{QUOTIENT_CLASSIFIER_ROW_COUNT}}` pair rows under the training/development/

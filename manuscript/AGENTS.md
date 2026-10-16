@@ -30,7 +30,7 @@
 - `{{QUOTIENT_PROTOCOL_ARTIFACT}}` links the first bounded P3
   equivalence/near-miss witness artifact; it must not be described as a latent
   semantic-identifiability result.
-- `{{REPRESENTATION_BENCHMARK_*}}` links the source-family-disjoint P3
-  benchmark and exposes bounded protocol diagnostics, including the deliberately
+- `{{REPRESENTATION_BENCHMARK_*}}` links the P3 benchmark with disjoint family
+  identifiers and exposes bounded protocol diagnostics, including the deliberately
   insufficient intervention negative control; it must not be described as a
   fitted semantic model, universal separation law, or identifiability result.

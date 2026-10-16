@@ -14,7 +14,7 @@ program understanding.
 The limitation is equally explicit. The canonical phase fixture is small, its
 vocabulary is hand-authored, the headline Active Inference comparison uses fixed
 likelihood and transition parameters, and steps within a trace are dependent. The
-source-family-disjoint quotient benchmark increases the number of synthetic
+quotient benchmark with disjoint family identifiers increases the number of synthetic
 families and tests a co-primary model portfolio, but its held-out scores remain
 bounded benchmark endpoints rather than evidence of population-level semantic
 identifiability. The supervised leave-one-fixture-out fit estimates tensors
@@ -66,8 +66,14 @@ resolve.
 This is the intended relationship to the Free Energy Principle
 [@parr2022activeinference]: assembly traces become sensory evidence for a
 generative model whose beliefs are updated under an explicit variational
-objective. RxInfer is the source of Bethe Free Energy values in this version;
-pymdp remains useful for the discrete comparison baseline. The source-bound
+objective. The actual GNN parser supplies the admitted model tensors, pymdp
+executes both the comparison diagnostic and prospective sensor Agent, and
+RxInfer supplies separately scoped native Bethe free-energy diagnostics
+[@friedman2026gnn; @heins2022pymdp; @bagaev2023rxinfer]. The sensor experiment
+establishes a causal acquisition order: policy selection precedes the chosen
+Capstone or Unicorn observation. It does not establish that the authored
+fixture hypotheses are discovered semantics or that the model-derived utility
+is a measured physical cost. The source-bound
 external track adds a complementary validity surface: pinned permissively licensed
 revisions are compiled and decoded locally, source-contract edits are recorded,
 and emitted objects remain outside execution. Its accepted rows establish a

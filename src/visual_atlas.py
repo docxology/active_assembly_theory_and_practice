@@ -29,6 +29,7 @@ from .figures import GRID, INK, LIGHT, MUTED, PALETTE, _style_axes
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 NARRATIVE_FIGURE_IDS = (
+    "gnn_sensing",
     "research_architecture",
     "assembly_state_plate",
     "quotient_construction",
@@ -1314,14 +1315,14 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
 
     levels = (
         (
-            "project / source family",
-            _text(payload.get("family_count"), "not observed"),
-            PALETTE[0],
+            "authored template lineage",
+            "shared across splits",
+            PALETTE[1],
         ),
         (
-            "source revision",
-            _text(payload.get("revision_count"), "not observed"),
-            PALETTE[1],
+            "transformation-family identifier",
+            _text(payload.get("family_count"), "not observed"),
+            PALETTE[0],
         ),
         (
             "transformation pair",
@@ -1333,7 +1334,7 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
             _text(payload.get("intervention_count"), "not observed"),
             PALETTE[4],
         ),
-        ("trace", _text(payload.get("trace_count"), "not observed"), PALETTE[3]),
+        ("trace", "dependent observations", PALETTE[3]),
         ("instruction step", _text(payload.get("step_count"), "not observed"), MUTED),
     )
     fig, axes = plt.subplots(
@@ -1351,15 +1352,16 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
     )
     for index, (label, count, color) in enumerate(levels):
         y = 5.30 - index * 0.82
-        _box(ax, (0.40, y), 2.72, 0.48, label, f"n = {count}", color + "31")
+        detail = f"n = {count}" if count.isdigit() else count
+        _box(ax, (0.40, y), 2.72, 0.48, label, detail, color + "31")
         if index < len(levels) - 1:
             ax.annotate(
                 "",
-                xy=(1.76, y - 0.26),
-                xytext=(1.76, y - 0.34),
+                xy=(1.76, y - 0.30),
+                xytext=(1.76, y - 0.04),
                 arrowprops={"arrowstyle": "-|>", "color": MUTED, "linewidth": 0.9},
             )
-            ax.text(2.00, y - 0.30, "contains", fontsize=6.7, color=MUTED, va="center")
+            ax.text(2.00, y - 0.17, "contains", fontsize=6.7, color=MUTED, va="center")
     ax.add_patch(
         Rectangle(
             (0.34, 0.18),
@@ -1368,7 +1370,6 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
             facecolor=PALETTE[0] + "13",
             edgecolor=PALETTE[0],
             linewidth=1.0,
-            hatch="..",
         )
     )
     ax.text(
@@ -1382,7 +1383,7 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
     ax.text(
         0.50,
         0.42,
-        f"bootstrap unit: {_text(payload.get('bootstrap_unit'), 'source family')} · {_text(payload.get('confidence_level'), 'not observed')} confidence",
+        f"bootstrap unit: {_text(payload.get('bootstrap_unit'), 'family identifier')} · {_text(payload.get('confidence_level'), 'not observed')} interval",
         fontsize=7.2,
         color=INK,
     )
@@ -1402,7 +1403,10 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
     ax.text(
         0.18,
         5.70,
-        "The split is declared before fitting; only development families control selection and stopping.",
+        _wrapped(
+            "The split is declared before fitting; only development identifiers control selection and stopping.",
+            65,
+        ),
         fontsize=7.2,
         color=MUTED,
         wrap=True,
@@ -1457,7 +1461,10 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
     ax.text(
         0.30,
         2.32,
-        "A larger row count improves coverage of the frozen benchmark, but it does not create additional independent source families.",
+        _wrapped(
+            "Identifiers are disjoint; authored lineages are shared. More rows do not create independent sources or population coverage.",
+            59,
+        ),
         fontsize=7.4,
         color=INK,
         wrap=True,
@@ -1475,7 +1482,7 @@ def plot_statistical_hierarchy(payload: Mapping[str, Any], output_path: Path) ->
     _title(
         fig,
         "Statistical hierarchy and leakage control",
-        "Counts describe the source-bound evaluation hierarchy; inference is clustered at the family level and model selection is restricted to development families.",
+        "Family identifiers define resampling and fitting boundaries; shared authored lineages prevent a population-independence interpretation.",
     )
     fig.subplots_adjust(left=0.03, right=0.98, bottom=0.04, top=0.84, wspace=0.32)
     return _save_multi(fig, output_path)
@@ -1906,8 +1913,111 @@ def plot_theorem_status_map(payload: Mapping[str, Any], output_path: Path) -> Pa
     return _save_multi(fig, output_path)
 
 
+def plot_gnn_sensing(
+    figure_inputs: Mapping[str, Any],
+    model: Mapping[str, Any],
+    controls: Mapping[str, Any],
+    output_path: Path,
+) -> Path:
+    """Show actual pre-acquisition policy probabilities and subsequent beliefs."""
+
+    policies = np.asarray(figure_inputs["sensor_policies"])
+    posterior = np.asarray(figure_inputs["sensor_posteriors"])
+    alternate = controls["withheld_invariance"]["bitwise_run"]["trajectory"]
+    other_posterior = np.asarray([row["posterior"][0] for row in alternate])
+    actions = model["actions"][1]
+    if (
+        policies.shape != (3,)
+        or posterior.shape != (2, 2)
+        or other_posterior.shape != (2, 2)
+    ):
+        raise ValueError(
+            "GNN sensing figure requires three policies and two decisions for two hypotheses"
+        )
+    for values in (policies, posterior, other_posterior):
+        if values.dtype.kind not in "fiu" or not np.isfinite(values).all():
+            raise ValueError("GNN sensing figure requires finite numeric probabilities")
+        if (
+            np.any(values < 0)
+            or np.any(values > 1)
+            or not np.allclose(values.sum(axis=-1), 1, atol=1e-6)
+        ):
+            raise ValueError("GNN sensing figure probabilities must be normalized")
+    if len(actions) != 3 or model["horizon"] != 1:
+        raise ValueError(
+            "GNN sensing figure supports the declared one-step sensor profile"
+        )
+    if not np.allclose(posterior[0], other_posterior[0], atol=1e-6):
+        raise ValueError(
+            "GNN sensing figure must start from the same hidden-fixture prior"
+        )
+    selected = [int(action[1]) for action in figure_inputs["sensor_actions"]]
+    if len(selected) != 2 or any(index not in range(3) for index in selected):
+        raise ValueError("GNN sensing figure has invalid selected sensor actions")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.7))
+    ax = axes[0]
+    bars = ax.bar(
+        actions,
+        policies,
+        color=[PALETTE[0], PALETTE[0], PALETTE[1]],
+        edgecolor=INK,
+        linewidth=0.7,
+    )
+    bars[0].set_hatch("//")
+    bars[1].set_fill(False)
+    for bar, probability in zip(bars, policies, strict=True):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            float(probability) + 0.025,
+            f"{probability:.3f}",
+            ha="center",
+            fontsize=9,
+            color=INK,
+        )
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Policy probability")
+    ax.set_title("A  Before fixture acquisition", loc="left", fontsize=11)
+    _style_axes(ax)
+
+    ax = axes[1]
+    for values, label, color, marker, line_style in (
+        (posterior, model["state_labels"][0][0], PALETTE[0], "o", "-"),
+        (other_posterior, model["state_labels"][0][1], PALETTE[1], "s", "--"),
+    ):
+        ax.plot(
+            [0, 1],
+            values[:, 0],
+            color=color,
+            marker=marker,
+            linestyle=line_style,
+            linewidth=1.5,
+            label=label,
+        )
+    ax.set_xticks([0, 1], ["Before acquisition", "After dynamic evidence"])
+    ax.set_ylim(-0.04, 1.04)
+    ax.set_ylabel("P(hypothesis = x86_accumulator)")
+    ax.set_title("B  Same prior, different acquired evidence", loc="left", fontsize=11)
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
+    _style_axes(ax)
+    _title(
+        fig,
+        "Prospective GNN sensing",
+        "Real Agent policy selection precedes actual bounded fixture acquisition; labels enter only the displayed evaluation.",
+    )
+    fig.text(
+        0.06,
+        0.025,
+        f"Recorded canonical actions: {actions[selected[0]]} then {actions[selected[1]]}. Fixed authored models; posterior probabilities are not population confidence intervals.",
+        fontsize=8,
+        color=MUTED,
+    )
+    fig.subplots_adjust(left=0.075, right=0.98, bottom=0.18, top=0.79, wspace=0.42)
+    return _save_multi(fig, output_path)
+
+
 def write_visual_atlas_figures(output_dir: Path) -> dict[str, str]:
-    """Write the nine narrative PNG/SVG/PDF figures from current receipts."""
+    """Write narrative PNG/SVG/PDF figures from current receipts."""
 
     data = output_dir / "data"
     fig_dir = output_dir / "figures"
@@ -1929,6 +2039,13 @@ def write_visual_atlas_figures(output_dir: Path) -> dict[str, str]:
     replication = _json(data / "replication_manifest.json")
 
     outputs: dict[str, str] = {}
+    plot_gnn_sensing(
+        _json(output_dir / "gnn/figure_inputs.json"),
+        _json(output_dir / "gnn/sensor_model.json"),
+        _json(output_dir / "gnn/controls.json"),
+        fig_dir / "gnn_sensing.png",
+    )
+    outputs["gnn_sensing"] = "output/figures/gnn_sensing.png"
     plot_research_architecture(protocol, fig_dir / "research_architecture.png")
     outputs["research_architecture"] = "output/figures/research_architecture.png"
     input_contract = replication.get("input_contract", {})
@@ -2020,8 +2137,8 @@ def write_visual_atlas_figures(output_dir: Path) -> dict[str, str]:
             "intervention_count": len(quotient_classifier.get("interventions", [])),
             "trace_count": quotient_classifier.get("row_count"),
             "step_count": "not recorded",
-            "bootstrap_unit": "source family",
-            "confidence_level": "95%",
+            "bootstrap_unit": "family identifier",
+            "confidence_level": f"{float(protocol['statistics_contract']['confidence_level']):.0%}",
             "split": "family-disjoint; development-only selection",
             "split_counts": split_counts,
         },
@@ -2063,6 +2180,7 @@ def write_visual_atlas_figures(output_dir: Path) -> dict[str, str]:
 
 __all__ = [
     "NARRATIVE_FIGURE_IDS",
+    "plot_gnn_sensing",
     "plot_assembly_state_plate",
     "plot_policy_certificate_frontier",
     "plot_quotient_construction",
