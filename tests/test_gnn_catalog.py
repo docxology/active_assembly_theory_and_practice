@@ -53,6 +53,14 @@ def test_every_model_has_actual_upstream_and_readable_graphs(catalog_root):
         "rendered_bytes",
         "missing_render_format",
         "render_path_association",
+        "schema",
+        "status",
+        "repository",
+        "adapter_sources",
+        "parameter_names",
+        "duplicate_instance",
+        "canonical_instance",
+        "canonical_parameters",
     ],
 )
 def test_corrupted_catalog_is_rejected_without_modifying_inputs(
@@ -99,8 +107,28 @@ def test_corrupted_catalog_is_rejected_without_modifying_inputs(
         rendered.write_bytes(b"invalid image")
     elif defect == "missing_render_format":
         row["rendered_artifacts"].pop(next(iter(row["rendered_artifacts"])))
-    else:
+    elif defect == "render_path_association":
         row["rendered_artifacts"] = {"../outside.png": "0" * 64}
+    elif defect == "schema":
+        payload["schema_version"] = "99"
+    elif defect == "status":
+        payload["status"] = "unchecked"
+    elif defect == "repository":
+        payload["upstream"]["repository"] = "https://example.org/foreign"
+    elif defect == "adapter_sources":
+        row["adapter_sources"] = ["src/foreign.py"]
+    elif defect == "parameter_names":
+        row["parameter_names"] = []
+    elif defect == "duplicate_instance":
+        row["instance_paths"] *= 2
+        row["instance_sha256"] *= 2
+        payload["numeric_instance_count"] += 1
+    else:
+        canonical = next(r for r in payload["models"] if r["name"] == "passive_phase")
+        if defect == "canonical_instance":
+            canonical["instance_paths"] = ["configs/gnn/fixture_sensor.md"]
+        else:
+            canonical["parameter_names"] = []
     path.write_text(json.dumps(payload))
     before = {
         p.relative_to(root): hashlib.sha256(p.read_bytes()).hexdigest()

@@ -321,7 +321,9 @@ def validate_inference_catalog(project_root: Path) -> list[str]:
         rows = payload["models"]
         expected = set(ADAPTERS) | {"passive_phase", "fixture_sensor"}
         if (
-            len(rows) != len(expected)
+            payload["schema_version"] != "1.0.0"
+            or payload["status"] != "validated_bounded"
+            or len(rows) != len(expected)
             or {row["name"] for row in rows} != expected
             or payload["model_profile_count"] != len(expected)
             or payload["source_hashes"] != _source_hashes()
@@ -330,6 +332,10 @@ def validate_inference_catalog(project_root: Path) -> list[str]:
         root = Path(os.environ["GNN_ROOT"]).resolve()
         if payload["upstream"]["revision"] != _git(root, "rev-parse", "HEAD"):
             raise GNNError("GNN_CATALOG_SOURCE: upstream revision mismatch")
+        if payload["upstream"]["repository"] != _git(
+            root, "remote", "get-url", "origin"
+        ):
+            raise GNNError("GNN_CATALOG_SOURCE: upstream repository mismatch")
         required_imports = {
             "src/gnn/parsers/markdown_parser.py",
             "src/gnn/visualization/graph/network_visualizations.py",
@@ -364,10 +370,26 @@ def validate_inference_catalog(project_root: Path) -> list[str]:
                 raise GNNError(
                     f"GNN_CATALOG_SOURCE: definition changed for {row['name']}"
                 )
-            if not row["instance_paths"] or len(row["instance_paths"]) != len(
-                row["instance_sha256"]
+            expected_adapters = (
+                ["src/gnn_experiments.py", "src/pymdp_runtime.py"]
+                if canonical
+                else [f"src/{name}" for name in ADAPTERS[row["name"]]]
+            )
+            if row["adapter_sources"] != expected_adapters:
+                raise GNNError("GNN_CATALOG_SOURCE: adapter association mismatch")
+            if (
+                not row["instance_paths"]
+                or len(row["instance_paths"]) != len(row["instance_sha256"])
+                or len(set(row["instance_paths"])) != len(row["instance_paths"])
             ):
                 raise GNNError("GNN_CATALOG_SOURCE: missing runtime instances")
+            if canonical and (
+                row["instance_paths"] != [expected_definition]
+                or row["instance_sha256"] != [row["definition_sha256"]]
+            ):
+                raise GNNError(
+                    "GNN_CATALOG_SOURCE: canonical instance association mismatch"
+                )
             for relative, digest in zip(
                 row["instance_paths"], row["instance_sha256"], strict=True
             ):
@@ -385,6 +407,7 @@ def validate_inference_catalog(project_root: Path) -> list[str]:
                     if (
                         binding.model_name != row["name"]
                         or binding.definition_sha256 != row["definition_sha256"]
+                        or sorted(binding.parameters) != row["parameter_names"]
                     ):
                         raise GNNError("GNN_CATALOG_SOURCE: instance profile mismatch")
                     if (
@@ -400,6 +423,8 @@ def validate_inference_catalog(project_root: Path) -> list[str]:
                 if (
                     not result.success
                     or semantic_graph(result.model.to_dict()) != row["graph"]
+                    or [p.name for p in result.model.parameters]
+                    != row["parameter_names"]
                 ):
                     raise GNNError(
                         "GNN_CATALOG_RENDER: canonical graph differs from source"

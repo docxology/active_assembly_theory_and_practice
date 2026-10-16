@@ -296,6 +296,27 @@ def test_replay_failure_audit_renders_not_observed_state(tmp_path: Path) -> None
 
     path = plot_replay_failure_audit({}, tmp_path / "replay_failure_audit.png")
     assert path.is_file() and path.stat().st_size > 0
+    from xml.etree import ElementTree
+
+    svg = path.parent / "vector/replay_failure_audit.svg"
+    tree = ElementTree.fromstring(svg.read_text())
+    panel = next(element for element in tree.iter() if element.get("id") == "axes_2")
+    assert not any(element.tag.endswith("}image") for element in panel.iter())
+    assert "Protected counts not observed" in svg.read_text()
+
+
+@pytest.mark.parametrize("bad", [None, -1, 0.5, float("nan")])
+def test_replay_confusion_panel_rejects_incomplete_or_invalid_counts(tmp_path, bad):
+    from src.visual_atlas import plot_replay_failure_audit
+
+    confusion = dict(
+        true_positive=1, false_negative=1, false_positive=1, true_negative=bad
+    )
+    with pytest.raises(ValueError, match="confusion counts"):
+        plot_replay_failure_audit(
+            {"protected_score": {"confusion_matrix": confusion}},
+            tmp_path / "invalid.png",
+        )
 
 
 def test_counterexample_search_figure_rejects_structural_drift(
@@ -408,6 +429,24 @@ def test_replay_failure_audit_renders_populated_score(tmp_path: Path) -> None:
     }
     path = plot_replay_failure_audit(payload, tmp_path / "audit_populated.png")
     assert path.is_file() and path.stat().st_size > 0
+
+
+def test_narrative_vector_export_retains_readable_editable_type(tmp_path):
+    from xml.etree import ElementTree
+    from src.visual_atlas import plot_research_architecture
+
+    path = plot_research_architecture({}, tmp_path / "architecture.png")
+    svg = path.parent / "vector/architecture.svg"
+    tree = ElementTree.fromstring(svg.read_text())
+    texts = [node for node in tree.iter() if node.tag.endswith("}text")]
+    assert len(texts) >= 20
+    sizes = [
+        float(size)
+        for node in texts
+        for size in re.findall(r"font-size:\s*([0-9.]+)px", node.get("style", ""))
+    ]
+    assert len(sizes) == len(texts)
+    assert min(sizes) >= 10
 
 
 def test_bulk_png_reader_preserves_decoded_pixels(tmp_path):

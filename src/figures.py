@@ -61,6 +61,16 @@ def read_png_image(path: Path) -> np.ndarray:
     return np.asarray(plt.imread(BytesIO(path.read_bytes()), format="png"))
 
 
+def _apply_readable_type(fig: Any) -> None:
+    for axes in fig.axes:
+        axes.tick_params(axis="both", labelsize=10)
+        for label in (axes.xaxis.label, axes.yaxis.label):
+            label.set_fontsize(max(label.get_fontsize(), 12))
+        axes.title.set_fontsize(max(axes.title.get_fontsize(), 13))
+    for artist in fig.findobj(match=Text):
+        artist.set_fontsize(max(artist.get_fontsize(), 10))
+
+
 def _save_figure(fig: Any, output_path: Path) -> Path:
     """Save a figure atomically with a stable white background.
 
@@ -70,13 +80,7 @@ def _save_figure(fig: Any, output_path: Path) -> Path:
     exposing a zero-byte/truncated image to the registry reader.
     """
 
-    for axes in fig.axes:
-        axes.tick_params(axis="both", labelsize=10)
-        for label in (axes.xaxis.label, axes.yaxis.label):
-            label.set_fontsize(max(label.get_fontsize(), 12))
-        axes.title.set_fontsize(max(axes.title.get_fontsize(), 13))
-    for artist in fig.findobj(match=Text):
-        artist.set_fontsize(max(artist.get_fontsize(), 10))
+    _apply_readable_type(fig)
     temporary_path = output_path.with_name(
         f".{output_path.stem}.{os.getpid()}.tmp{output_path.suffix}"
     )

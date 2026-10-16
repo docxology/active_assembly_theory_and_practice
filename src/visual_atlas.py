@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 import numpy as np
 
-from .figures import GRID, INK, LIGHT, MUTED, PALETTE, _style_axes
+from .figures import GRID, INK, LIGHT, MUTED, PALETTE, _apply_readable_type, _style_axes
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 NARRATIVE_FIGURE_IDS = (
@@ -82,6 +82,7 @@ def _wrapped(value: object, width: int, default: str = "not observed") -> str:
 def _save_multi(fig: Any, output_path: Path) -> Path:
     """Save a narrative figure as high-resolution PNG and direct vector files."""
 
+    _apply_readable_type(fig)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     vector_dir = output_path.parent / "vector"
     vector_dir.mkdir(parents=True, exist_ok=True)
@@ -91,17 +92,18 @@ def _save_multi(fig: Any, output_path: Path) -> Path:
         (vector_dir / f"{output_path.stem}.pdf", "pdf"),
     )
     try:
-        for path, fmt in targets:
-            temporary = path.with_name(f".{path.name}.{id(fig)}.tmp")
-            fig.savefig(
-                temporary,
-                format=fmt,
-                dpi=300,
-                bbox_inches="tight",
-                facecolor="white",
-                edgecolor="none",
-            )
-            temporary.replace(path)
+        with plt.rc_context({"svg.fonttype": "none", "pdf.fonttype": 42}):
+            for path, fmt in targets:
+                temporary = path.with_name(f".{path.name}.{id(fig)}.tmp")
+                fig.savefig(
+                    temporary,
+                    format=fmt,
+                    dpi=300,
+                    bbox_inches="tight",
+                    facecolor="white",
+                    edgecolor="none",
+                )
+                temporary.replace(path)
     finally:
         plt.close(fig)
         for path, _fmt in targets:
@@ -218,7 +220,7 @@ def plot_research_architecture(payload: Mapping[str, Any], output_path: Path) ->
             0.08,
             2.42,
             4.88,
-            0.92,
+            1.02,
             "STATIC DECODING / NORMALIZED REPRESENTATION",
             PALETTE[0],
         ),
@@ -226,7 +228,7 @@ def plot_research_architecture(payload: Mapping[str, Any], output_path: Path) ->
             0.08,
             1.30,
             4.88,
-            0.92,
+            1.02,
             "REFERENCE EXECUTION / FORMAL CROSS-CHECK",
             PALETTE[1],
         ),
@@ -234,7 +236,7 @@ def plot_research_architecture(payload: Mapping[str, Any], output_path: Path) ->
             0.08,
             0.18,
             4.88,
-            0.92,
+            1.02,
             "OBSERVATION / INFERENCE / DOCUMENT EVIDENCE",
             PALETTE[2],
         ),
@@ -362,286 +364,87 @@ def plot_observation_semantics(payload: Mapping[str, Any], output_path: Path) ->
     typed_schema = _text(payload.get("typed_schema_version"), "not observed")
     replay_status = _text(payload.get("replication_status"), "not observed")
 
-    fig = plt.figure(figsize=(15.0, 8.6))
-    grid = fig.add_gridspec(2, 1, height_ratios=(1.44, 1.0), hspace=0.28)
+    fig = plt.figure(figsize=(12.0, 8.7))
+    grid = fig.add_gridspec(2, 1, height_ratios=(1.2, 1.1), hspace=0.22)
     ax = fig.add_subplot(grid[0, 0])
-    ax.set_xlim(0.0, 11.0)
-    ax.set_ylim(0.0, 4.0)
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 4)
     ax.axis("off")
-
-    ax.text(
-        0.18, 3.72, "Value and status vocabulary", fontsize=10, weight="bold", color=INK
-    )
-    ax.text(
-        6.32,
-        3.72,
-        "Public / protected / receipt boundary",
-        fontsize=10,
-        weight="bold",
-        color=INK,
-    )
-
-    state_specs = (
-        (
-            "Observed",
-            f"{fields[0] if fields else 'field'} = arithmetic",
-            PALETTE[2],
-            None,
-        ),
-        ("Missing", f"{dynamic_field} = {missing_token}", PALETTE[1], "//"),
-        ("Unseen", f"categorical value = {unseen_token}", PALETTE[4], ".."),
-        ("Unsupported", "instruction outside declared subset", PALETTE[3], "xx"),
-        ("Unavailable", "compiler or target capability absent", PALETTE[0], "\\\\"),
-        ("Measured zero", "receipt count = 0", MUTED, None),
-    )
-    state_positions = (
-        (0.18, 2.50),
-        (2.00, 2.50),
-        (0.18, 1.59),
-        (2.00, 1.59),
-        (0.18, 0.68),
-        (2.00, 0.68),
-    )
-
-    def _state_box(
-        xy: tuple[float, float],
-        label: str,
-        detail: str,
-        color: str,
-        hatch: str | None,
-    ) -> None:
-        x, y = xy
-        width, height = 1.52, 0.78
-        ax.add_patch(
-            FancyBboxPatch(
-                (x, y),
-                width,
-                height,
-                boxstyle="round,pad=0.012,rounding_size=0.025",
-                facecolor=color + "30",
-                edgecolor=INK,
-                linewidth=1.0,
-                hatch=hatch,
-            )
-        )
-        ax.text(
-            x + width / 2,
-            y + height * 0.73,
-            label,
-            ha="center",
-            va="center",
-            fontsize=7.8,
-            color=INK,
-            weight="bold",
-        )
-        ax.text(
-            x + width / 2,
-            y + height * 0.43,
-            textwrap.fill(detail, width=18),
-            ha="center",
-            va="top",
-            fontsize=6.0,
-            linespacing=1.25,
-            color=INK,
-        )
-
-    for (label, detail, color, hatch), (x, y) in zip(
-        state_specs, state_positions, strict=True
-    ):
-        _state_box((x, y), label, detail, color, hatch)
-    # A single converging boundary keeps the six statuses readable without
-    # drawing six crossing arrows through the central record.
-    ax.plot((3.60, 3.60), (1.04, 3.26), color=MUTED, linewidth=1.0)
-    for y in (2.98, 2.07, 1.16):
-        ax.plot((3.52, 3.60), (y, y), color=MUTED, linewidth=1.0)
-    _arrow(ax, (3.60, 2.34), (4.18, 2.34), "encode")
-    record_xy = (4.18, 1.60)
-    record_width, record_height = 1.82, 1.34
-    ax.add_patch(
-        FancyBboxPatch(
-            record_xy,
-            record_width,
-            record_height,
-            boxstyle="round,pad=0.012,rounding_size=0.025",
-            facecolor=PALETTE[2] + "25",
-            edgecolor=INK,
-            linewidth=1.0,
-        )
-    )
-    ax.text(
-        record_xy[0] + record_width / 2,
-        record_xy[1] + record_height * 0.84,
-        "Typed record",
-        ha="center",
-        va="center",
-        fontsize=8.5,
-        color=INK,
-        weight="bold",
-    )
-    ax.text(
-        record_xy[0] + record_width / 2,
-        record_xy[1] + record_height * 0.68,
-        f"schema {typed_schema} · {len(fields)} fields",
-        ha="center",
-        va="center",
-        fontsize=6.4,
-        color=INK,
-    )
-    ax.text(
-        record_xy[0] + record_width / 2,
-        record_xy[1] + record_height * 0.42,
-        textwrap.fill(field_preview, width=22),
-        ha="center",
-        va="center",
-        fontsize=6.1,
-        linespacing=1.18,
-        color=INK,
-    )
-    ax.text(
-        record_xy[0] + record_width / 2,
-        record_xy[1] + record_height * 0.10,
-        "status-bearing · label-blind",
-        ha="center",
-        va="center",
-        fontsize=6.1,
-        color=INK,
-    )
     ax.add_patch(
         Rectangle(
-            (3.98, 0.30),
-            2.05,
-            1.18,
-            facecolor=PALETTE[3] + "12",
-            edgecolor=PALETTE[3],
-            linewidth=1.0,
-            hatch="///",
-        )
-    )
-    ax.text(4.12, 1.20, "Interpretation rules", fontsize=8.5, weight="bold", color=INK)
-    ax.text(
-        4.12,
-        1.06,
-        "missing ≠ unseen\nunsupported / unavailable\n≠ numeric zero",
-        fontsize=6.6,
-        color=INK,
-        va="top",
-    )
-    ax.text(
-        4.12,
-        0.48,
-        textwrap.fill(
-            "A numeric zero is valid only when a receipt measures zero.", width=29
-        ),
-        fontsize=5.8,
-        color=MUTED,
-    )
-
-    # The right side is a protected-boundary map.  The outer dashed frame is
-    # the controlled evidence boundary; a nested blue frame marks the public
-    # label-blind path, while the gold-hatched labels remain outside that
-    # public frame but inside the owner-side scoring boundary.  The receipt
-    # box is provenance metadata rather than an additional model feature.
-    ax.add_patch(
-        Rectangle(
-            (6.18, 0.36),
-            4.56,
-            3.00,
+            (0.05, 0.45),
+            7.7,
+            2.95,
             facecolor=PALETTE[0] + "08",
             edgecolor=PALETTE[0],
-            linewidth=1.1,
             linestyle="--",
         )
     )
     ax.text(
-        6.34, 3.14, "controlled evidence boundary", fontsize=9, weight="bold", color=INK
+        0.25, 3.15, "Public label-blind path", fontsize=12, weight="bold", color=INK
     )
-    ax.add_patch(
-        Rectangle(
-            (6.30, 1.24),
-            1.98,
-            1.72,
-            facecolor=PALETTE[0] + "05",
-            edgecolor=PALETTE[0],
-            linewidth=1.0,
-            linestyle="--",
-        )
-    )
-    ax.text(
-        6.42,
-        2.80,
-        "public label-blind path",
-        fontsize=8.2,
-        weight="bold",
-        color=INK,
-    )
-    public_summary = textwrap.fill(
-        f"{public_count} rows · fields: {public_preview}", width=22
-    )
-    ax.text(
-        6.42,
-        2.58,
-        f"{public_summary}\nstable IDs are not target labels",
-        fontsize=7.5,
-        color=INK,
-        va="top",
-    )
-    _box(
-        ax,
-        (6.43, 1.30),
-        1.72,
-        0.64,
-        "Predictions",
-        "stable IDs\nordered output",
-        PALETTE[2] + "28",
-    )
-    ax.add_patch(
-        Rectangle(
-            (8.44, 1.30),
-            2.08,
-            1.22,
-            facecolor=PALETTE[1] + "15",
-            edgecolor=PALETTE[1],
-            linewidth=1.0,
-            hatch="///",
-        )
-    )
-    ax.text(8.58, 2.25, "protected labels", fontsize=9, weight="bold", color=INK)
-    ax.text(
-        8.58,
-        1.90,
-        textwrap.fill(
-            f"{gold_count} gold rows\n{forbidden_preview}\noutside public directory",
-            width=26,
+    cards = (
+        (
+            0.25,
+            "Typed record",
+            f"schema {typed_schema} · {len(fields)} fields\n"
+            + textwrap.fill(field_preview, 30)
+            + f"\n{dynamic_field}: status-bearing",
+            PALETTE[2],
         ),
-        fontsize=7.4,
-        color=INK,
-        va="top",
+        (
+            4.25,
+            "Public predictions",
+            f"{public_count} public rows\n"
+            + textwrap.fill(public_preview, 30)
+            + "\nstable IDs are not target labels\nordered model output",
+            PALETTE[0],
+        ),
+        (
+            8.45,
+            "Protected scoring",
+            f"{gold_count} gold rows\n"
+            + textwrap.fill(forbidden_preview, 28)
+            + "\nlabels stay outside public rows\nowner-side scoring only",
+            PALETTE[1],
+        ),
     )
-    _arrow(ax, (6.43 + 1.72, 1.62), (8.44, 1.62), "score")
-    ax.add_patch(
-        Rectangle(
-            (6.34, 0.56),
-            4.18,
-            0.52,
-            facecolor=PALETTE[3] + "16",
-            edgecolor=PALETTE[3],
-            linewidth=1.0,
+    for x, title, detail, color in cards:
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, 0.75),
+                3.15,
+                2.1,
+                boxstyle="round,pad=0.02",
+                facecolor="white",
+                edgecolor=color,
+                linewidth=1.6,
+            )
         )
-    )
+        ax.text(x + 0.15, 2.63, title, fontsize=12, weight="bold", color=INK, va="top")
+        ax.text(
+            x + 0.15, 2.28, detail, fontsize=10, color=INK, va="top", linespacing=1.25
+        )
+    _arrow(ax, (3.45, 1.75), (4.2, 1.75), "infer")
+    _arrow(ax, (7.45, 1.75), (8.4, 1.75), "score")
     ax.text(
-        6.48,
-        0.82,
-        f"protocol: {protocol_id} · hash {protocol_hash}\nreplay receipt: {replay_status}",
-        fontsize=6.1,
-        color=INK,
-        va="center",
-    )
-    ax.text(
-        6.34,
-        0.20,
-        "Receipt metadata joins the public path to reproducible provenance; it does not reveal protected labels.",
-        fontsize=6.8,
+        0.25,
+        0.08,
+        "Protected labels enter scoring after predictions; they are never model features.",
+        fontsize=10,
         color=MUTED,
+    )
+    fig.text(
+        0.055,
+        0.02,
+        textwrap.fill(
+            f"Protocol {protocol_id} · hash {protocol_hash} · replay receipt {replay_status}. "
+            "Receipts provide provenance without revealing protected labels.",
+            120,
+        ),
+        fontsize=10,
+        color=MUTED,
+        va="bottom",
     )
 
     table_ax = fig.add_subplot(grid[1, 0])
@@ -710,10 +513,10 @@ def plot_observation_semantics(payload: Mapping[str, Any], output_path: Path) ->
                 cell.get_text().set_fontweight("bold")
     _title(
         fig,
-        "Observation semantics: values, absence, and protection are different evidence states",
-        "Protocol-bound schema diagram from the typed-observation and replay receipts; a status-bearing record preserves what was observed, what was not available, and what must remain protected.",
+        "Observation semantics and protected scoring",
+        "Typed values, missingness, unseen categories and protected labels have distinct representations.",
     )
-    fig.subplots_adjust(left=0.035, right=0.975, bottom=0.035, top=0.86)
+    fig.subplots_adjust(left=0.035, right=0.975, bottom=0.12, top=0.86)
     return _save_multi(fig, output_path)
 
 
@@ -919,18 +722,17 @@ def plot_assembly_state_plate(payload: Mapping[str, Any], output_path: Path) -> 
     ax_boundary.axis("off")
     ax_boundary.add_patch(
         Rectangle(
-            (0.04, 0.20),
+            (0.04, 0.05),
             0.92,
-            0.59,
+            0.90,
             facecolor=PALETTE[3] + "16",
             edgecolor=PALETTE[3],
             linewidth=1.1,
-            hatch="///",
         )
     )
     ax_boundary.text(
         0.50,
-        0.63,
+        0.84,
         "closed-world boundary",
         ha="center",
         va="center",
@@ -940,16 +742,16 @@ def plot_assembly_state_plate(payload: Mapping[str, Any], output_path: Path) -> 
     )
     ax_boundary.text(
         0.50,
-        0.46,
+        0.65,
         "unsupported instructions, undefined flags,\nexceptions, and out-of-bounds memory\nreturn structured status",
         ha="center",
-        va="center",
+        va="top",
         fontsize=8.5,
         color=INK,
     )
     ax_boundary.text(
         0.50,
-        0.26,
+        0.22,
         f"formal status: {_text(payload.get('status'))}\nfixture: {_text(trace.get('sample_id'))}",
         ha="center",
         va="center",
@@ -1497,6 +1299,18 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     confusion = score.get("confusion_matrix", {})
     if not isinstance(confusion, Mapping):
         confusion = {}
+    keys = ("true_positive", "false_negative", "false_positive", "true_negative")
+    if score and any(
+        isinstance(confusion.get(key), bool)
+        or not isinstance(confusion.get(key), (int, float))
+        or not np.isfinite(confusion[key])
+        or confusion[key] < 0
+        or int(confusion[key]) != confusion[key]
+        for key in keys
+    ):
+        raise ValueError(
+            "protected confusion counts must be complete nonnegative integers"
+        )
     fig = plt.figure(figsize=(14.0, 8.2))
     gs = fig.add_gridspec(2, 3, height_ratios=(0.83, 1.17), hspace=0.36, wspace=0.28)
     ax_flow = fig.add_subplot(gs[0, :])
@@ -1510,7 +1324,8 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
         (
             3.25,
             "protected score",
-            "gold stays owner-side\nnegative result retained",
+            "gold stays owner-side\n"
+            + ("result retained" if score else "result not observed"),
             PALETTE[3],
         ),
     )
@@ -1543,46 +1358,42 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     if score:
         cm = np.array(
             [
-                [
-                    _number(confusion.get("true_positive")),
-                    _number(confusion.get("false_negative")),
-                ],
-                [
-                    _number(confusion.get("false_positive")),
-                    _number(confusion.get("true_negative")),
-                ],
-            ]
+                [confusion[keys[0]], confusion[keys[1]]],
+                [confusion[keys[2]], confusion[keys[3]]],
+            ],
+            dtype=float,
         )
+        cm_max = max(1.0, float(np.max(cm)))
+        ax_cm.imshow(cm, cmap="Greys", vmin=0, vmax=cm_max)
+        ax_cm.set_xticks(
+            [0, 1], ["predicted equal", "predicted different"], rotation=20
+        )
+        ax_cm.set_yticks([0, 1], ["actually equal", "actually different"])
+        for i in range(2):
+            for j in range(2):
+                ax_cm.text(
+                    j,
+                    i,
+                    f"{int(cm[i, j])}",
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    weight="bold",
+                    color="white" if cm[i, j] / cm_max >= 0.55 else INK,
+                )
     else:
-        cm = np.zeros((2, 2), dtype=float)
-    cm_max = max(1.0, float(np.max(cm)))
-    ax_cm.imshow(cm, cmap="Greys", vmin=0, vmax=cm_max)
-    ax_cm.tick_params(axis="x", labelrotation=20, labelsize=7)
-    ax_cm.tick_params(axis="y", labelsize=7)
-    for i in range(2):
-        for j in range(2):
-            cell_color = "white" if cm[i, j] / cm_max >= 0.55 else INK
-            ax_cm.text(
-                j,
-                i,
-                f"{int(cm[i, j])}",
-                ha="center",
-                va="center",
-                fontsize=10,
-                color=cell_color,
-                weight="bold",
-            )
-    ax_cm.set_title("Protected confusion counts", loc="left", fontsize=10, color=INK)
-    if not score:
+        ax_cm.axis("off")
         ax_cm.text(
             0.5,
-            -0.42,
-            "no separately operated receipt ingested: protected counts not observed",
+            0.5,
+            "Protected counts not observed\nNo separately operated receipt ingested",
             transform=ax_cm.transAxes,
             ha="center",
-            fontsize=8,
+            va="center",
+            fontsize=10,
             color=MUTED,
         )
+    ax_cm.set_title("Protected confusion counts", loc="left", fontsize=10, color=INK)
     ax_cal = fig.add_subplot(gs[1, 1])
     metrics = ("balanced\naccuracy", "macro-F1", "Brier", "ECE")
     values = [
@@ -1652,7 +1463,7 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     ax_risk.text(
         0.05,
         0.92,
-        "one protected replay",
+        "one protected replay" if score else "not observed",
         transform=ax_risk.transAxes,
         fontsize=7.2,
         color=MUTED,
@@ -1662,7 +1473,11 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     _title(
         fig,
         "Controlled replay failure audit",
-        "Same-host separately controlled guest replay; the protected score is a negative reproducibility result, not an efficacy estimate or independent physical replication.",
+        (
+            "Same-host controlled replay; protected results are single-run audit diagnostics, not independent physical replication."
+            if score
+            else "Protected scoring is not observed. The diagram records the required boundary without inventing numerical results."
+        ),
     )
     fig.text(
         0.055,
