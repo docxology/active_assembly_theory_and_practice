@@ -21,6 +21,8 @@ calculation measures generalization to unseen programs. The separate exact
 dynamic-programming study below evaluates a different finite decision problem;
 its optimality certificate is not a certificate for this predictive Agent.
 
+## Trace and comparison diagnostics {#sec:trace-diagnostics}
+
 The canonical fixture `{{SAMPLE_NAME}}` produces `{{INSTRUCTION_COUNT}}` decoded
 instructions and a bounded Unicorn trace with final `RAX = {{FINAL_RAX}}`.
 Its inference stream contains `{{OBSERVATION_COUNT}}` categorical observations
