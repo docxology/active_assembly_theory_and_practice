@@ -16,6 +16,8 @@ demonstrator, not unsupervised phase discovery or external validation.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Sequence, cast
 
@@ -103,6 +105,9 @@ def _expected_statistics(
     """Return expected emission, transition, and initial counts for one sequence."""
 
     model.validate()
+    from .temporal_model import _admit_temporal_model
+
+    model = _admit_temporal_model(model)
     ids = _as_observation_ids(
         list(observation_ids), observation_count=len(model.observation_labels)
     )
@@ -178,12 +183,23 @@ def fit_ordered_hmm_em(
     n_obs = len(model.observation_labels)
     n_states = len(model.hidden_state_labels)
     support = _left_to_right_mask(n_states)
+    fit_context = {
+        "fit_kind": "ordered_baum_welch",
+        "training_observations_sha256": hashlib.sha256(
+            json.dumps(sequences).encode()
+        ).hexdigest(),
+        "sequence_count": len(sequences),
+        "emission_alpha": emission_alpha,
+        "transition_alpha": transition_alpha,
+        "prior_alpha": prior_alpha,
+    }
     current = TemporalGenerativeModel(
         A=np.asarray(model.A, dtype=float).copy(),
         B=np.asarray(model.B, dtype=float).copy(),
         D=np.asarray(model.D, dtype=float).copy(),
         observation_labels=tuple(model.observation_labels),
         hidden_state_labels=tuple(model.hidden_state_labels),
+        gnn_context=fit_context,
     )
 
     history: list[dict[str, float | int | bool]] = []
@@ -219,6 +235,7 @@ def fit_ordered_hmm_em(
             D=prior_parameters,
             observation_labels=tuple(model.observation_labels),
             hidden_state_labels=tuple(model.hidden_state_labels),
+            gnn_context={**fit_context, "iteration": iteration},
         )
         updated.validate()
         delta = float(

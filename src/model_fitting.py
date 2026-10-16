@@ -98,9 +98,18 @@ def fit_temporal_model(
         D=prior_counts / prior_counts.sum(),
         observation_labels=tuple(OBSERVATION_LABELS),
         hidden_state_labels=tuple(HIDDEN_STATE_LABELS),
+        gnn_context={
+            "fit_kind": "supervised_smoothed_counts",
+            "training_fixtures": [fixture.name for fixture in fixtures],
+            "emission_alpha": emission_alpha,
+            "transition_alpha": transition_alpha,
+            "prior_alpha": prior_alpha,
+        },
     )
     model.validate()
-    return model
+    from .temporal_model import _admit_temporal_model
+
+    return _admit_temporal_model(model)
 
 
 def _accuracy(predicted: Sequence[str], truth: Sequence[str]) -> float:

@@ -45,6 +45,15 @@ boundary.
 
 ## Source Roles
 
+The 2026-10-16 categorical-energy revision uses the RxInfer 5.4.0 source
+documentation pinned to commit `b4335792b4c8fbb2cdb5b560491f2443c97e7e35`:
+the Bethe-free-energy manual and message-passing concepts chapter. Their role
+is to explain the objective and scheduling boundary. They do not supply the
+project's numerical results. The stationary fixed-chain trace and native
+prefix-evidence values are project outputs, checked against an independent
+scaled-forward calculation. Prefix evidence is not presented as convergence,
+and one-sweep exactness is restricted to the declared structured tree model.
+
 - Free Energy Principle and active inference theory: Friston 2009 and Friston
   et al. 2017.
 - Inference software: RxInfer JOSS paper, RxInfer static-inference docs, RxInfer

@@ -35,6 +35,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from .figures import plot_rxinfer_categorical_free_energy, plot_rxinfer_free_energy
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -351,7 +353,80 @@ def validate_categorical_rxinfer_outputs(
         raise ValueError(
             "categorical RxInfer records have an unexpected model identity"
         )
+    load_categorical_prefix_records(output_dir)
     return records
+
+
+def load_categorical_prefix_records(output_dir: Path) -> list[dict[str, Any]]:
+    path = output_dir / "categorical_evidence_by_prefix.json"
+    rows = json.loads(path.read_text())
+    config = json.loads((output_dir / "categorical_model_config.json").read_text())
+    diagnostics = json.loads((output_dir / "categorical_diagnostics.json").read_text())
+    observations = config["observation_values"]
+    if not isinstance(rows, list) or not observations or len(rows) != len(observations):
+        raise ValueError("categorical prefix evidence is incomplete")
+    matrix_a = np.asarray(config["emission_matrix"], dtype=float)
+    matrix_b = np.asarray(config["transition_matrix"], dtype=float)
+    posterior = np.asarray(config["initial_probs"], dtype=float)
+    if (
+        matrix_a.ndim != 2
+        or posterior.ndim != 1
+        or not posterior.size
+        or matrix_a.shape[1] != posterior.size
+        or matrix_b.shape != (posterior.size, posterior.size)
+        or any(
+            not np.isfinite(v).all() or np.any(v < 0)
+            for v in (matrix_a, matrix_b, posterior)
+        )
+        or not np.allclose(matrix_a.sum(axis=0), 1, atol=1e-10, rtol=0)
+        or not np.allclose(matrix_b.sum(axis=0), 1, atol=1e-10, rtol=0)
+        or not np.isclose(posterior.sum(), 1, atol=1e-10, rtol=0)
+    ):
+        raise ValueError("categorical prefix model has malformed distributions")
+    evidence = 0.0
+    for index, (observation, row) in enumerate(zip(observations, rows, strict=True)):
+        if (
+            isinstance(observation, bool)
+            or not isinstance(observation, (int, float))
+            or not float(observation).is_integer()
+            or not 1 <= observation <= len(matrix_a)
+        ):
+            raise ValueError(
+                "categorical prefix observation must be a 1-based category"
+            )
+        if index:
+            posterior = matrix_b @ posterior
+        posterior = posterior * matrix_a[int(observation) - 1]
+        mass = float(posterior.sum())
+        if not np.isfinite(mass) or mass <= 0:
+            raise ValueError("categorical prefix has zero or invalid evidence")
+        evidence -= float(np.log(mass))
+        posterior /= mass
+        if not isinstance(row, dict):
+            raise ValueError("categorical prefix record must be an object")
+        value = row.get("value")
+        if (
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not np.isfinite(value)
+            or not np.isclose(value, evidence, atol=1e-8, rtol=0)
+            or row.get("observation_count") != index + 1
+            or row.get("source_field") != "result.free_energy"
+            or row.get("conditioning") != "trace_prefix"
+            or row.get("backend_iterations") != 1
+            or any(
+                row.get(key) != diagnostics.get(key)
+                for key in ("data_hash", "config_hash", "run_id", "model_digest")
+            )
+        ):
+            raise ValueError(
+                f"categorical native prefix evidence mismatch at {index + 1}"
+            )
+    if not np.isclose(
+        rows[-1]["value"], diagnostics["free_energy_final"], atol=1e-8, rtol=0
+    ):
+        raise ValueError("categorical prefix/full free energy mismatch")
+    return rows
 
 
 def _cached_rxinfer_outputs(
@@ -399,6 +474,8 @@ def _cached_rxinfer_outputs(
             or diagnostics.get("model_name") != expected_model
             or diagnostics.get("mode") != expected_mode
             or len(records) != iterations
+            or diagnostics.get("native_source_sha256")
+            != file_sha256(JULIA_PROJECT / "src/ActiveAssemblyRxInfer.jl")
         ):
             return None
         validate_backend_versions(
@@ -455,6 +532,10 @@ def _result_from_outputs(
         "stdout": artifact_path(output_dir / "stdout.log"),
         "stderr": artifact_path(output_dir / "stderr.log"),
     }
+    if categorical:
+        artifact_paths["evidence_by_prefix"] = artifact_path(
+            output_dir / "categorical_evidence_by_prefix.json"
+        )
     return RxInferRunResult(
         run_id=str(diagnostics["run_id"]),
         sample_id=str(diagnostics["sample_id"]),
@@ -478,6 +559,7 @@ def run_rxinfer_backend(
     iterations: int = 8,
     julia_executable: str = "julia",
     instantiate: bool = True,
+    model_path: Path | None = None,
 ) -> RxInferRunResult:
     """Run native Julia/RxInfer inference and validate all returned artifacts."""
 
@@ -490,6 +572,11 @@ def run_rxinfer_backend(
     julia_path = resolve_julia_executable(julia_executable)
     rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer").resolve()
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
+    from .gnn_numeric import bind_numeric
+
+    binding = bind_numeric("gaussian_event_code", definition_path=model_path)
+    shared_model_path = rxinfer_dir / "gnn_model.json"
+    shared_model_path.write_text(json.dumps(binding.to_dict(), allow_nan=False))
     figure_dir = (
         OUTPUT_DIR / "figures" if output_dir is None else rxinfer_dir / "figures"
     )
@@ -502,7 +589,7 @@ def run_rxinfer_backend(
         iterations=iterations,
         categorical=False,
     )
-    if cached is not None:
+    if cached is not None and cached[1].get("model_digest") == binding.instance_sha256:
         records, diagnostics = cached
         figure_path = plot_rxinfer_free_energy(
             records,
@@ -553,6 +640,8 @@ def run_rxinfer_backend(
         str(rxinfer_dir),
         "--iterations",
         str(iterations),
+        "--model-spec",
+        str(shared_model_path),
     ]
     completed = subprocess.run(
         command,
@@ -619,9 +708,11 @@ def run_rxinfer_categorical_backend(
     julia_path = resolve_julia_executable(julia_executable)
     rxinfer_dir = (output_dir or OUTPUT_DIR / "rxinfer_categorical").resolve()
     rxinfer_dir.mkdir(parents=True, exist_ok=True)
-    from .gnn_parser import compile_gnn
+    from .gnn_numeric import canonical_model
 
-    compiled = compile_gnn(model_path or PROJECT_ROOT / "configs/gnn/passive_phase.md")
+    compiled = canonical_model(
+        model_path or PROJECT_ROOT / "configs/gnn/passive_phase.md"
+    )
     shared_model_path = rxinfer_dir / "gnn_model.json"
     shared_model_path.write_text(json.dumps(compiled.to_dict(), allow_nan=False))
     figure_dir = (
@@ -641,6 +732,7 @@ def run_rxinfer_categorical_backend(
         figure_path = plot_rxinfer_categorical_free_energy(
             records,
             figure_dir / "rxinfer_categorical_free_energy.png",
+            prefix_records=load_categorical_prefix_records(rxinfer_dir),
         )
         return _result_from_outputs(
             rxinfer_dir,
@@ -720,6 +812,7 @@ def run_rxinfer_categorical_backend(
     figure_path = plot_rxinfer_categorical_free_energy(
         records,
         figure_dir / "rxinfer_categorical_free_energy.png",
+        prefix_records=load_categorical_prefix_records(rxinfer_dir),
     )
     return _result_from_outputs(
         rxinfer_dir,

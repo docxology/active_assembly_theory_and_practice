@@ -11,6 +11,15 @@ quantities without changing outputs. The static comparator and HMM adapters
 read the same GNN A/B/D rather than maintaining separate numeric defaults.
 The methods below retain their individual diagnostic boundaries.
 
+`src/gnn_numeric.py` admits specialized numeric instances for every inference
+comparator, learned model, finite sensor and calibration. The actual upstream
+parser supplies the arrays consumed by bounded project adapters; fitted caches
+retain literal GNN source capsules for replay. `src/gnn_catalog.py` requires
+runtime coverage, invokes the upstream graph renderer, emits larger-label
+PNG/SVG/PDF graphs and validates source, parameter and topology lineage without
+rewriting inputs. Optimizers remain project code, and universal GNN backend
+generation is outside the supported contract.
+
 The project follows the template code-project pattern:
 
 1. `src/assembly_packages/` records adapter provenance and the shared trace

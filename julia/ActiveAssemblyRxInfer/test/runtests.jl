@@ -23,7 +23,14 @@ using SHA
         write(io, JSON3.write(trace))
     end
 
-    result = ActiveAssemblyRxInfer.run_rxinfer(trace_path, output_dir; iterations = 4)
+    root = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    model_path = joinpath(tmp, "gaussian_gnn_model.json")
+    code = "import json; from src.gnn_numeric import bind_numeric; print(json.dumps(bind_numeric('gaussian_event_code').to_dict()))"
+    model_json = cd(root) do
+        read(`uv run --locked python -c $code`, String)
+    end
+    write(model_path, model_json)
+    result = ActiveAssemblyRxInfer.run_rxinfer(trace_path, output_dir; iterations = 4, model_path=model_path)
     diagnostics = result["diagnostics"]
     @test diagnostics["iteration_count"] == 4
     @test diagnostics["all_free_energy_finite"] == true
@@ -39,6 +46,23 @@ using SHA
     @test isfile(joinpath(output_dir, "posteriors.json"))
     @test isfile(joinpath(output_dir, "diagnostics.json"))
     @test isfile(joinpath(output_dir, "model_config.json"))
+    changed_code = "import json; from src.gnn_numeric import bind_numeric; print(json.dumps(bind_numeric('gaussian_event_code', {'mean': 20.0, 'variance': 0.1, 'shape': 2.0, 'rate': 3.0}).to_dict()))"
+    changed_json = cd(root) do
+        read(`uv run --locked python -c $changed_code`, String)
+    end
+    changed_path = joinpath(tmp, "changed_prior.json")
+    write(changed_path, changed_json)
+    changed = ActiveAssemblyRxInfer.run_rxinfer(trace_path, joinpath(tmp, "changed"); iterations=4, model_path=changed_path)
+    @test !isapprox(changed["diagnostics"]["free_energy_final"], diagnostics["free_energy_final"]; atol=1e-3)
+    invalid = JSON3.read(model_json, Dict{String,Any})
+    invalid["parameters"]["variance"] = [-1.0]
+    invalid_path = joinpath(tmp, "invalid_prior.json")
+    write(invalid_path, JSON3.write(invalid))
+    @test_throws ErrorException ActiveAssemblyRxInfer._gaussian_gnn_parameters(invalid_path)
+    invalid = JSON3.read(model_json, Dict{String,Any})
+    invalid["source_sha256"] = repeat("0", 64)
+    write(invalid_path, JSON3.write(invalid))
+    @test_throws ErrorException ActiveAssemblyRxInfer._gaussian_gnn_parameters(invalid_path)
 end
 
 @testset "ActiveAssemblyRxInfer categorical" begin
@@ -87,6 +111,10 @@ end
     @test isfile(joinpath(output_dir, "categorical_posteriors.json"))
     @test isfile(joinpath(output_dir, "categorical_diagnostics.json"))
     @test isfile(joinpath(output_dir, "categorical_model_config.json"))
+    prefixes = JSON3.read(read(joinpath(output_dir, "categorical_evidence_by_prefix.json"), String))
+    @test length(prefixes) == length(trace["observations"])
+    @test all(row -> row.backend_iterations == 1 && row.conditioning == "trace_prefix", prefixes)
+    @test prefixes[end].value ≈ diagnostics["free_energy_final"] atol=1e-8
 end
 
 

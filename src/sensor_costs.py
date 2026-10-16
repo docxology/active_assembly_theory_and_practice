@@ -21,6 +21,7 @@ import numpy as np
 from .artifact_contract import write_json_artifact
 from .information_policy import (
     FiniteSensor,
+    admit_finite_sensor,
     active_information_payload,
     entropy,
     solve_exact_policy,
@@ -321,6 +322,11 @@ def sensor_cost_payload(
     if reuse_existing:
         cached = _cached_sensor_cost_payload(project_root)
         if cached is not None:
+            from .gnn_numeric import restore_numeric_sources
+
+            restore_numeric_sources(
+                [cached["calibration"]["regression"]["gnn_model_source"]]
+            )
             return cached
 
     frontier_payload = active_information_payload()
@@ -369,10 +375,19 @@ def sensor_cost_payload(
         dtype=float,
     )
     coefficients, _, _, _ = np.linalg.lstsq(design, timing, rcond=None)
+    from .gnn_numeric import bind_numeric
+
+    binding = bind_numeric(
+        "linear_regression",
+        {"coefficients": coefficients},
+        context={"design_columns": ["intercept", *COST_COMPONENTS]},
+    )
+    coefficients = binding.parameters["coefficients"]
     fitted = design @ coefficients
     residuals = timing - fitted
     total_sum_squares = float(np.sum((timing - timing.mean()) ** 2))
     regression = {
+        "gnn_model_source": binding.source,
         "design_columns": ["intercept", *COST_COMPONENTS],
         "coefficients": [float(value) for value in coefficients],
         "residuals": [float(value) for value in residuals],
@@ -396,6 +411,9 @@ def sensor_cost_payload(
             ),
         )
         for sensor in sensors
+    )
+    finite_sensors = tuple(
+        admit_finite_sensor(sensor, belief.size) for sensor in finite_sensors
     )
     calibrated_costs = {
         str(row["sensor_id"]): float(
@@ -606,6 +624,16 @@ def validate_sensor_cost_payload(payload: object) -> tuple[bool, str]:
     ):
         return False, "sensor calibration regression diagnostics are missing"
     regression = calibration["regression"]
+    from .gnn_numeric import admit_numeric_source
+
+    try:
+        binding = admit_numeric_source(regression["gnn_model_source"])
+        if binding.model_name != "linear_regression" or not np.array_equal(
+            binding.parameters["coefficients"], regression["coefficients"]
+        ):
+            return False, "sensor calibration GNN coefficients mismatch"
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        return False, f"sensor calibration GNN model invalid: {exc}"
     if regression.get("design_columns") != ["intercept", *COST_COMPONENTS]:
         return False, "sensor calibration design columns drift"
     for key in (

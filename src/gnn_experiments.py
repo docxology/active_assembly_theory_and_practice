@@ -37,7 +37,7 @@ def source_hashes():
     paths = [
         ROOT / "pyproject.toml",
         ROOT / "uv.lock",
-        *sorted((ROOT / "configs/gnn").glob("*.md")),
+        *sorted((ROOT / "configs/gnn").rglob("*.md")),
         *(
             ROOT / "src" / n
             for n in (

@@ -49,6 +49,8 @@ than duplicating a module count.
 | `gnn_parser.py`, `gnn_model.py`, `gnn_upstream.py` | Strict bounded contract and actual upstream parser tensor admission. |
 | `gnn_experiments.py`, `pymdp_runtime.py`, `fixture_sensor_environment.py` | Canonical real Agent models, controls and action-gated native sensing. |
 | `gnn_validation.py` | Read-only recomputation and source/tensor/native receipt checks. |
+| `gnn_numeric.py` | Actual upstream-parsed parameters for every bounded inference adapter and replay of fitted source capsules. |
+| `gnn_catalog.py` | Runtime model coverage, actual upstream graphs, larger-label exports and read-only source/graph validation. |
 | `temporal_model.py` | Temporal HMM over latent program phases. |
 | `phase_segmentation.py` | Contiguous phase segmentation of belief traces. |
 | `active_selection.py` | Expected Free Energy and active observation selection. |

@@ -11,12 +11,13 @@ forward-backward smoothing).
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import numpy as np
 
 from .generative_model import build_generative_model
+from .gnn_numeric import bind_numeric, canonical_model
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ class TemporalGenerativeModel:
     D: np.ndarray
     observation_labels: tuple[str, ...]
     hidden_state_labels: tuple[str, ...]
+    gnn_context: dict[str, object] = field(default_factory=dict, repr=False)
 
     def validate(self) -> None:
         """Validate categorical probability tensors.
@@ -83,9 +85,7 @@ class TemporalGenerativeModel:
 
 
 def build_temporal_model(model_path: Path | None = None) -> TemporalGenerativeModel:
-    from .gnn_parser import compile_gnn
-
-    compiled = compile_gnn(
+    compiled = canonical_model(
         model_path
         if model_path is not None
         else Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"
@@ -99,9 +99,33 @@ def build_temporal_model(model_path: Path | None = None) -> TemporalGenerativeMo
         D=base.D,
         observation_labels=base.observation_labels,
         hidden_state_labels=base.hidden_state_labels,
+        gnn_context={
+            "fit_kind": "fixed_canonical",
+            "source_sha256": compiled.source_sha256,
+        },
     )
     model.validate()
     return model
+
+
+def _admit_temporal_model(model: TemporalGenerativeModel) -> TemporalGenerativeModel:
+    parameters = bind_numeric(
+        "phase_hmm",
+        {"A": model.A, "B": model.B, "D": model.D},
+        context={
+            **model.gnn_context,
+            "observation_labels": model.observation_labels,
+            "hidden_state_labels": model.hidden_state_labels,
+        },
+    ).parameters
+    return TemporalGenerativeModel(
+        A=parameters["A"],
+        B=parameters["B"],
+        D=parameters["D"],
+        observation_labels=model.observation_labels,
+        hidden_state_labels=model.hidden_state_labels,
+        gnn_context=model.gnn_context,
+    )
 
 
 def _variational_free_energy(logits: np.ndarray, posterior: np.ndarray) -> float:
@@ -179,6 +203,7 @@ def forward_filter(
     """
 
     model.validate()
+    model = _admit_temporal_model(model)
     ids = _as_observation_ids(
         observation_ids, observation_count=len(model.observation_labels)
     )
@@ -232,6 +257,7 @@ def viterbi_decode(
     """
 
     model.validate()
+    model = _admit_temporal_model(model)
     ids = _as_observation_ids(
         observation_ids, observation_count=len(model.observation_labels)
     )
@@ -293,6 +319,7 @@ def forward_backward(
     """
 
     model.validate()
+    model = _admit_temporal_model(model)
     ids = _as_observation_ids(
         observation_ids, observation_count=len(model.observation_labels)
     )

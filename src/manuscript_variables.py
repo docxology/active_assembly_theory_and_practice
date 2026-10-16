@@ -24,6 +24,7 @@ from .experiments import OUTPUT_DIR, run_experiment
 from .features import HIDDEN_STATE_LABELS, OBSERVATION_LABELS
 from .figures import plot_inference_diagnostics
 from .figure_contract import build_figure_specs
+from .gnn_numeric import NumericBinding, capture_numeric_bindings
 from .manuscript_registry import write_variable_registry
 from .reproducibility import MANIFEST_TARGETS, write_reproducibility_manifest
 from .rxinfer_bridge import (
@@ -51,6 +52,11 @@ def _mapping_or_empty(value: object) -> dict[str, Any]:
 def generate_variables() -> dict[str, str]:
     """Run the source-bound experiment and return manuscript variables."""
 
+    with capture_numeric_bindings() as bindings:
+        return _generate_variables(bindings)
+
+
+def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
     result = run_experiment()
     docx_payload = docx_render_payload(PROJECT_ROOT)
     assembly_listing_payload = json.loads(
@@ -324,6 +330,10 @@ def generate_variables() -> dict[str, str]:
     categorical_rxinfer_result = run_rxinfer_categorical_backend(
         PROJECT_ROOT / result.data_paths["trace_bundle"]
     )
+    from .gnn_catalog import write_inference_catalog
+
+    catalog_path = write_inference_catalog(PROJECT_ROOT, bindings)
+    catalog = json.loads(catalog_path.read_text())
     inference_diagnostic_path = plot_inference_diagnostics(
         list(result.inference.free_energy_by_step),
         list(rxinfer_result.free_energy_values),
@@ -1106,6 +1116,9 @@ def generate_variables() -> dict[str, str]:
             f"../{advanced_figure_paths['representation_invariance_benchmark']}"
         ),
         "SUBSTANTIVE_FIGURE_COUNT": str(len(figure_specs)),
+        "GNN_INFERENCE_MODEL_COUNT": str(catalog["model_profile_count"]),
+        "GNN_INFERENCE_INSTANCE_COUNT": str(catalog["numeric_instance_count"]),
+        "GNN_INFERENCE_CATALOG_PATH": "../output/gnn/inference/README.md",
         "INTERVENTION_POWER_FIGURE": f"../{advanced_figure_paths['intervention_power']}",
         "CROSS_ARCHITECTURE_FIGURE": (
             f"../{advanced_figure_paths['cross_architecture_benchmark']}"

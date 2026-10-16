@@ -191,6 +191,62 @@ class FactorizedObservationModel:
             raise ValueError("observations must not be empty")
         n_steps = len(observations)
         n_states = len(self.hidden_state_labels)
+        from .gnn_numeric import bind_numeric
+
+        groups = {
+            group: tuple(field for field in fields if field in self.fields)
+            for group, fields in TYPED_FIELD_GROUPS.items()
+            if any(field in self.fields for field in fields)
+        }
+        if mode == "hierarchical" and not groups:
+            raise ValueError("hierarchical score has no active field groups")
+        likelihood = np.zeros(
+            (
+                len(self.fields),
+                max(len(self.field_support[f]) for f in self.fields),
+                n_states,
+            )
+        )
+        for fi, field in enumerate(self.fields):
+            for oi, value in enumerate(self.field_support[field]):
+                for si, state in enumerate(self.hidden_state_labels):
+                    likelihood[fi, oi, si] = self.probabilities[field][state][value]
+        divisors = [
+            (
+                next(len(active) for active in groups.values() if field in active)
+                if mode == "hierarchical"
+                else 1
+            )
+            for field in self.fields
+        ]
+        binding = bind_numeric(
+            "factorized_fields" if mode == "factorized" else "hierarchical_fields",
+            {
+                "likelihood": likelihood,
+                "B": self.B,
+                "D": self.D,
+                "divisors": divisors,
+                "group_divisor": len(groups) if mode == "hierarchical" else 1,
+            },
+            context={
+                "fields": self.fields,
+                "field_support": self.field_support,
+                "hidden_state_labels": self.hidden_state_labels,
+                "training_fixtures": self.training_fixtures,
+                "groups": groups,
+            },
+        )
+        parsed = binding.parameters
+        probabilities = {
+            field: {
+                state: {
+                    value: float(parsed["likelihood"][fi, oi, si])
+                    for oi, value in enumerate(self.field_support[field])
+                }
+                for si, state in enumerate(self.hidden_state_labels)
+            }
+            for fi, field in enumerate(self.fields)
+        }
         scores = np.zeros((n_steps, n_states), dtype=float)
         group_scores: dict[str, np.ndarray] = {}
         for group, group_fields in TYPED_FIELD_GROUPS.items():
@@ -203,9 +259,11 @@ class FactorizedObservationModel:
                     value = self._value_for_support(observation, field)
                     for state_index, state in enumerate(self.hidden_state_labels):
                         group_matrix[step, state_index] += np.log(
-                            self.probabilities[field][state][value]
+                            probabilities[field][state][value]
                         )
-            group_scores[group] = group_matrix / len(active)
+            group_scores[group] = (
+                group_matrix / parsed["divisors"][self.fields.index(active[0])]
+            )
         if mode == "factorized":
             # Sum field-wise log probabilities directly.  The explicit loop
             # keeps field ablations exact and avoids silently weighting a
@@ -216,13 +274,13 @@ class FactorizedObservationModel:
                     value = self._value_for_support(observation, field)
                     for state_index, state in enumerate(self.hidden_state_labels):
                         scores[step, state_index] += np.log(
-                            self.probabilities[field][state][value]
+                            probabilities[field][state][value]
                         )
             return scores
         if not group_scores:
             raise ValueError("hierarchical score has no active field groups")
         for group_matrix in group_scores.values():
-            scores += group_matrix / len(group_scores)
+            scores += group_matrix / float(parsed["group_divisor"][0])
         return scores
 
     def emission_matrix(

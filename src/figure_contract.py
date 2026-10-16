@@ -165,6 +165,27 @@ def _hash_inputs(root: Path, artifacts: Iterable[str]) -> dict[str, str]:
 
 
 def _base_artifacts(stem: str) -> tuple[str, ...]:
+    if stem == "rxinfer_categorical_free_energy":
+        return tuple(
+            f"output/rxinfer_categorical/{name}"
+            for name in (
+                "categorical_evidence_by_prefix.json",
+                "categorical_free_energy_trace.jsonl",
+                "categorical_diagnostics.json",
+                "categorical_model_config.json",
+                "gnn_model.json",
+            )
+        )
+    if stem == "rxinfer_free_energy":
+        return tuple(
+            f"output/rxinfer/{name}"
+            for name in (
+                "free_energy_trace.jsonl",
+                "diagnostics.json",
+                "model_config.json",
+                "gnn_model.json",
+            )
+        )
     """Return the source receipts for legacy figures by stable stem."""
 
     if stem == "assembly_cfg":
@@ -1025,6 +1046,26 @@ def build_figure_specs(output_dir: Path) -> list[FigureSpec]:
                 "receive invented intervals",
             )
             missing_semantics = "Unavailable and unsupported cells remain labelled; no unavailable evidence is plotted as zero."
+            if stem == "rxinfer_categorical_free_energy":
+                question = "How much evidence does each observed instruction contribute under the fixed GNN model?"
+                title = "Categorical GNN evidence accumulation"
+                subtitle = "Native prefix evidence and conditional surprisal; separate fixed-point iteration check."
+                hierarchy = "one owned fixture → nested observation prefixes; prefixes are dependent, not repeated samples"
+                metrics = "negative log evidence and conditional surprisal in nats; observation prefix length"
+                uncertainty = "exact fixed-model computation checked by an independent recursion; no sampling interval"
+                long_description = caption + (
+                    " In panel A the horizontal coordinate is the number of instructions already observed, "
+                    "and the vertical coordinate is minus the logarithm of the probability assigned to that "
+                    "complete prefix. Panel B subtracts consecutive prefix values, beginning from zero for "
+                    "the empty prefix, to show each instruction's conditional surprisal. Both use normalized "
+                    "categorical probabilities and natural logarithms. The graph is a chain with fixed "
+                    "transition and observation tensors, and the structured native posterior is checked "
+                    "against the forward algorithm. Nested prefixes share data and are not independent "
+                    "replicates. The full-sequence iteration values are retained in their own artifact; "
+                    "their equality is compatible with exact message passing reaching a fixed point on "
+                    "the first sweep. Neither increasing prefix evidence cost nor constant iteration "
+                    "values establish learned semantics, external validity, or superiority over another model."
+                )
         png_path = root / "output" / "figures" / f"{stem}.png"
         svg_path = root / "output" / "figures" / "vector" / f"{stem}.svg"
         pdf_path = root / "output" / "figures" / "vector" / f"{stem}.pdf"

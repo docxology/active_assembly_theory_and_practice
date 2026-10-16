@@ -68,6 +68,13 @@ _TEMPORAL_BELIEF_TARGETS: tuple[ArtifactManifestTarget, ...] = tuple(
 
 MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
     ArtifactManifestTarget(
+        path="output/data/inference_model_catalog.json",
+        artifact_type="gnn_model_catalog",
+        generated_by="src.gnn_catalog.write_inference_catalog",
+        claim_ids=("CLM-009",),
+        validation_checks=("inference_models_have_gnn_specs_and_graphs",),
+    ),
+    ArtifactManifestTarget(
         path="output/data/disassembly_trace.json",
         artifact_type="trace",
         generated_by="src.experiments.run_experiment",
@@ -474,6 +481,13 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
     ),
     ArtifactManifestTarget(
         path="output/rxinfer_categorical/categorical_free_energy_trace.jsonl",
+        artifact_type="rxinfer_categorical",
+        generated_by="src.rxinfer_bridge.run_rxinfer_categorical_backend",
+        claim_ids=("CLM-004",),
+        validation_checks=("rxinfer_categorical_free_energy_records",),
+    ),
+    ArtifactManifestTarget(
+        path="output/rxinfer_categorical/categorical_evidence_by_prefix.json",
         artifact_type="rxinfer_categorical",
         generated_by="src.rxinfer_bridge.run_rxinfer_categorical_backend",
         claim_ids=("CLM-004",),

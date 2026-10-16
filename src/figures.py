@@ -18,6 +18,7 @@ from matplotlib.colors import ListedColormap
 from matplotlib.container import BarContainer
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.text import Text
 import numpy as np
 
 from .active_inference_bridge import InferenceResult
@@ -43,7 +44,7 @@ def _style_axes(ax: Any, *, grid_axis: str = "y") -> None:
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_color(GRID)
     ax.spines["bottom"].set_color(GRID)
-    ax.tick_params(colors=MUTED, labelsize=8)
+    ax.tick_params(colors=MUTED, labelsize=10)
     ax.xaxis.label.set_color(MUTED)
     ax.yaxis.label.set_color(MUTED)
     ax.title.set_color(INK)
@@ -69,6 +70,13 @@ def _save_figure(fig: Any, output_path: Path) -> Path:
     exposing a zero-byte/truncated image to the registry reader.
     """
 
+    for axes in fig.axes:
+        axes.tick_params(axis="both", labelsize=10)
+        for label in (axes.xaxis.label, axes.yaxis.label):
+            label.set_fontsize(max(label.get_fontsize(), 12))
+        axes.title.set_fontsize(max(axes.title.get_fontsize(), 13))
+    for artist in fig.findobj(match=Text):
+        artist.set_fontsize(max(artist.get_fontsize(), 10))
     temporary_path = output_path.with_name(
         f".{output_path.stem}.{os.getpid()}.tmp{output_path.suffix}"
     )
@@ -331,15 +339,70 @@ def plot_rxinfer_free_energy(
 
 
 def plot_rxinfer_categorical_free_energy(
-    records: list[dict[str, Any]], output_path: Path
+    records: list[dict[str, Any]],
+    output_path: Path,
+    *,
+    prefix_records: list[dict[str, Any]],
 ) -> Path:
-    """Plot the namespaced categorical RxInfer companion diagnostic."""
-
-    return plot_rxinfer_free_energy(
-        records,
-        output_path,
-        title="RxInfer Bethe Free Energy: categorical phase-HMM",
+    """Separate changing-data evidence from a fixed-model iteration diagnostic."""
+    if not records or not prefix_records:
+        raise ValueError(
+            "categorical iterations and native prefix records are required"
+        )
+    values = np.asarray([row["value"] for row in prefix_records], dtype=float)
+    full = np.asarray([row["value"] for row in records], dtype=float)
+    counts = [row["observation_count"] for row in prefix_records]
+    if (
+        counts != list(range(1, len(counts) + 1))
+        or not np.isfinite(values).all()
+        or not np.isfinite(full).all()
+        or not np.isclose(values[-1], full[-1], atol=1e-8, rtol=0)
+    ):
+        raise ValueError(
+            "categorical native prefix records do not match the full model"
+        )
+    increments = np.diff(np.r_[0.0, values])
+    if np.any(increments < -1e-8):
+        raise ValueError("categorical conditional surprisal cannot be negative")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 4.4))
+    axes[0].plot(counts, values, marker="o", color=PALETTE[0], linewidth=2.2)
+    axes[1].bar(counts, increments, color=PALETTE[2], width=0.62, edgecolor=INK)
+    axes[0].set_title("A  Evidence accumulated", loc="left", fontsize=13)
+    axes[1].set_title("B  Contribution of each observation", loc="left", fontsize=13)
+    axes[0].set_ylabel("Negative log evidence (nats)")
+    axes[1].set_ylabel("Conditional surprisal (nats)")
+    for axis, plotted in zip(axes, (values, increments), strict=True):
+        axis.set_xticks(counts)
+        axis.set_xlabel("Observed instruction prefix")
+        axis.set_ylim(0, max(float(plotted.max()) * 1.28, 0.2))
+        for x, value in zip(counts, plotted, strict=True):
+            axis.annotate(
+                f"{value:.3f}",
+                (x, value),
+                xytext=(0, 7),
+                textcoords="offset points",
+                ha="center",
+                fontsize=10,
+            )
+        _style_axes(axis)
+    flat = "identical" if np.ptp(full) == 0 else "varying"
+    fig.suptitle(
+        "Categorical GNN model: native evidence by observation prefix",
+        fontsize=14,
+        color=INK,
+        y=0.98,
     )
+    fig.text(
+        0.02,
+        0.03,
+        f"Full-sequence check: {len(full)} {flat} iteration values; "
+        f"final F = {full[-1]:.3f}. Fixed parameters; no learning curve.",
+        fontsize=10,
+        color=MUTED,
+    )
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.23, top=0.78, wspace=0.39)
+    return _save_figure(fig, output_path)
 
 
 def plot_package_provenance(
@@ -4200,17 +4263,24 @@ def plot_formal_verification_receipt(
         MUTED,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig = plt.figure(figsize=(12.6, 6.7))
-    grid = fig.add_gridspec(1, 2, width_ratios=(1.12, 1.0), wspace=0.24)
+    fig = plt.figure(figsize=(8.8, 11.5))
+    grid = fig.add_gridspec(2, 1, height_ratios=(1.0, 1.8), hspace=0.16)
     ax_status = fig.add_subplot(grid[0, 0])
     ax_status.axis("off")
     table = ax_status.table(
-        cellText=status_rows,
+        cellText=[
+            [
+                textwrap.fill(value, width)
+                for value, width in zip(row, (22, 16, 40), strict=True)
+            ]
+            for row in status_rows
+        ],
         colLabels=("evidence status", "receipt value", "interpretation"),
         loc="center",
         cellLoc="left",
         colLoc="left",
         bbox=cast(Any, (0.0, 0.03, 1.0, 0.82)),
+        colWidths=(0.30, 0.22, 0.48),
     )
     table.auto_set_font_size(False)
     table.set_fontsize(7.5)
@@ -4232,7 +4302,7 @@ def plot_formal_verification_receipt(
     ax_status.text(
         0.0,
         0.92,
-        "The formal receipt reports what this Lean build checked and keeps absent evidence visible.",
+        "The receipt distinguishes checked results from absent evidence.",
         transform=ax_status.transAxes,
         ha="left",
         va="bottom",
@@ -4240,38 +4310,40 @@ def plot_formal_verification_receipt(
         color=MUTED,
     )
 
-    ax_scope = fig.add_subplot(grid[0, 1])
+    ax_scope = fig.add_subplot(grid[1, 0])
     ax_scope.axis("off")
     checked = payload.get("checked_fragment")
     checked_operations = (
         checked.get("operations", []) if isinstance(checked, dict) else []
     )
     operations_text = (
-        "\n".join(f"• {str(operation)}" for operation in checked_operations)
+        "\n".join(
+            textwrap.fill(f"• {str(operation)}", 86, subsequent_indent="  ")
+            for operation in checked_operations
+        )
         or "• not recorded"
     )
     ax_scope.add_patch(
         Rectangle(
-            (0.03, 0.22),
-            0.94,
-            0.62,
-            facecolor=PALETTE[2] + "18",
+            (0.0, 0.30),
+            1.0,
+            0.66,
+            facecolor="white",
             edgecolor=PALETTE[2],
             linewidth=1.0,
-            hatch="..",
         )
     )
     ax_scope.text(
-        0.07,
-        0.79,
+        0.03,
+        0.91,
         "Checked fragment",
         fontsize=10,
         weight="bold",
         color=INK,
     )
     ax_scope.text(
-        0.07,
-        0.73,
+        0.03,
+        0.85,
         operations_text,
         fontsize=7.4,
         va="top",
@@ -4289,19 +4361,22 @@ def plot_formal_verification_receipt(
         else "not recorded"
     )
     ax_scope.text(
-        0.07,
-        0.15,
+        0.03,
+        0.24,
         "Formal boundary\n"
-        + textwrap.fill(f"state: {state}; relation: {relation}", 54)
+        + textwrap.fill(f"state: {state}; relation: {relation}", 86)
         + "\n\n"
-        + "Unsupported ISA effects, complete x86-64 semantics, and population-level claims remain outside this receipt.",
+        + textwrap.fill(
+            "Unsupported ISA effects, complete x86-64 semantics, and population-level claims remain outside this receipt.",
+            86,
+        ),
         fontsize=7.7,
         va="top",
         color=MUTED,
         linespacing=1.3,
     )
     fig.suptitle(
-        "Formal verification receipt: checked fragment and evidence boundary",
+        "Formal verification: checked fragment and evidence boundary",
         x=0.06,
         ha="left",
         fontsize=13,
@@ -4310,7 +4385,10 @@ def plot_formal_verification_receipt(
     fig.text(
         0.06,
         0.93,
-        f"Lean toolchain {payload.get('toolchain', 'unknown')} · {len(theorem_names)} declared theorems · endpoint: {payload.get('endpoint_status', 'not observed')}",
+        textwrap.fill(
+            f"Lean toolchain {payload.get('toolchain', 'unknown')} · {len(theorem_names)} declared theorems · endpoint: {payload.get('endpoint_status', 'not observed')}",
+            95,
+        ),
         ha="left",
         va="top",
         fontsize=8,
@@ -4319,13 +4397,16 @@ def plot_formal_verification_receipt(
     fig.text(
         0.06,
         0.025,
-        "Kernel-checked rows are not a complete x86-64 semantics proof; computational bridge evidence and absent theorem statuses remain explicitly separated.",
+        textwrap.fill(
+            "Kernel-checked rows are not a complete x86-64 semantics proof; computational bridge evidence and absent theorem statuses remain explicitly separated.",
+            95,
+        ),
         ha="left",
         va="bottom",
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.83)
+    fig.subplots_adjust(left=0.07, right=0.96, bottom=0.075, top=0.87)
     return _save_figure(fig, output_path)
 
 
@@ -5220,236 +5301,145 @@ def plot_quotient_classifier(payload: dict[str, object], output_path: Path) -> P
 
 
 def plot_compiler_transfer(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot status-aware static compiler and decoder capability evidence."""
-
     rows = payload.get("rows")
     if not isinstance(rows, list) or not rows:
         raise ValueError("compiler-transfer rows must be non-empty")
+    statuses = (
+        "validated_static_object",
+        "unavailable",
+        "failed",
+        "unsupported",
+        "underpowered",
+    )
     normalized: list[dict[str, object]] = []
-    for raw in rows:
-        if not isinstance(raw, dict):
-            raise ValueError("compiler-transfer row is not an object")
-        status = str(raw.get("status", "not_observed"))
-        if status == "validated_static_object":
-            count = raw.get("decoded_instruction_count")
-            if not isinstance(count, int) or count <= 0:
-                raise ValueError("validated transfer row lacks decoded count")
-        elif status not in {"unavailable", "failed", "unsupported", "underpowered"}:
-            raise ValueError(f"compiler-transfer row has unknown status: {status}")
-        normalized.append(raw)
-
-    source_ids = sorted(
-        {str(row.get("source_id", "not_observed")) for row in normalized}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("status") not in statuses:
+            raise ValueError("compiler-transfer row has unknown status")
+        count = row.get("decoded_instruction_count")
+        if row["status"] == "validated_static_object" and (
+            isinstance(count, bool) or not isinstance(count, int) or count <= 0
+        ):
+            raise ValueError("validated transfer row lacks decoded count")
+        normalized.append(row)
+    compilers = sorted({str(row.get("compiler", "not_observed")) for row in normalized})
+    labels = (
+        "Validated static",
+        "Unavailable",
+        "Failed",
+        "Unsupported",
+        "Underpowered",
     )
-    configurations = sorted(
-        {
-            (
-                str(row.get("compiler", "not_observed")),
-                str(row.get("target_id", "not_observed")),
-                str(row.get("object_format", "not_observed")),
-                str(row.get("optimization", "not_observed")),
-            )
-            for row in normalized
-        }
-    )
-    capability = payload.get("capability_summary")
-    capability = capability if isinstance(capability, dict) else {}
-    raw_validated_compilers = capability.get("compilers_validated", [])
-    validated_compilers = (
-        {str(item) for item in raw_validated_compilers}
-        if isinstance(raw_validated_compilers, list)
-        else set()
-    )
-    validated_configs = {
-        (
-            str(row.get("compiler")),
-            str(row.get("target_id")),
-            str(row.get("object_format")),
-            str(row.get("optimization")),
-        )
-        for row in normalized
-        if row.get("status") == "validated_static_object"
-    }
-    # Wide multi-toolchain matrices stay legible by plotting only the validated
-    # toolchains' columns; every source-family row is kept in the receipt-driven
-    # table and every non-validated cell remains an explicit receipt row.
-    plotted_configurations = configurations
-    table_note = ""
-    if len(configurations) > 24:
-        keep_compilers = validated_compilers | {
-            config[0] for config in validated_configs
-        }
-        all_compilers = {config[0] for config in configurations}
-        if keep_compilers and keep_compilers < all_compilers:
-            plotted_configurations = [
-                config for config in configurations if config[0] in keep_compilers
-            ]
-            table_note = (
-                " Status columns are limited to the validated toolchains for legibility; "
-                "every requested cell, including non-validated toolchains, remains an "
-                "explicit row in the receipt."
-            )
-    config_labels = [
-        f"{compiler}\n{target}/{object_format}\n{optimization}"
-        for compiler, target, object_format, optimization in plotted_configurations
-    ]
-    by_key = {
-        (
-            str(row.get("source_id")),
-            str(row.get("compiler")),
-            str(row.get("target_id")),
-            str(row.get("object_format")),
-            str(row.get("optimization")),
-        ): row
-        for row in normalized
-    }
-    status_text = {
-        "validated_static_object": "VALID\nstatic",
-        "unavailable": "UNAVAILABLE",
-        "failed": "FAILED",
-        "unsupported": "UNSUPPORTED",
-        "underpowered": "UNDERPOWERED",
-    }
-    status_color = {
-        "validated_static_object": PALETTE[2],
-        "unavailable": LIGHT,
-        "failed": PALETTE[4] + "30",
-        "unsupported": PALETTE[3] + "30",
-        "underpowered": PALETTE[1] + "30",
-    }
-    status_hatch = {
-        "validated_static_object": "",
-        "unavailable": "//",
-        "failed": "xx",
-        "unsupported": "..",
-        "underpowered": "\\\\",
-    }
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    colors = (PALETTE[2], "#D5DAE0", PALETTE[4], PALETTE[3], PALETTE[1])
+    hatches = ("", "//", "xx", "..", "\\\\")
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(12.8, 5.8),
-        gridspec_kw={"width_ratios": (1.35, 1.0)},
+        figsize=(12.8, max(5.8, len(compilers) * 0.65 + 2.3)),
+        gridspec_kw={"width_ratios": (1.15, 1)},
     )
-    axes[0].axis("off")
-    axes[0].set_title(
-        "Capability status by source × compiler × target/format × optimization",
-        loc="left",
-        pad=AXIS_TITLE_PAD,
-    )
-    table_values: list[list[str]] = []
-    for source_id in source_ids:
-        cells: list[str] = []
-        for compiler, target_id, object_format, optimization in plotted_configurations:
-            row = by_key.get(
-                (source_id, compiler, target_id, object_format, optimization)
-            )
-            status = str(row.get("status", "not_observed")) if row else "not_observed"
-            cells.append(status_text.get(status, status.upper()))
-        table_values.append(cells)
-    table = axes[0].table(
-        cellText=table_values,
-        rowLabels=source_ids,
-        colLabels=config_labels,
-        loc="center",
-        cellLoc="center",
-        rowLoc="left",
-        bbox=(0.0, 0.10, 1.0, 0.78),
-    )
-    table.set_fontsize(max(3.0, min(6.8, 150.0 / max(1, len(plotted_configurations)))))
-    table.scale(1.0, 1.55)
-    for (row_index, col_index), cell in table.get_celld().items():
-        cell.set_edgecolor(GRID)
-        if row_index == 0:
-            cell.set_facecolor(PALETTE[0])
-            cell.get_text().set_color("white")
-            cell.get_text().set_fontweight("bold")
-        elif col_index == -1:
-            cell.set_facecolor(LIGHT)
-            cell.get_text().set_fontweight("bold")
-        else:
-            compiler, target_id, object_format, optimization = plotted_configurations[
-                col_index
+    y = np.arange(len(compilers))
+    left = np.zeros(len(compilers))
+    for status, label, color, hatch in zip(
+        statuses, labels, colors, hatches, strict=True
+    ):
+        counts = np.array(
+            [
+                sum(
+                    str(row.get("compiler", "not_observed")) == compiler
+                    and row["status"] == status
+                    for row in normalized
+                )
+                for compiler in compilers
             ]
-            row = by_key.get(
-                (source_id, compiler, target_id, object_format, optimization)
-            )
-            status = str(row.get("status", "not_observed")) if row else "not_observed"
-            cell.set_facecolor(status_color.get(status, "white"))
-            cell.set_hatch(status_hatch.get(status, "///"))
-    axes[0].text(
-        0.0,
-        0.03,
-        "Text and hatching carry status; unavailable/failed/unsupported cells are not zero performance."
-        + table_note,
-        transform=axes[0].transAxes,
-        ha="left",
-        va="bottom",
-        fontsize=7.2,
-        color=MUTED,
+        )
+        axes[0].barh(
+            y,
+            counts,
+            left=left,
+            label=label,
+            color=color,
+            hatch=hatch,
+            edgecolor=INK,
+            linewidth=0.6,
+        )
+        for index, count in enumerate(counts):
+            if count:
+                axes[0].text(
+                    left[index] + count / 2,
+                    index,
+                    str(count),
+                    ha="center",
+                    va="center",
+                    fontsize=11,
+                )
+        left += counts
+    axes[0].set_yticks(y, compilers)
+    axes[0].invert_yaxis()
+    axes[0].set_xlabel("Requested source/target/format/optimization rows")
+    axes[0].set_title("Capability status across every requested row", loc="left")
+    axes[0].legend(
+        loc="upper left", bbox_to_anchor=(0, -0.17), ncol=2, frameon=False, fontsize=10
     )
-
-    valid_rows = [
-        row for row in normalized if row.get("status") == "validated_static_object"
-    ]
-    x = np.arange(len(plotted_configurations), dtype=float)
-    for source_index, source_id in enumerate(source_ids):
-        for config_index, config in enumerate(plotted_configurations):
-            row = by_key.get((source_id, *config))
-            if row is None or row.get("status") != "validated_static_object":
-                continue
-            count_value = row.get("decoded_instruction_count")
-            if not isinstance(count_value, (int, float)):
-                continue
-            count = int(count_value)
-            offset = (source_index - (len(source_ids) - 1) / 2) * 0.04
+    for index, compiler in enumerate(compilers):
+        validated_counts = [
+            cast(int, row["decoded_instruction_count"])
+            for row in normalized
+            if str(row.get("compiler", "not_observed")) == compiler
+            and row["status"] == "validated_static_object"
+        ]
+        if validated_counts:
+            low, high = min(validated_counts), max(validated_counts)
+            axes[1].plot([low, high], [index, index], color=PALETTE[0], linewidth=3)
             axes[1].scatter(
-                config_index + offset,
-                count,
-                s=34,
-                color=PALETTE[source_index % len(PALETTE)],
-                edgecolor=INK,
-                linewidth=0.45,
+                validated_counts,
+                np.full(len(validated_counts), index),
+                s=25,
+                color=PALETTE[0],
+                alpha=0.35,
                 zorder=3,
             )
             axes[1].text(
-                config_index + offset,
-                count + 0.55,
-                str(count),
-                ha="center",
-                va="bottom",
-                fontsize=6.1,
-                color=INK,
+                high + 0.6,
+                index,
+                f"n={len(validated_counts)}; {low}–{high}",
+                va="center",
+                fontsize=10,
             )
-    axes[1].set_xticks(x, config_labels)
-    axes[1].tick_params(axis="x", labelsize=7)
-    axes[1].set_ylabel("Decoded instructions per validated object")
-    axes[1].set_title(
-        "Static decoded-count distribution",
-        loc="left",
-        fontsize=10,
-        pad=AXIS_TITLE_PAD,
-    )
-    axes[1].text(
-        0.0,
-        -0.20,
-        f"{len(valid_rows)} validated rows shown; no emitted object was executed. A missing configuration has no count to plot.",
-        transform=axes[1].transAxes,
-        ha="left",
-        va="top",
-        fontsize=7.2,
-        color=MUTED,
-    )
-    _style_axes(axes[1], grid_axis="y")
+        else:
+            axes[1].text(
+                0.02,
+                index,
+                "No validated object",
+                transform=axes[1].get_yaxis_transform(),
+                va="center",
+                fontsize=10,
+                color=MUTED,
+            )
+    axes[1].set_yticks(y, compilers)
+    axes[1].set_ylim(axes[0].get_ylim())
+    axes[1].set_xlim(left=0)
+    axes[1].margins(x=0.38)
+    axes[1].set_xlabel("Decoded instructions per validated object")
+    axes[1].set_title("Observed counts and exact range", loc="left")
+    for ax in axes:
+        _style_axes(ax, grid_axis="x")
     fig.suptitle(
-        "Compiler/source/architecture transfer capability receipt",
-        x=0.06,
+        "Compiler capability and static decoding",
+        x=0.07,
         ha="left",
-        fontsize=12,
+        fontsize=15,
         color=INK,
     )
-    fig.subplots_adjust(left=0.05, right=0.98, bottom=0.24, top=0.80, wspace=0.28)
+    fig.text(
+        0.07,
+        0.035,
+        "All requested rows contribute to status counts. Unavailable objects have no instruction count.\n"
+        "Repeated counts overlap; ranges and n are exact. Objects were not executed. Full cells remain in the receipt.",
+        fontsize=10,
+        color=MUTED,
+        va="bottom",
+    )
+    fig.subplots_adjust(left=0.09, right=0.93, bottom=0.30, top=0.84, wspace=0.40)
     return _save_figure(fig, output_path)
 
 
@@ -6625,16 +6615,19 @@ FIGURE_CAPTIONS: dict[str, str] = {
     ),
     "rxinfer_free_energy": (
         "Bethe Free Energy values emitted by the native Julia/RxInfer backend for the Gaussian "
-        "event-code model. Points are backend iterations from the selected trace bundle; this is "
+        "event-code model with GNN-specified Normal-Gamma priors. Points are backend iterations from the selected trace bundle; this is "
         "the authoritative RxInfer diagnostic for the implemented model, not the pymdp comparison "
         "objective and not evidence of semantic understanding."
     ),
     "rxinfer_categorical_free_energy": (
-        "Bethe Free Energy values emitted by the native Julia/RxInfer categorical phase-HMM "
-        "companion for the canonical trace bundle. Points are backend iterations for the fixed "
-        "categorical model; the recorded trajectory is {rxinfer_categorical_flat} with "
-        "delta {rxinfer_categorical_delta}. This namespaced diagnostic is model-specific and "
-        "must not be compared as an absolute scale with the Gaussian event-code trajectory."
+        "Native evidence accumulation under the fixed GNN categorical phase-HMM. "
+        "Panel A shows separate one-iteration RxInfer runs on successive observation prefixes; "
+        "panel B shows their differences, the conditional surprisal of each observation. "
+        "The independent forward recursion verifies every prefix. This changes the conditioning "
+        "data, not the parameters, and is not an optimization or learning curve. The retained "
+        "full-sequence check records {rxinfer_categorical_flat} with delta {rxinfer_categorical_delta}. "
+        "The objective remains distinct from Gaussian event-code free energy and policy EFE "
+        "[@rxinfer54_bethe_docs; @rxinfer54_message_passing]."
     ),
     "inference_diagnostics": (
         "Two inference diagnostics kept on separate axes and scales: the pymdp comparison variational "
@@ -6934,12 +6927,13 @@ FIGURE_CAPTIONS: dict[str, str] = {
     "compiler_transfer": (
         "Compiler/source/architecture capability receipt for {compiler_validated_count} locally compiled and "
         "statically disassembled objects across the recorded multi-toolchain matrix of compilers, target "
-        "triples, Mach-O and ELF object formats, and per-compiler optimization vocabularies. A check mark "
-        "means the exact compiler command produced an object whose text bytes were decoded by Capstone; a "
-        "dash means the requested compiler/target/format/optimization cell was unavailable or failed and was "
-        "retained as an explicit missing cell. The matrix includes {compiler_architecture_count} validated "
-        "architecture target(s) and {compiler_unavailable_count} unavailable row(s); the line panel counts "
-        "validated source-family-by-optimization rows. No emitted object was executed, "
+        "triples, Mach-O and ELF object formats, and per-compiler optimization vocabularies. Stacked bars "
+        "count every requested row by its explicit capability status; text and hatching retain unavailable, "
+        "failed and unsupported outcomes. The receipt includes {compiler_architecture_count} validated "
+        "architecture target(s) and {compiler_unavailable_count} unavailable row(s). The right panel shows "
+        "all validated object instruction counts, their exact range and denominator for each compiler; "
+        "repeated points overlap. Full source/target/format/optimization cells remain in the receipt. "
+        "No emitted object was executed, "
         "so the figure supports capability and provenance claims only, not compiler correctness or semantic transfer."
     ),
     "formal_correspondence": (
@@ -7300,8 +7294,9 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
         "the Gaussian event-code model."
     ),
     "rxinfer_categorical_free_energy": (
-        "Point plot of Bethe Free Energy at each RxInfer categorical phase-HMM backend "
-        "iteration, with the recorded final trajectory and delta annotated."
+        "Two panels show cumulative native negative log evidence by observation prefix and "
+        "the conditional surprisal of each newly observed instruction. A note retains the "
+        "separate fixed-full-sequence iteration result."
     ),
     "inference_diagnostics": (
         "Two stacked traces on separate axes: the pymdp comparison variational "
@@ -7461,9 +7456,9 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
         "and leakage-probe margins against the 0.05 margin."
     ),
     "compiler_transfer": (
-        "Status table of compiled-and-disassembled capability by source, compiler, target, "
-        "object format, and optimization, with check marks, explicit dashes, and a "
-        "validated-row count panel."
+        "Stacked capability-status counts for every requested row by compiler, beside "
+        "validated object instruction counts with exact ranges and denominators. "
+        "Unavailable objects have no instruction-count point."
     ),
     "formal_correspondence": (
         "Two panels: per-fixture step-agreement marks for addresses, state, flags, and "
@@ -7539,6 +7534,8 @@ FIGURE_CITATIONS: dict[str, tuple[str, ...]] = {
     "rxinfer_categorical_free_energy": (
         "bagaev2023rxinfer",
         "rxinfer_static_docs",
+        "rxinfer54_bethe_docs",
+        "rxinfer54_message_passing",
     ),
     "inference_diagnostics": ("bagaev2023rxinfer", "heins2022pymdp"),
     "scholarship_source_roles": (),
@@ -8267,9 +8264,11 @@ def _figure_registry_rows(
             input_artifacts = ["output/data/memory_evidence.json"]
         if stem == "rxinfer_categorical_free_energy":
             input_artifacts = [
+                "output/rxinfer_categorical/categorical_evidence_by_prefix.json",
                 "output/rxinfer_categorical/categorical_free_energy_trace.jsonl",
                 "output/rxinfer_categorical/categorical_diagnostics.json",
                 "output/rxinfer_categorical/categorical_model_config.json",
+                "output/rxinfer_categorical/gnn_model.json",
             ]
         if "active" in stem or stem == "ambiguity_ablation":
             input_artifacts.append("output/data/active_selection.json")

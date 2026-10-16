@@ -126,7 +126,18 @@ def _field_distribution(
     )
     if likelihood.ndim != 2 or likelihood.shape[1] != len(HIDDEN_STATE_LABELS):
         raise ValueError(f"invalid likelihood shape for field {field!r}")
-    return support, likelihood
+    from .gnn_numeric import bind_numeric
+
+    binding = bind_numeric(
+        "finite_sensor",
+        {"likelihood": likelihood, "cost": 1.0},
+        context={
+            "sensor_id": field,
+            "outcomes": support,
+            "training_fixtures": model.training_fixtures,
+        },
+    )
+    return tuple(binding.context["outcomes"]), binding.parameters["likelihood"]
 
 
 def _support_value(

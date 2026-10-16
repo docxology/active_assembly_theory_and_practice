@@ -16,9 +16,11 @@ from src.rxinfer_bridge import (
     EXPECTED_JULIA_VERSION,
     EXPECTED_RXINFER_VERSION,
     JULIA_MANIFEST,
+    JULIA_PROJECT,
     _cached_rxinfer_outputs,
     julia_available,
     load_free_energy_records,
+    load_categorical_prefix_records,
     resolve_julia_executable,
     run_rxinfer_backend,
     run_rxinfer_categorical_backend,
@@ -232,6 +234,9 @@ def test_cached_rxinfer_outputs_requires_matching_lineage(tmp_path) -> None:
                 "mode": "static",
                 "julia_version": EXPECTED_JULIA_VERSION,
                 "rxinfer_version": EXPECTED_RXINFER_VERSION,
+                "native_source_sha256": file_sha256(
+                    JULIA_PROJECT / "src/ActiveAssemblyRxInfer.jl"
+                ),
             }
         ),
         encoding="utf-8",
@@ -262,3 +267,30 @@ def test_native_backends_execute_real_julia_in_isolated_output_roots(tmp_path) -
     assert len(gaussian.free_energy_values) == 1
     assert len(categorical.free_energy_values) == 1
     assert str(tmp_path) in gaussian.artifact_paths["diagnostics"]
+    directory = tmp_path / "categorical"
+    prefixes = load_categorical_prefix_records(directory)
+    assert prefixes[-1]["value"] == pytest.approx(categorical.free_energy_values[-1])
+    assert len({row["value"] for row in prefixes}) > 1
+    path = directory / "categorical_evidence_by_prefix.json"
+    original = path.read_text()
+    for key, bad in (
+        ("value", prefixes[0]["value"] + 0.1),
+        ("value", True),
+        ("source_field", "invented"),
+        ("conditioning", "iteration"),
+        ("observation_count", 999),
+        ("backend_iterations", 8),
+        ("model_digest", "foreign"),
+    ):
+        rows = json.loads(original)
+        rows[0][key] = bad
+        path.write_text(json.dumps(rows))
+        with pytest.raises(ValueError):
+            load_categorical_prefix_records(directory)
+    path.write_text(original)
+    config_path = directory / "categorical_model_config.json"
+    config = json.loads(config_path.read_text())
+    config["emission_matrix"][0][0] = -0.1
+    config_path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="malformed distributions"):
+        load_categorical_prefix_records(directory)

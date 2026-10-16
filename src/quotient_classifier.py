@@ -132,6 +132,8 @@ def _classifier_input_hashes(protocol: dict[str, Any]) -> dict[str, str]:
     """Bind the direct producer and observation dependencies before cache reuse."""
     sources = (
         "src/quotient_classifier.py",
+        "src/gnn_numeric.py",
+        "src/gnn_upstream.py",
         "src/disassembly.py",
         "src/emulation.py",
         "src/typed_observations.py",
@@ -143,6 +145,10 @@ def _classifier_input_hashes(protocol: dict[str, Any]) -> dict[str, str]:
     return {
         "research_protocol.json": protocol["protocol_sha256"],
         **{name: sha256_path(PROJECT_ROOT / name) for name in sources},
+        **{
+            str(path.relative_to(PROJECT_ROOT)): sha256_path(path)
+            for path in sorted((PROJECT_ROOT / "configs/gnn").rglob("*.md"))
+        },
     }
 
 
@@ -596,6 +602,23 @@ def _predict_logistic(
     x: np.ndarray, model: tuple[np.ndarray, float, np.ndarray, np.ndarray]
 ) -> np.ndarray:
     weights, bias, mean, scale = model
+    from .gnn_numeric import bind_numeric
+
+    parameters = bind_numeric(
+        "quotient_logistic",
+        {
+            "weights": weights,
+            "bias": bias,
+            "center": mean,
+            "scale": scale,
+        },
+    ).parameters
+    weights, bias, mean, scale = (
+        parameters["weights"],
+        float(parameters["bias"][0]),
+        parameters["center"],
+        parameters["scale"],
+    )
     return _sigmoid(((x - mean) / scale) @ weights + bias)
 
 
@@ -625,6 +648,26 @@ def _predict_markov(
     model: tuple[np.ndarray, np.ndarray, np.ndarray],
 ) -> np.ndarray:
     initial, transition, prior = model
+    from .gnn_numeric import bind_numeric
+
+    binding = bind_numeric(
+        "quotient_markov",
+        {
+            "initial": initial,
+            "transition": transition,
+            "prior": prior,
+        },
+        context={"vocabulary": vocabulary},
+    )
+    parameters = binding.parameters
+    vocabulary = {
+        key: int(value) for key, value in binding.context["vocabulary"].items()
+    }
+    initial, transition, prior = (
+        parameters["initial"],
+        parameters["transition"],
+        parameters["prior"],
+    )
     probabilities: list[float] = []
     for row in rows:
         ids = [
@@ -714,6 +757,28 @@ def _predict_rnn(
     model: tuple[np.ndarray, np.ndarray, np.ndarray, float, float],
 ) -> np.ndarray:
     wxh, whh, why, by, _ = model
+    from .gnn_numeric import bind_numeric
+
+    binding = bind_numeric(
+        "quotient_recurrent",
+        {
+            "wxh": wxh,
+            "whh": whh,
+            "why": why,
+            "bias": by,
+        },
+        context={"vocabulary": vocabulary},
+    )
+    parameters = binding.parameters
+    vocabulary = {
+        key: int(value) for key, value in binding.context["vocabulary"].items()
+    }
+    wxh, whh, why, by = (
+        parameters["wxh"],
+        parameters["whh"],
+        parameters["why"],
+        float(parameters["bias"][0]),
+    )
     return np.asarray(
         [
             _rnn_forward(
@@ -785,7 +850,15 @@ def _fit_platt(probabilities: np.ndarray, labels: np.ndarray) -> tuple[float, fl
 
 
 def _apply_platt(probabilities: np.ndarray, a: float, b: float) -> np.ndarray:
-    return _sigmoid(a * _logit(probabilities) + b)
+    from .gnn_numeric import bind_numeric
+
+    parameters = bind_numeric(
+        "platt_calibration", {"slope": a, "intercept": b}
+    ).parameters
+    return _sigmoid(
+        float(parameters["slope"][0]) * _logit(probabilities)
+        + float(parameters["intercept"][0])
+    )
 
 
 def _fit_with_starts(
@@ -1925,6 +1998,16 @@ def quotient_classifier_payload() -> dict[str, Any]:
     if cached is not None:
         return cached
 
+    from .gnn_numeric import capture_numeric_bindings
+
+    with capture_numeric_bindings() as bindings:
+        payload = _compute_quotient_classifier_payload()
+    payload["gnn_model_sources"] = [b.source for _, b in sorted(bindings.items())]
+    return payload
+
+
+def _compute_quotient_classifier_payload() -> dict[str, Any]:
+
     rows = _dataset()
     train_rows = [row for row in rows if row.split == "training"]
     development_rows = [row for row in rows if row.split == "development"]
@@ -2459,6 +2542,19 @@ def validate_quotient_classifier_payload(payload: object) -> tuple[bool, str]:
     missing = [key for key in required if key not in payload]
     if missing:
         return False, f"quotient classifier missing {missing}"
+    from .gnn_numeric import restore_numeric_sources
+
+    try:
+        names = restore_numeric_sources(payload.get("gnn_model_sources"))
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        return False, f"quotient classifier GNN sources invalid: {exc}"
+    if not {
+        "quotient_logistic",
+        "quotient_markov",
+        "quotient_recurrent",
+        "platt_calibration",
+    }.issubset(names):
+        return False, "quotient classifier GNN model family coverage is incomplete"
     if payload["schema_version"] != QUOTIENT_CLASSIFIER_SCHEMA_VERSION:
         return False, "quotient classifier schema mismatch"
     protocol = scientific_protocol_payload()

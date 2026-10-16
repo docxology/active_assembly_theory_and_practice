@@ -7,7 +7,8 @@ The configured
 [Generalized Notation Notation repository](https://github.com/ActiveInferenceInstitute/Generalized_Notation_Notation)
 supplies the actual Markdown parser. The historical identity-transition,
 fitted, factorized, hierarchical and Gaussian paths remain explicitly scoped
-diagnostics.
+diagnostics, with their own executable numeric GNN bindings and rendered graphs.
+`GNN_ROOT` is required for all inference paths, including these comparators.
 
 ## Preparation and commands
 
@@ -71,6 +72,47 @@ rejects zero E support because its supported upstream policy implementation
 floors logarithms; the mathematical IR retains structural-zero support.
 This is a bounded executable profile, not universal support for every GNN
 family or backend.
+
+## Numeric adapter profiles and rendered catalog
+
+The twelve files in `configs/gnn/inference/` extend source admission to every
+other inference architecture: phase HMM, identity comparator, Gaussian
+Normal/Gamma model, factorized and hierarchical fields, finite sensor channel,
+retrospective ordering, logistic, Markov and recurrent classifiers, Platt
+calibration and linear cost calibration. Together with the two canonical
+specifications, these form fourteen model profiles. They are software
+architectures, not fourteen independent experiments.
+
+`src/gnn_numeric.py` specializes fitted or runtime parameters into literal GNN
+instances, parses them through the actual upstream parser and checks exact
+values, ranks, shared axes and declared probability constraints. Adapters
+consume the returned arrays. Scalars use explicit singleton vectors; larger
+matrices use the upstream brace/tuple syntax and are checked for exact numeric
+round trips. This numeric adapter profile is distinct from the smaller strict
+categorical compiler above. Unsupported declarations and expressions fail;
+no model distributions are normalized or repaired during admission.
+
+`output/data/inference_model_catalog.json` records source hashes, training
+context, specialized GNN instances, adapter source files and graph hashes.
+`output/gnn/inference/README.md` links every profile to its actual upstream
+network rendering and a larger-label PNG/SVG/PDF rendering of the same parsed
+topology. The producer requires an actual runtime binding for every numeric
+profile. Cached fitted results must replay their retained GNN source capsules;
+default prototypes cannot substitute for missing runtime coverage. Validation
+reparses the sources and leaves their bytes unchanged.
+
+Fitting algorithms remain explicit project implementations. GNN supplies the
+parsed model specification and numerical parameters consumed by bounded
+Python/Julia adapters; this is not a claim of universal upstream code
+generation. The Gaussian native bridge additionally checks the GNN source
+digest and its literal Normal/Gamma prior parameters before constructing the
+RxInfer graph.
+
+The categorical companion retains its stationary iteration trace. Its main
+figure shows separate native runs on observation prefixes and conditional
+surprisal increments, with independent scaled-forward evidence checks. A
+fixed categorical tree can reach its exact fixed point immediately; changing
+the observed prefix is not an optimization iteration.
 
 ## Models and interpretation
 

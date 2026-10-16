@@ -41,9 +41,9 @@ class GenerativeModelSpec:
 
 def build_generative_model(model_path: Path | None = None) -> GenerativeModelSpec:
     """Adapt the canonical GNN likelihood/prior to the historical result shape."""
-    from .gnn_parser import compile_gnn
+    from .gnn_numeric import canonical_model
 
-    model = compile_gnn(
+    model = canonical_model(
         Path(model_path)
         if model_path is not None
         else Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"

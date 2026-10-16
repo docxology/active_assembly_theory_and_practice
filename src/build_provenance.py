@@ -86,7 +86,7 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "manuscript" / "config.yaml",
         project_root / "manuscript" / "references.bib",
         project_root / "manuscript" / "assets" / "active_assembly_cover.png",
-        *sorted((project_root / "configs/gnn").glob("*.md")),
+        *sorted((project_root / "configs/gnn").rglob("*.md")),
         project_root / "julia/ActiveAssemblyRxInfer/Project.toml",
         project_root / "julia/ActiveAssemblyRxInfer/Manifest.toml",
         project_root / "julia/ActiveAssemblyRxInfer/src/ActiveAssemblyRxInfer.jl",
@@ -123,7 +123,11 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "output/data/held_out_model.json",
         project_root / "output/figures/README.md",
     ]
-    generated_paths.extend(sorted((project_root / "output/gnn").glob("*.json")))
+    generated_paths.extend(
+        path
+        for path in sorted((project_root / "output/gnn").rglob("*"))
+        if path.is_file() and path.suffix in {".json", ".md", ".png", ".svg", ".pdf"}
+    )
     generated_paths.extend(
         path
         for path in sorted((project_root / "output/manuscript").glob("*"))

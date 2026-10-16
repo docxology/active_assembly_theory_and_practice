@@ -23,6 +23,11 @@ sidecar is available, and the computational research shape of the sibling
   [the executable contract](docs/gnn_models.md) for source admission, tensor
   meaning, acquisition order and native parity. Gaussian, fitted, factorized
   and hierarchical diagnostics retain separate scales and limitations.
+- Every inference adapter must consume an actual upstream-parsed numeric GNN
+  binding. Keep the twelve profiles in `configs/gnn/inference/`, runtime source
+  capsules and rendered catalog synchronized. A prototype is not runtime
+  coverage; malformed distributions fail without repair. Preserve native
+  categorical iteration traces and distinguish prefix evidence from convergence.
 - Keep manuscript claims cautious: this is a demonstrator linking assembly
   observations to Active Inference/FEP, not a full reverse-engineering system.
 

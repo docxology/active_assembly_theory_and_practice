@@ -12,9 +12,9 @@ export run_rxinfer, run_rxinfer_categorical, run_shared_categorical, main
 const DEFAULT_MODEL_NAME = "gaussian_event_code_model"
 const CATEGORICAL_MODEL_NAME = "categorical_phase_hmm"
 
-@model function gaussian_event_code_model(y)
-    μ ~ NormalMeanVariance(0.0, 100.0)
-    τ ~ GammaShapeRate(1.0, 1.0)
+@model function gaussian_event_code_model(y, prior_mean, prior_variance, prior_shape, prior_rate)
+    μ ~ NormalMeanVariance(prior_mean, prior_variance)
+    τ ~ GammaShapeRate(prior_shape, prior_rate)
     for i in eachindex(y)
         y[i] ~ NormalMeanPrecision(μ, τ)
     end
@@ -31,6 +31,26 @@ end
 
 function _read_json(path::AbstractString)
     return JSON3.read(read(path, String))
+end
+
+function _gaussian_gnn_parameters(path::AbstractString)
+    spec = _read_json(path)
+    spec.schema_version == "1.0" && spec.dialect == "active-assembly-numeric-gnn-1" && spec.model_name == "gaussian_event_code" || error("GNN_GAUSSIAN_UNSUPPORTED_MODEL")
+    _sha256_text(String(spec.gnn_source)) == spec.source_sha256 || error("GNN_GAUSSIAN_SOURCE_HASH")
+    Set(String.(keys(spec.parameters))) == Set(["mean", "variance", "shape", "rate"]) || error("GNN_GAUSSIAN_PARAMETER_INVENTORY")
+    values = Dict{String,Float64}()
+    for name in ("mean", "variance", "shape", "rate")
+        array = spec.parameters[Symbol(name)]
+        length(array) == 1 && array[1] isa Real && !(array[1] isa Bool) && isfinite(array[1]) || error("GNN_GAUSSIAN_PARAMETER_VALUE")
+        literal = match(Regex("(?m)^" * name * "=(.+)\$"), String(spec.gnn_source))
+        isnothing(literal) && error("GNN_GAUSSIAN_SOURCE_PARAMETER")
+        parsed = JSON3.read(literal.captures[1])
+        length(parsed) == 1 && parsed[1] == array[1] || error("GNN_GAUSSIAN_SOURCE_PARAMETER")
+        values[name] = Float64(array[1])
+    end
+    all(values[name] > 0 for name in ("variance", "shape", "rate")) || error("GNN_GAUSSIAN_POSITIVE_PRIOR")
+    parameters = (prior_mean=values["mean"], prior_variance=values["variance"], prior_shape=values["shape"], prior_rate=values["rate"])
+    return parameters, spec
 end
 
 function _write_json(path::AbstractString, payload)
@@ -76,7 +96,7 @@ function _extract_observations(bundle)
     return values, categories, mnemonics
 end
 
-function _run_static_model(values::Vector{Float64}; iterations::Int)
+function _run_static_model(values::Vector{Float64}; iterations::Int, prior_mean::Float64, prior_variance::Float64, prior_shape::Float64, prior_rate::Float64)
     if iterations <= 0
         error("iterations must be positive")
     end
@@ -85,11 +105,11 @@ function _run_static_model(values::Vector{Float64}; iterations::Int)
         q(μ, τ) = q(μ)q(τ)
     end
     initialization = @initialization begin
-        q(μ) = NormalMeanVariance(initial_mean, 100.0)
-        q(τ) = GammaShapeRate(1.0, 1.0)
+        q(μ) = NormalMeanVariance(initial_mean, prior_variance)
+        q(τ) = GammaShapeRate(prior_shape, prior_rate)
     end
     return infer(
-        model = gaussian_event_code_model(),
+        model = gaussian_event_code_model(prior_mean=prior_mean, prior_variance=prior_variance, prior_shape=prior_shape, prior_rate=prior_rate),
         data = (y = values,),
         constraints = constraints,
         initialization = initialization,
@@ -285,13 +305,17 @@ function _write_jsonl(path::AbstractString, records)
     return path
 end
 
-function run_rxinfer(trace_path::AbstractString, output_dir::AbstractString; iterations::Int = 8)
+function run_rxinfer(trace_path::AbstractString, output_dir::AbstractString; iterations::Int = 8, model_path::AbstractString)
     mkpath(output_dir)
     bundle = _read_json(trace_path)
     observation_values, categories, mnemonics = _extract_observations(bundle)
+    parameters, spec = _gaussian_gnn_parameters(model_path)
     sample_id = String(bundle.sample_id)
     model_config = Dict{String, Any}(
         "model_name" => DEFAULT_MODEL_NAME,
+        "model_digest" => String(spec.source_sha256),
+        "gnn_definition_sha256" => String(spec.definition_sha256),
+        "prior_parameters" => Dict(string(k) => v for (k,v) in pairs(parameters)),
         "mode" => "static",
         "iterations" => iterations,
         "observation_count" => length(observation_values),
@@ -305,7 +329,7 @@ function run_rxinfer(trace_path::AbstractString, output_dir::AbstractString; ite
     config_hash = _sha256_text(config_text)
     run_id = "$(sample_id)-$(Dates.format(now(UTC), dateformat"yyyymmddTHHMMSS"))"
 
-    result = _run_static_model(observation_values; iterations = iterations)
+    result = _run_static_model(observation_values; iterations = iterations, parameters...)
     free_energy_values = Float64.(collect(result.free_energy))
     free_energy_records = _free_energy_records(
         free_energy_values;
@@ -328,7 +352,9 @@ function run_rxinfer(trace_path::AbstractString, output_dir::AbstractString; ite
         "model_name" => DEFAULT_MODEL_NAME,
         "mode" => "static",
         "iteration_count" => length(free_energy_values),
+        "native_source_sha256" => _sha256_file(@__FILE__),
         "all_free_energy_finite" => finite_values,
+        "model_digest" => String(spec.source_sha256),
         "free_energy_initial" => first(free_energy_values),
         "free_energy_final" => last(free_energy_values),
         "free_energy_min" => minimum(free_energy_values),
@@ -414,6 +440,18 @@ function run_rxinfer_categorical(
         posteriors[string(name)] = _posterior_summary(posterior)
     end
 
+    evidence_by_prefix = [begin
+        prefix = _run_categorical_model(observations[1:stop], initial_probs, transition_matrix, emission_matrix; iterations=1)
+        value = Float64(last(prefix.free_energy))
+        isfinite(value) || error("categorical prefix evidence must be finite")
+        Dict{String,Any}("observation_count"=>stop, "value"=>value,
+            "source_field"=>"result.free_energy", "conditioning"=>"trace_prefix",
+            "backend_iterations"=>length(prefix.free_energy), "run_id"=>run_id,
+            "model_digest"=>String(spec.model_digest), "data_hash"=>data_hash,
+            "config_hash"=>config_hash)
+    end for stop in eachindex(observations)]
+    abs(evidence_by_prefix[end]["value"] - last(free_energy_values)) <= 1e-8 || error("categorical prefix/full evidence mismatch")
+
     deltas = [nothing; [free_energy_values[i] - free_energy_values[i - 1] for i in 2:length(free_energy_values)]]
     diagnostics = Dict{String, Any}(
         "run_id" => run_id,
@@ -423,6 +461,7 @@ function run_rxinfer_categorical(
         "time_convention" => "first_observation_D",
         "mode" => "categorical",
         "iteration_count" => length(free_energy_values),
+        "native_source_sha256" => _sha256_file(@__FILE__),
         "all_free_energy_finite" => finite_values,
         "free_energy_initial" => first(free_energy_values),
         "free_energy_final" => last(free_energy_values),
@@ -437,11 +476,13 @@ function run_rxinfer_categorical(
 
     outputs = Dict{String, String}(
         "free_energy_trace" => joinpath(output_dir, "categorical_free_energy_trace.jsonl"),
+        "evidence_by_prefix" => joinpath(output_dir, "categorical_evidence_by_prefix.json"),
         "posteriors" => joinpath(output_dir, "categorical_posteriors.json"),
         "diagnostics" => joinpath(output_dir, "categorical_diagnostics.json"),
         "model_config" => joinpath(output_dir, "categorical_model_config.json"),
     )
     _write_jsonl(outputs["free_energy_trace"], free_energy_records)
+    _write_json(outputs["evidence_by_prefix"], evidence_by_prefix)
     _write_json(outputs["posteriors"], Dict("run_id" => run_id, "posteriors" => posteriors))
     _write_json(outputs["diagnostics"], diagnostics)
     _write_json(outputs["model_config"], model_config)
@@ -494,7 +535,7 @@ function main(args::Vector{String})
     result = if model == "categorical"
         run_rxinfer_categorical(trace_path, output_dir; iterations = iterations, model_path = (isnothing(model_path) ? error("--model-spec is required") : String(model_path)))
     else
-        run_rxinfer(trace_path, output_dir; iterations = iterations)
+        run_rxinfer(trace_path, output_dir; iterations = iterations, model_path = (isnothing(model_path) ? error("--model-spec is required") : String(model_path)))
     end
     println(JSON3.write(result["diagnostics"]))
     return 0

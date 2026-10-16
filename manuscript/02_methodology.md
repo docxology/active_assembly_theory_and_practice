@@ -45,6 +45,26 @@ The first observation conditions D before any transition. The passive
 categorical Python and native Julia paths consume the same parameter export;
 the prospective sensor model executes through pymdp.
 
+The same source requirement extends to every inference comparator and fitted
+diagnostic. The generated catalog contains {{GNN_INFERENCE_MODEL_COUNT}} model
+profiles and {{GNN_INFERENCE_INSTANCE_COUNT}} distinct numeric instances at
+`{{GNN_INFERENCE_CATALOG_PATH}}`. Besides the two canonical specifications,
+these profiles declare the phase HMM, identity comparator, Gaussian event-code
+model, factorized and hierarchical likelihoods, finite sensor channels,
+retrospective ordering weights, logistic and recurrent classifiers, Markov
+classifier, Platt calibration, and linear cost calibration. A profile defines
+an architecture; a numeric instance binds its current parameters and training
+context. These counts describe software artifacts, not independent samples.
+
+Each adapter consumes parameters returned by the configured upstream GNN
+parser. Its declared axes and probability constraints are checked before
+inference; fitted parameters are retained as specialized GNN sources. The
+upstream graph renderer and a larger-label rendering of the same parsed
+topology accompany every profile. Python and Julia adapters implement the
+declared bounded architectures. This extends source binding across the study
+without claiming universal GNN code generation or turning a discriminative
+classifier into an active-inference agent.
+
 For this fixed-parameter profile, each policy's negative expected free energy
 is the finite-horizon sum of expected dimensionless utility and modality-wise
 expected state information gain. With policy precision $\gamma$ and policy
@@ -582,8 +602,13 @@ also runs a validated, namespaced categorical companion,
 fixed left-to-right latent phases. Its diagnostics are written to
 `{{RXINFER_CATEGORICAL_ARTIFACT}}` and contain
 `{{RXINFER_CATEGORICAL_FREE_ENERGY_COUNT}}` finite values, with final value
-`{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`; its convergence is shown in
-[@fig:rxinfer-categorical-free-energy]. The Gaussian and categorical
+`{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`. The fixed-chain iteration values
+are already stationary after the first sweep. The prefix-evidence and
+conditional-surprisal panels in [@fig:rxinfer-categorical-free-energy] instead
+show native inference on successively longer observed sequences, checked
+against an independent forward calculation. They are evidence accumulation
+diagnostics, not learning or convergence curves
+[@rxinfer54_bethe_docs;@rxinfer54_message_passing]. The Gaussian and categorical
 free-energy values are not compared on an absolute scale: they are distinct
 factor graphs with different variational objectives.
 

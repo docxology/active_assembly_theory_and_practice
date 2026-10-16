@@ -113,11 +113,14 @@ def sensors_from_factorized_model(
             for outcome in outcomes
         )
         sensors.append(
-            FiniteSensor(
-                sensor_id=field,
-                outcomes=outcomes,
-                cost=1.0,
-                likelihood=likelihood,
+            admit_finite_sensor(
+                FiniteSensor(
+                    sensor_id=field,
+                    outcomes=outcomes,
+                    cost=1.0,
+                    likelihood=likelihood,
+                ),
+                len(model.hidden_state_labels),
             )
         )
     return tuple(sensors)
@@ -135,7 +138,32 @@ def _validate_sensor(sensor: FiniteSensor, state_count: int) -> np.ndarray:
         raise ValueError(f"sensor {sensor.sensor_id!r} likelihood is invalid")
     if not np.allclose(matrix.sum(axis=0), 1.0, atol=1e-8):
         raise ValueError(f"sensor {sensor.sensor_id!r} columns must normalize")
-    return matrix
+    from .gnn_numeric import bind_numeric
+
+    return bind_numeric(
+        "finite_sensor",
+        {"likelihood": matrix, "cost": sensor.cost},
+        context={"sensor_id": sensor.sensor_id, "outcomes": sensor.outcomes},
+    ).parameters["likelihood"]
+
+
+def admit_finite_sensor(sensor: FiniteSensor, state_count: int) -> FiniteSensor:
+    from .gnn_numeric import bind_numeric
+
+    matrix = _validate_sensor(sensor, state_count)
+    binding = bind_numeric(
+        "finite_sensor",
+        {"likelihood": matrix, "cost": sensor.cost},
+        context={"sensor_id": sensor.sensor_id, "outcomes": sensor.outcomes},
+    )
+    return FiniteSensor(
+        sensor_id=str(binding.context["sensor_id"]),
+        outcomes=tuple(binding.context["outcomes"]),
+        cost=float(binding.parameters["cost"][0]),
+        likelihood=tuple(
+            tuple(float(v) for v in row) for row in binding.parameters["likelihood"]
+        ),
+    )
 
 
 def _posterior_for_outcome(
@@ -244,8 +272,9 @@ def solve_exact_policy(
     if len({sensor.sensor_id for sensor in sensor_tuple}) != len(sensor_tuple):
         raise ValueError("sensor identifiers must be unique")
     normalized = _normalize(np.asarray(belief, dtype=float))
-    for sensor in sensor_tuple:
-        _validate_sensor(sensor, normalized.size)
+    sensor_tuple = tuple(
+        admit_finite_sensor(sensor, normalized.size) for sensor in sensor_tuple
+    )
     prior_entropy = entropy(normalized)
     objective, terminal_entropy, expected_cost, policy_count, first_sensor = _optimal(
         normalized,

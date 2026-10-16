@@ -154,6 +154,22 @@ def _validate_inputs(
         preferences = _normalize(C, name="C")
         if preferences.size != matrix_a.shape[0]:
             raise ValueError("C length must match A observation dimension")
+    from .gnn_numeric import bind_numeric
+
+    parameters = bind_numeric(
+        "retrospective_ordering",
+        {
+            "A": matrix_a,
+            "preferences": (
+                preferences
+                if preferences is not None
+                else np.full(matrix_a.shape[0], 1.0 / matrix_a.shape[0])
+            ),
+        },
+    ).parameters
+    matrix_a = parameters["A"]
+    if preferences is not None:
+        preferences = parameters["preferences"]
     return prior, matrix_a, preferences
 
 

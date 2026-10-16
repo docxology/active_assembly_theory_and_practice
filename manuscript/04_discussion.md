@@ -83,6 +83,17 @@ application effectiveness. The model is a reproducible computational substrate f
 asking which temporal and active-inference mechanisms are visible once assembly
 evidence, formal scope, and external provenance have all been made explicit.
 
+Requiring GNN sources for the fitted and discriminative comparators makes the
+parameter boundary inspectable across that substrate. The generated catalog
+binds numeric instances, training context, adapter code and rendered topology.
+It supports a reproducibility claim: the recorded parameters are the parameters
+admitted to inference. It does not show that a chosen architecture is adequate
+for program semantics. The categorical energy diagnostic illustrates the same
+distinction. A stationary iteration trace is expected for the exact fixed
+chain; prefix evidence reveals how each observation changes the model's
+evidence, while supplying no learning curve or general convergence guarantee
+[@rxinfer54_bethe_docs;@rxinfer54_message_passing].
+
 The additional formal and cross-architecture tranches clarify what a stronger
 scientific contribution would require. The Lean receipt gives the quotient
 program a genuine kernel-checked algebraic nucleus: equivalence, neutrality,

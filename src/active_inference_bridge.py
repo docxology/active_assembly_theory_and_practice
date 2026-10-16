@@ -49,6 +49,23 @@ def infer_hidden_states_reference(
         raise ValueError("observations must not be empty")
     model.validate()
 
+    from .gnn_numeric import bind_numeric
+
+    parameters = bind_numeric(
+        "identity_phase",
+        {"A": model.A, "D": model.D},
+        context={
+            "observation_labels": model.observation_labels,
+            "hidden_state_labels": model.hidden_state_labels,
+        },
+    ).parameters
+    model = GenerativeModelSpec(
+        A=parameters["A"],
+        D=parameters["D"],
+        observation_labels=model.observation_labels,
+        hidden_state_labels=model.hidden_state_labels,
+    )
+
     posterior = np.asarray(model.D, dtype=float)
     posterior_by_step: list[tuple[float, ...]] = []
     free_energy_by_step: list[float] = []
@@ -87,27 +104,29 @@ def infer_hidden_states(
     if not observations:
         raise ValueError("observations must not be empty")
     model.validate()
-    import hashlib
-    import json
     from dataclasses import replace
     from pathlib import Path
 
-    from .gnn_parser import compile_gnn
+    from .gnn_numeric import bind_numeric, canonical_model
     from .pymdp_runtime import PymdpRuntime, beliefs
 
-    canonical = compile_gnn(
+    binding = bind_numeric(
+        "identity_phase",
+        {"A": model.A, "D": model.D},
+        context={
+            "observation_labels": model.observation_labels,
+            "hidden_state_labels": model.hidden_state_labels,
+        },
+    )
+    canonical = canonical_model(
         Path(__file__).resolve().parents[1] / "configs/gnn/passive_phase.md"
     )
     compiled = replace(
         canonical,
-        A=(model.A,),
-        D=(model.D,),
+        A=(binding.parameters["A"],),
+        D=(binding.parameters["D"],),
         B=(np.eye(len(model.D))[:, :, None],),
-        source_sha256=hashlib.sha256(
-            json.dumps(
-                {"A": model.A.tolist(), "D": model.D.tolist()}, sort_keys=True
-            ).encode()
-        ).hexdigest(),
+        source_sha256=binding.instance_sha256,
     )
     runtime = PymdpRuntime(compiled)
     rows = []

@@ -19,6 +19,9 @@ consumes the passive model's same parameters [@friedman2026gnn; @heins2022pymdp;
 @bagaev2023rxinfer]. The sensor Agent selects an action before fixture evidence
 is acquired. Independent finite calculations check beliefs and policy scores;
 native smoothing uses the same parameters and first-observation convention.
+Every inference comparator and fitted diagnostic also consumes an
+upstream-parsed numeric GNN specification, with source-bound runtime instances
+and rendered model graphs.
 
 A corpus of `{{TEMPORAL_FIXTURE_COUNT}}` authored fixtures supports
 complete-fixture exclusion diagnostics. At the fixed informative likelihood,

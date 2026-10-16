@@ -3086,6 +3086,18 @@ def build_validation_report(project_root: Path = PROJECT_ROOT) -> ValidationRepo
     trace_path = output_dir / "data" / "trace_bundle.json"
     rxinfer_dir = output_dir / "rxinfer"
     checks: list[ValidationCheck] = []
+    from .gnn_catalog import validate_inference_catalog
+
+    gnn_catalog_errors = validate_inference_catalog(project_root)
+    checks.append(
+        _check(
+            "inference_models_have_gnn_specs_and_graphs",
+            not gnn_catalog_errors,
+            "; ".join(gnn_catalog_errors)
+            if gnn_catalog_errors
+            else "all inference profiles have source-bound GNN instances and actual upstream/readable graphs",
+        )
+    )
     receipt_errors = validate_data_artifact_surface(project_root)
     checks.append(
         _check(

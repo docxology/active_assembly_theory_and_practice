@@ -7,6 +7,13 @@ and PDF validators, and the offline HTML atlas. Plotting code may create pixels,
 but it does not own the caption, source note, status semantics, or alternative
 text.
 
+The common figure exporter enforces at least 10-point plot text, 12-point axis
+labels and 13-point titles before saving. These source sizes are checked in
+the final page layout because scaling can still make text too small. Dense
+tables and matrices require sufficient canvas space and explicit visual
+inspection. Model topology graphs additionally have larger-label native
+PNG/SVG/PDF exports in `output/gnn/inference/`; see [GNN models](gnn_models.md).
+
 ## Contract
 
 Every substantive visual has one `FigureSpec` with a stable identifier and

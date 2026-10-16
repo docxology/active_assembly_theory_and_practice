@@ -42,6 +42,16 @@ The native package also executes the categorical phase-HMM companion
 finite iterations and final Bethe Free Energy `{{RXINFER_CATEGORICAL_FINAL_FREE_ENERGY}}`
 in `{{RXINFER_CATEGORICAL_ARTIFACT}}`. This is a separate, fixed-parameter
 factor graph; its free-energy scale is not compared with the Gaussian spine.
+Its iteration trace is flat because the structured categorical chain reaches
+its exact fixed point in the first sweep. Figure @fig:rxinfer-categorical-free-energy
+therefore displays actual native runs on successive observation prefixes.
+For this normalized tree model, the resulting Bethe free energy agrees with
+the independent scaled-forward value $-\log p(o_{1:t})$. Adjacent increments
+are conditional surprisal, $-\log p(o_t\mid o_{1:t-1})$, rather than an
+optimization trajectory. The unchanged repeated-iteration trace is retained
+in the native receipt. This distinction follows the factorization and
+message-passing schedule, and does not imply that arbitrary variational
+models converge in one iteration [@rxinfer54_bethe_docs;@rxinfer54_message_passing].
 
 The independent bounded-semantics check supports the trace interpretation at
 the concrete level: {{SYMBOLIC_SUPPORTED_COUNT}} decoded instructions are
