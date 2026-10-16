@@ -300,7 +300,3 @@ uv run python scripts/run_scientific_program.py \
   generate-figures \
   --formats png svg pdf atlas
 ```
-
-The renderer hydrates figure captions and paths through the same variable
-registry used for the rest of the manuscript. No rendered caption, figure
-number, or accessibility string is hand-edited after hydration.
