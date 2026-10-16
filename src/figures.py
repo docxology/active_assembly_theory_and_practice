@@ -66,6 +66,13 @@ def _apply_readable_type(fig: Any) -> None:
         axes.tick_params(axis="both", labelsize=10)
         for label in (axes.xaxis.label, axes.yaxis.label):
             label.set_fontsize(max(label.get_fontsize(), 12))
+            if "$" not in label.get_text():
+                label.set_text(
+                    "\n".join(
+                        textwrap.fill(line, 44, break_long_words=False)
+                        for line in label.get_text().splitlines()
+                    )
+                )
         axes.title.set_fontsize(max(axes.title.get_fontsize(), 13))
     for artist in fig.findobj(match=Text):
         artist.set_fontsize(max(artist.get_fontsize(), 10))
@@ -553,9 +560,7 @@ def plot_trace_feature_matrix(
                 fontsize=8,
             )
     ax_flags.set_title("Evidence-backed instruction features", pad=12)
-    ax_flags.set_xlabel(
-        "0 = absent; 1 = present; immediate and register flags use Capstone detail"
-    )
+    ax_flags.set_xlabel("Binary feature (0 absent; 1 present)")
     _style_axes(ax_flags, grid_axis="none")
 
     ax_codes.axis("off")
@@ -1742,9 +1747,6 @@ def plot_model_comparison_bars(
     ax.set_ylabel("Phase-decoding accuracy")
     ax.set_ylim(0.0, 1.0)
     ax.set_title("Per-fixture accuracy")
-    for bars in ax.containers:
-        if isinstance(bars, BarContainer):
-            ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=7)
     ax.legend(
         loc="upper center",
         bbox_to_anchor=(0.5, -0.18),
@@ -3097,7 +3099,7 @@ def plot_model_evidence(payload: dict[str, object], output_path: Path) -> Path:
         values,
         color=[PALETTE[2] if name == best else "#B8CDE0" for name in names],
     )
-    ax.bar_label(bars, fmt="%.2f", fontsize=8)
+    ax.bar_label(bars, fmt="%.2f", fontsize=10, label_type="center")
     ax.set_yticks(x)
     ax.set_yticklabels([name.replace("_", " ") for name in names])
     ax.axvline(0.0, color=INK, linewidth=0.8)
@@ -3441,7 +3443,15 @@ def plot_factorized_observation_comparison(
         ("hierarchical", "hierarchical", PALETTE[2]),
     )
     x = np.arange(len(rows), dtype=float)
-    fig, axes = plt.subplots(1, 3, figsize=(13.0, 5.2))
+    fig = plt.figure(figsize=(12.8, 9.5))
+    layout = fig.add_gridspec(
+        2, 2, height_ratios=(0.95, 1.05), hspace=0.65, wspace=0.72
+    )
+    axes = (
+        fig.add_subplot(layout[0, :]),
+        fig.add_subplot(layout[1, 0]),
+        fig.add_subplot(layout[1, 1]),
+    )
 
     width = 0.18
     for offset, (key, label, color) in enumerate(methods):
@@ -3449,19 +3459,7 @@ def plot_factorized_observation_comparison(
             float(cast(float, cast(dict[str, object], row[key])["accuracy"]))
             for row in rows
         ]
-        bars = axes[0].bar(
-            x + (offset - 1.5) * width, values, width, label=label, color=color
-        )
-        for bar, value in zip(bars, values, strict=True):
-            axes[0].text(
-                bar.get_x() + bar.get_width() / 2,
-                value + 0.025,
-                f"{value:.2f}",
-                ha="center",
-                va="bottom",
-                fontsize=6.5,
-                color=INK,
-            )
+        axes[0].bar(x + (offset - 1.5) * width, values, width, label=label, color=color)
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(labels, rotation=22, ha="right")
     axes[0].set_ylim(0.0, 1.12)
@@ -3519,29 +3517,16 @@ def plot_factorized_observation_comparison(
         for row in rows
     ]
     ax = axes[2]
-    # Several fixtures intentionally tie on this tiny corpus.  Stagger the
-    # direct labels by a small, deterministic amount and draw a connector so
-    # tied points remain readable without implying a change in the measured
-    # accuracy.
-    label_offsets = (0.018, -0.018, 0.018, -0.018)
     for index, (full, missing) in enumerate(
         zip(full_values, missing_values, strict=True)
     ):
-        ax.plot([0, 1], [full, missing], color=GRID, linewidth=1.2, zorder=1)
-        ax.scatter([0], [full], color=PALETTE[0], s=42, zorder=2)
-        ax.scatter([1], [missing], color=PALETTE[1], s=42, zorder=2)
-        label_y = min(
-            0.96, max(0.04, missing + label_offsets[index % len(label_offsets)])
-        )
-        ax.plot([1.01, 1.035], [missing, label_y], color=GRID, linewidth=0.8)
-        ax.text(1.04, label_y, labels[index], va="center", fontsize=7, color=INK)
-    ax.set_xlim(-0.2, 1.9)
-    ax.set_ylim(0.0, 1.0)
-    ax.set_xticks([0, 1])
-    ax.set_xticklabels(
-        ["all typed fields", "memory field masked"], rotation=22, ha="right"
-    )
-    ax.set_ylabel("held-out accuracy")
+        ax.plot([full, missing], [index, index], color=GRID, linewidth=1.5, zorder=1)
+        ax.scatter([full], [index], color=PALETTE[0], s=42, zorder=3)
+        ax.scatter([missing], [index], color=PALETTE[1], marker="x", s=50, zorder=4)
+    ax.set_xlim(-0.03, 1.03)
+    ax.set_yticks(np.arange(len(labels)), labels)
+    ax.invert_yaxis()
+    ax.set_xlabel("held-out accuracy")
     ax.set_title("Explicit missing-field policy", loc="left", fontsize=10)
     ax.legend(
         handles=[
@@ -3556,9 +3541,9 @@ def plot_factorized_observation_comparison(
             Line2D(
                 [0],
                 [0],
-                marker="o",
+                marker="x",
                 color="w",
-                markerfacecolor=PALETTE[1],
+                markeredgecolor=PALETTE[1],
                 label="masked",
             ),
         ],
@@ -3568,7 +3553,7 @@ def plot_factorized_observation_comparison(
     )
 
     for ax in axes:
-        _style_axes(ax, grid_axis="y")
+        _style_axes(ax, grid_axis="x" if ax is axes[2] else "y")
     fig.suptitle(
         "Typed evidence is an evaluated companion, not an automatic improvement",
         x=0.07,
@@ -3585,7 +3570,7 @@ def plot_factorized_observation_comparison(
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.24, top=0.78, wspace=0.34)
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.10, top=0.84)
     return _save_figure(fig, output_path)
 
 
@@ -4486,18 +4471,17 @@ def plot_active_information_frontier(
                 "edgecolor": "none",
             },
         )
-    ax.text(
-        1.0,
-        -0.16,
-        "Costs are model-derived unit proxies; the curve is a mechanism result, not a wall-clock law.",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
+    fig.text(
+        0.11,
+        0.025,
+        "Costs are model-derived proxies; this finite mechanism result is not a wall-clock law.",
+        ha="left",
+        va="bottom",
         fontsize=8,
         color=MUTED,
     )
     _style_axes(ax, grid_axis="y")
-    fig.subplots_adjust(left=0.11, right=0.98, bottom=0.24, top=0.80)
+    fig.subplots_adjust(left=0.11, right=0.98, bottom=0.28, top=0.80)
     return _save_figure(fig, output_path)
 
 
@@ -5541,7 +5525,7 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(10.1, 5.0), gridspec_kw={"width_ratios": (1.0, 1.35)}
+        1, 2, figsize=(10.1, 6.5), gridspec_kw={"width_ratios": (1.0, 1.35)}
     )
     y = np.arange(len(field_counts), dtype=float)
     proportions = [
@@ -5614,21 +5598,16 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
         ncol=2,
     )
     fig.text(
-        0.12,
-        0.105,
-        f"{trace_count} intervention traces; {total_reference_steps} reference step rows; no inferential interval.",
+        0.08,
+        0.075,
+        textwrap.fill(
+            f"{trace_count} intervention traces; {total_reference_steps} reference step rows. "
+            f"Boundary: {unsupported_rows} unsupported traces; {bound_rows} bound/exception/unsupported steps. No inferential interval.",
+            115,
+        ),
         ha="left",
         va="bottom",
-        fontsize=7.4,
-        color=MUTED,
-    )
-    fig.text(
-        0.55,
-        0.105,
-        f"Boundary rows: {unsupported_rows} unsupported traces; {bound_rows} bound/exception/unsupported steps.",
-        ha="left",
-        va="bottom",
-        fontsize=7.4,
+        fontsize=10,
         color=MUTED,
     )
     fig.text(
@@ -5640,7 +5619,7 @@ def plot_formal_correspondence(payload: dict[str, object], output_path: Path) ->
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.12, right=0.98, bottom=0.23, top=0.80, wspace=0.32)
+    fig.subplots_adjust(left=0.12, right=0.98, bottom=0.36, top=0.80, wspace=0.32)
     return _save_figure(fig, output_path)
 
 
@@ -5716,7 +5695,7 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         highs.append(float(maximum))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(
-        1, 2, figsize=(11.4, 5.1), gridspec_kw={"width_ratios": (1.45, 1.0)}
+        1, 2, figsize=(11.4, 6.5), gridspec_kw={"width_ratios": (1.45, 1.0)}
     )
     image = axes[0].imshow(
         np.log1p(value_matrix),
@@ -5725,10 +5704,10 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
     )
     del image
     axes[0].set_xticks(np.arange(len(required)), component_labels)
-    axes[0].tick_params(axis="x", labelrotation=22, labelsize=7.2)
+    axes[0].tick_params(axis="x", labelrotation=90, labelsize=10)
     axes[0].set_yticks(np.arange(len(labels)), display_labels)
     axes[0].set_xlabel(
-        "Deterministic component (log-scaled shading; labels are exact counts)",
+        "Cost-vector component",
         labelpad=4,
     )
     axes[0].set_title("Primary cost vector", fontsize=10, pad=AXIS_TITLE_PAD)
@@ -5785,21 +5764,17 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         else None
     )
     fig.text(
-        0.11,
-        0.105,
-        "All 8 deterministic receipt components shown; cell labels are counts.",
+        0.08,
+        0.085,
+        textwrap.fill(
+            "Eight deterministic components; exact cell counts and log-scaled shading. "
+            f"Timing bars: medians with min-max whiskers over {repetitions if repetitions is not None else 'not observed'} "
+            f"repetitions × {trials if trials is not None else 'not observed'} trials.",
+            120,
+        ),
         ha="left",
         va="bottom",
-        fontsize=7.5,
-        color=MUTED,
-    )
-    fig.text(
-        0.55,
-        0.105,
-        f"Bars are medians; whiskers: {repetitions if repetitions is not None else 'not observed'} repetitions × {trials if trials is not None else 'not observed'} trials.",
-        ha="left",
-        va="bottom",
-        fontsize=7.5,
+        fontsize=10,
         color=MUTED,
     )
     fig.text(
@@ -5811,135 +5786,124 @@ def plot_sensor_costs(payload: dict[str, object], output_path: Path) -> Path:
         fontsize=8,
         color=MUTED,
     )
-    fig.subplots_adjust(left=0.11, right=0.98, bottom=0.30, top=0.80, wspace=0.32)
+    fig.subplots_adjust(left=0.11, right=0.98, bottom=0.40, top=0.80, wspace=0.32)
     return _save_figure(fig, output_path)
 
 
 def plot_replication_manifest(payload: dict[str, object], output_path: Path) -> Path:
-    """Plot the public/gold/receipt separation of the local harness."""
-
     count = payload.get("public_row_count")
     gold_count = payload.get("gold_row_count")
-    separation = payload.get("label_separated")
     if not isinstance(count, int) or not isinstance(gold_count, int):
         raise ValueError("replication counts are missing")
-    if separation is not True:
+    if payload.get("label_separated") is not True:
         raise ValueError("replication labels are not separated")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(8.7, 3.9))
-    # The protected label boundary is a first-class visual object.  It is not
-    # enough to place a gold-label box beside the public input: the diagram
-    # must show which material is unavailable to the label-blind model path.
+    fig, ax = plt.subplots(figsize=(10.2, 4.8))
+    ax.axis("off")
     ax.add_patch(
         Rectangle(
-            (0.265, 0.16),
-            0.22,
-            0.66,
+            (0.50, 0.08),
+            0.48,
+            0.82,
             transform=ax.transAxes,
-            facecolor=PALETTE[1] + "12",
+            facecolor="#FFF9ED",
             edgecolor=PALETTE[1],
-            linewidth=1.0,
             linestyle="--",
-            hatch="///",
-            zorder=0,
+            linewidth=1.2,
         )
     )
     ax.text(
-        0.375,
-        0.84,
-        "protected owner boundary",
+        0.74,
+        0.94,
+        "Protected owner-side scoring",
         transform=ax.transAxes,
         ha="center",
-        va="bottom",
-        fontsize=7.4,
-        color=PALETTE[1],
+        fontsize=11,
+        color=INK,
         weight="bold",
     )
     boxes = (
-        (0.04, "Public input\n% s rows" % count, "features only", PALETTE[0]),
-        (
-            0.29,
-            "Gold labels\n% s rows" % gold_count,
-            "held outside public input",
-            PALETTE[1],
-        ),
-        (0.54, "Predictions\nCLI output", "label-separated scoring", PALETTE[2]),
-        (0.79, "Receipts\nhashes + protocol", "replay validation", PALETTE[3]),
+        (0.03, 0.57, f"Public input\n{count} rows", PALETTE[0]),
+        (0.28, 0.57, "Predictions\nlabel-blind CLI", PALETTE[2]),
+        (0.53, 0.57, "Score\nafter prediction", PALETTE[1]),
+        (0.78, 0.57, "Receipts\nhashes + protocol", PALETTE[3]),
+        (0.53, 0.15, f"Gold labels\n{gold_count} rows", PALETTE[1]),
     )
-    for index, (left, title, subtitle, color) in enumerate(boxes):
-        patch = FancyBboxPatch(
-            (left, 0.35),
-            0.16,
-            0.35,
-            boxstyle="round,pad=0.012,rounding_size=0.02",
-            facecolor=color,
-            edgecolor=INK,
-            linewidth=0.8,
-            alpha=0.92,
-            transform=ax.transAxes,
+    for x, y, label, color in boxes:
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                0.18,
+                0.28,
+                boxstyle="round,pad=0.01",
+                transform=ax.transAxes,
+                facecolor=color + "22",
+                edgecolor=color,
+                linewidth=1.3,
+            )
         )
-        ax.add_patch(patch)
         ax.text(
-            left + 0.08,
-            0.56,
-            title,
+            x + 0.09,
+            y + 0.14,
+            label,
             transform=ax.transAxes,
             ha="center",
             va="center",
-            fontsize=9,
-            color="white",
+            fontsize=11,
+            color=INK,
             weight="bold",
         )
-        ax.text(
-            left + 0.08,
-            0.25,
-            subtitle,
-            transform=ax.transAxes,
-            ha="center",
-            va="center",
-            fontsize=8,
-            color=MUTED,
-        )
-        if index < len(boxes) - 1:
-            ax.add_patch(
-                FancyArrowPatch(
-                    (left + 0.17, 0.525),
-                    (boxes[index + 1][0] - 0.015, 0.525),
-                    transform=ax.transAxes,
-                    arrowstyle="-|>",
-                    mutation_scale=12,
-                    linewidth=1.1,
-                    color=INK,
-                )
+    for start, end in (
+        ((0.22, 0.71), (0.27, 0.71)),
+        ((0.47, 0.71), (0.52, 0.71)),
+        ((0.72, 0.71), (0.77, 0.71)),
+        ((0.62, 0.44), (0.62, 0.56)),
+    ):
+        ax.add_patch(
+            FancyArrowPatch(
+                start,
+                end,
+                transform=ax.transAxes,
+                arrowstyle="-|>",
+                mutation_scale=16,
+                color=INK,
+                linewidth=1.3,
             )
+        )
     ax.text(
-        0.5,
-        0.08,
-        "Public filenames, ordering, and metadata carry no family or quotient label; hashes invalidate stale replay.",
+        0.03,
+        0.39,
+        "Features only\nNo gold-label input",
         transform=ax.transAxes,
-        ha="center",
-        va="center",
-        fontsize=8,
+        fontsize=10,
         color=MUTED,
+        va="top",
     )
-    ax.set_axis_off()
+    ax.text(
+        0.78,
+        0.27,
+        "Gold enters scoring;\nnever prediction.",
+        transform=ax.transAxes,
+        fontsize=10,
+        color=INK,
+        va="center",
+    )
     fig.suptitle(
-        "Frozen local replication harness and provenance boundary",
+        "Local replication harness and protected scoring",
         x=0.05,
         ha="left",
-        fontsize=12,
+        fontsize=14,
         color=INK,
     )
     fig.text(
         0.05,
-        0.02,
-        "The gold-label boundary is protected; the observed controlled replay is separate from independent physical replication or reimplementation.",
-        ha="left",
-        va="bottom",
-        fontsize=8,
+        0.025,
+        "Stable IDs, ordering and input metadata carry no target label; hashes invalidate stale replay.\n"
+        "This schema does not establish that a separately operated or independent physical replay occurred.",
+        fontsize=10,
         color=MUTED,
+        va="bottom",
     )
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.78, bottom=0.08)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.83, bottom=0.15)
     return _save_figure(fig, output_path)
 
 
@@ -6846,9 +6810,9 @@ FIGURE_CAPTIONS: dict[str, str] = {
     ),
     "factorized_observation_comparison": (
         "Leave-one-fixture-out comparison of the collapsed categorical HMM with static typed, full "
-        "factorized, and hierarchical composite observation scores. The left panel reports held-out "
-        "accuracy per fixture, the middle panel removes one typed field family at a time, and the right "
-        "panel masks memory addressing metadata under the explicit missing-field policy. Every fit excludes "
+        "factorized, and hierarchical composite observation scores. The upper panel reports held-out "
+        "accuracy per fixture, the lower-left panel removes one typed field family at a time, and the lower-right "
+        "panel pairs full and memory-masked accuracy by fixture under the explicit missing-field policy. Every fit excludes "
         "the displayed fixture; no bar is a population estimate. The hierarchical score balances evidence "
         "groups and is not interpreted as a normalized joint likelihood [@rabiner1989tutorial;@gelman2013bda]."
     ),

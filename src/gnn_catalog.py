@@ -9,6 +9,7 @@ import sys
 from typing import Any, Mapping
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 import networkx as nx
 
 from .artifact_contract import write_json_artifact
@@ -122,56 +123,71 @@ def _readable_graph(
     if not nx.is_directed_acyclic_graph(network):
         raise GNNError("GNN_RENDER_STRUCTURE: unsupported cyclic adapter topology")
     layers = list(nx.topological_generations(network))
-    for layer, nodes in enumerate(layers):
-        for node in nodes:
-            network.nodes[node]["layer"] = layer
-    position = nx.multipartite_layout(network, subset_key="layer", align="vertical")
-    height = max(4.2, 0.9 * max(map(len, layers)) + 1.5)
+    row_count = max(map(len, layers))
+    position = {
+        node: (1.5 + 3.0 * layer, (row_count - 1) / 2 + (len(nodes) - 1) / 2 - index)
+        for layer, nodes in enumerate(layers)
+        for index, node in enumerate(nodes)
+    }
+    height = max(4.8, row_count + 2.0)
     with plt.rc_context(
         {"svg.fonttype": "none", "pdf.fonttype": 42, "font.family": "DejaVu Sans"}
     ):
-        fig, ax = plt.subplots(figsize=(max(7.5, len(layers) * 1.9), height))
-        nx.draw_networkx_edges(
-            network,
-            position,
-            ax=ax,
-            arrows=True,
-            arrowsize=22,
-            node_size=4800,
-            edge_color="#52606D",
-            width=1.7,
-        )
-        nx.draw_networkx_nodes(
-            network,
-            position,
-            ax=ax,
-            node_size=4800,
-            node_color=[
-                "#BFDCEC" if node in parameters else "#D9EBCB" for node in network
-            ],
-            edgecolors="#243447",
-            linewidths=1.2,
-        )
-        labels = {
-            node: node
-            + "\n["
-            + " × ".join(map(str, network.nodes[node]["dimensions"]))
-            + "]"
-            for node in network
-        }
-        nx.draw_networkx_labels(
-            network, position, labels, ax=ax, font_size=12, font_color="#243447"
-        )
+        fig, ax = plt.subplots(figsize=(max(7.8, len(layers) * 3.0 + 0.8), height))
+        for source, target in network.edges:
+            sx, sy = position[source]
+            tx, ty = position[target]
+            ax.add_patch(
+                FancyArrowPatch(
+                    (sx + 1.1, sy),
+                    (tx - 1.1, ty),
+                    arrowstyle="-|>",
+                    mutation_scale=18,
+                    connectionstyle=(
+                        f"arc3,rad={-0.25 if sy >= ty else 0.25}"
+                        if tx - sx > 3.1
+                        else "arc3,rad=0"
+                    ),
+                    color="#52606D",
+                    linewidth=1.5,
+                )
+            )
+        for node in network:
+            x, y = position[node]
+            ax.add_patch(
+                FancyBboxPatch(
+                    (x - 1.1, y - 0.36),
+                    2.2,
+                    0.72,
+                    boxstyle="round,pad=0.02",
+                    linewidth=1.2,
+                    edgecolor="#243447",
+                    facecolor="#BFDCEC" if node in parameters else "#D9EBCB",
+                )
+            )
+            dimensions = " × ".join(map(str, network.nodes[node]["dimensions"]))
+            ax.text(
+                x,
+                y,
+                f"{node}\n[{dimensions}]",
+                ha="center",
+                va="center",
+                fontsize=12,
+                color="#243447",
+            )
+        ax.set_xlim(0, len(layers) * 3.0)
+        ax.set_ylim(-0.8, row_count - 0.2)
+        ax.set_aspect("equal")
         ax.set_title(name.replace("_", " "), fontsize=15, pad=18)
-        ax.margins(0.2)
         ax.axis("off")
         fig.text(
             0.03,
             0.025,
-            "Declared GNN topology; blue: parameter tensors, green: state/data nodes.\nDimensions belong to this actual admitted instance; arrows do not establish scientific validity.",
+            "Declared GNN topology; blue: parameters, green: state/data nodes.\n"
+            "Dimensions describe this admitted instance; arrows do not establish scientific validity.",
             fontsize=10,
         )
-        fig.subplots_adjust(top=0.85, bottom=0.14, left=0.05, right=0.95)
+        fig.subplots_adjust(top=0.88, bottom=0.14, left=0.04, right=0.97)
         paths = [
             directory / f"{name}_readable.{suffix}" for suffix in ("png", "svg", "pdf")
         ]
