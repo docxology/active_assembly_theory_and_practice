@@ -7415,8 +7415,8 @@ FIGURE_ALT_TEXTS: dict[str, str] = {
         "accumulator values for x86-64, AArch64, and RISC-V64 fixtures."
     ),
     "formal_verification_receipt": (
-        "Marker list of kernel-checked Lean theorems for the Word64 accumulator "
-        "fragment, including modular transfer functions and a near-miss counterexample."
+        "Upper evidence-status ledger separates checked theorem counts and bounded "
+        "bridge evidence; the lower panel lists checked operations and formal scope."
     ),
     "active_information_frontier": (
         "Lines of expected information gain in nats versus sensing horizon under four "
