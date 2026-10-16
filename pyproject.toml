@@ -46,6 +46,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short --strict-markers"
+markers = ["post_render: requires the current native manuscript export"]
 
 [tool.coverage.run]
 source = ["src"]

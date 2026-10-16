@@ -201,7 +201,7 @@ promotion state remains deliberately asymmetric:
 
 | Phase | Earned local evidence | What remains unearned |
 | --- | --- | --- |
-| P3 quotient benchmark | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}`-family source-disjoint quotient labels, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent implementation and any claim of semantic discovery |
+| P3 quotient benchmark | `{{QUOTIENT_CLASSIFIER_FAMILY_COUNT}}` quotient-family identifiers with disjoint split membership but shared authored lineages, three-way co-primary portfolio, clustered intervals, calibration, leakage controls, and negative controls | independent-lineage generalization, independent implementation and any claim of semantic discovery |
 | P4 formal correspondence | explicit 16-register/width-aware Python state, real Capstone/Unicorn step comparison, and a separately kernel-checked Lean fragment | broad Lean/Python correspondence theorem for the full declared user-mode subset |
 | P5 transfer | local compiler capability receipt with exact target/source/object hashes and explicit unavailable targets | compiler-disjoint, source-disjoint, project-held-out licensed-source effectiveness validation |
 | P6 active sensing | deterministic vectors, overhead-corrected local calibration, regression diagnostics, and exact finite dynamic-program certificates | multi-hardware acquisition model and non-oracle near-optimal policy evidence |

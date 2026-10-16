@@ -41,18 +41,26 @@ DOCX counts. The post-render mode can complete the configured DOCX projection
 and refresh receipts; it leaves scientific data, figure bytes, registries and
 hydrated sources unchanged.
 
+The pre-render suite selects `-m "not post_render"`. Tests marked
+`post_render` run in an explicit stage after the current native export; the
+rendered-PDF test requires the PDF to exist and applies the same strict
+semantic audit as the standalone receipt. This ordering prevents a previous
+edition from being tested against a newly generated figure registry. Running
+the unfiltered suite directly therefore requires the current export.
+
 ## Gate responsibilities
 
 | Gate | Purpose and limitation |
 | --- | --- |
 | Locked development sync | Installs the committed Python environment before producer tests; does not replace native Julia/Lean/template preparation. |
 | Canonical `all` | Produces protocol, formal/benchmark/transfer/sensing/theorem, stress, counterexample and offline external-preparation receipts before artifact-dependent tests. |
-| pytest with branch coverage >=90% | Exercises real APIs and source modules; a skip is explicit, and tests need generated inputs. |
+| Pre-render pytest with combined line/branch coverage >=90% | Exercises real APIs and source modules after scientific generation; current rendered-artifact tests run after export. |
 | Ruff / format / mypy | Code syntax/style/type checks; no scientific validity claim. |
 | Authored docs / claim map | Offline Markdown structural/index/citation closure and claim-ID equality against current generated output. |
 | Formal / replication / RxInfer | Pinned Lean receipt, public/private bundle verification and real native Gaussian/categorical backends. |
 | Hydration | Source-token closure and exact generated manuscript tree. |
 | Native template export | Current hydrated composition, configured document formats, native Pandoc and LaTeX renderers. |
+| Post-render pytest | Requires the current PDF and exercises its source-bound semantic accessibility audit. |
 | DOCX / PDF / qpdf / VeraPDF | Actual exported media/source/structure, PDF syntax and reported UA-2 compliance. |
 | Existing-output oracle | Current source-bound scientific and document checks without rewriting their consumed inputs. |
 | Optional Julia tests | Real `Pkg.test()` with `allow_reresolve=false`. |

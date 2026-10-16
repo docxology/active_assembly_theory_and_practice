@@ -76,7 +76,7 @@ run_step "shared GNN native smoothing parity" \
 run_step "canonical analysis and artifact regeneration" \
   uv run --locked python scripts/run_scientific_program.py all
 run_step "pytest (>=90% coverage)" \
-  uv run --locked pytest tests --cov=src --cov-fail-under=90 -q
+  uv run --locked pytest tests -m "not post_render" --cov=src --cov-fail-under=90 -q
 run_step "ruff check" \
   uv run --locked ruff check src tests scripts
 run_step "ruff format --check" \
@@ -108,6 +108,8 @@ run_step "claim-map identifier closure" \
 fi
 if [ "$analysis_only" -eq 0 ]; then
 export ACTIVE_ASSEMBLY_DOCX_PRE_RENDER=0
+run_step "current rendered-artifact regressions" \
+  uv run --locked pytest tests -m post_render -q
 run_step "DOCX configured cover projection" \
   uv run --locked python scripts/render_docx_cover.py
 run_step "DOCX structural receipt" \
