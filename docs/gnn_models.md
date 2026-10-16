@@ -100,6 +100,13 @@ from Gaussian and categorical Bethe free energies.
 
 `output/gnn/` contains compiled models, runs, trajectories, upstream
 qualification, controls, source-bound figure inputs and native comparison.
+The manuscript's prospective-sensing figure uses those actual policy and
+posterior records, including the paired hidden-fixture control. Its three
+policy probabilities are computed before acquisition; its two posterior stages
+precede and follow the first dynamic observation. Native PNG, SVG and PDF
+exports, exact input digests and the accessible explanation are registered as
+`gnn_sensing`. These stages describe conditional inference under the authored
+model, rather than repeated-trial frequencies or population uncertainty.
 The audit recomputes priors, posteriors and policy scores, checks the actual
 action/acquisition sequence, and binds trajectories back to their run.
 It also checks A/B/C/D/E interventions, hidden-fixture invariance, horizon
