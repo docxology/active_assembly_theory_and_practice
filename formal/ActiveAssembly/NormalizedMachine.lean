@@ -279,7 +279,7 @@ theorem movsx32N_sign_extension (source : Word64N) :
             then source.val % 2 ^ 32
             else source.val % 2 ^ 32 + MOD64N - 2 ^ 32) % MOD64N
         = source.val % 2 ^ 32
-      rw [if_pos hsign]
+      rw [ite_eq_left hsign]
       exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hbound hle)
     constructor
     · intro h
@@ -296,9 +296,10 @@ theorem movsx32N_sign_extension (source : Word64N) :
             then source.val % 2 ^ 32
             else source.val % 2 ^ 32 + MOD64N - 2 ^ 32) % MOD64N
         = source.val % 2 ^ 32 + MOD64N - 2 ^ 32
-      rw [if_neg hsign]
+      rw [ite_eq_right hsign]
       refine Nat.mod_eq_of_lt ?_
-      have h2 : MOD64N - 2 ^ 32 < MOD64N := Nat.sub_lt mod64n_pos (by omega)
+      have h32 : 2 ^ 32 = 4294967296 := rfl
+      rw [hM, h32] at *
       omega
     constructor
     · intro h
@@ -494,7 +495,7 @@ theorem read_write_little_endian_roundtrip (width address value : Nat)
       have hbyte : UInt8.toNat (if address = address then UInt8.ofNat (value % 256)
           else writeLittleEndianN width (address + 1) (value / 256) memory address)
           = value % 256 := by
-        rw [if_pos rfl]
+        rw [ite_eq_left rfl]
         simp
       have hagree : ∀ j, j < width →
           (fun a => if a = address then UInt8.ofNat (value % 256)
@@ -508,7 +509,7 @@ theorem read_write_little_endian_roundtrip (width address value : Nat)
             (address + 1 + j))
           = writeLittleEndianN width (address + 1) (value / 256) memory
             (address + 1 + j)
-        rw [if_neg (by omega : ¬ (address + 1 + j = address))]
+        rw [ite_eq_right (by omega : ¬ (address + 1 + j = address))]
       rw [readLittleEndianN_congr width (address + 1) _ _ hagree, hbyte, ih]
       have hpow : 2 ^ (8 * (width + 1)) = 256 * 2 ^ (8 * width) := by
         have hexp : 8 * (width + 1) = 8 * width + 8 := by omega
@@ -566,7 +567,7 @@ theorem push64N_out_of_bounds_is_explicit (state : MachineStateN) (index : Fin 1
     (push64N state index).status = MachineStatusN.boundExceeded ∧
     (push64N state index).gprs = state.gprs ∧
     (push64N state index).memory = state.memory := by
-  simp only [push64N, if_neg hout]
+  simp only [push64N, ite_eq_right hout]
   exact ⟨trivial, trivial, trivial⟩
 
 theorem pop64N_out_of_bounds_is_explicit (state : MachineStateN) (index : Fin 16)
@@ -575,7 +576,7 @@ theorem pop64N_out_of_bounds_is_explicit (state : MachineStateN) (index : Fin 16
     (pop64N state index).status = MachineStatusN.boundExceeded ∧
     (pop64N state index).gprs = state.gprs ∧
     (pop64N state index).memory = state.memory := by
-  simp only [pop64N, if_neg hout]
+  simp only [pop64N, ite_eq_right hout]
   exact ⟨trivial, trivial, trivial⟩
 
 /-- Push into the bounded window then pop back restores the stack pointer and
@@ -607,7 +608,7 @@ theorem push64N_pop64N_roundtrip (state : MachineStateN) (index : Fin 16)
   have hpush : push64N state index
       = pushInBoundsN state index (((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N) := by
     simp only [push64N]
-    exact if_pos hpushCond
+    exact ite_eq_left hpushCond
   have hpushRsp :
       ((pushInBoundsN state index
         (((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N)).gprs rspIndexN).val
@@ -615,7 +616,7 @@ theorem push64N_pop64N_roundtrip (state : MachineStateN) (index : Fin 16)
     show ((if rspIndexN = rspIndexN
       then word64n (((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N)
       else state.gprs rspIndexN)).val = (state.gprs rspIndexN).val - 8
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     show ((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N % MOD64N
       = (state.gprs rspIndexN).val - 8
     rw [Nat.mod_mod]
@@ -638,7 +639,7 @@ theorem push64N_pop64N_roundtrip (state : MachineStateN) (index : Fin 16)
         (state.gprs index).val := by
     simp only [pop64N]
     rw [hpushRsp, hread]
-    exact if_pos hpopCond
+    exact ite_eq_left hpopCond
   rw [hpush, hpop]
   refine ⟨?_, ?_, rfl⟩
   · show ((if index = rspIndexN then
@@ -647,7 +648,7 @@ theorem push64N_pop64N_roundtrip (state : MachineStateN) (index : Fin 16)
       else if index = index then word64n ((state.gprs index).val)
       else (pushInBoundsN state index
         (((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N)).gprs index)) = state.gprs index
-    rw [if_neg hne, if_pos rfl]
+    rw [ite_eq_right hne, ite_eq_left rfl]
     apply Fin.ext
     show ((state.gprs index).val) % MOD64N = (state.gprs index).val
     exact Nat.mod_eq_of_lt hMindex
@@ -655,7 +656,7 @@ theorem push64N_pop64N_roundtrip (state : MachineStateN) (index : Fin 16)
         then word64n (((pushInBoundsN state index
           (((state.gprs rspIndexN).val + MOD64N - 8) % MOD64N)).gprs rspIndexN).val + 8)
         else state.gprs rspIndexN)) = state.gprs rspIndexN
-    rw [if_pos rfl, hpushRsp]
+    rw [ite_eq_left rfl, hpushRsp]
     have hadd : (state.gprs rspIndexN).val - 8 + 8 = (state.gprs rspIndexN).val := by
       omega
     rw [hadd]
@@ -744,7 +745,7 @@ theorem jcc_zero_flag_branch_distinct (state : MachineStateN) (taken fallthrough
   have hfalse : jccHoldsN (stateWithZfN state false) JccConditionN.e = some false := by
     simp [jccHoldsN, readFlagN, flagValueAtBitN, stateWithZfN, zfBitN, cfBitN,
       pfBitN, afBitN]
-  simp only [jccStateN, htrue, hfalse, if_true] at hEq
+  simp only [jccStateN, htrue, hfalse, ite_true] at hEq
   exact hne (congrArg MachineStateN.rip hEq)
 
 /-- Reading a conditional branch over an undefined zero flag fails closed into

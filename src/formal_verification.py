@@ -30,7 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FORMAL_PROJECT_DIR = PROJECT_ROOT / "formal"
 FORMAL_ARTIFACT = "output/data/formal_verification.json"
 FORMAL_SCHEMA_VERSION = "2.0.0"
-FORMAL_TOOLCHAIN = "leanprover/lean4:v4.28.0"
+FORMAL_TOOLCHAIN = "leanprover/lean4:v4.35.0"
 FORMAL_THEOREMS = (
     "ActiveAssembly.inc_inc_eq_add_two",
     "ActiveAssembly.constant_add_equivalence",

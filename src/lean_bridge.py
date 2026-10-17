@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FORMAL_TOOLCHAIN = "leanprover/lean4:v4.28.0"
+FORMAL_TOOLCHAIN = "leanprover/lean4:v4.35.0"
 GENERATED_RELATIVE_PATH = Path("formal/ActiveAssembly/GeneratedCorrespondence.lean")
 BRIDGE_CODE = bytes.fromhex("48 83 c0 02 48 ff c0")
 BRIDGE_INITIAL_RAX = (1 << 64) - 1

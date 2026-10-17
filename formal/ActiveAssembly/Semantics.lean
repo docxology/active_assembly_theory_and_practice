@@ -131,14 +131,14 @@ theorem constant_add_equivalence :
       [.mov (word64 1), .add (word64 2)]
       [.mov (word64 1), .inc, .inc] := by
   intro initial
-  simp [run, step, inc64, add64, word64, MOD64, Nat.add_mod]
+  rfl
 
 theorem neutral_nop_equivalence :
     ObservationallyEqual
       [.mov (word64 7), .add (word64 5)]
       [.mov (word64 7), .nop, .add (word64 5)] := by
   intro initial
-  simp [run, step, add64, word64, MOD64, Nat.add_mod]
+  rfl
 
 theorem changed_subtraction_is_not_equivalent :
     ¬ ObservationallyEqual
@@ -146,16 +146,15 @@ theorem changed_subtraction_is_not_equivalent :
       [.mov (word64 5), .sub (word64 3)] := by
   intro hypothesis
   have witness := hypothesis (word64 0)
-  have values := congrArg Fin.val witness
+  have values := congrArg (fun value : Word64 => value.val) witness
   change (8 : Nat) = 2 at values
   omega
 
 theorem run_nop_append (program : List Op) (initial : Word64) :
     run (program ++ [.nop]) initial = run program initial := by
-  induction program generalizing initial with
-  | nil => simp [run, step]
-  | cons head tail inductionHypothesis =>
-      simp [run, step, List.foldl_append]
+  unfold run
+  rw [List.foldl_append]
+  rfl
 
 /-- ``cmp`` is exactly ``sub`` without writeback: identical flags, identical
 registers, memory, and program counter. -/
