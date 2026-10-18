@@ -21,14 +21,14 @@ formal/
 ├── ActiveAssembly/                    the Lean library (see its AGENTS.md)
 ├── lake-manifest.json                 Lake manifest; packages list is empty
 ├── lakefile.toml                      package `active_assembly_formal`, lib `ActiveAssembly`
-└── lean-toolchain                     leanprover/lean4:v4.28.0
+└── lean-toolchain                     leanprover/lean4:v4.35.0
 ```
 
 `.lake/` is a build directory and is git-ignored.
 
 ## Build and receipt
 
-The toolchain is pinned by `lean-toolchain` (`leanprover/lean4:v4.28.0`) and
+The toolchain is pinned by `lean-toolchain` (`leanprover/lean4:v4.35.0`) and
 resolved through `elan`. `lakefile.toml` declares the package
 `active_assembly_formal`, the `ActiveAssembly` Lean library, and
 `defaultTargets = ["ActiveAssembly.Semantics"]`. `lake-manifest.json` has an

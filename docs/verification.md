@@ -149,7 +149,7 @@ handoff and the [VM guide](replay_vm.md) for the narrower same-host boundary.
 
 The RxInfer bridge checks the committed Julia/RxInfer manifest, the selected
 Julia executable and returned backend diagnostics. Julia 1.12.7, RxInfer 5.4.0
-and Lean v4.28.0 are scientific pins; optional compiler version rows describe
+and Lean v4.35.0 are scientific pins; optional compiler version rows describe
 the measured producer environment. A pin change requires a deliberate source
 change, regenerated receipt and native run. Never replace an unavailable pin
 with synthetic data or an unrecorded compatible version.

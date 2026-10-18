@@ -569,7 +569,7 @@ CLAIM_RECORDS: tuple[ClaimRecord, ...] = (
         claim_id="CLM-030",
         claim_type="formal_verification_receipt",
         statement=(
-            "A pinned Lean 4.28.0 project kernel-checks modular accumulator "
+            "A pinned Lean 4.35.0 project kernel-checks modular accumulator "
             "equivalence and a near-miss counterexample for the declared closed "
             "operational fragment."
         ),

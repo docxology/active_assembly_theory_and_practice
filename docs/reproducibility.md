@@ -235,7 +235,7 @@ as recorded local toolchains (the `rustc` `x86_64-apple-darwin` standard
 library is absent and is recorded as unavailable, never silently substituted),
 `go` 1.27.1 and `zig` 0.16.0 declared but not compiled, and an `objdump`
 wrapper used for disassembly provenance. The scientific pins are unchanged:
-Julia 1.12.7, RxInfer 5.4.0, and Lean v4.28.0. These recorded versions
+Julia 1.12.7, RxInfer 5.4.0, and Lean v4.35.0. These recorded versions
 describe the developer envelope; they are not independent-replay or
 behavioral-validity evidence.
 

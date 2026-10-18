@@ -30,7 +30,7 @@ as described in [executable GNN models](gnn_models.md).
 | --- | --- |
 | Python | Committed 3.13 interpreter pin and locked development extra. |
 | Julia / RxInfer | Julia 1.12.7 and RxInfer 5.4.0 in the committed Julia manifest; set `JULIA` to the exact executable if discovery selects another version. |
-| Lean | `formal/lean-toolchain` pins v4.28.0; `lake build` checks the declared fragment. |
+| Lean | `formal/lean-toolchain` pins v4.35.0; `lake build` checks the declared fragment. |
 | Template | A configured `docxology/template` checkout with its own prepared runtime and a working-lane link to this project. |
 | Document tools | Pandoc/crossref and the template's Office filters; native LuaLaTeX with tagged PDF support, `seqsplit` and `selnolig`; Poppler `pdftotext` for real PDF text regressions; qpdf and VeraPDF with UA-2 support for post-render checking. |
 | Optional capabilities | External compilers, architecture targets and Lima are explicitly probed; unavailable rows remain visible. They are not generic prerequisites for every Python unit test. |
