@@ -39,6 +39,9 @@ Notation implementation [@friedman2026gnn] parses their numeric tensors before a
 compiler admits the supported finite profile. The compiler checks declared
 axes, distributions, dependencies and policy enumeration; the upstream
 revision, imported-source hashes and tensor digest accompany each study.
+The software citation identifies a documented source edition; the execution
+receipt identifies the parser revision actually used for the current run.
+A matching software version string alone does not establish source identity.
 A is observation likelihood, B is action-conditioned transition, C contains
 dimensionless utilities, D is the initial prior and E is the policy prior.
 The first observation conditions D before any transition. The passive

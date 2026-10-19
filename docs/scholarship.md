@@ -43,6 +43,37 @@ spot-checked against their receipts. That historical audit did not cover dedicat
 or the updated role of the existing `nasm` manual citation. This audit introduced no new claim and changed no claim
 boundary.
 
+## 2026-10-19 primary-source and visualization review
+
+The [RxInfer JOSS record](https://joss.theoj.org/papers/10.21105/joss.05161)
+and [pymdp JOSS record](https://joss.theoj.org/papers/10.21105/joss.04098)
+were rechecked for title, author order, publication year, volume, issue and
+article number; the current bibliography agrees. The
+[PMLR calibration record](https://proceedings.mlr.press/v70/guo17a.html)
+was also checked for author order, year and pages. These are metadata and
+method-attribution checks, not fresh validation of the papers' results or of
+every bibliography entry. The OUP EM record and MIT Press clustered-bootstrap
+record could not be read through the web reader in this pass; their historical
+checks are not relabelled as fresh verification.
+
+A separate primary-registry pass requested metadata for the 20 Crossref-style
+DOIs in the ledger. Nineteen records were retrieved from the
+[Crossref works API](https://api.crossref.org/works); all 19 titles and
+publication years agreed after removing registry markup. This includes metadata
+for the EM and clustered-bootstrap papers, whose publisher article pages were
+unavailable above. The Holm/JSTOR identifier returned HTTP 404 from Crossref;
+that result establishes only registry unavailability. The two Zenodo identifiers
+were outside this Crossref pass. Agreement of metadata does not verify an
+article's full argument, a software version, or a project claim.
+
+The source-role and stage-matrix figures now use integer count scales,
+explicit stage totals and shorter explanatory text. Empty stage columns
+remain visible. An invalid stage fails before export instead of silently
+dropping a source; empty or nontext tier/type labels are rejected as well.
+Real raster exports and malformed-category regressions exercise this boundary.
+Sources can share a method or software dependency, so their counts are neither
+independent experiments nor weights of scientific support.
+
 ## Source Roles
 
 The 2026-10-16 categorical-energy revision uses the RxInfer 5.4.0 source
@@ -173,6 +204,13 @@ pymdp's implemented prospective role. Real corrupted ledger copies exercise
 count mismatches, duplicate or missing sources, and incorrect role assignments.
 
 ## Current maintenance boundary
+
+The 2026-10-19 link sweep checked all 52 ledger URLs. One confirmed missing
+page, the former FSL landing page for Dasgupta et al. (2019), was replaced by
+the official PLDI 2019 paper record. Its title, authors, year, and DOI agree
+with the bibliography. Access-denied responses and the Intel certificate
+failure remain access limitations, not evidence that the cited works are
+invalid. Metadata agreement does not verify a source's scientific conclusions.
 
 Dated metadata reviews above apply to their recorded source sets. Current
 ledger/BibTeX/manuscript closure is generated and validated rather than inferred

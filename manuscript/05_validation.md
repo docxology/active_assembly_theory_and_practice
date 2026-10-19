@@ -6,6 +6,12 @@ a claim boundary, so software-package documentation, peer-reviewed active
 inference theory, and optional binary-analysis adapters do not collapse into a
 single undifferentiated support claim.
 The role partition is shown in [@fig:scholarship-source-roles].
+These counts describe the curated reading inventory. Multiple sources may
+document the same implementation or motivate the same method; they are not
+independent replications or quantitative weights of support. The stage totals
+in [@fig:scholarship-evidence-matrix] retain empty categories explicitly.
+Bibliography and citation closure establish traceability, while the adjacent
+source-bound computations must establish each project result.
 
 The project also writes a claim register with `{{CLAIM_COUNT}}` bounded claims
 to `{{CLAIM_REGISTER}}`; `{{VALIDATED_CLAIM_COUNT}}` are linked to sources,
