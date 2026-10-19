@@ -756,6 +756,21 @@ def write_external_acquisition_payload(
     return path
 
 
+def prepare_static_source_headers(
+    source_root: Path, build_command: tuple[str, ...] | list[str]
+) -> dict[str, str]:
+    """Prepare the pinned libpng header before either static compilation path."""
+
+    generated: dict[str, str] = {}
+    if any(token.endswith("/png.c") or token == "png.c" for token in build_command):
+        candidates = list(source_root.rglob("scripts/pnglibconf.h.prebuilt"))
+        if len(candidates) == 1:
+            header = candidates[0].parent.parent / "pnglibconf.h"
+            shutil.copyfile(candidates[0], header)
+            generated[str(header.relative_to(source_root))] = _sha256_path(header)
+    return generated
+
+
 def static_compile_external_source(
     spec: ExternalSourceSpec,
     source_root: Path,
@@ -801,15 +816,7 @@ def static_compile_external_source(
         command[1:1] = ["-target", spec.target_triple]
     output_directory.mkdir(parents=True, exist_ok=True)
     output_path = output_directory / f"{spec.source_id}.o"
-    generated_files: dict[str, str] = {}
-    if any(token.endswith("/png.c") or token == "png.c" for token in command):
-        prebuilt_candidates = list(source_root.rglob("scripts/pnglibconf.h.prebuilt"))
-        if len(prebuilt_candidates) == 1:
-            generated_header = prebuilt_candidates[0].parent.parent / "pnglibconf.h"
-            shutil.copyfile(prebuilt_candidates[0], generated_header)
-            generated_files[str(generated_header.relative_to(source_root))] = (
-                _sha256_path(generated_header)
-            )
+    generated_files = prepare_static_source_headers(source_root, spec.build_command)
     if "-o" not in command:
         command.extend(["-o", str(output_path)])
     else:

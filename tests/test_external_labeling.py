@@ -154,6 +154,32 @@ def test_fixture_label_producer_writes_static_source_bound_receipt(
     assert (tmp_path / "configs" / "external_label_contracts.yaml").is_file()
 
 
+def test_fresh_label_compilation_prepares_pinned_headers_without_a_warmup(tmp_path):
+    _write_fixture_inputs(tmp_path)
+    repository = tmp_path / "output/external_sources/fixture-source/repo"
+    source = repository / "fixture.c"
+    (repository / "png.c").write_text('#include "pnglibconf.h"\n' + source.read_text())
+    (repository / "scripts").mkdir()
+    (repository / "scripts/pnglibconf.h.prebuilt").write_text("#define PNG_FIXTURE 1\n")
+    manifest = tmp_path / "configs/external_sources.yaml"
+    data = yaml.safe_load(manifest.read_text())
+    data["sources"][0]["build_command"] = ["clang", "-c", "png.c"]
+    manifest.write_text(yaml.safe_dump(data, sort_keys=False))
+    design = tmp_path / "configs/external_label_design.yaml"
+    data = yaml.safe_load(design.read_text())
+    data["source_designs"][0]["source_path"] = "png.c"
+    design.write_text(yaml.safe_dump(data, sort_keys=False))
+    assert not (repository / "pnglibconf.h").exists()
+    payload, inputs = generate_label_contract(tmp_path)
+    assert len(payload["contracts"]) == 10
+    assert payload["exclusions"] == []
+    assert (repository / "pnglibconf.h").read_bytes() == (
+        repository / "scripts/pnglibconf.h.prebuilt"
+    ).read_bytes()
+    assert repository / "pnglibconf.h" in inputs
+    assert all(row["execution_performed"] is False for row in payload["contracts"])
+
+
 def test_label_receipt_writer_fails_closed_if_post_write_validation_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

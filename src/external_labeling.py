@@ -37,6 +37,7 @@ from .external_sources import (
     ExternalSourceSpec,
     _spec_from_row,
     load_external_manifest,
+    prepare_static_source_headers,
 )
 from .provenance import (
     generator_revision,
@@ -574,6 +575,10 @@ def generate_label_contract(
             )
             continue
         input_paths.append(source_file)
+        generated_headers = prepare_static_source_headers(
+            repository_root, spec.build_command
+        )
+        input_paths.extend(repository_root / relative for relative in generated_headers)
         cache_root = pair_root / ".cache" / source_id
         base = _prepare_compiled_variant(
             base_source,
