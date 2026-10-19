@@ -19,6 +19,7 @@ from matplotlib.container import BarContainer
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 from matplotlib.text import Text
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 
 from .active_inference_bridge import InferenceResult
@@ -810,7 +811,7 @@ def plot_artifact_hash_manifest(rows: list[dict[str, Any]], output_path: Path) -
     y = np.arange(len(labels))
     bars = ax.barh(y, values_kib, color=colors, edgecolor=INK, linewidth=0.4)
     ax.set_yticks(y)
-    ax.set_yticklabels([label.replace("_", " ") for label in labels])
+    ax.set_yticklabels([textwrap.fill(label.replace("_", " "), 30) for label in labels])
     ax.set_xlabel("Tracked bytes (KiB)")
     ax.set_title(
         f"Reproducibility manifest by artifact class ({sum(count_by_type.values())} files)",
@@ -1415,16 +1416,18 @@ def plot_scholarship_source_roles(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = {}
     for source in sources:
-        source_type = str(source["source_type"])
+        source_type = source.get("source_type")
+        if not isinstance(source_type, str) or not source_type.strip():
+            raise ValueError("scholarship source_type must be a nonempty string")
         counts[source_type] = counts.get(source_type, 0) + 1
     labels = sorted(counts, key=lambda label: counts[label], reverse=True)
     values = [counts[label] for label in labels]
 
-    fig, ax = plt.subplots(figsize=(8.6, max(4.4, 0.42 * len(labels) + 1.8)))
+    fig, ax = plt.subplots(figsize=(9.4, max(4.4, 0.60 * len(labels) + 1.8)))
     y = np.arange(len(labels))
     bars = ax.barh(y, values, color=PALETTE[0], edgecolor=INK, linewidth=0.4)
     ax.set_yticks(y)
-    ax.set_yticklabels([label.replace("_", " ") for label in labels])
+    ax.set_yticklabels([textwrap.fill(label.replace("_", " "), 30) for label in labels])
     ax.set_xlabel("Sources in curated ledger")
     ax.set_title(
         f"Scholarship ledger composition ({len(sources)} sources)",
@@ -1436,7 +1439,7 @@ def plot_scholarship_source_roles(
     ax.text(
         0.0,
         AXIS_SUBTITLE_Y,
-        "Source-type counts describe curation roles; they are not weights of empirical evidence.",
+        "Counts describe curation roles;\nsource totals do not measure empirical support.",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
@@ -1454,8 +1457,10 @@ def plot_scholarship_source_roles(
             color=INK,
         )
     ax.invert_yaxis()
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(0, max(values) + max(1.0, max(values) * 0.12))
     _style_axes(ax, grid_axis="x")
-    fig.subplots_adjust(left=0.34, right=0.98, bottom=0.14, top=0.82)
+    fig.subplots_adjust(left=0.34, right=0.98, bottom=0.10, top=0.80)
     return _save_figure(fig, output_path)
 
 
@@ -1480,6 +1485,12 @@ def plot_scholarship_evidence_matrix(
         "theory",
         "roadmap_adapter",
     ]
+    for source in sources:
+        if source.get("project_stage") not in stages:
+            raise ValueError("scholarship project_stage is outside the declared stages")
+        tier = source.get("evidence_tier")
+        if not isinstance(tier, str) or not tier.strip():
+            raise ValueError("scholarship evidence_tier must be a nonempty string")
     present_tiers = {str(source["evidence_tier"]) for source in sources}
     tiers = [tier for tier in tier_order if tier in present_tiers]
     tiers.extend(sorted(present_tiers - set(tiers)))
@@ -1489,10 +1500,9 @@ def plot_scholarship_evidence_matrix(
     for source in sources:
         stage = str(source["project_stage"])
         tier = str(source["evidence_tier"])
-        if stage in stage_index and tier in tier_index:
-            matrix[tier_index[tier], stage_index[stage]] += 1.0
+        matrix[tier_index[tier], stage_index[stage]] += 1.0
 
-    fig, ax = plt.subplots(figsize=(8.6, max(4.6, 0.46 * len(tiers) + 1.6)))
+    fig, ax = plt.subplots(figsize=(9.4, max(4.6, 0.50 * len(tiers) + 1.8)))
     image = ax.imshow(
         matrix,
         cmap="Blues",
@@ -1501,11 +1511,16 @@ def plot_scholarship_evidence_matrix(
         vmax=max(1.0, float(matrix.max())),
     )
     ax.set_xticks(np.arange(len(stages)))
-    ax.set_xticklabels(stages, rotation=20, ha="right")
+    ax.set_xticklabels(
+        [
+            f"{stage}\n(n={int(total)})"
+            for stage, total in zip(stages, matrix.sum(axis=0), strict=True)
+        ]
+    )
     ax.set_yticks(np.arange(len(tiers)))
     ax.set_yticklabels([tier.replace("_", " ") for tier in tiers], fontsize=8)
     ax.set_title(
-        "Scholarship evidence tiers by implementation stage",
+        f"Scholarship roles by stage ({len(sources)} sources)",
         loc="left",
         color=INK,
         fontsize=11,
@@ -1514,7 +1529,7 @@ def plot_scholarship_evidence_matrix(
     ax.text(
         0.0,
         AXIS_SUBTITLE_Y,
-        "Cells are source counts; zero cells are shown explicitly so roadmap and implemented evidence stay distinct.",
+        "Each source contributes to one cell; zero means no ledger entry.\nSource counts describe roles, not independent experimental evidence.",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
@@ -1533,11 +1548,19 @@ def plot_scholarship_evidence_matrix(
                 ha="center",
                 va="center",
                 fontsize=8,
-                color="white" if value >= max(1, int(matrix.max() * 0.55)) else INK,
+                color="white" if value >= max(1.0, float(matrix.max()) * 0.75) else INK,
             )
-    fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04, label="Source count")
+    colorbar = fig.colorbar(
+        image, ax=ax, fraction=0.046, pad=0.04, label="Source count"
+    )
+    colorbar.locator = MaxNLocator(integer=True)
+    colorbar.update_ticks()
+    ax.set_xticks(np.arange(len(stages) + 1) - 0.5, minor=True)
+    ax.set_yticks(np.arange(len(tiers) + 1) - 0.5, minor=True)
+    ax.grid(which="minor", color="white", linewidth=1.0)
+    ax.tick_params(which="minor", bottom=False, left=False)
     _style_axes(ax, grid_axis="none")
-    fig.subplots_adjust(left=0.30, right=0.90, bottom=0.22, top=0.82)
+    fig.subplots_adjust(left=0.30, right=0.90, bottom=0.16, top=0.79)
     return _save_figure(fig, output_path)
 
 
@@ -2317,7 +2340,7 @@ def plot_confusion_matrix(pooled: dict[str, object], output_path: Path) -> Path:
     ax.set_xticklabels(
         [label.replace("_", " ") for label in labels], rotation=30, ha="right"
     )
-    ax.set_yticklabels([label.replace("_", " ") for label in labels])
+    ax.set_yticklabels([textwrap.fill(label.replace("_", " "), 30) for label in labels])
     for row in range(len(labels)):
         for column in range(len(labels)):
             value = int(matrix[row, column])

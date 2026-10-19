@@ -36,6 +36,14 @@ does not become an empirical population result; `underpowered`, `unavailable`,
 `unresolved` remain visible. No figure producer may replace such a value with a
 numeric zero merely to complete a plot.
 
+Numeric policy-frontier and protected-replay metrics must be present and
+finite; strings, booleans, missing values and nonfinite values fail export.
+An absent replay receipt still renders an explicit not-observed panel.
+Selective risk is undefined when coverage is zero and no rows were selected;
+that state is labelled without plotting a fictitious zero-risk point.
+Scholarship stage/type/tier labels are also checked before export so an
+unrecognized stage cannot silently disappear from its count matrix.
+
 ## Generated surfaces
 
 ```text

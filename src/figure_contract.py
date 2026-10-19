@@ -1256,7 +1256,7 @@ def write_figure_atlas(output_dir: Path, specs: list[FigureSpec] | None = None) 
     index = (
         '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         "<title>Active Assembly Theory and Practice — figure atlas</title><style>"
-        'body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45;color:#243447;max-width:1200px;margin:0 auto;padding:2rem}'
+        'body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45;color:#243447;max-width:1200px;margin:0 auto;padding:2rem;overflow-wrap:anywhere}'
         "h1{font-size:2rem}h2{margin-bottom:.25rem;color:#17324d}.subtitle{color:#52606d;margin-top:0}"
         "section{border-top:3px solid #d9e2ec;padding:1.5rem 0}figure{margin:1rem 0}figure img{display:block;max-width:100%;height:auto;border:1px solid #9aa5b1}figcaption{margin-top:.75rem;max-width:100ch}"
         "details{background:#f5f7fa;padding:.8rem;margin:.8rem 0}table{border-collapse:collapse;width:100%;font-size:.86rem}th,td{border:1px solid #d9e2ec;padding:.35rem;text-align:left;vertical-align:top}th{background:#e9eef3}.source-table{margin-top:1rem}code{overflow-wrap:anywhere}.downloads{font-weight:600}"

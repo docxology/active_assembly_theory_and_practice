@@ -49,8 +49,16 @@ def _json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _number(value: object, default: float = 0.0) -> float:
-    return float(value) if isinstance(value, (int, float)) else default
+def _number(value: object) -> float:
+    """Require observed finite data; missing evidence must never become zero."""
+
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not np.isfinite(value)
+    ):
+        raise ValueError("figure metric must be an observed finite number")
+    return float(value)
 
 
 def _text(value: object, default: str = "not observed") -> str:
@@ -1311,6 +1319,27 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
         raise ValueError(
             "protected confusion counts must be complete nonnegative integers"
         )
+    values = (
+        [
+            _number(score.get(name))
+            for name in (
+                "balanced_accuracy",
+                "macro_f1",
+                "brier_score",
+                "expected_calibration_error",
+            )
+        ]
+        if score
+        else []
+    )
+    coverage = risk = None
+    if score:
+        selective = score.get("selective_risk_coverage")
+        if not isinstance(selective, Mapping):
+            raise ValueError("selective risk/coverage must be an observed mapping")
+        coverage = _number(selective.get("coverage"))
+        if selective.get("risk") is not None or coverage != 0:
+            risk = _number(selective.get("risk"))
     fig = plt.figure(figsize=(14.0, 8.2))
     gs = fig.add_gridspec(2, 3, height_ratios=(0.83, 1.17), hspace=0.36, wspace=0.28)
     ax_flow = fig.add_subplot(gs[0, :])
@@ -1396,12 +1425,6 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     ax_cm.set_title("Protected confusion counts", loc="left", fontsize=10, color=INK)
     ax_cal = fig.add_subplot(gs[1, 1])
     metrics = ("balanced\naccuracy", "macro-F1", "Brier", "ECE")
-    values = [
-        _number(score.get("balanced_accuracy")),
-        _number(score.get("macro_f1")),
-        _number(score.get("brier_score")),
-        _number(score.get("expected_calibration_error")),
-    ]
     bars: object
     if score:
         bars = ax_cal.bar(
@@ -1414,7 +1437,7 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     else:
         bars = []
     ax_cal.set_xticks(np.arange(4), metrics)
-    ax_cal.set_ylim(0, max(1.0, max(values) * 1.25))
+    ax_cal.set_ylim(0, max(1.0, max(values, default=0.0) * 1.25))
     ax_cal.set_ylabel("score")
     ax_cal.set_title(
         "Observed single-replay metrics", loc="left", fontsize=10, color=INK
@@ -1441,17 +1464,7 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
             color=MUTED,
         )
     ax_risk = fig.add_subplot(gs[1, 2])
-    coverage = _number(
-        score.get("selective_risk_coverage", {}).get("coverage")
-        if isinstance(score.get("selective_risk_coverage"), Mapping)
-        else None
-    )
-    risk = _number(
-        score.get("selective_risk_coverage", {}).get("risk")
-        if isinstance(score.get("selective_risk_coverage"), Mapping)
-        else None
-    )
-    if score:
+    if coverage is not None and risk is not None:
         ax_risk.scatter(
             [coverage], [risk], s=75, color=PALETTE[3], edgecolor=INK, zorder=3
         )
@@ -1463,7 +1476,13 @@ def plot_replay_failure_audit(payload: Mapping[str, Any], output_path: Path) -> 
     ax_risk.text(
         0.05,
         0.92,
-        "one protected replay" if score else "not observed",
+        (
+            "risk undefined: no rows selected"
+            if score and risk is None
+            else "one protected replay"
+            if score
+            else "not observed"
+        ),
         transform=ax_risk.transAxes,
         fontsize=7.2,
         color=MUTED,
@@ -1504,6 +1523,15 @@ def plot_policy_certificate_frontier(
         evaluations = []
     if not isinstance(certificates, list):
         certificates = []
+    for row in frontier:
+        if not isinstance(row, Mapping):
+            raise ValueError("policy frontier rows must be observed mappings")
+        for field in ("cost_weight", "expected_cost", "expected_information_gain"):
+            _number(row.get(field))
+    for row in evaluations:
+        if not isinstance(row, Mapping):
+            raise ValueError("policy evaluation rows must be observed mappings")
+        _number(row.get("optimality_gap"))
     fig, axes = plt.subplots(
         1, 2, figsize=(13.8, 5.8), gridspec_kw={"width_ratios": (1.25, 1.0)}
     )
