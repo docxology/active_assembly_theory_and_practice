@@ -18,7 +18,7 @@ The folder index owns the complete topic list; do not maintain duplicate line
 counts or live artifact totals here. Its routes are:
 
 - setup and operations: `getting_started.md`, `verification.md`,
-  `document_rendering.md`;
+  `document_rendering.md`, `release.md`;
 - pipeline: `architecture.md`, `gnn_models.md`, `assembly_packages.md`,
   `rxinfer_roadmap.md`;
 - methods and interpretation: `evaluation.md`, `statistics.md`, `scholarship.md`;

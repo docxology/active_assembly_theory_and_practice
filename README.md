@@ -1,5 +1,11 @@
 # Active Assembly Theory and Practice
 
+For the versioned review package, start with the
+[review and release guide](docs/release.md). It maps the real inference paths,
+primary manuscript, figure atlas, provenance receipts and citation metadata.
+Project-owned software and documentation use the [MIT license](LICENSE);
+third-party dependencies and acquired source materials retain their own licenses.
+
 The canonical categorical models are executable
 [GNN specifications](docs/gnn_models.md), consumed through the configured
 Generalized Notation Notation parser and the real pymdp Agent. The assembly
@@ -103,9 +109,10 @@ uv sync --locked --extra dev
 
 The package requires Python 3.11 or newer (`tomllib` is part of the runtime);
 the canonical replay environment is pinned to 3.13. Python 3.15 currently
-cannot install the locked JAX wheel. On macOS, if loading native libraries from
-an external volume stalls, place only the environment on local storage using
-`UV_PROJECT_ENVIRONMENT` and `--link-mode copy`; keep the repository canonical.
+cannot install the locked JAX wheel. Keep the environment, base interpreter,
+caches and temporary files on mounted GitVault; verify both `sys.prefix` and
+`sys.base_prefix` before running source commands. See
+[external runtime preparation](docs/getting_started.md#locked-environments).
 
 Protocol v2.2 corrects paired significance testing with whole-source-family
 prediction swaps. Bootstrap intervals remain descriptive, and the correction

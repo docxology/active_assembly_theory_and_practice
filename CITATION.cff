@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "Please cite this version of the software and accompanying technical monograph."
+type: software
+title: "Active Assembly Theory and Practice"
+version: "0.1.0"
+date-released: "2026-10-19"
+authors:
+  - family-names: Friedman
+    given-names: Daniel Ari
+    orcid: "https://orcid.org/0000-0001-6232-9096"
+    affiliation: "Active Inference Institute"
+repository-code: "https://github.com/docxology/active_assembly_theory_and_practice"
+license: MIT
+abstract: >-
+  A bounded computational research demonstrator linking transparent assembly
+  observations to executable GNN specifications, real pymdp Active Inference
+  agents and native Julia/RxInfer inference. Includes source-bound diagnostics,
+  formal correspondence checks, scientific figures and a technical monograph.
+  Local verification does not establish general semantic recovery, external
+  validity or independent replication.
+keywords:
+  - active inference
+  - assembly analysis
+  - generative models
+  - GNN
+  - pymdp
+  - RxInfer
+  - reproducible research

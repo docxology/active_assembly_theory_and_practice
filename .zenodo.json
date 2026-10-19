@@ -1,0 +1,32 @@
+{
+  "title": "Active Assembly Theory and Practice",
+  "upload_type": "software",
+  "version": "0.1.0",
+  "publication_date": "2026-10-19",
+  "description": "A bounded computational research demonstrator and technical monograph linking transparent assembly observations to executable GNN specifications, real pymdp Active Inference agents and native Julia/RxInfer inference. The package includes source-bound diagnostics, formal correspondence checks, scientific figures and reproducibility contracts. Local qualification does not establish general semantic recovery, external validity or independent replication. The full research archive is distinct from the filtered label-blind replay handoff.",
+  "creators": [
+    {
+      "name": "Friedman, Daniel Ari",
+      "orcid": "0000-0001-6232-9096",
+      "affiliation": "Active Inference Institute"
+    }
+  ],
+  "license": "mit",
+  "access_right": "open",
+  "keywords": [
+    "active inference",
+    "assembly analysis",
+    "generative models",
+    "GNN",
+    "pymdp",
+    "RxInfer",
+    "reproducible research"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/docxology/active_assembly_theory_and_practice",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

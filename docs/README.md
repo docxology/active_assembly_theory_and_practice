@@ -27,6 +27,7 @@ before interpreting a score, interval, p-value or leakage control.
 | [Analysis validation](analysis_validation.md) | Regeneration versus existing-output checks, deferred values and fail-closed oracle. |
 | [Document rendering](document_rendering.md) | Native template handoff, DOCX media/source binding, tagged PDF and manual review. |
 | [Verification](verification.md) | Pre-render, complete-build and post-render commands, gate scope and failure behavior. |
+| [Review package and release](release.md) | Reviewer route, actual inference paths, artifact contents, citation metadata and production DOI publication contract. |
 | [Replay operator runbook](replay_operator_runbook.md) | Public-only operator handoff, predictions, attestation and protected scoring. |
 | [Replay VM](replay_vm.md) | Pinned Lima guest, filtered committed runtime archive, network boundary and same-host limits. |
 | [Roadmap](roadmap.md) | Completed engineering tranches, actionable maintenance and open promotion gates. |
