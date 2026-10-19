@@ -3,6 +3,8 @@ message: "Please cite this version of the software and accompanying technical mo
 type: software
 title: "Active Assembly Theory and Practice"
 version: "0.1.0"
+doi: "10.5281/zenodo.23484108"
+url: "https://zenodo.org/records/23484108"
 date-released: "2026-10-19"
 authors:
   - family-names: Friedman

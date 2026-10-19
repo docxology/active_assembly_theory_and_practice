@@ -9,6 +9,12 @@ does not promote its scientific evidence level. Citation metadata is in
 bundled into the release; their acquisition manifests retain upstream licenses
 and digests.
 
+The production archival identifier for this version is
+[10.5281/zenodo.23484108](https://doi.org/10.5281/zenodo.23484108).
+Its [Zenodo record](https://zenodo.org/records/23484108) is the authority for
+publication state and deposited files. The identifier binds the full research
+archive; it does not certify independent replication or scientific validity.
+
 ## Reviewer reading route
 
 1. Read the combined PDF for the scientific argument and its limits.

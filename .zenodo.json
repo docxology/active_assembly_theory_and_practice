@@ -2,6 +2,7 @@
   "title": "Active Assembly Theory and Practice",
   "upload_type": "software",
   "version": "0.1.0",
+  "doi": "10.5281/zenodo.23484108",
   "publication_date": "2026-10-19",
   "description": "A bounded computational research demonstrator and technical monograph linking transparent assembly observations to executable GNN specifications, real pymdp Active Inference agents and native Julia/RxInfer inference. The package includes source-bound diagnostics, formal correspondence checks, scientific figures and reproducibility contracts. Local qualification does not establish general semantic recovery, external validity or independent replication. The full research archive is distinct from the filtered label-blind replay handoff.",
   "creators": [
