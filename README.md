@@ -192,8 +192,8 @@ scripts/run_full_verification.sh --julia
 ```
 
 For the staged workflow, use `--analysis-only --julia`, then
-`uv run --locked python scripts/render_manuscript.py`, then
-`--post-render-only`. The latter forces strict validation and does not regenerate
+`uv run --locked python scripts/render_manuscript.py --project-root "$PWD" --skip-manuscript-hydration`,
+then `--post-render-only`. The latter forces strict validation and does not regenerate
 scientific inputs. Template environment/registration prerequisites are in
 [getting started](docs/getting_started.md); [verification](docs/verification.md)
 and [document rendering](docs/document_rendering.md) own the exact gate order.

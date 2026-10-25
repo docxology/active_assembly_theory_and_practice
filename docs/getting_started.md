@@ -72,7 +72,8 @@ environment alone does not establish renderer compatibility.
 
 ```bash
 scripts/run_full_verification.sh --analysis-only --julia
-uv run --locked python scripts/render_manuscript.py
+uv run --locked python scripts/render_manuscript.py \
+  --project-root "$PWD" --skip-manuscript-hydration
 scripts/run_full_verification.sh --post-render-only
 ```
 

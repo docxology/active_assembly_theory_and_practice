@@ -31,7 +31,7 @@ checks an existing template edition without regenerating its scientific inputs.
 For a manual handoff from this checkout, the explicit-root call is:
 
 ```bash
-uv run python scripts/render_manuscript.py \
+uv run --locked python scripts/render_manuscript.py \
   --project-root "$PWD" \
   --skip-manuscript-hydration
 ```

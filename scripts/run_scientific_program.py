@@ -129,7 +129,7 @@ def main() -> int:
     )
     subparsers.add_parser(
         "render-manuscript",
-        help="regenerate variables and hydrate the manuscript through docxology/template",
+        help="legacy alias for manuscript-variable generation and hydration only",
     )
     subparsers.add_parser(
         "vm-probe", help="write the blue-backed Lima VM capability/config receipt"

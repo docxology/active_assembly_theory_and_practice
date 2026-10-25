@@ -97,7 +97,8 @@ run_step "manuscript variables + template hydration" \
   uv run --locked python scripts/z_generate_manuscript_variables.py
 if [ "$analysis_only" -eq 0 ]; then
 run_step "native template manuscript export" \
-  uv run --locked python scripts/render_manuscript.py
+  uv run --locked python scripts/render_manuscript.py \
+    --project-root "$PWD" --skip-manuscript-hydration
 fi
 fi
 if [ "$post_render_only" -eq 1 ]; then

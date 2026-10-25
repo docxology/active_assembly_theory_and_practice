@@ -155,10 +155,11 @@ The project follows the template code-project pattern:
     path tokens; unembedded figures are marked explicitly as atlas-only so the
     variable audit does not confuse a complete metadata surface with an unused
     scientific value.
-38. `scripts/run_scientific_program.py` exposes `generate-figures`,
-    `audit-figures`, and `render-manuscript` as thin orchestration entry points.
-    The sibling template remains the renderer of record for DOCX, PDF, HTML,
-    and slides.
+38. `scripts/run_scientific_program.py` exposes `generate-figures` and
+    `audit-figures` as thin orchestration entry points. Manuscript hydration
+    runs through `scripts/z_generate_manuscript_variables.py`; native DOCX,
+    PDF, HTML and slide export runs through `scripts/render_manuscript.py` and
+    the sibling template renderer.
 
 Scripts are thin entrypoints. Manuscript variables are generated from the live
 experiment so prose and figures stay aligned with the code.
