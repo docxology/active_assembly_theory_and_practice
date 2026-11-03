@@ -15,7 +15,7 @@ uv sync --locked --extra dev
 uv run --locked python scripts/00_preflight.py
 ```
 
-`.python-version` pins Python 3.13; `pyproject.toml` supports Python >=3.11.
+`.python-version` pins the development interpreter; `pyproject.toml` supports Python >=3.11.
 Use `uv.lock` rather than selecting newer dependencies incidentally. The
 preflight imports real Capstone, Unicorn and pymdp and validates the Julia
 manifest; successful imports alone do not run the scientific or document gates.
