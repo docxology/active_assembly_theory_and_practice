@@ -3,6 +3,8 @@
 Version 0.1.0 archival identifier:
 [10.5281/zenodo.23484108](https://doi.org/10.5281/zenodo.23484108).
 
+<p align="center"><img src="manuscript/assets/active_assembly_cover.png" alt="Active Assembly cover" width="360"></p>
+
 For the versioned review package, start with the
 [review and release guide](docs/release.md). It maps the real inference paths,
 primary manuscript, figure atlas, provenance receipts and citation metadata.
