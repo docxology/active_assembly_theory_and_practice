@@ -111,3 +111,36 @@ The two post-render receipts stay outside the self-referential scientific byte
 manifest. `validate_analysis_outputs.py --existing-only` writes validation JSON
 and refreshes build lineage without replacing figures, figure metadata or
 hydrated sections. Its default regeneration mode belongs before export.
+
+## Pinned Template verification
+
+The canonical source is [docs/manuscript](manuscript/README.md). The shared
+[Template checkout at 87704feae0a4490ef7dad9c931d268e8c30273c2](https://github.com/docxology/template/tree/87704feae0a4490ef7dad9c931d268e8c30273c2)
+can resolve the same source and hydrated sections. Provision the renderer
+with `uv sync --locked` and the native tools in [getting started](getting_started.md).
+Register a disposable copy at `projects/working/active_assembly_theory_and_practice`,
+then run the stages from the Template checkout after hydration.
+
+For a release snapshot replay, download the
+[v0.1.0 review ZIP](https://zenodo.org/records/23484108/files/active_assembly_theory_and_practice-0.1.0-review.zip)
+to a local path. Call the staging script through the Template runtime. It
+verifies the archive SHA-256, checks that the eight current sections, preamble
+and bibliography match the release, and stages the retained figure bytes
+and variable values. It adjusts the paths for the new source directory.
+
+```bash
+uv run --no-sync python projects/working/active_assembly_theory_and_practice/scripts/prepare_manuscript_replay.py   /path/to/active_assembly_theory_and_practice-0.1.0-review.zip
+```
+
+Then run the pinned stages:
+
+```bash
+uv run --no-sync python scripts/pipeline/stage_03_render.py \
+  --project working/active_assembly_theory_and_practice --skip-manuscript-hydration
+uv run --no-sync python scripts/pipeline/stage_04_validate.py \
+  --project working/active_assembly_theory_and_practice
+```
+
+This replay uses evidence from the versioned review archive. Fresh analysis
+and native release verification use the scientific producers and the
+project-specific audit steps above, including its exact Julia/RxInfer runtime.

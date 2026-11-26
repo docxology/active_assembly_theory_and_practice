@@ -13,21 +13,21 @@ from src.document_rendering import render_manuscript
 
 def _project(tmp_path):
     project = tmp_path / "project"
-    (project / "manuscript").mkdir(parents=True)
-    (project / "manuscript/00_abstract.md").write_text("# {{TITLE}}\n")
-    (project / "manuscript/preamble.md").write_text(
+    (project / "docs/manuscript").mkdir(parents=True)
+    (project / "docs/manuscript/00_abstract.md").write_text("# {{TITLE}}\n")
+    (project / "docs/manuscript/preamble.md").write_text(
         "# Rendering preamble\n\n```latex\n\\hypersetup{pdfdisplaydoctitle=true}\n```\n"
     )
-    (project / "manuscript/config.yaml").write_text(
+    (project / "docs/manuscript/config.yaml").write_text(
         "paper:\n  title: Native handoff regression\n"
     )
     (project / "output/manuscript").mkdir(parents=True)
     (project / "output/manuscript/00_abstract.md").write_text("# CURRENT_ROOT_7319\n")
     (project / "output/manuscript/config.yaml").write_bytes(
-        (project / "manuscript/config.yaml").read_bytes()
+        (project / "docs/manuscript/config.yaml").read_bytes()
     )
     (project / "output/manuscript/preamble.md").write_bytes(
-        (project / "manuscript/preamble.md").read_bytes()
+        (project / "docs/manuscript/preamble.md").read_bytes()
     )
     (project / "output/data").mkdir()
     (project / "output/data/manuscript_variables.json").write_text(
@@ -60,7 +60,7 @@ def test_native_handoff_preserves_hydration_and_uses_explicit_root(tmp_path):
 
 def test_stale_hydration_never_reaches_template(tmp_path):
     project = _project(tmp_path)
-    (project / "manuscript/00_abstract.md").write_text("# Changed\n")
+    (project / "docs/manuscript/00_abstract.md").write_text("# Changed\n")
     with pytest.raises(RuntimeError, match="hydration contract failed"):
         render_manuscript(project)
     assert not (project / "output/reports/project_render.json").exists()

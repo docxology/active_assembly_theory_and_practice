@@ -7,8 +7,10 @@ from src.docs_validation import validate_documentation
 
 def _project(root: Path) -> Path:
     (root / "docs").mkdir()
-    (root / "manuscript").mkdir()
-    (root / "manuscript/references.bib").write_text("@article{known, title={Known}}")
+    (root / "docs/manuscript").mkdir(parents=True)
+    (root / "docs/manuscript/references.bib").write_text(
+        "@article{known, title={Known}}"
+    )
     (root / "README.md").write_text("# Project\n\n[Docs](docs/README.md)\n")
     (root / "docs/README.md").write_text("# Index\n\n[Topic](topic.md)\n")
     (root / "docs/topic.md").write_text("# Topic\n\nKnown citation [@known].\n")

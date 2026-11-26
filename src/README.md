@@ -19,7 +19,7 @@ The package includes the adapter subpackage,
 | External sources | `external_sources`, `external_labeling`, `external_corpus` | Pinned, static-only licensed-source acquisition and label contracts. |
 | Receipts & registries | `receipt`, `artifact_contract`, `provenance`, `reproducibility`, `build_provenance`, `claim_register`, `scholarship`, `docs_validation`, `validation` | Protocol-v2 artifact envelopes, hash manifests, and the validation oracle. |
 | Figures | `figures`, `advanced_figures`, `figure_contract`, `visual_atlas` | Source-bound figure specifications, the offline atlas, and the figure registry. |
-| Manuscript & delivery | `manuscript_variables`, `manuscript_registry`, `document_rendering`, `docx_validation`, `pdf_accessibility`, `pdf_ua` | Token hydration for [`../manuscript`](../manuscript) and post-render DOCX/PDF audits. |
+| Manuscript & delivery | `manuscript_variables`, `manuscript_registry`, `document_rendering`, `docx_validation`, `pdf_accessibility`, `pdf_ua` | Token hydration for [`../docs/manuscript`](../docs/manuscript) and post-render DOCX/PDF audits. |
 
 ## Quick Start
 

@@ -89,7 +89,7 @@ def validate_hydrated_tree(
     """Fail closed if template hydration omits files or changes substitution."""
 
     root = project_root if project_root is not None else PROJECT_ROOT
-    source_dir = root / "manuscript"
+    source_dir = root / "docs/manuscript"
     expected = {
         path.name
         for path in source_dir.glob("*.md")
@@ -163,8 +163,8 @@ def run_hydration_gate() -> int:
                 "VALIDATION_FAIL_COUNT": str(report.summary["failed"]),
                 "VALIDATION_TOTAL_COUNT": str(report.summary["total"]),
                 "VALIDATION_ALL_PASSED": str(report.summary["all_passed"]).lower(),
-                "VALIDATION_REPORT": "../output/data/validation_report.json",
-                "VALIDATION_FIGURE": "../output/figures/validation_summary.png",
+                "VALIDATION_REPORT": "../../output/data/validation_report.json",
+                "VALIDATION_FIGURE": "../../output/figures/validation_summary.png",
             }
             if all(
                 variables.get(key) == value for key, value in validation_values.items()

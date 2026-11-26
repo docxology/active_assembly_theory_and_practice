@@ -421,7 +421,7 @@ MANIFEST_TARGETS: tuple[ArtifactManifestTarget, ...] = (
         ),
     ),
     ArtifactManifestTarget(
-        path="manuscript/assets/active_assembly_cover.png",
+        path="docs/manuscript/assets/active_assembly_cover.png",
         artifact_type="cover_image",
         generated_by="imagegen: academic assembly-to-belief cover asset",
         claim_ids=("CLM-009",),

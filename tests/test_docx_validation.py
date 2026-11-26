@@ -55,10 +55,10 @@ def _write_fake_docx(
         encoding="utf-8",
     )
     if cover:
-        cover_path = project_root / "manuscript" / "assets" / "cover.png"
+        cover_path = project_root / "docs/manuscript" / "assets" / "cover.png"
         cover_path.parent.mkdir(parents=True)
         cover_path.write_bytes(b"COVER PNG")
-        (project_root / "manuscript" / "config.yaml").write_text(
+        (project_root / "docs/manuscript" / "config.yaml").write_text(
             "paper:\n"
             "  cover:\n"
             "    image: assets/cover.png\n"

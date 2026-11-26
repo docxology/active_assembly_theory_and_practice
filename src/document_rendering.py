@@ -45,7 +45,7 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
         )
     if cover.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
         raise ValueError("DOCX cover must use a supported raster format")
-    config_path = project_root / "manuscript/config.yaml"
+    config_path = project_root / "docs/manuscript/config.yaml"
     config = yaml.safe_load(config_path.read_text())
     load_template_injection(project_root)
     from .project_rendering import manuscript_sections
@@ -75,7 +75,7 @@ def render_docx_with_cover(project_root: Path = PROJECT_ROOT) -> Path:
 
     output = project_root / DOCX_ARTIFACT
     output.parent.mkdir(parents=True, exist_ok=True)
-    bibliography = project_root / "manuscript/references.bib"
+    bibliography = project_root / "docs/manuscript/references.bib"
     with tempfile.TemporaryDirectory(
         prefix="cover-render-", dir=output.parent
     ) as staging:
@@ -136,7 +136,7 @@ def render_manuscript(project_root: Path = PROJECT_ROOT) -> None:
     from .project_rendering import _hashes, manuscript_sections
 
     sources = sorted(
-        path for path in (project_root / "manuscript").glob("*") if path.is_file()
+        path for path in (project_root / "docs/manuscript").glob("*") if path.is_file()
     )
     hydrated = sorted(
         path

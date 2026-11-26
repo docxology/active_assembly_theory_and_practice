@@ -95,7 +95,7 @@ def _render_project(
     if "docx" in formats and not {"pdf", "html"}.intersection(formats):
         raise ValueError("RENDER_DOCX_REQUIRES_COMPOSITION: request pdf or html too")
     for relative in (
-        "manuscript",
+        "docs/manuscript",
         "output",
         "output/manuscript",
         "output/pdf",
@@ -129,7 +129,7 @@ def _render_project(
     validate_hydrated_tree(hydrated, variables, project_root=root)
     sources = manuscript_sections(hydrated)
     source_paths = sorted(
-        path for path in (root / "manuscript").glob("*") if path.is_file()
+        path for path in (root / "docs/manuscript").glob("*") if path.is_file()
     )
     hydrated_paths = sorted(path for path in hydrated.glob("*") if path.is_file())
     before_sources = _hashes(source_paths, root)

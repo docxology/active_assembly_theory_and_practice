@@ -114,7 +114,7 @@ validation oracle).
 `figure_contract.py` declares canonical source-bound specs and the offline
 atlas; `visual_atlas.py` produces the narrative atlas figures.
 `manuscript_variables.py` and `manuscript_registry.py` hydrate the
-`{{TOKEN}}` surface for [`../manuscript`](../manuscript/AGENTS.md);
+`{{TOKEN}}` surface for [`../docs/manuscript`](../docs/manuscript/AGENTS.md);
 `document_rendering.py` completes the source-configured DOCX cover through the
 canonical renderer; `docx_validation.py`, `pdf_accessibility.py` and `pdf_ua.py` audit the rendered artifacts
 after the sibling template renders them.

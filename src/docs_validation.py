@@ -64,7 +64,7 @@ def validate_documentation(project_root: Path) -> list[str]:
         root / "README.md"
     ]
     errors: list[str] = []
-    bibliography = root / "manuscript/references.bib"
+    bibliography = root / "docs/manuscript/references.bib"
     keys = set(re.findall(r"@\w+\s*\{\s*([^,\s]+)", bibliography.read_text()))
     indexed: set[Path] = set()
     for path in paths:

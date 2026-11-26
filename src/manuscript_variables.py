@@ -385,8 +385,8 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "ASSEMBLY_ARCHITECTURE": str(assembly_listing_payload["architecture"]),
         "ASSEMBLY_BASE_ADDRESS": f"0x{int(assembly_listing_payload['base_address']):x}",
         "ASSEMBLY_LISTING": assembly_listing_markdown(assembly_listing_payload),
-        "ASSEMBLY_LISTING_ARTIFACT": "../output/data/assembly_listing.json",
-        "SYMBOLIC_SEMANTICS_ARTIFACT": "../output/data/symbolic_execution.json",
+        "ASSEMBLY_LISTING_ARTIFACT": "../../output/data/assembly_listing.json",
+        "SYMBOLIC_SEMANTICS_ARTIFACT": "../../output/data/symbolic_execution.json",
         "SYMBOLIC_SUPPORTED_COUNT": str(
             result.symbolic_execution.supported_instruction_count
         ),
@@ -435,31 +435,31 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "CORPUS_OBSERVATION_COUNT": str(evidence["observation_count"]),
         "TEMPORAL_PHASE_SEQUENCE": temporal_phase_sequence,
         "TEMPORAL_BELIEFS_BITWISE_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_bitwise']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_bitwise']}"
         ),
         "TEMPORAL_BELIEFS_GUARD_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_guard']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_guard']}"
         ),
         "TEMPORAL_BELIEFS_LONG_ACCUMULATOR_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_long_accumulator']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_long_accumulator']}"
         ),
         "TEMPORAL_BELIEFS_MEMORY_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_memory']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_memory']}"
         ),
         "TEMPORAL_BELIEFS_GUARD_TAKEN_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_guard_taken']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_guard_taken']}"
         ),
         "TEMPORAL_BELIEFS_CALL_RETURN_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_call_return']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_call_return']}"
         ),
         "TEMPORAL_BELIEFS_BRANCH_NOT_TAKEN_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_branch_not_taken']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_branch_not_taken']}"
         ),
         "TEMPORAL_BELIEFS_STACK_LOCAL_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_stack_local']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_stack_local']}"
         ),
         "TEMPORAL_BELIEFS_OPTIMIZATION_REWRITE_FIGURE": (
-            f"../{advanced_figure_paths['temporal_beliefs_x86_optimization_rewrite']}"
+            f"../../{advanced_figure_paths['temporal_beliefs_x86_optimization_rewrite']}"
         ),
         "FINAL_RAX": str(result.trace.final_rax),
         "FINAL_STATE": result.inference.final_state.replace("_", " "),
@@ -485,15 +485,15 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             len(categorical_rxinfer_result.free_energy_values)
         ),
         "RXINFER_CATEGORICAL_FINAL_FREE_ENERGY": f"{categorical_rxinfer_result.final_free_energy:.6f}",
-        "RXINFER_CATEGORICAL_ARTIFACT": "../output/rxinfer_categorical/categorical_diagnostics.json",
+        "RXINFER_CATEGORICAL_ARTIFACT": "../../output/rxinfer_categorical/categorical_diagnostics.json",
         "SCHOLARSHIP_SOURCE_COUNT": str(len(SCHOLARSHIP_SOURCES)),
-        "SCHOLARSHIP_SOURCE_LEDGER": f"../{scholarship_path}",
+        "SCHOLARSHIP_SOURCE_LEDGER": f"../../{scholarship_path}",
         "CLAIM_COUNT": str(len(CLAIM_RECORDS)),
         "VALIDATED_CLAIM_COUNT": str(
             sum(claim.status == "validated" for claim in CLAIM_RECORDS)
         ),
-        "CLAIM_REGISTER": f"../{claim_register_path}",
-        "REPRODUCIBILITY_MANIFEST": f"../{reproducibility_path}",
+        "CLAIM_REGISTER": f"../../{claim_register_path}",
+        "REPRODUCIBILITY_MANIFEST": f"../../{reproducibility_path}",
         "REPRODUCIBILITY_ARTIFACT_COUNT": str(len(MANIFEST_TARGETS)),
         "CORPUS_FIXTURE_COUNT": str(evaluation_summary["fixture_count"]),
         "TEMPORAL_MEAN_ACCURACY": f"{evaluation_summary['mean_temporal_accuracy']:.3f}",
@@ -533,7 +533,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             field.replace("_", " ") for field in TYPED_OBSERVATION_FIELDS
         ),
         "TYPED_FIXTURE_COUNT": str(len(typed_report["per_fixture"])),
-        "CORPUS_COVERAGE_ARTIFACT": f"../{advanced_paths['corpus_coverage']}",
+        "CORPUS_COVERAGE_ARTIFACT": f"../../{advanced_paths['corpus_coverage']}",
         "CORPUS_MEMORY_FIXTURE_COUNT": str(
             corpus_coverage_summary["memory_fixture_count"]
         ),
@@ -564,7 +564,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             .get("families_per_split", {})
             .get("held_out", 0),
         ),
-        "ACTION_SENSING_ARTIFACT": f"../{advanced_paths['action_sensing']}",
+        "ACTION_SENSING_ARTIFACT": f"../../{advanced_paths['action_sensing']}",
         "ACTION_SENSING_ACTIVE_MEAN_ACTIONS": f"{action_sensing_summary['mean_actions_used']['active']:.3f}",
         "ACTION_SENSING_FIXED_MEAN_ACTIONS": f"{action_sensing_summary['mean_actions_used']['fixed']:.3f}",
         "ACTION_SENSING_RANDOM_CONFIDENCE_RATE": f"{action_sensing_summary['confidence_rate']['random']:.3f}",
@@ -573,7 +573,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "ACTION_SENSING_LEAKAGE_FREE": (
             "yes" if action_sensing_summary["leakage_free"] else "no"
         ),
-        "PARAMETER_LEARNING_ARTIFACT": f"../{advanced_paths['parameter_learning']}",
+        "PARAMETER_LEARNING_ARTIFACT": f"../../{advanced_paths['parameter_learning']}",
         "PARAMETER_LEARNING_HOLDOUT_COUNT": str(
             parameter_learning_summary["fixture_count"]
         ),
@@ -597,7 +597,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "PARAMETER_LEARNING_MULTI_START_MEAN_ACCURACY": f"{parameter_learning_summary['multi_start_mean_accuracy']:.3f}",
         "PARAMETER_LEARNING_MULTI_START_MEAN_RANGE": f"{parameter_learning_summary['multi_start_mean_accuracy_range']:.3f}",
         "PARAMETER_LEARNING_MULTI_START_MEAN_AGREEMENT": f"{parameter_learning_summary['multi_start_mean_pairwise_label_agreement']:.3f}",
-        "SCIENTIFIC_PROGRAM_ARTIFACT": f"../{advanced_paths['scientific_program']}",
+        "SCIENTIFIC_PROGRAM_ARTIFACT": f"../../{advanced_paths['scientific_program']}",
         "SCIENTIFIC_PROGRAM_MILESTONE_COUNT": str(
             len(scientific_program_report["milestones"])
         ),
@@ -610,9 +610,9 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "SCIENTIFIC_PROGRAM_PLANNED_COUNT": str(
             scientific_program_status_counts.get("planned", 0)
         ),
-        "QUOTIENT_PROTOCOL_ARTIFACT": f"../{advanced_paths['quotient_invariance_protocol']}",
+        "QUOTIENT_PROTOCOL_ARTIFACT": f"../../{advanced_paths['quotient_invariance_protocol']}",
         "REPRESENTATION_BENCHMARK_ARTIFACT": (
-            f"../{advanced_paths['representation_invariance_benchmark']}"
+            f"../../{advanced_paths['representation_invariance_benchmark']}"
         ),
         "REPRESENTATION_BENCHMARK_FAMILY_COUNT": str(
             representation_benchmark_report["family_count"]
@@ -629,7 +629,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "REPRESENTATION_BENCHMARK_NEGATIVE_CONTROL_UNSEPARATED_COUNT": str(
             representation_negative_control_unseparated_count
         ),
-        "INTERVENTION_POWER_ARTIFACT": f"../{advanced_paths['intervention_power']}",
+        "INTERVENTION_POWER_ARTIFACT": f"../../{advanced_paths['intervention_power']}",
         "INTERVENTION_POWER_SUBSET_COUNT": str(
             intervention_power_report["subset_count"]
         ),
@@ -646,7 +646,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "INTERVENTION_POWER_SINGLE_STATE_UNRESOLVED_COUNT": str(
             len(intervention_negative_control["unresolved_near_miss_families"])
         ),
-        "CROSS_ARCHITECTURE_ARTIFACT": f"../{advanced_paths['cross_architecture_fixtures']}",
+        "CROSS_ARCHITECTURE_ARTIFACT": f"../../{advanced_paths['cross_architecture_fixtures']}",
         "CROSS_ARCHITECTURE_COUNT": str(
             cross_architecture_summary["architecture_count"]
         ),
@@ -658,7 +658,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "CROSS_ARCHITECTURE_RESULT": str(
             cross_architecture_report["rows"][0]["execution"]["final_accumulator"]
         ),
-        "FORMAL_VERIFICATION_ARTIFACT": f"../{advanced_paths['formal_verification']}",
+        "FORMAL_VERIFICATION_ARTIFACT": f"../../{advanced_paths['formal_verification']}",
         "FORMAL_TOOLCHAIN": str(formal_verification_report["toolchain"]),
         "FORMAL_THEOREM_COUNT": str(len(formal_verification_report["theorems"])),
         "FORMAL_VERIFICATION_STATUS": str(
@@ -666,7 +666,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 "endpoint_status", formal_verification_report["status"]
             )
         ),
-        "ACTIVE_INFORMATION_ARTIFACT": f"../{advanced_paths['active_information_frontier']}",
+        "ACTIVE_INFORMATION_ARTIFACT": f"../../{advanced_paths['active_information_frontier']}",
         "ACTIVE_INFORMATION_SENSOR_COUNT": str(
             len(active_information_report["sensors"])
         ),
@@ -676,7 +676,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "ACTIVE_INFORMATION_EXACT": (
             "yes" if active_information_report["exact_enumeration"] else "no"
         ),
-        "RESEARCH_PROTOCOL_ARTIFACT": f"../{advanced_paths['research_protocol']}",
+        "RESEARCH_PROTOCOL_ARTIFACT": f"../../{advanced_paths['research_protocol']}",
         "RESEARCH_PROTOCOL_ID": str(research_protocol_report["protocol_id"]),
         "RESEARCH_PROTOCOL_HASH": str(research_protocol_report["protocol_sha256"]),
         "ARTIFACT_RECEIPT_SCHEMA_VERSION": "2.0",
@@ -686,7 +686,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "ARTIFACT_RECEIPT_AUDIT_COMMAND": (
             "uv run python scripts/run_scientific_program.py audit-artifacts"
         ),
-        "QUOTIENT_CLASSIFIER_ARTIFACT": f"../{advanced_paths['quotient_classifier']}",
+        "QUOTIENT_CLASSIFIER_ARTIFACT": f"../../{advanced_paths['quotient_classifier']}",
         "QUOTIENT_CLASSIFIER_STATUS": str(quotient_classifier_report["status"]),
         "QUOTIENT_CLASSIFIER_FAMILY_COUNT": str(
             quotient_classifier_report["family_count"]
@@ -761,7 +761,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 "consistent_family_count"
             ]
         ),
-        "FORMAL_CORRESPONDENCE_ARTIFACT": f"../{advanced_paths['formal_trace_correspondence']}",
+        "FORMAL_CORRESPONDENCE_ARTIFACT": f"../../{advanced_paths['formal_trace_correspondence']}",
         "FORMAL_CORRESPONDENCE_STATUS": str(formal_correspondence_report["status"]),
         "FORMAL_CORRESPONDENCE_FIXTURE_COUNT": str(
             formal_correspondence_report["fixture_count"]
@@ -779,7 +779,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "LEAN_BRIDGE_THEOREM_COUNT": str(lean_bridge_theorem_total),
         "LEAN_BRIDGE_KERNEL_CHECKED": lean_bridge_kernel_checked,
         "FORMAL_AXIOM_REPORT_CLEAN": formal_axiom_report_clean,
-        "COMPILER_TRANSFER_ARTIFACT": f"../{advanced_paths['compiler_transfer']}",
+        "COMPILER_TRANSFER_ARTIFACT": f"../../{advanced_paths['compiler_transfer']}",
         "COMPILER_TRANSFER_VALIDATED_COUNT": str(
             compiler_transfer_report["capability_summary"]["validated_static_objects"]
         ),
@@ -806,7 +806,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 "row_count", 0
             )
         ),
-        "EXTERNAL_SOURCE_ARTIFACT": f"../{advanced_paths['external_source_validation']}",
+        "EXTERNAL_SOURCE_ARTIFACT": f"../../{advanced_paths['external_source_validation']}",
         "EXTERNAL_SOURCE_STATUS": str(external_source_report["status"]),
         "EXTERNAL_SOURCE_PROJECT_COUNT": str(external_source_report["project_count"]),
         "EXTERNAL_SOURCE_LABELABLE_EXAMPLE_COUNT": str(
@@ -815,7 +815,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "EXTERNAL_SOURCE_GATE_COUNT": str(
             len(external_source_report["promotion_gate"])
         ),
-        "EXTERNAL_ACQUISITION_ARTIFACT": "../output/data/external_acquisition.json",
+        "EXTERNAL_ACQUISITION_ARTIFACT": "../../output/data/external_acquisition.json",
         "EXTERNAL_ACQUISITION_STATUS": str(
             external_acquisition_report.get("status", "not_yet_observed")
         ),
@@ -827,7 +827,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "EXTERNAL_ACQUISITION_NETWORK_USED": (
             "yes" if external_acquisition_report.get("network_used") is True else "no"
         ),
-        "EXTERNAL_LABEL_ARTIFACT": f"../{advanced_paths.get('external_label_contract', 'output/data/external_label_contract.json')}",
+        "EXTERNAL_LABEL_ARTIFACT": f"../../{advanced_paths.get('external_label_contract', 'output/data/external_label_contract.json')}",
         "EXTERNAL_LABEL_STATUS": str(
             external_label_report.get("status", "not_yet_observed")
         ),
@@ -869,7 +869,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             str(item) for item in external_label_summary.get("test_projects", [])
         )
         or "none",
-        "EXTERNAL_STATIC_ARTIFACT": "../output/data/external_static_validation.json",
+        "EXTERNAL_STATIC_ARTIFACT": "../../output/data/external_static_validation.json",
         "EXTERNAL_STATIC_STATUS": str(external_static_report["status"]),
         "EXTERNAL_STATIC_ROW_COUNT": str(len(external_static_report["rows"])),
         "EXTERNAL_STATIC_VALIDATED_COUNT": str(
@@ -878,7 +878,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 for row in external_static_report["rows"]
             )
         ),
-        "EXTERNAL_CAPABILITIES_ARTIFACT": "../output/data/external_capabilities.json",
+        "EXTERNAL_CAPABILITIES_ARTIFACT": "../../output/data/external_capabilities.json",
         "EXTERNAL_CAPABILITIES_STATUS": str(external_capabilities_report["status"]),
         "EXTERNAL_CAPABILITY_TARGET_COUNT": str(
             sum(
@@ -916,11 +916,11 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             if independent_replay_external
             else "not_observed"
         ),
-        "SENSOR_COST_ARTIFACT": f"../{advanced_paths['sensor_cost_receipt']}",
+        "SENSOR_COST_ARTIFACT": f"../../{advanced_paths['sensor_cost_receipt']}",
         "SENSOR_COST_SENSOR_COUNT": str(len(sensor_cost_report["sensors"])),
         "SENSOR_CERTIFICATE_COUNT": str(len(sensor_cost_report["policy_certificates"])),
         "SENSOR_CERTIFICATE_MAX_GAP": f"{max(float(row['optimality_gap']) for row in sensor_cost_report['policy_certificates']):.3f}",
-        "REPLICATION_ARTIFACT": f"../{advanced_paths['replication_manifest']}",
+        "REPLICATION_ARTIFACT": f"../../{advanced_paths['replication_manifest']}",
         "REPLICATION_PUBLIC_COUNT": str(replication_report["public_row_count"]),
         "REPLICATION_GOLD_COUNT": str(replication_report["gold_row_count"]),
         "REPLICATION_LABEL_SEPARATED": (
@@ -929,7 +929,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "REPLICATION_PUBLIC_BUNDLE_SHA256": str(
             replication_report["public_bundle_sha256"]
         ),
-        "THEOREM_COUNTERTHEOREM_ARTIFACT": f"../{advanced_paths['theorem_or_countertheorem']}",
+        "THEOREM_COUNTERTHEOREM_ARTIFACT": f"../../{advanced_paths['theorem_or_countertheorem']}",
         "THEOREM_COUNTERTHEOREM_STATUS": str(theorem_report["promotion_status"]),
         "THEOREM_COUNTEREXAMPLE_FAMILY": str(
             theorem_report["counterexample"]["family_id"]
@@ -946,7 +946,9 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 for item in theorem_report["candidate_theorems"]
             )
         ),
-        "COUNTEREXAMPLE_SEARCH_ARTIFACT": ("../output/data/counterexample_search.json"),
+        "COUNTEREXAMPLE_SEARCH_ARTIFACT": (
+            "../../output/data/counterexample_search.json"
+        ),
         "COUNTEREXAMPLE_SEARCH_METHOD": str(
             counterexample_report["enumeration_rule"]["order"]
         ),
@@ -972,7 +974,7 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
                 if item.get("status") == "falsified_by_counterexample"
             )
         ),
-        "SENSING_STRESS_ARTIFACT": "../output/data/sensing_stress.json",
+        "SENSING_STRESS_ARTIFACT": "../../output/data/sensing_stress.json",
         "SENSING_STRESS_GRID_ROW_COUNT": str(len(sensing_stress_report["grid"])),
         "SENSING_STRESS_MAX_REGRET": (
             f"{max(float(row['regret_vs_exact']) for row in sensing_stress_report['grid']):.3f}"
@@ -1058,98 +1060,98 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         "SEG_MEMORYLESS_F1": f"{ablation_rows[0]['memoryless_segmentation_f1']:.3f}",
         "SEG_HIGH_TEMPORAL_F1": f"{max_blend_row['temporal_segmentation_f1']:.3f}",
         "SEG_HIGH_MEMORYLESS_F1": f"{max_blend_row['memoryless_segmentation_f1']:.3f}",
-        "TEMPORAL_INFERENCE_ARTIFACT": f"../{advanced_paths['temporal_inference']}",
-        "EVALUATION_REPORT_ARTIFACT": f"../{advanced_paths['evaluation_report']}",
-        "PHASE_SEGMENTS_ARTIFACT": f"../{advanced_paths['phase_segments']}",
-        "ACTIVE_SELECTION_ARTIFACT": f"../{advanced_paths['active_selection']}",
-        "HELD_OUT_MODEL_ARTIFACT": f"../{advanced_paths['held_out_model']}",
-        "CFG_EVIDENCE_ARTIFACT": f"../{advanced_paths['cfg_evidence']}",
-        "MEMORY_EVIDENCE_ARTIFACT": f"../{advanced_paths['memory_evidence']}",
-        "OBSERVATION_FIGURE": "../output/figures/observation_pipeline.png",
-        "POSTERIOR_FIGURE": "../output/figures/posterior_beliefs.png",
-        "PACKAGE_PROVENANCE_FIGURE": "../output/figures/package_provenance.png",
-        "TRACE_FEATURE_FIGURE": "../output/figures/trace_feature_matrix.png",
-        "TRACE_REFINEMENT_FIGURE": "../output/figures/trace_refinement.png",
-        "RXINFER_FREE_ENERGY_FIGURE": "../output/figures/rxinfer_free_energy.png",
+        "TEMPORAL_INFERENCE_ARTIFACT": f"../../{advanced_paths['temporal_inference']}",
+        "EVALUATION_REPORT_ARTIFACT": f"../../{advanced_paths['evaluation_report']}",
+        "PHASE_SEGMENTS_ARTIFACT": f"../../{advanced_paths['phase_segments']}",
+        "ACTIVE_SELECTION_ARTIFACT": f"../../{advanced_paths['active_selection']}",
+        "HELD_OUT_MODEL_ARTIFACT": f"../../{advanced_paths['held_out_model']}",
+        "CFG_EVIDENCE_ARTIFACT": f"../../{advanced_paths['cfg_evidence']}",
+        "MEMORY_EVIDENCE_ARTIFACT": f"../../{advanced_paths['memory_evidence']}",
+        "OBSERVATION_FIGURE": "../../output/figures/observation_pipeline.png",
+        "POSTERIOR_FIGURE": "../../output/figures/posterior_beliefs.png",
+        "PACKAGE_PROVENANCE_FIGURE": "../../output/figures/package_provenance.png",
+        "TRACE_FEATURE_FIGURE": "../../output/figures/trace_feature_matrix.png",
+        "TRACE_REFINEMENT_FIGURE": "../../output/figures/trace_refinement.png",
+        "RXINFER_FREE_ENERGY_FIGURE": "../../output/figures/rxinfer_free_energy.png",
         "RXINFER_CATEGORICAL_FREE_ENERGY_FIGURE": (
-            "../output/figures/rxinfer_categorical_free_energy.png"
+            "../../output/figures/rxinfer_categorical_free_energy.png"
         ),
-        "INFERENCE_DIAGNOSTIC_FIGURE": f"../{inference_diagnostic_path.relative_to(PROJECT_ROOT)}",
-        "SCHOLARSHIP_FIGURE": "../output/figures/scholarship_source_roles.png",
-        "SCHOLARSHIP_MATRIX_FIGURE": "../output/figures/scholarship_evidence_matrix.png",
-        "CLAIM_FIGURE": "../output/figures/claim_evidence_map.png",
-        "REPRODUCIBILITY_FIGURE": "../output/figures/artifact_hash_manifest.png",
-        "TEMPORAL_BELIEFS_FIGURE": f"../{advanced_figure_paths['temporal_beliefs']}",
-        "MODEL_COMPARISON_FIGURE": f"../{advanced_figure_paths['model_comparison']}",
-        "ACTIVE_EFE_FIGURE": f"../{advanced_figure_paths['active_efe']}",
-        "ASSEMBLY_CFG_FIGURE": f"../{advanced_figure_paths['assembly_cfg']}",
+        "INFERENCE_DIAGNOSTIC_FIGURE": f"../../{inference_diagnostic_path.relative_to(PROJECT_ROOT)}",
+        "SCHOLARSHIP_FIGURE": "../../output/figures/scholarship_source_roles.png",
+        "SCHOLARSHIP_MATRIX_FIGURE": "../../output/figures/scholarship_evidence_matrix.png",
+        "CLAIM_FIGURE": "../../output/figures/claim_evidence_map.png",
+        "REPRODUCIBILITY_FIGURE": "../../output/figures/artifact_hash_manifest.png",
+        "TEMPORAL_BELIEFS_FIGURE": f"../../{advanced_figure_paths['temporal_beliefs']}",
+        "MODEL_COMPARISON_FIGURE": f"../../{advanced_figure_paths['model_comparison']}",
+        "ACTIVE_EFE_FIGURE": f"../../{advanced_figure_paths['active_efe']}",
+        "ASSEMBLY_CFG_FIGURE": f"../../{advanced_figure_paths['assembly_cfg']}",
         "ASSEMBLY_MEMORY_FIGURE": (
-            f"../{advanced_figure_paths['assembly_memory_timeline']}"
+            f"../../{advanced_figure_paths['assembly_memory_timeline']}"
         ),
-        "CALIBRATION_CURVE_FIGURE": f"../{advanced_figure_paths['calibration_curve']}",
-        "CONFUSION_MATRIX_FIGURE": f"../{advanced_figure_paths['confusion_matrix']}",
-        "AMBIGUITY_ABLATION_FIGURE": f"../{advanced_figure_paths['ambiguity_ablation']}",
+        "CALIBRATION_CURVE_FIGURE": f"../../{advanced_figure_paths['calibration_curve']}",
+        "CONFUSION_MATRIX_FIGURE": f"../../{advanced_figure_paths['confusion_matrix']}",
+        "AMBIGUITY_ABLATION_FIGURE": f"../../{advanced_figure_paths['ambiguity_ablation']}",
         "SEGMENTATION_RIBBONS_FIGURE": (
-            f"../{advanced_figure_paths['segmentation_ribbons']}"
+            f"../../{advanced_figure_paths['segmentation_ribbons']}"
         ),
-        "CORPUS_STABILITY_FIGURE": f"../{advanced_figure_paths['corpus_stability']}",
-        "PHASE_RECOVERY_FIGURE": f"../{advanced_figure_paths['phase_recovery']}",
-        "DECODER_CALIBRATION_FIGURE": f"../{advanced_figure_paths['decoder_calibration']}",
-        "GENERATIVE_MODEL_FIGURE": f"../{advanced_figure_paths['generative_model']}",
-        "OBSERVATION_INFO_FIGURE": f"../{advanced_figure_paths['observation_informativeness']}",
-        "MODEL_EVIDENCE_FIGURE": f"../{advanced_figure_paths['model_evidence']}",
-        "TRANSITION_ABLATION_FIGURE": f"../{advanced_figure_paths['transition_ablation']}",
-        "GENERATIVE_ADEQUACY_FIGURE": f"../{advanced_figure_paths['generative_adequacy']}",
-        "GENERATIVE_ADEQUACY_ARTIFACT": f"../{advanced_paths['generative_adequacy']}",
-        "TYPED_OBSERVATION_ARTIFACT": f"../{advanced_paths['typed_observations']}",
-        "FACTORIZED_OBSERVATION_ARTIFACT": f"../{advanced_paths['factorized_observation_model']}",
+        "CORPUS_STABILITY_FIGURE": f"../../{advanced_figure_paths['corpus_stability']}",
+        "PHASE_RECOVERY_FIGURE": f"../../{advanced_figure_paths['phase_recovery']}",
+        "DECODER_CALIBRATION_FIGURE": f"../../{advanced_figure_paths['decoder_calibration']}",
+        "GENERATIVE_MODEL_FIGURE": f"../../{advanced_figure_paths['generative_model']}",
+        "OBSERVATION_INFO_FIGURE": f"../../{advanced_figure_paths['observation_informativeness']}",
+        "MODEL_EVIDENCE_FIGURE": f"../../{advanced_figure_paths['model_evidence']}",
+        "TRANSITION_ABLATION_FIGURE": f"../../{advanced_figure_paths['transition_ablation']}",
+        "GENERATIVE_ADEQUACY_FIGURE": f"../../{advanced_figure_paths['generative_adequacy']}",
+        "GENERATIVE_ADEQUACY_ARTIFACT": f"../../{advanced_paths['generative_adequacy']}",
+        "TYPED_OBSERVATION_ARTIFACT": f"../../{advanced_paths['typed_observations']}",
+        "FACTORIZED_OBSERVATION_ARTIFACT": f"../../{advanced_paths['factorized_observation_model']}",
         "COUNTEREXAMPLE_SEARCH_FIGURE": (
-            f"../{advanced_figure_paths['counterexample_search']}"
+            f"../../{advanced_figure_paths['counterexample_search']}"
         ),
-        "SENSING_STRESS_FIGURE": f"../{advanced_figure_paths['sensing_stress']}",
-        "TYPED_OBSERVATION_MATRIX_FIGURE": f"../{advanced_figure_paths['typed_observation_matrix']}",
-        "FACTORIZED_OBSERVATION_COMPARISON_FIGURE": f"../{advanced_figure_paths['factorized_observation_comparison']}",
-        "CORPUS_COVERAGE_FIGURE": f"../{advanced_figure_paths['corpus_coverage']}",
-        "ACTION_SENSING_FIGURE": f"../{advanced_figure_paths['action_sensing']}",
-        "PARAMETER_LEARNING_FIGURE": f"../{advanced_figure_paths['parameter_learning']}",
+        "SENSING_STRESS_FIGURE": f"../../{advanced_figure_paths['sensing_stress']}",
+        "TYPED_OBSERVATION_MATRIX_FIGURE": f"../../{advanced_figure_paths['typed_observation_matrix']}",
+        "FACTORIZED_OBSERVATION_COMPARISON_FIGURE": f"../../{advanced_figure_paths['factorized_observation_comparison']}",
+        "CORPUS_COVERAGE_FIGURE": f"../../{advanced_figure_paths['corpus_coverage']}",
+        "ACTION_SENSING_FIGURE": f"../../{advanced_figure_paths['action_sensing']}",
+        "PARAMETER_LEARNING_FIGURE": f"../../{advanced_figure_paths['parameter_learning']}",
         "REPRESENTATION_BENCHMARK_FIGURE": (
-            f"../{advanced_figure_paths['representation_invariance_benchmark']}"
+            f"../../{advanced_figure_paths['representation_invariance_benchmark']}"
         ),
         "SUBSTANTIVE_FIGURE_COUNT": str(len(figure_specs)),
         "GNN_INFERENCE_MODEL_COUNT": str(catalog["model_profile_count"]),
         "GNN_INFERENCE_INSTANCE_COUNT": str(catalog["numeric_instance_count"]),
-        "GNN_INFERENCE_CATALOG_PATH": "../output/gnn/inference/README.md",
-        "INTERVENTION_POWER_FIGURE": f"../{advanced_figure_paths['intervention_power']}",
+        "GNN_INFERENCE_CATALOG_PATH": "../../output/gnn/inference/README.md",
+        "INTERVENTION_POWER_FIGURE": f"../../{advanced_figure_paths['intervention_power']}",
         "CROSS_ARCHITECTURE_FIGURE": (
-            f"../{advanced_figure_paths['cross_architecture_benchmark']}"
+            f"../../{advanced_figure_paths['cross_architecture_benchmark']}"
         ),
         "FORMAL_VERIFICATION_FIGURE": (
-            f"../{advanced_figure_paths['formal_verification_receipt']}"
+            f"../../{advanced_figure_paths['formal_verification_receipt']}"
         ),
         "ACTIVE_INFORMATION_FIGURE": (
-            f"../{advanced_figure_paths['active_information_frontier']}"
+            f"../../{advanced_figure_paths['active_information_frontier']}"
         ),
-        "QUOTIENT_CLASSIFIER_FIGURE": f"../{advanced_figure_paths['quotient_classifier']}",
-        "COMPILER_TRANSFER_FIGURE": f"../{advanced_figure_paths['compiler_transfer']}",
-        "FORMAL_CORRESPONDENCE_FIGURE": f"../{advanced_figure_paths['formal_correspondence']}",
-        "SENSOR_COST_FIGURE": f"../{advanced_figure_paths['sensor_costs']}",
-        "REPLICATION_FIGURE": f"../{advanced_figure_paths['replication_manifest']}",
+        "QUOTIENT_CLASSIFIER_FIGURE": f"../../{advanced_figure_paths['quotient_classifier']}",
+        "COMPILER_TRANSFER_FIGURE": f"../../{advanced_figure_paths['compiler_transfer']}",
+        "FORMAL_CORRESPONDENCE_FIGURE": f"../../{advanced_figure_paths['formal_correspondence']}",
+        "SENSOR_COST_FIGURE": f"../../{advanced_figure_paths['sensor_costs']}",
+        "REPLICATION_FIGURE": f"../../{advanced_figure_paths['replication_manifest']}",
         "EXTERNAL_SOURCE_PROVENANCE_FIGURE": (
-            f"../{advanced_figure_paths['external_source_provenance']}"
+            f"../../{advanced_figure_paths['external_source_provenance']}"
         ),
         "EXTERNAL_LABEL_COVERAGE_FIGURE": (
-            f"../{advanced_figure_paths['external_label_coverage']}"
+            f"../../{advanced_figure_paths['external_label_coverage']}"
         ),
         "ARTIFACT_RECEIPT_CLOSURE_FIGURE": (
-            f"../{advanced_figure_paths['artifact_receipt_closure']}"
+            f"../../{advanced_figure_paths['artifact_receipt_closure']}"
         ),
-        "FIGURE_REGISTRY_ARTIFACT": "../output/data/figure_registry.json",
-        "FIGURE_ATLAS_ARTIFACT": "../output/figure_atlas/index.html",
-        "COVER_IMAGE_ARTIFACT": "manuscript/assets/active_assembly_cover.png",
+        "FIGURE_REGISTRY_ARTIFACT": "../../output/data/figure_registry.json",
+        "FIGURE_ATLAS_ARTIFACT": "../../output/figure_atlas/index.html",
+        "COVER_IMAGE_ARTIFACT": "docs/manuscript/assets/active_assembly_cover.png",
         "DOCX_RENDER_ARTIFACT": (
-            "../output/docx/active_assembly_theory_and_practice_combined.docx"
+            "../../output/docx/active_assembly_theory_and_practice_combined.docx"
         ),
-        "DOCX_RENDER_RECEIPT": "../output/data/docx_render_receipt.json",
+        "DOCX_RENDER_RECEIPT": "../../output/data/docx_render_receipt.json",
         "DOCX_RENDER_STATUS": (
             "valid"
             if docx_payload.get("artifact_exists") and docx_payload.get("valid")
@@ -1185,15 +1187,15 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
         )
         variables.update(
             {
-                f"{prefix}_PATH": f"../{spec.png_path}",
+                f"{prefix}_PATH": f"../../{spec.png_path}",
                 f"{prefix}_CAPTION": spec.caption,
                 f"{prefix}_ALT_TEXT": spec.alt_text,
                 f"{prefix}_LONG_DESCRIPTION": spec.long_description,
                 f"{prefix}_SOURCE_NOTE": source_note,
                 f"{prefix}_STATUS": f"{spec.evidence_status}/{spec.receipt_status}",
-                f"{prefix}_ATLAS_PATH": f"../{spec.atlas_path}",
-                f"{prefix}_SVG_PATH": f"../{spec.svg_path}",
-                f"{prefix}_PDF_PATH": f"../{spec.pdf_path}",
+                f"{prefix}_ATLAS_PATH": f"../../{spec.atlas_path}",
+                f"{prefix}_SVG_PATH": f"../../{spec.svg_path}",
+                f"{prefix}_PDF_PATH": f"../../{spec.pdf_path}",
             }
         )
     # These are populated after the first validation pass. Initial values
@@ -1204,8 +1206,8 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             "VALIDATION_FAIL_COUNT": "pending",
             "VALIDATION_TOTAL_COUNT": "pending",
             "VALIDATION_ALL_PASSED": "pending",
-            "VALIDATION_REPORT": "../output/data/validation_report.json",
-            "VALIDATION_FIGURE": "../output/figures/validation_summary.png",
+            "VALIDATION_REPORT": "../../output/data/validation_report.json",
+            "VALIDATION_FIGURE": "../../output/figures/validation_summary.png",
         }
     )
     output_path = OUTPUT_DIR / "data" / "manuscript_variables.json"
@@ -1242,8 +1244,8 @@ def _generate_variables(bindings: dict[str, NumericBinding]) -> dict[str, str]:
             "VALIDATION_ALL_PASSED": str(
                 validation_report.summary["all_passed"]
             ).lower(),
-            "VALIDATION_REPORT": "../output/data/validation_report.json",
-            "VALIDATION_FIGURE": "../output/figures/validation_summary.png",
+            "VALIDATION_REPORT": "../../output/data/validation_report.json",
+            "VALIDATION_FIGURE": "../../output/figures/validation_summary.png",
         }
     )
     write_json_artifact(

@@ -1004,12 +1004,16 @@ def _memory_evidence_checks(project_root: Path) -> list[ValidationCheck]:
 def _cover_image_checks(project_root: Path) -> list[ValidationCheck]:
     """Verify that the configured manuscript cover is a present, nonblank PNG."""
 
-    config_path = project_root / "manuscript" / "config.yaml"
-    image_path = project_root / "manuscript" / "assets" / "active_assembly_cover.png"
+    config_path = project_root / "docs/manuscript" / "config.yaml"
+    image_path = (
+        project_root / "docs/manuscript" / "assets" / "active_assembly_cover.png"
+    )
     try:
         config_text = config_path.read_text(encoding="utf-8")
         image = np.asarray(read_png_image(image_path), dtype=float)
-        configured = 'image: "assets/active_assembly_cover.png"' in config_text
+        configured = (
+            'image: "docs/manuscript/assets/active_assembly_cover.png"' in config_text
+        )
         alt_configured = 'alt: "Abstract cover illustration' in config_text
         present_and_nonblank = (
             image_path.is_file() and image.size > 0 and float(np.var(image)) > 0.00001
@@ -1390,8 +1394,8 @@ SCHOLARSHIP_CHECK_NAMES = (
 def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
     """Fail closed with explicit rows when the citation surface is unreadable."""
 
-    references_path = project_root / "manuscript" / "references.bib"
-    manuscript_paths = sorted((project_root / "manuscript").glob("*.md"))
+    references_path = project_root / "docs/manuscript" / "references.bib"
+    manuscript_paths = sorted((project_root / "docs/manuscript").glob("*.md"))
     if not references_path.exists() or not manuscript_paths:
         detail = (
             f"missing references.bib={not references_path.exists()} "
@@ -1405,12 +1409,12 @@ def _scholarship_checks(project_root: Path) -> list[ValidationCheck]:
 
 
 def _scholarship_checks_payload(project_root: Path) -> list[ValidationCheck]:
-    references = (project_root / "manuscript" / "references.bib").read_text(
+    references = (project_root / "docs/manuscript" / "references.bib").read_text(
         encoding="utf-8"
     )
     manuscript_text = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in sorted((project_root / "manuscript").glob("*.md"))
+        for path in sorted((project_root / "docs/manuscript").glob("*.md"))
     )
     bib_keys = set(re.findall(r"@\w+\{([^,]+),", references))
     cited_keys = {
@@ -1533,7 +1537,7 @@ def _scholarship_checks_payload(project_root: Path) -> list[ValidationCheck]:
 
 
 def _manuscript_source_checks(project_root: Path) -> list[ValidationCheck]:
-    manuscript_dir = project_root / "manuscript"
+    manuscript_dir = project_root / "docs/manuscript"
     expected_sections = {
         "00_abstract.md",
         "01_introduction.md",
@@ -1594,7 +1598,7 @@ def _manuscript_variable_coverage_checks(project_root: Path) -> list[ValidationC
 
     source_paths = tuple(
         path
-        for path in (project_root / "manuscript").glob("*.md")
+        for path in (project_root / "docs/manuscript").glob("*.md")
         if path.name not in MANUSCRIPT_SOURCE_EXCLUDES
     )
     required = {

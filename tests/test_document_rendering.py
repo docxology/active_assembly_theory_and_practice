@@ -22,8 +22,8 @@ def test_missing_shared_source_leaves_existing_docx_intact(tmp_path):
 def test_missing_cover_alternative_leaves_existing_docx_intact(tmp_path):
     (tmp_path / "output/web").mkdir(parents=True)
     (tmp_path / "output/web/_combined_manuscript.md").write_text("# Abstract\n")
-    (tmp_path / "manuscript").mkdir()
-    (tmp_path / "manuscript/config.yaml").write_text("paper: {title: Test}\n")
+    (tmp_path / "docs/manuscript").mkdir(parents=True)
+    (tmp_path / "docs/manuscript/config.yaml").write_text("paper: {title: Test}\n")
     target = tmp_path / DOCX_ARTIFACT
     target.parent.mkdir()
     target.write_bytes(b"prior document")
@@ -34,9 +34,9 @@ def test_missing_cover_alternative_leaves_existing_docx_intact(tmp_path):
 
 def test_native_docx_cover_preserves_body_and_scientific_numbering(tmp_path):
     root = Path(__file__).resolve().parents[1]
-    cover = root / "manuscript/assets/active_assembly_cover.png"
-    (tmp_path / "manuscript").mkdir()
-    (tmp_path / "manuscript/config.yaml").write_text(
+    cover = root / "docs/manuscript/assets/active_assembly_cover.png"
+    (tmp_path / "docs/manuscript").mkdir(parents=True)
+    (tmp_path / "docs/manuscript/config.yaml").write_text(
         f'paper:\n  title: Cover regression\n  cover:\n    image: "{cover}"\n    alt: Cover regression alternative\n'
     )
     (tmp_path / "output/web").mkdir(parents=True)
@@ -102,9 +102,9 @@ def _bind_shared_composition(project_root):
 @pytest.mark.parametrize("change", ["body", "combined", "section"])
 def test_stale_shared_composition_cannot_relabel_existing_docx(tmp_path, change):
     root = Path(__file__).resolve().parents[1]
-    cover = root / "manuscript/assets/active_assembly_cover.png"
-    (tmp_path / "manuscript").mkdir()
-    (tmp_path / "manuscript/config.yaml").write_text(
+    cover = root / "docs/manuscript/assets/active_assembly_cover.png"
+    (tmp_path / "docs/manuscript").mkdir(parents=True)
+    (tmp_path / "docs/manuscript/config.yaml").write_text(
         f'paper:\n  title: Regression\n  cover:\n    image: "{cover}"\n    alt: Regression cover\n'
     )
     combined = tmp_path / "output/web/_combined_manuscript.md"
@@ -131,7 +131,7 @@ def test_native_docx_uses_canonical_images_when_snapshots_shadow_resource_paths(
     import base64
 
     root = Path(__file__).resolve().parents[1]
-    cover = root / "manuscript/assets/active_assembly_cover.png"
+    cover = root / "docs/manuscript/assets/active_assembly_cover.png"
     canonical = tmp_path / "output/figures/scientific.png"
     canonical.parent.mkdir(parents=True)
     canonical.write_bytes(cover.read_bytes())
@@ -142,8 +142,8 @@ def test_native_docx_uses_canonical_images_when_snapshots_shadow_resource_paths(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
         )
     )
-    (tmp_path / "manuscript").mkdir()
-    (tmp_path / "manuscript/config.yaml").write_text(
+    (tmp_path / "docs/manuscript").mkdir(parents=True)
+    (tmp_path / "docs/manuscript/config.yaml").write_text(
         f'paper:\n  title: Canonical image regression\n  cover:\n    image: "{cover}"\n    alt: Source cover\n'
     )
     combined = tmp_path / "output/web/_combined_manuscript.md"

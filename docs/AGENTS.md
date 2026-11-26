@@ -4,7 +4,7 @@
 
 `docs/` is the authored project contract: how the disassembly-to-inference
 pipeline is structured, what it claims, where each claim stops, and how it is
-verified. These documents and the [`../manuscript`](../manuscript) sources are
+verified. These documents and the [`manuscript/`](manuscript/README.md) sources are
 the two authored interfaces of the project; everything under `output/` is
 regenerated from code and must never be hand-edited to agree with prose here.
 
@@ -76,5 +76,5 @@ general sensing law.
 
 - [`README.md`](README.md) — the folder index with per-document summaries
 - [`../AGENTS.md`](../AGENTS.md) — project-level boundaries
-- [`../manuscript/AGENTS.md`](../manuscript/AGENTS.md) — manuscript conventions
+- [`manuscript/AGENTS.md`](manuscript/AGENTS.md) — manuscript conventions
 - [`../src/AGENTS.md`](../src/AGENTS.md) — the modules these documents describe

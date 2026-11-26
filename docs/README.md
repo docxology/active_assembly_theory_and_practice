@@ -25,6 +25,7 @@ before interpreting a score, interval, p-value or leakage control.
 | [Reproducibility](reproducibility.md) | Artifact envelopes, source/byte lineage, public/private receipts and producer order. |
 | [Visual atlas](visual_atlas.md) | Canonical figure specs, raster/vector metadata, offline atlas and visual QA. |
 | [Analysis validation](analysis_validation.md) | Regeneration versus existing-output checks, deferred values and fail-closed oracle. |
+| [Manuscript sources](manuscript/README.md) | Ordered scholarly sections, figures, citations and the native export contract. |
 | [Document rendering](document_rendering.md) | Native template handoff, DOCX media/source binding, tagged PDF and manual review. |
 | [Verification](verification.md) | Pre-render, complete-build and post-render commands, gate scope and failure behavior. |
 | [Review package and release](release.md) | Reviewer route, actual inference paths, artifact contents, citation metadata and production DOI publication contract. |
