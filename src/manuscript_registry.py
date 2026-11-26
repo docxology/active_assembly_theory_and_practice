@@ -330,7 +330,7 @@ def manuscript_source_paths(project_root: Path = PROJECT_ROOT) -> tuple[Path, ..
     return tuple(
         sorted(
             path
-            for path in (project_root / "manuscript").glob("*.md")
+            for path in (project_root / "docs/manuscript").glob("*.md")
             if path.name not in SOURCE_EXCLUDES
         )
     )

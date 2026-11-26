@@ -23,7 +23,7 @@ whose ordering or filename encodes the protected target. The public bundle is
 already digest-ordered to prevent source-generation order from becoming a
 label channel. The VM implementation's explicit runtime allowlist is `README.md`,
 `pyproject.toml`, `uv.lock`, `src/` and `scripts/`; it excludes tracked `configs/`,
-`data/`, `docs/`, `figures/`, `formal/`, `julia/`, `manuscript/` and `tests/`.
+`data/`, `docs/`, `figures/`, `formal/`, `julia/` and `tests/`.
 Use that filtered export for a handoff; a full research checkout includes
 owner-side contracts and is not the prescribed public artifact bundle.
 

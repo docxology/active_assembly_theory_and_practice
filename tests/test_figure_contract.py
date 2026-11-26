@@ -176,7 +176,7 @@ def test_figure_pngs_and_vector_companions_are_nonblank_and_parseable() -> None:
 def test_narrative_figure_tokens_are_consumed_by_authored_manuscript() -> None:
     manuscript = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in sorted((PROJECT_ROOT / "manuscript").glob("*.md"))
+        for path in sorted((PROJECT_ROOT / "docs/manuscript").glob("*.md"))
     )
     for figure_id in NARRATIVE_FIGURE_IDS:
         prefix = f"FIGURE_{figure_id.upper()}"

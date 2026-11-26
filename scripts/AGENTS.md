@@ -30,7 +30,7 @@ land under `output/` and are disposable; build artifacts such as
 | `validate_analysis_outputs.py` | Regenerates inputs by default; `--existing-only` checks current outputs without changing scientific inputs | `src/manuscript_variables.py`, `src/validation.py` |
 | `validate_docx_render.py` | Post-render DOCX structural receipt (fail-closed) | `src/docx_validation.py` |
 | `validate_pdf_accessibility.py` | Post-render PDF tag-tree / accessibility audit | `src/pdf_accessibility.py` |
-| `z_generate_manuscript_variables.py` | Generates manuscript variables and hydrates the `manuscript/` tree through the template renderer | `src/manuscript_variables.py` + template `infrastructure` package (re-exec) |
+| `z_generate_manuscript_variables.py` | Generates manuscript variables and hydrates the `docs/manuscript/` tree through the template renderer | `src/manuscript_variables.py` + template `infrastructure` package (re-exec) |
 
 ## Gotchas
 

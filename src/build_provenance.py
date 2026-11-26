@@ -83,9 +83,9 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         project_root / "formal" / "lakefile.toml",
         project_root / "formal" / "lake-manifest.json",
         project_root / "formal" / "README.md",
-        project_root / "manuscript" / "config.yaml",
-        project_root / "manuscript" / "references.bib",
-        project_root / "manuscript" / "assets" / "active_assembly_cover.png",
+        project_root / "docs/manuscript" / "config.yaml",
+        project_root / "docs/manuscript" / "references.bib",
+        project_root / "docs/manuscript" / "assets" / "active_assembly_cover.png",
         *sorted((project_root / "configs/gnn").rglob("*.md")),
         project_root / "julia/ActiveAssemblyRxInfer/Project.toml",
         project_root / "julia/ActiveAssemblyRxInfer/Manifest.toml",
@@ -102,7 +102,7 @@ def build_provenance_payload(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         ),
         *sorted(
             path
-            for path in (project_root / "manuscript").glob("*.md")
+            for path in (project_root / "docs/manuscript").glob("*.md")
             if path.name not in {"AGENTS.md", "README.md", "SYNTAX.md"}
         ),
     ]

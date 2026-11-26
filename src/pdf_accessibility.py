@@ -253,7 +253,7 @@ def audit_pdf(
     )
 
     configured_language = "en"
-    config_path = project_root / "manuscript/config.yaml"
+    config_path = project_root / "docs/manuscript/config.yaml"
     if config_path.is_file():
         try:
             import yaml
@@ -350,7 +350,7 @@ def audit_pdf(
         registry_alts = {
             str(row.get("alt_text", "")).strip() for row in rows if row.get("alt_text")
         }
-    config_path = project_root / "manuscript/config.yaml"
+    config_path = project_root / "docs/manuscript/config.yaml"
     if config_path.is_file():
         try:
             import yaml

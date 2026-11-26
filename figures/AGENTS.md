@@ -6,7 +6,7 @@
 can see representative output without running the pipeline. It is not an input
 directory and not the path the manuscript resolves: manuscript sources
 reference `../output/figures/<name>.png` after token hydration, per
-[`../manuscript/AGENTS.md`](../manuscript/AGENTS.md).
+[`../docs/manuscript/AGENTS.md`](../docs/manuscript/AGENTS.md).
 
 Every file here has a same-named counterpart in `output/figures/`.
 
@@ -37,7 +37,7 @@ requires exact labels, filenames, row count, and alt text.
 Adding a figure therefore means adding a spec, a caption, a manuscript token,
 and a manifest target together — see
 [`../docs/visual_atlas.md`](../docs/visual_atlas.md) and
-[`../manuscript/AGENTS.md`](../manuscript/AGENTS.md).
+[`../docs/manuscript/AGENTS.md`](../docs/manuscript/AGENTS.md).
 
 ## Commands
 

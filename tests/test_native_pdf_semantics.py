@@ -22,20 +22,20 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture(scope="module")
 def semantic_pdf(tmp_path_factory):
     root = tmp_path_factory.mktemp("native-pdf-semantics")
-    assets = root / "manuscript/assets"
+    assets = root / "docs/manuscript/assets"
     assets.mkdir(parents=True)
     cover = assets / "cover.png"
-    shutil.copyfile(ROOT / "manuscript/assets/active_assembly_cover.png", cover)
+    shutil.copyfile(ROOT / "docs/manuscript/assets/active_assembly_cover.png", cover)
     figures = root / "output/figures"
     figures.mkdir(parents=True)
     image = figures / "owned.png"
     shutil.copyfile(cover, image)
-    (root / "manuscript/config.yaml").write_text(
+    (root / "docs/manuscript/config.yaml").write_text(
         "paper:\n  title: Native PDF semantic regression\n  cover:\n"
         f"    image: {json.dumps(str(cover))}\n    alt: Owned cover alternative\n"
         "metadata:\n  language: en\n  tagged_pdf: true\n"
     )
-    (root / "manuscript/00_body.md").write_text(
+    (root / "docs/manuscript/00_body.md").write_text(
         '---\nlang: en\npdfstandard:\n  version: "2.0"\n'
         "  standards: [UA-2]\n  tagging: true\n---\n\n"
         "# {{TITLE}}\n\n## Evidence\n\n### Detail\n\n"

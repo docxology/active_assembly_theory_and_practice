@@ -192,7 +192,7 @@ def _projection_source_hashes() -> dict[str, str | None]:
 def _configured_cover(project_root: Path) -> tuple[Path | None, str | None]:
     """Resolve the source-configured cover image and its alternative text."""
 
-    config_path = project_root / "manuscript" / "config.yaml"
+    config_path = project_root / "docs/manuscript" / "config.yaml"
     if not config_path.is_file():
         return None, None
     try:

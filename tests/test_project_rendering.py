@@ -18,9 +18,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def project(root):
-    (root / "manuscript").mkdir()
-    (root / "manuscript/00_body.md").write_text("# Current root\n\n{{SENTINEL}}\n")
-    (root / "manuscript/config.yaml").write_text(
+    (root / "docs/manuscript").mkdir(parents=True)
+    (root / "docs/manuscript/00_body.md").write_text("# Current root\n\n{{SENTINEL}}\n")
+    (root / "docs/manuscript/config.yaml").write_text(
         "paper:\n  title: Explicit-root regression\n"
     )
     write_json_artifact(
@@ -70,15 +70,15 @@ def test_actual_template_exports_current_root_without_registration(tmp_path):
 
 def test_preamble_stays_bound_without_entering_reader_or_slide_compositions(tmp_path):
     project(tmp_path)
-    assets = tmp_path / "manuscript/assets"
-    assets.mkdir()
+    assets = tmp_path / "docs/manuscript/assets"
+    assets.mkdir(parents=True)
     cover = assets / "cover.png"
-    shutil.copyfile(ROOT / "manuscript/assets/active_assembly_cover.png", cover)
-    (tmp_path / "manuscript/config.yaml").write_text(
+    shutil.copyfile(ROOT / "docs/manuscript/assets/active_assembly_cover.png", cover)
+    (tmp_path / "docs/manuscript/config.yaml").write_text(
         "paper:\n  title: Preamble regression\n  cover:\n"
         f"    image: {json.dumps(str(cover))}\n    alt: Owned cover alternative\n"
     )
-    preamble = tmp_path / "manuscript/preamble.md"
+    preamble = tmp_path / "docs/manuscript/preamble.md"
     preamble.write_text(
         "# PREAMBLE_INTERNAL_8391\n\n```latex\n\\hypersetup{pdfdisplaydoctitle=true}\n```\n"
     )
@@ -90,7 +90,7 @@ def test_preamble_stays_bound_without_entering_reader_or_slide_compositions(tmp_
         project_name="active_assembly_theory_and_practice",
     )
     assert len(report["rendered_hashes"]) == 4
-    assert "manuscript/preamble.md" in report["source_hashes"]
+    assert "docs/manuscript/preamble.md" in report["source_hashes"]
     assert "output/manuscript/preamble.md" in report["hydrated_hashes"]
     assert not (tmp_path / "output/slides/preamble_slides.pdf").exists()
     assert (

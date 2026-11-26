@@ -370,7 +370,7 @@ def test_manuscript_variables_are_generated_from_live_result(
     assert variables["ACTIVE_INFORMATION_EXACT"] == "yes"
     assert (
         variables["COVER_IMAGE_ARTIFACT"]
-        == "manuscript/assets/active_assembly_cover.png"
+        == "docs/manuscript/assets/active_assembly_cover.png"
     )
     assert math.isfinite(float(variables["RXINFER_FINAL_FREE_ENERGY"]))
     assert (PROJECT_ROOT / "output/data/manuscript_variables.json").exists()
@@ -421,7 +421,7 @@ def test_manuscript_variables_are_generated_from_live_result(
     assert (PROJECT_ROOT / "output/data/active_information_frontier.json").exists()
     assert (PROJECT_ROOT / "output/data/intervention_power.json").exists()
     assert (PROJECT_ROOT / "output/data/held_out_model.json").exists()
-    assert (PROJECT_ROOT / "manuscript/assets/active_assembly_cover.png").exists()
+    assert (PROJECT_ROOT / "docs/manuscript/assets/active_assembly_cover.png").exists()
     assert variables["ASSEMBLY_CFG_FIGURE"].endswith("assembly_cfg.png")
     assert (PROJECT_ROOT / "output/figures/rxinfer_free_energy.png").exists()
     assert (
@@ -490,7 +490,7 @@ def test_rxinfer_free_energy_validation_rejects_nonfinite_values() -> None:
 def test_scholarship_ledger_matches_bibliography() -> None:
     relative_path = write_scholarship_sources()
     payload = json.loads((PROJECT_ROOT / relative_path).read_text(encoding="utf-8"))
-    references = (PROJECT_ROOT / "manuscript/references.bib").read_text(
+    references = (PROJECT_ROOT / "docs/manuscript/references.bib").read_text(
         encoding="utf-8"
     )
 

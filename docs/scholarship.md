@@ -9,7 +9,7 @@ The source ledger lives in `src/scholarship.py` and is generated into:
 
 Each source has a citation key, source type, evidence tier, project stage,
 project role, and claim boundary. The validator checks that each ledger key
-exists in `manuscript/references.bib`, is cited in the manuscript, uses an
+exists in [manuscript bibliography](manuscript/references.bib), is cited in the manuscript, uses an
 approved source type, stage, and tier, has an HTTPS URL, has a valid DOI shape
 when a DOI is present, and carries non-empty role and boundary text. This
 prevents quiet growth of unused or unsupported scholarship claims.
@@ -38,7 +38,7 @@ claim appear stronger.
 ## 2026-09-17 claim and citation audit
 
 On 2026-09-17, a full closure audit recorded 47/47 ledger keys cited 1:1 with
-`manuscript/references.bib`, and 40/40 claim-register entries validated and
+[manuscript bibliography](manuscript/references.bib), and 40/40 claim-register entries validated and
 spot-checked against their receipts. That historical audit did not cover dedicated Rust compiler documentation
 or the updated role of the existing `nasm` manual citation. This audit introduced no new claim and changed no claim
 boundary.

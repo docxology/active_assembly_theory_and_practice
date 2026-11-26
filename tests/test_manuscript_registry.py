@@ -9,8 +9,8 @@ from src.validation import _manuscript_variable_coverage_checks
 
 
 def _surface(root, text, values):
-    (root / "manuscript").mkdir()
-    (root / "manuscript/00_abstract.md").write_text(text)
+    (root / "docs/manuscript").mkdir(parents=True)
+    (root / "docs/manuscript/00_abstract.md").write_text(text)
     (root / "output/data").mkdir(parents=True)
     (root / "output/data/manuscript_variables.json").write_text(json.dumps(values))
     registry = build_variable_registry(values, root)

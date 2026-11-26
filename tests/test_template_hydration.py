@@ -17,7 +17,7 @@ VARIABLES = {"PROJECT_TITLE": "Active Assembly Theory and Practice"}
 
 
 def _make_source_tree(project_root: Path) -> None:
-    source_dir = project_root / "manuscript"
+    source_dir = project_root / "docs/manuscript"
     source_dir.mkdir(parents=True)
     (source_dir / "00_abstract.md").write_text(
         "Title: {{PROJECT_TITLE}}", encoding="utf-8"
@@ -28,7 +28,7 @@ def _make_source_tree(project_root: Path) -> None:
 
 
 def _hydrate(project_root: Path, out_dir: Path) -> None:
-    for path in (project_root / "manuscript").glob("*.md"):
+    for path in (project_root / "docs/manuscript").glob("*.md"):
         if path.name in SOURCE_EXCLUDES:
             continue
         text = path.read_text(encoding="utf-8")
